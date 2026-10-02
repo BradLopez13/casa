@@ -1,7 +1,9 @@
--- Same as before except the lookup also takes a shared lock on the household
--- row. delete_household updates that row first, so under READ COMMITTED an
--- accept that waits behind a delete re-evaluates h.deleted_at after the
--- deleter commits and gets INVITE_INVALID instead of joining a dead household.
+-- Same contract as before, but the locks are taken household first, invite
+-- second: the same order the admin RPCs use (delete_household / leave_household
+-- lock the households row, then touch the invites), so the two cannot deadlock.
+-- The share lock on the household row also makes accept wait behind a
+-- concurrent delete_household; under READ COMMITTED it then re-evaluates
+-- deleted_at and gets INVITE_INVALID instead of joining a dead household.
 create or replace function public.accept_invite(p_token text)
 returns uuid
 language plpgsql
@@ -10,20 +12,40 @@ set search_path = ''
 as $$
 declare
   v_user uuid := (select auth.uid());
+  v_hash text := encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex');
+  v_hid uuid;
   v_invite public.household_invites;
 begin
   if v_user is null then
     raise exception 'NOT_AUTHENTICATED' using errcode = 'P0001';
   end if;
 
-  -- The row lock serialises two people redeeming the same token: the second
-  -- one waits, then sees accepted_at set and gets INVITE_INVALID.
+  -- Resolve the household without locking anything.
+  select i.household_id into v_hid
+  from public.household_invites i
+  where i.token_hash = v_hash;
+
+  if not found then
+    raise exception 'INVITE_INVALID' using errcode = 'P0001';
+  end if;
+
+  -- 1) household row (shared), 2) invite row (exclusive).
+  perform 1
+  from public.households h
+  where h.id = v_hid and h.deleted_at is null
+  for share;
+
+  if not found then
+    raise exception 'INVITE_INVALID' using errcode = 'P0001';
+  end if;
+
+  -- The invite lock serialises two people redeeming the same token: the second
+  -- one waits, then sees accepted_at set and gets INVITE_INVALID. State is
+  -- re-read after the lock.
   select i.* into v_invite
   from public.household_invites i
-  join public.households h on h.id = i.household_id
-  where i.token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
-    and h.deleted_at is null
-  for update of i for share of h;
+  where i.token_hash = v_hash
+  for update;
 
   if not found or v_invite.revoked_at is not null or v_invite.accepted_at is not null then
     raise exception 'INVITE_INVALID' using errcode = 'P0001';

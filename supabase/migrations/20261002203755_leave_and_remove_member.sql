@@ -42,8 +42,8 @@ begin
     raise exception 'NOT_AUTHENTICATED' using errcode = 'P0001';
   end if;
 
-  -- Household lock first (same order everywhere), so a concurrent accept,
-  -- transfer or delete is serialised with this call.
+  -- Household row first (accept_invite takes it shared, the admin RPCs exclusive),
+  -- so a concurrent accept, transfer or delete is serialised with this call.
   perform 1 from public.households
   where id = p_household_id and deleted_at is null
   for update;
