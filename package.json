@@ -26,6 +26,7 @@
     "eslint-config-expo": "^57.0.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.9",
+    "supabase": "^2.119.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.0",
     "vitest": "^5.0.3"
@@ -40,7 +41,10 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:start": "supabase db start",
+    "db:test": "supabase test db",
+    "db:reset": "supabase db reset"
   },
   "private": true,
   "packageManager": "pnpm@12.3.4"

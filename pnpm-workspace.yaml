@@ -2,3 +2,4 @@
 # unrs-resolver (eslint-config-expo) trae binarios precompilados; su postinstall es solo un respaldo.
 allowBuilds:
   unrs-resolver: false
+  supabase: true
