@@ -42,3 +42,4 @@ jobs:
           version: 2.119.0
       - run: supabase db start
       - run: supabase test db
+      - run: pnpm db:types && git diff --exit-code data/supabase/database.types.ts
