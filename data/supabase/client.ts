@@ -5,8 +5,8 @@ import { AppState, Platform } from 'react-native';
 import { createChunkedStorage } from './chunked-storage';
 import type { Database } from './database.types';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL as string | undefined;
-const key = process.env.EXPO_PUBLIC_SUPABASE_KEY as string | undefined;
+const url: string | undefined = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const key: string | undefined = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 if (!url || !key) {
   throw new Error(

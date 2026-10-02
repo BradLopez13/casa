@@ -4,3 +4,4 @@ dist/
 ios/
 android/
 data/supabase/database.types.ts
+supabase/.temp/
