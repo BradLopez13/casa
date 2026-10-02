@@ -1,4 +1,27 @@
 {
   "app.name": "Casa",
-  "members.count": "{count} miembros"
+  "members.count": "{count} miembros",
+  "auth.signIn.title": "Inicia sesión",
+  "auth.signIn.submit": "Entrar",
+  "auth.signIn.goSignUp": "Crear una cuenta",
+  "auth.signUp.title": "Crea tu cuenta",
+  "auth.signUp.submit": "Registrarme",
+  "auth.signUp.goSignIn": "Ya tengo cuenta",
+  "auth.fields.displayName": "Nombre",
+  "auth.fields.email": "Correo electrónico",
+  "auth.fields.password": "Contraseña",
+  "auth.errors.nameRequired": "Escribe tu nombre.",
+  "auth.errors.nameTooLong": "El nombre admite como máximo 40 caracteres.",
+  "auth.errors.emailInvalid": "Escribe un correo válido.",
+  "auth.errors.passwordRequired": "Escribe tu contraseña.",
+  "auth.errors.passwordTooShort": "La contraseña necesita al menos 8 caracteres.",
+  "auth.errors.INVALID_CREDENTIALS": "El correo o la contraseña no son correctos.",
+  "auth.errors.EMAIL_TAKEN": "Ya existe una cuenta con este correo.",
+  "auth.errors.WEAK_PASSWORD": "La contraseña es demasiado débil.",
+  "auth.errors.NETWORK": "No hay conexión. Inténtalo de nuevo.",
+  "auth.errors.UNKNOWN": "Algo ha ido mal. Inténtalo de nuevo.",
+  "auth.signOut": "Cerrar sesión",
+  "onboarding.placeholder": "Aquí crearás tu hogar o te unirás a uno.",
+  "invite.placeholder": "Aquí aceptarás una invitación.",
+  "today.placeholder": "Hoy"
 }
