@@ -5,10 +5,10 @@ import { AppState, Platform } from 'react-native';
 import { createChunkedStorage } from './chunked-storage';
 import type { Database } from './database.types';
 
-const url: string | undefined = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const key: string | undefined = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+const url: unknown = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const key: unknown = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
-if (!url || !key) {
+if (typeof url !== 'string' || !url || typeof key !== 'string' || !key) {
   throw new Error(
     'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_KEY. Copy .env.example to .env and fill both in.',
   );
