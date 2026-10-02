@@ -60,4 +60,18 @@ describe('createChunkedStorage', () => {
     map.delete('session.1');
     expect(await storage.getItem('session')).toBeNull();
   });
+
+  it('never splits a surrogate pair across chunks', async () => {
+    const { map, store } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const value = 'a'.repeat(1799) + '😀' + 'b'.repeat(10);
+    await storage.setItem('session', value);
+    expect(await storage.getItem('session')).toBe(value);
+    const count = Number(map.get('session.n'));
+    for (let i = 0; i < count; i++) {
+      const chunk = map.get(`session.${i}`) ?? '';
+      const last = chunk.charCodeAt(chunk.length - 1);
+      expect(last >= 0xd800 && last <= 0xdbff).toBe(false);
+    }
+  });
 });
