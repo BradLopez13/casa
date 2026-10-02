@@ -1,11 +1,12 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(47);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
 select tests.create_user('carla@test.dev', 'Carla') as carla \gset
 select tests.create_user('eva@test.dev', 'Eva') as eva \gset
+select tests.create_user('dani@test.dev', 'Dani') as dani \gset
 
 -- Ana owns the household; Bob and Carla are members; Eva has none.
 insert into public.households (id, name, created_by)
@@ -178,6 +179,171 @@ select tests.authenticate_as(:'eva');
 select ok(
   public.create_household('Otra casa de Eva') is not null,
   'the former owner can create a new household'
+);
+
+
+-- transfer_ownership ----------------------------------------------------------
+-- State now: Ana owner, Bob member (Carla left, Eva's households are deleted).
+
+select tests.clear_auth();
+
+select throws_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'bob'),
+  'P0001', 'NOT_AUTHENTICATED', 'transfer_ownership without session is rejected'
+);
+
+select throws_ok(
+  $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  'P0001', 'NOT_AUTHENTICATED', 'delete_household without session is rejected'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', gen_random_uuid())$$,
+  '42501', null, 'anon cannot execute transfer_ownership'
+);
+
+select throws_ok(
+  $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  '42501', null, 'anon cannot execute delete_household'
+);
+
+reset role;
+
+select tests.authenticate_as(:'bob');
+
+select throws_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'bob'),
+  'P0001', 'NOT_OWNER', 'member cannot transfer ownership'
+);
+
+select throws_ok(
+  $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  'P0001', 'NOT_OWNER', 'member cannot delete the household'
+);
+
+select tests.authenticate_as(:'dani');
+
+select throws_ok(
+  $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  'P0001', 'NOT_OWNER', 'non-member cannot delete the household'
+);
+
+select tests.authenticate_as(:'ana');
+
+select throws_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'dani'),
+  'P0001', 'NOT_A_MEMBER', 'cannot transfer to someone who is not a member'
+);
+
+select throws_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'carla'),
+  'P0001', 'NOT_A_MEMBER', 'cannot transfer to someone who left'
+);
+
+select lives_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'ana'),
+  'transferring to yourself is a no-op'
+);
+
+select is(
+  (select role from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'ana' and left_at is null),
+  'owner',
+  'the owner is still owner after transferring to self'
+);
+
+select lives_ok(
+  format($$select public.transfer_ownership('00000000-0000-0000-0000-0000000000a1', %L)$$, :'bob'),
+  'owner transfers ownership to a member'
+);
+
+select tests.clear_auth();
+
+select is(
+  (select role from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'bob' and left_at is null),
+  'owner',
+  'the new owner is owner'
+);
+
+select is(
+  (select role from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'ana' and left_at is null),
+  'member',
+  'the former owner is now a member'
+);
+
+select is(
+  (select count(*) from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1'
+      and role = 'owner' and left_at is null),
+  1::bigint,
+  'exactly one active owner after the transfer'
+);
+
+select tests.authenticate_as(:'ana');
+
+select throws_ok(
+  format($$select public.remove_member('00000000-0000-0000-0000-0000000000a1', %L)$$, :'bob'),
+  'P0001', 'NOT_OWNER', 'the former owner has lost owner powers'
+);
+
+-- delete_household ------------------------------------------------------------
+
+select tests.authenticate_as(:'bob');
+select token as del_token, invite_id as del_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select public.delete_household('00000000-0000-0000-0000-0000000000a1');
+select tests.clear_auth();
+
+select is(
+  (select count(*) from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1' and left_at is null),
+  0::bigint,
+  'delete leaves no active members'
+);
+
+select ok(
+  (select deleted_at is not null from public.households
+    where id = '00000000-0000-0000-0000-0000000000a1'),
+  'delete sets deleted_at on the household'
+);
+
+select ok(
+  (select revoked_at is not null from public.household_invites where id = :'del_inv'),
+  'delete revokes the active invites'
+);
+
+select is(
+  (select count(*) from public.household_members
+    where household_id = '00000000-0000-0000-0000-0000000000a1'),
+  4::bigint,
+  'delete is soft: no membership row disappears'
+);
+
+select tests.authenticate_as(:'ana');
+
+select is(
+  (select count(*) from public.households), 0::bigint,
+  'a former member sees no household after the delete'
+);
+
+select throws_ok(
+  $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  'P0001', 'NOT_OWNER', 'deleting an already deleted household is NOT_OWNER'
+);
+
+select ok(
+  public.create_household('Nueva de Ana') is not null,
+  'a former member can create a new household after the delete'
+);
+
+select tests.authenticate_as(:'bob');
+
+select ok(
+  public.create_household('Nueva de Bob') is not null,
+  'the former owner can create a new household after the delete'
 );
 
 select tests.clear_auth();
