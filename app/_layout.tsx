@@ -14,6 +14,9 @@ const queryClient = new QueryClient({
 
 function groupOf(segment: string | undefined): RouteInput['group'] {
   switch (segment) {
+    case undefined:
+    case 'index':
+      return 'root';
     case '(auth)':
       return 'auth';
     case 'onboarding':
