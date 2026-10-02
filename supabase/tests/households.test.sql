@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(24);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -59,15 +59,16 @@ select is(
   'member does not see the profile of someone who left'
 );
 
+select throws_ok($$update public.households set name = 'x'$$, '42501', null, 'member cannot update households');
+select throws_ok($$delete from public.households$$, '42501', null, 'member cannot delete households');
+select throws_ok($$update public.household_members set role = 'owner'$$, '42501', null, 'member cannot update members');
+select throws_ok($$delete from public.household_members$$, '42501', null, 'member cannot delete members');
+
 select tests.authenticate_as(:'bob');
 
-select is(
-  (select count(*) from public.households)
-    + (select count(*) from public.household_members)
-    + (select count(*) from public.profiles where user_id = :'ana'),
-  0::bigint,
-  'non-member sees no household, members or profiles'
-);
+select is((select count(*) from public.households), 0::bigint, 'non-member sees no households');
+select is((select count(*) from public.household_members), 0::bigint, 'non-member sees no members');
+select is((select count(*) from public.profiles where user_id = :'ana'), 0::bigint, 'non-member sees no housemate profiles');
 
 select throws_ok(
   format($$insert into public.household_members (household_id, user_id, role)
@@ -101,16 +102,19 @@ select tests.create_user('eva@test.dev', 'Eva') as eva \gset
 
 select tests.authenticate_as(:'eva');
 
-select lives_ok(
-  $$select public.create_household('  Casa  ')$$,
-  'create_household accepts a padded name'
+select public.create_household('  Casa  ') as hid \gset
+
+select is(
+  (select count(*) from public.households where id = :'hid' and name = 'Casa'),
+  1::bigint,
+  'create_household returns the id of the new, trimmed-name household'
 );
 
 select is(
-  (select h.name from public.households h join public.household_members m on m.household_id = h.id
-    where m.user_id = :'eva' and m.role = 'owner'),
-  'Casa',
-  'create_household trims the name and makes the caller owner'
+  (select count(*) from public.household_members
+    where user_id = :'eva' and role = 'owner' and household_id = :'hid'),
+  1::bigint,
+  'create_household makes the caller owner of the returned household'
 );
 
 select throws_ok(
@@ -151,6 +155,19 @@ select throws_ok(
   'anonymous call is rejected'
 );
 reset role;
+
+select tests.clear_auth();
+select tests.create_user('fran@test.dev', 'Fran') as fran \gset
+insert into public.household_members (household_id, user_id, role)
+values ('00000000-0000-0000-0000-0000000000a1', :'fran', 'member');
+select tests.authenticate_as(:'fran');
+
+select throws_ok(
+  $$select public.create_household('Casa')$$,
+  'P0001',
+  'ALREADY_IN_HOUSEHOLD',
+  'an existing active membership is reported as ALREADY_IN_HOUSEHOLD'
+);
 
 select tests.clear_auth();
 select * from finish();
