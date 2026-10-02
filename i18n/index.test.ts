@@ -8,6 +8,9 @@ describe('t', () => {
   it('interpolates variables', () => {
     expect(t('members.count', { count: 3 })).toBe('3 miembros');
   });
+  it('uses the singular form key for one member', () => {
+    expect(t('members.countOne')).toBe('1 miembro');
+  });
   it('leaves unknown placeholders untouched', () => {
     expect(t('members.count')).toBe('{count} miembros');
   });
