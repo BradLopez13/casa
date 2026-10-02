@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { t } from '@/i18n';
 import { useTheme } from '../theme';
@@ -26,6 +27,18 @@ export function ConfirmDialog({
   loading = false,
 }: Props) {
   const { colors, space } = useTheme();
+  // Keep the last content while the Modal fades out, so it doesn't blank or flash "¿Expulsar a ?".
+  const live = { title, message, confirmLabel, destructive };
+  const [content, setContent] = useState(live);
+  if (
+    visible &&
+    (content.title !== title ||
+      content.message !== message ||
+      content.confirmLabel !== confirmLabel ||
+      content.destructive !== destructive)
+  ) {
+    setContent(live);
+  }
   return (
     <Modal
       visible={visible}
@@ -54,13 +67,13 @@ export function ConfirmDialog({
             accessibilityRole="header"
             style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}
           >
-            {title}
+            {content.title}
           </Text>
-          <Text style={{ color: colors.text, fontSize: 16 }}>{message}</Text>
+          <Text style={{ color: colors.text, fontSize: 16 }}>{content.message}</Text>
           <Button
             testID="members.confirm"
-            title={confirmLabel}
-            variant={destructive ? 'danger' : 'primary'}
+            title={content.confirmLabel}
+            variant={content.destructive ? 'danger' : 'primary'}
             loading={loading}
             onPress={onConfirm}
           />

@@ -78,6 +78,7 @@
   "members.confirm.transferAction": "Hacer propietario",
   "members.confirm.leaveTitle": "¿Salir del hogar?",
   "members.confirm.leaveMessage": "Dejarás de ver las tareas y la compra de este hogar.",
+  "members.confirm.leaveLastMessage": "Eres la única persona del hogar: al salir se borrará el hogar y sus datos.",
   "members.confirm.leaveAction": "Salir",
   "members.confirm.deleteTitle": "¿Borrar el hogar?",
   "members.confirm.deleteMessage": "Se borrará el hogar para todos sus miembros. No se puede deshacer.",
