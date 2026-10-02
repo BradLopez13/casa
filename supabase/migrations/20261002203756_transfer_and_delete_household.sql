@@ -43,6 +43,12 @@ begin
   set role = 'owner'
   where household_id = p_household_id and user_id = p_new_owner_id
     and left_at is null;
+
+  -- Defensive: the target was checked above under the household lock. If it
+  -- still vanished, raising rolls back the demote too.
+  if not found then
+    raise exception 'NOT_A_MEMBER' using errcode = 'P0001';
+  end if;
 end;
 $$;
 
