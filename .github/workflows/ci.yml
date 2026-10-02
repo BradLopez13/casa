@@ -12,6 +12,10 @@ concurrency:
 jobs:
   app:
     runs-on: ubuntu-latest
+    env:
+      # Placeholders so the bundle can import the Supabase client; no real project or secrets.
+      EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      EXPO_PUBLIC_SUPABASE_KEY: ci-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
