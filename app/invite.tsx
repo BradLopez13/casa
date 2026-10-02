@@ -65,6 +65,8 @@ export default function InviteScreen() {
   useEffect(() => {
     if (!signedOut || stored.current) return;
     stored.current = true;
+    // A malformed link is shown as invalid below: don't store anything or redirect.
+    if (hasParam && !paramToken) return;
     if (token) {
       setPending.mutate(token, {
         onSuccess: () => router.replace('/sign-in'),
@@ -73,7 +75,7 @@ export default function InviteScreen() {
     } else {
       router.replace('/sign-in');
     }
-  }, [signedOut, token, setPending, router]);
+  }, [signedOut, token, hasParam, paramToken, setPending, router]);
 
   async function accept() {
     if (!token) return;
@@ -99,6 +101,19 @@ export default function InviteScreen() {
   async function dismiss() {
     await clearPending.mutateAsync().catch(() => undefined);
     router.replace('/');
+  }
+
+  if (signedOut && hasParam && !paramToken) {
+    return (
+      <Screen>
+        <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
+        <Button
+          testID="invite.back"
+          title={t('invite.back')}
+          onPress={() => router.replace('/sign-in')}
+        />
+      </Screen>
+    );
   }
 
   if (signedOut && persistFailed) {
