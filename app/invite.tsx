@@ -52,7 +52,12 @@ export default function InviteScreen() {
   const [accepting, setAccepting] = useState(false);
   const [failure, setFailure] = useState<{ code: AppErrorCode; terminal: boolean } | null>(null);
 
-  const token = parseInviteToken(params.token) ?? pending.token;
+  // A present-but-malformed token param is invalid; only fall back to the stored token
+  // when the param is absent.
+  const paramToken = parseInviteToken(params.token);
+  const hasParam = params.token !== undefined && params.token !== '';
+  const token = hasParam ? paramToken : pending.token;
+  const [persistFailed, setPersistFailed] = useState(false);
   const signedOut = session.status === 'signed-out';
   const stored = useRef(false);
 
@@ -61,7 +66,10 @@ export default function InviteScreen() {
     if (!signedOut || stored.current) return;
     stored.current = true;
     if (token) {
-      setPending.mutate(token, { onSettled: () => router.replace('/sign-in') });
+      setPending.mutate(token, {
+        onSuccess: () => router.replace('/sign-in'),
+        onError: () => setPersistFailed(true),
+      });
     } else {
       router.replace('/sign-in');
     }
@@ -91,6 +99,19 @@ export default function InviteScreen() {
   async function dismiss() {
     await clearPending.mutateAsync().catch(() => undefined);
     router.replace('/');
+  }
+
+  if (signedOut && persistFailed) {
+    return (
+      <Screen>
+        <ErrorText testID="invite.error">{t('invite.errors.UNKNOWN')}</ErrorText>
+        <Button
+          testID="invite.back"
+          title={t('invite.back')}
+          onPress={() => router.replace('/sign-in')}
+        />
+      </Screen>
+    );
   }
 
   if (session.status !== 'signed-in' || pending.isLoading) return null;
