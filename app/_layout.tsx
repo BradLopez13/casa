@@ -11,6 +11,7 @@ import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
+import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
 
 void SplashScreen.preventAutoHideAsync();
@@ -83,12 +84,13 @@ function Guard() {
   const segments = useSegments();
   const session = useSession();
   const membershipQuery = useMembership();
+  const pending = usePendingInvite();
 
   const signedIn = session.status === 'signed-in';
   const hasData = membershipQuery.data !== undefined;
   const failed = signedIn && membershipQuery.isError && !hasData;
   const membership: RouteInput['membership'] =
-    !signedIn || membershipQuery.isPending || failed
+    !signedIn || membershipQuery.isPending || pending.isLoading || failed
       ? 'loading'
       : membershipQuery.data === null
         ? 'none'
@@ -97,7 +99,7 @@ function Guard() {
   const target = resolveRoute({
     session: session.status,
     membership,
-    hasPendingInvite: false, // Task 8
+    hasPendingInvite: pending.hasPendingInvite,
     group,
   });
 
@@ -106,7 +108,10 @@ function Guard() {
   }, [target, router]);
 
   const ready =
-    session.status !== 'loading' && !(signedIn && membershipQuery.isPending) && target === null;
+    !pending.isLoading &&
+    session.status !== 'loading' &&
+    !(signedIn && membershipQuery.isPending) &&
+    target === null;
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
