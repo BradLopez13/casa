@@ -95,6 +95,7 @@ export default function SignUpScreen() {
         loading={loading}
       />
       <Button
+        testID="sign-up.go-sign-in"
         title={t('auth.signUp.goSignIn')}
         variant="secondary"
         onPress={() => router.push('/sign-in')}
