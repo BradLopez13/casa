@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(48);
+select plan(49);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -335,15 +335,28 @@ select throws_ok(
 );
 
 -- accept_invite vs delete_household. accept_invite locks the household row
--- (for share) and delete_household updates that row first, so a concurrent
--- accept waits for the delete and then re-reads deleted_at. Concurrency cannot
--- be staged in one session; this checks the resulting state: an invite that
--- was valid before the delete is rejected afterwards.
+-- (for share) first and delete_household updates that row first, so a
+-- concurrent accept waits for the delete and then re-reads deleted_at.
+-- Concurrency cannot be staged in one session; this checks the resulting
+-- state with an invite that is otherwise perfectly valid (inserted after the
+-- delete, so delete_household did not revoke it): only deleted_at rejects it.
+select tests.clear_auth();
+insert into public.household_invites (household_id, token_hash, created_by, expires_at)
+values (
+  '00000000-0000-0000-0000-0000000000a1',
+  encode(extensions.digest('late-token', 'sha256'), 'hex'),
+  :'bob', now() + interval '7 days'
+);
 select tests.authenticate_as(:'dani');
 
 select throws_ok(
-  format($$select public.accept_invite(%L)$$, :'del_token'),
-  'P0001', 'INVITE_INVALID', 'an invite that was valid before the delete cannot join the deleted household'
+  $$select public.accept_invite('late-token')$$,
+  'P0001', 'INVITE_INVALID', 'a valid invite cannot join a deleted household'
+);
+
+select throws_ok(
+  $$select private.soft_delete_household('00000000-0000-0000-0000-0000000000a1')$$,
+  '42501', null, 'authenticated cannot execute the private delete routine'
 );
 
 select tests.authenticate_as(:'ana');
