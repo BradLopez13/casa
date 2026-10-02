@@ -14,6 +14,11 @@ export type ChunkedStorage = {
  * SecureStore limits each value to about 2 KB, and a Supabase session is
  * larger, so values are split into `${key}.0 … ${key}.N-1` with the chunk
  * count in `${key}.n`.
+ *
+ * The default chunk size assumes mostly-ASCII content (JWTs and JSON), which is
+ * what Supabase sessions are; 1800 UTF-16 units is not guaranteed to fit in
+ * ~2048 bytes for arbitrary non-ASCII text. Chunks never end in the middle of a
+ * surrogate pair, so each one is valid UTF-16 and survives native UTF-8 storage.
  */
 export function createChunkedStorage(store: SecureKeyValue, chunkSize = 1800): ChunkedStorage {
   const countKey = (key: string) => `${key}.n`;
@@ -47,9 +52,16 @@ export function createChunkedStorage(store: SecureKeyValue, chunkSize = 1800): C
     async setItem(key, value) {
       const previous = await readCount(key);
       const chunks: string[] = [];
-      for (let i = 0; i < value.length; i += chunkSize) {
-        chunks.push(value.slice(i, i + chunkSize));
+      for (let start = 0; start < value.length;) {
+        let end = Math.min(start + chunkSize, value.length);
+        const last = value.charCodeAt(end - 1);
+        if (end < value.length && last >= 0xd800 && last <= 0xdbff && end - 1 > start) end--;
+        chunks.push(value.slice(start, end));
+        start = end;
       }
+      // Not atomic: an interrupted overwrite can leave a mix of old and new
+      // chunks. auth-js then fails to parse the session and signs the user out,
+      // which is acceptable.
       for (const [i, chunk] of chunks.entries()) {
         await store.setItemAsync(chunkKey(key, i), chunk);
       }
