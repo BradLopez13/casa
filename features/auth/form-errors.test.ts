@@ -7,7 +7,7 @@ describe('fieldErrors', () => {
     const r = signUpSchema.safeParse({ displayName: ' ', email: 'x', password: '123' });
     expect(r.success).toBe(false);
     if (r.success) return;
-    expect(fieldErrors(r.error)).toEqual({
+    expect(fieldErrors(r.error, { form: 'signUp' })).toEqual({
       displayName: 'auth.errors.nameRequired',
       email: 'auth.errors.emailInvalid',
       password: 'auth.errors.passwordTooShort',
@@ -21,13 +21,17 @@ describe('fieldErrors', () => {
       password: '12345678',
     });
     if (r.success) throw new Error('expected failure');
-    expect(fieldErrors(r.error)).toEqual({ displayName: 'auth.errors.nameTooLong' });
+    expect(fieldErrors(r.error, { form: 'signUp' })).toEqual({
+      displayName: 'auth.errors.nameTooLong',
+    });
   });
 
   it('reports an empty sign-in password as required', () => {
     const r = signInSchema.safeParse({ email: 'a@b.co', password: '' });
     if (r.success) throw new Error('expected failure');
-    expect(fieldErrors(r.error, true)).toEqual({ password: 'auth.errors.passwordRequired' });
+    expect(fieldErrors(r.error, { form: 'signIn' })).toEqual({
+      password: 'auth.errors.passwordRequired',
+    });
   });
 });
 

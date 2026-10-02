@@ -26,7 +26,7 @@ export default function SignUpScreen() {
     setFormError(null);
     const parsed = signUpSchema.safeParse({ displayName, email: email.trim(), password });
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error));
+      setErrors(fieldErrors(parsed.error, { form: 'signUp' }));
       return;
     }
     setErrors({});
