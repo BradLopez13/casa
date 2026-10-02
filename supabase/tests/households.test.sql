@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(17);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -95,6 +95,62 @@ select is(
   0::bigint,
   'a soft-deleted household and its members are hidden'
 );
+
+select tests.clear_auth();
+select tests.create_user('eva@test.dev', 'Eva') as eva \gset
+
+select tests.authenticate_as(:'eva');
+
+select lives_ok(
+  $$select public.create_household('  Casa  ')$$,
+  'create_household accepts a padded name'
+);
+
+select is(
+  (select h.name from public.households h join public.household_members m on m.household_id = h.id
+    where m.user_id = :'eva' and m.role = 'owner'),
+  'Casa',
+  'create_household trims the name and makes the caller owner'
+);
+
+select throws_ok(
+  $$select public.create_household('   ')$$,
+  'P0001',
+  'INVALID_NAME',
+  'blank name is rejected'
+);
+
+select throws_ok(
+  $$select public.create_household(repeat('a', 61))$$,
+  'P0001',
+  'INVALID_NAME',
+  '61-char name is rejected'
+);
+
+select throws_ok(
+  $$select public.create_household('Otra')$$,
+  'P0001',
+  'ALREADY_IN_HOUSEHOLD',
+  'second household is rejected'
+);
+
+select tests.clear_auth();
+
+select throws_ok(
+  $$select public.create_household('Casa')$$,
+  'P0001',
+  'NOT_AUTHENTICATED',
+  'a call without session is rejected'
+);
+
+set local role anon;
+select throws_ok(
+  $$select public.create_household('Casa')$$,
+  '42501',
+  null,
+  'anonymous call is rejected'
+);
+reset role;
 
 select tests.clear_auth();
 select * from finish();
