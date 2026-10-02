@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(48);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -333,6 +333,20 @@ select throws_ok(
   $$select public.delete_household('00000000-0000-0000-0000-0000000000a1')$$,
   'P0001', 'NOT_OWNER', 'deleting an already deleted household is NOT_OWNER'
 );
+
+-- accept_invite vs delete_household. accept_invite locks the household row
+-- (for share) and delete_household updates that row first, so a concurrent
+-- accept waits for the delete and then re-reads deleted_at. Concurrency cannot
+-- be staged in one session; this checks the resulting state: an invite that
+-- was valid before the delete is rejected afterwards.
+select tests.authenticate_as(:'dani');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'del_token'),
+  'P0001', 'INVITE_INVALID', 'an invite that was valid before the delete cannot join the deleted household'
+);
+
+select tests.authenticate_as(:'ana');
 
 select ok(
   public.create_household('Nueva de Ana') is not null,
