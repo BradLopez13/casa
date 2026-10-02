@@ -23,5 +23,8 @@
   "auth.signOut": "Cerrar sesión",
   "onboarding.placeholder": "Aquí crearás tu hogar o te unirás a uno.",
   "invite.placeholder": "Aquí aceptarás una invitación.",
-  "today.placeholder": "Hoy"
+  "today.placeholder": "Hoy",
+  "errors.membershipLoad": "No hemos podido cargar tu hogar.",
+  "errors.membershipNetwork": "No hay conexión. Comprueba tu red e inténtalo de nuevo.",
+  "errors.retry": "Reintentar"
 }
