@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
@@ -91,9 +91,16 @@ export default function MembersScreen() {
   const del = useHouseholdMutation(deleteHousehold);
   const [pending, setPending] = useState<Pending | null>(null);
   const [error, setError] = useState<string | undefined>();
+  const [footerError, setFooterError] = useState<string | undefined>();
+  // Synchronous guards: a second tap can land before the pending state re-renders.
+  const inviting = useRef(false);
+  const confirming = useRef(false);
+  const onlyMember = isOwner && members.data?.length === 1;
+  const mustTransfer = isOwner && (members.data?.length ?? 0) > 1;
 
   async function onInvite() {
-    if (!householdId) return;
+    if (!householdId || inviting.current) return;
+    inviting.current = true;
     setError(undefined);
     try {
       const { token } = await invite.mutateAsync(householdId);
@@ -102,7 +109,19 @@ export default function MembersScreen() {
       await Share.share({ message: t('invite.shareMessage', { url }) });
     } catch (e) {
       setError(errorText(e));
+    } finally {
+      inviting.current = false;
     }
+  }
+
+  function onLeave() {
+    setFooterError(undefined);
+    // The DB would refuse (OWNER_MUST_TRANSFER); say so next to the button instead of a dialog.
+    if (mustTransfer) {
+      setFooterError(t('members.errors.OWNER_MUST_TRANSFER'));
+      return;
+    }
+    setPending({ kind: 'leave' });
   }
 
   function onRevoke(inviteId: string) {
@@ -117,15 +136,21 @@ export default function MembersScreen() {
   const busy = remove.isPending || transfer.isPending || leave.isPending || del.isPending;
 
   function confirm() {
-    if (!pending || !householdId) return;
+    if (!pending || !householdId || confirming.current) return;
+    confirming.current = true;
+    const footer = pending.kind === 'leave' || pending.kind === 'delete';
     const done = {
       onSuccess: () => setPending(null),
       onError: (e: unknown) => {
         setPending(null);
-        setError(errorText(e));
+        (footer ? setFooterError : setError)(errorText(e));
+      },
+      onSettled: () => {
+        confirming.current = false;
       },
     };
     setError(undefined);
+    setFooterError(undefined);
     // After leave/delete the membership refetch makes the route guard send the user to onboarding.
     switch (pending.kind) {
       case 'remove':
@@ -243,21 +268,33 @@ export default function MembersScreen() {
         testID="members.leave"
         title={t('members.leave')}
         variant="secondary"
-        onPress={() => setPending({ kind: 'leave' })}
+        onPress={onLeave}
       />
       {isOwner ? (
         <Button
           testID="members.delete-household"
           title={t('members.deleteHousehold')}
           variant="danger"
-          onPress={() => setPending({ kind: 'delete' })}
+          onPress={() => {
+            setFooterError(undefined);
+            setPending({ kind: 'delete' });
+          }}
         />
       ) : null}
+      {footerError ? <ErrorText testID="members.footer-error">{footerError}</ErrorText> : null}
 
       <ConfirmDialog
         visible={pending !== null}
         title={dialog ? t(dialog.title, { name: targetName }) : ''}
-        message={dialog ? t(dialog.message) : ''}
+        message={
+          dialog
+            ? t(
+                pending?.kind === 'leave' && onlyMember
+                  ? 'members.confirm.leaveLastMessage'
+                  : dialog.message,
+              )
+            : ''
+        }
         confirmLabel={dialog ? t(dialog.action) : ''}
         destructive={pending?.kind !== 'transfer'}
         loading={busy}
