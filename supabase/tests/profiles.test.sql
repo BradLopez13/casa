@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(9);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', '') as bob \gset
@@ -38,6 +38,36 @@ select is(
   (select count(*) from u),
   0::bigint,
   'user cannot change another user''s profile'
+);
+
+select throws_ok(
+  format($$insert into public.profiles (user_id, display_name) values (%L, 'x')$$, gen_random_uuid()),
+  '42501',
+  null,
+  'user cannot insert profiles directly'
+);
+
+select throws_ok(
+  format($$delete from public.profiles where user_id = %L$$, :'ana'),
+  '42501',
+  null,
+  'user cannot delete profiles'
+);
+
+select throws_ok(
+  format($$update public.profiles set user_id = gen_random_uuid() where user_id = %L$$, :'ana'),
+  '42501',
+  null,
+  'user cannot change own user_id'
+);
+
+with u as (
+  update public.profiles set display_name = 'Ana B' where user_id = :'ana' returning 1
+)
+select is(
+  (select count(*) from u),
+  1::bigint,
+  'user can update own display name'
 );
 
 select tests.clear_auth();
