@@ -42,5 +42,6 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "test": "vitest run"
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@12.3.4"
 }
