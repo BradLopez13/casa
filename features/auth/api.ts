@@ -34,11 +34,21 @@ export async function signIn({ email, password }: SignInArgs): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  let result;
+  // The default (global) sign-out needs the server. If it is unreachable, clear the local
+  // session anyway so the user is never stuck signed in.
+  let failed = false;
   try {
-    result = await supabase.auth.signOut();
+    const result = await supabase.auth.signOut();
+    failed = result.error !== null;
+  } catch {
+    failed = true;
+  }
+  if (!failed) return;
+  let local;
+  try {
+    local = await supabase.auth.signOut({ scope: 'local' });
   } catch (e) {
     throw toAuthFailure(e);
   }
-  if (result.error) throw toAuthFailure(result.error);
+  if (local.error) throw toAuthFailure(local.error);
 }
