@@ -36,6 +36,7 @@
   "invite.body": "Al unirte compartirás las tareas y la compra con las personas de ese hogar.",
   "invite.accept": "Unirme al hogar",
   "invite.continue": "Continuar",
+  "invite.dismiss": "No, gracias",
   "invite.back": "Volver",
   "invite.errors.INVITE_INVALID": "Esta invitación no es válida. Pide a quien te invitó que te envíe una nueva.",
   "invite.errors.INVITE_EXPIRED": "Esta invitación ha caducado. Pide a quien te invitó que te envíe una nueva.",

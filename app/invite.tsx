@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native';
 import { toAppError, type AppErrorCode } from '@/data/supabase/errors';
+import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
 import { acceptInvite } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
@@ -87,6 +88,11 @@ export default function InviteScreen() {
     }
   }
 
+  async function dismiss() {
+    await clearPending.mutateAsync().catch(() => undefined);
+    router.replace('/');
+  }
+
   if (session.status !== 'signed-in' || pending.isLoading) return null;
 
   const title = (
@@ -132,6 +138,18 @@ export default function InviteScreen() {
         title={t('invite.accept')}
         loading={accepting}
         onPress={() => void accept()}
+      />
+      <Button
+        testID="invite.dismiss"
+        title={t('invite.dismiss')}
+        variant="secondary"
+        onPress={() => void dismiss()}
+      />
+      <Button
+        testID="invite.sign-out"
+        title={t('auth.signOut')}
+        variant="secondary"
+        onPress={() => void signOut().catch(() => undefined)}
       />
     </Screen>
   );
