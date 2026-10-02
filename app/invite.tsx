@@ -5,7 +5,7 @@ import { Text } from 'react-native';
 import { toAppError, type AppErrorCode } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
-import { acceptInvite } from '@/features/households/api';
+import { acceptInvite, getMyMembership } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
 import {
   useClearPendingInvite,
@@ -50,6 +50,10 @@ export default function InviteScreen() {
   const setPending = useSetPendingInvite();
   const clearPending = useClearPendingInvite();
   const [accepting, setAccepting] = useState(false);
+  // 'busy': joined or leaving, waiting for the membership refresh (render blank, never an
+  // error); 'failed': joined, but the membership refresh failed (retry without re-accepting).
+  const [phase, setPhase] = useState<'busy' | 'failed' | null>(null);
+  const [refreshNetwork, setRefreshNetwork] = useState(false);
   const [failure, setFailure] = useState<{ code: AppErrorCode; terminal: boolean } | null>(null);
 
   // A present-but-malformed token param is invalid; only fall back to the stored token
@@ -84,10 +88,9 @@ export default function InviteScreen() {
       await acceptInvite(token);
       // Accepted: from here on nothing may turn this into an error. Clear the stored token
       // first (best effort) so the guard's pending-invite rule does not bring us back here.
+      setPhase('busy');
       await clearPending.mutateAsync().catch(() => undefined);
-      await queryClient.invalidateQueries({ queryKey: membershipKey });
-      // Root lets the guard pick /today (it returns null for member + invite by design).
-      router.replace('/');
+      await refreshMembershipAndLeave();
     } catch (e) {
       const code = toAppError(e).code;
       const terminal = TERMINAL.has(code);
@@ -98,7 +101,27 @@ export default function InviteScreen() {
     }
   }
 
+  async function refreshMembershipAndLeave() {
+    setPhase('busy');
+    try {
+      // Fetch (not just invalidate) so a failure is visible here instead of the guard
+      // acting on the stale "no household" data.
+      await queryClient.fetchQuery({
+        queryKey: membershipKey,
+        queryFn: getMyMembership,
+        staleTime: 0,
+      });
+    } catch (e) {
+      setRefreshNetwork(toAppError(e).code === 'NETWORK');
+      setPhase('failed');
+      return;
+    }
+    // Root lets the guard pick /today (it returns null for member + invite by design).
+    router.replace('/');
+  }
+
   async function dismiss() {
+    setPhase('busy');
     await clearPending.mutateAsync().catch(() => undefined);
     router.replace('/');
   }
@@ -129,7 +152,28 @@ export default function InviteScreen() {
     );
   }
 
-  if (session.status !== 'signed-in' || pending.isLoading) return null;
+  if (session.status !== 'signed-in' || pending.isLoading || phase === 'busy') return null;
+
+  if (phase === 'failed') {
+    return (
+      <Screen>
+        <ErrorText testID="invite.error">
+          {refreshNetwork ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
+        </ErrorText>
+        <Button
+          testID="invite.retry"
+          title={t('errors.retry')}
+          onPress={() => void refreshMembershipAndLeave()}
+        />
+        <Button
+          testID="invite.sign-out"
+          title={t('auth.signOut')}
+          variant="secondary"
+          onPress={() => void signOut().catch(() => undefined)}
+        />
+      </Screen>
+    );
+  }
 
   const title = (
     <Text
