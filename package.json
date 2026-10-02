@@ -49,7 +49,8 @@
     "test": "vitest run",
     "db:start": "supabase db start",
     "db:test": "supabase test db",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local --schema public > data/supabase/database.types.ts"
   },
   "private": true,
   "packageManager": "pnpm@12.3.4"
