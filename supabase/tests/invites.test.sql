@@ -1,10 +1,12 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(42);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
 select tests.create_user('gus@test.dev', 'Gus') as gus \gset
+select tests.create_user('carla@test.dev', 'Carla') as carla \gset
+select tests.create_user('dani@test.dev', 'Dani') as dani \gset
 
 -- Ana (owner) and Gus (member) share a household; Bob has none.
 insert into public.households (id, name, created_by)
@@ -223,5 +225,161 @@ select is(
   'a repeated revoke keeps the original revoked_at'
 );
 
+-- accept_invite ---------------------------------------------------------------
+
+select tests.authenticate_as(:'bob');
+select public.accept_invite(:'inv_token') as accepted_hid \gset
+
+select is(
+  :'accepted_hid'::uuid,
+  '00000000-0000-0000-0000-0000000000a1'::uuid,
+  'accept_invite returns the id of the household'
+);
+
+select is(
+  (select count(*) from public.household_members
+    where user_id = :'bob' and role = 'member' and left_at is null
+      and household_id = '00000000-0000-0000-0000-0000000000a1'),
+  1::bigint,
+  'accept joins as member'
+);
+
+select is(
+  (select count(*) from public.households where id = '00000000-0000-0000-0000-0000000000a1'),
+  1::bigint,
+  'the new member sees the household'
+);
+
+select is(
+  (select count(*) from public.profiles where user_id = :'ana'),
+  1::bigint,
+  'the new member sees the profile of the owner'
+);
+
+select tests.clear_auth();
+
+select ok(
+  (select accepted_by = :'bob'::uuid and accepted_at is not null
+     from public.household_invites where id = :'inv_invite_id'),
+  'the invite records who accepted it and when'
+);
+
+select tests.authenticate_as(:'carla');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'inv_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'invite is single use'
+);
+
+select throws_ok(
+  $$select public.accept_invite('nope')$$,
+  'P0001',
+  'INVITE_INVALID',
+  'garbage token'
+);
+
+-- Expired
+select tests.authenticate_as(:'ana');
+select token as exp_token, invite_id as exp_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.clear_auth();
+update public.household_invites set expires_at = now() - interval '1 minute' where id = :'exp_inv';
+select tests.authenticate_as(:'carla');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'exp_token'),
+  'P0001',
+  'INVITE_EXPIRED',
+  'expired invite'
+);
+
+-- Revoked
+select tests.authenticate_as(:'ana');
+select token as rev_token, invite_id as rev_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select public.revoke_invite(:'rev_inv'::uuid);
+select tests.authenticate_as(:'carla');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'rev_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'revoked invite'
+);
+
+-- Someone who already has a household cannot consume an invite
+select tests.authenticate_as(:'ana');
+select token as own_token, invite_id as own_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.authenticate_as(:'dani');
+select public.create_household('Casa de Dani') as dani_hid \gset
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'own_token'),
+  'P0001',
+  'ALREADY_IN_HOUSEHOLD',
+  'accept_invite while in a household is rejected'
+);
+
+select tests.clear_auth();
+
+select is(
+  (select accepted_by from public.household_invites where id = :'own_inv'),
+  null::uuid,
+  'accept_invite while in a household leaves the invite unused'
+);
+
+select tests.authenticate_as(:'carla');
+
+select lives_ok(
+  format($$select public.accept_invite(%L)$$, :'own_token'),
+  'the unused invite can still be accepted by someone without a household'
+);
+
+-- Revoking an accepted invite does nothing
+select tests.authenticate_as(:'ana');
+select public.revoke_invite(:'inv_invite_id'::uuid);
+select tests.clear_auth();
+
+select ok(
+  (select revoked_at is null and accepted_by = :'bob'::uuid
+     from public.household_invites where id = :'inv_invite_id'),
+  'revoking an accepted invite is a no-op'
+);
+
+-- Without session / anon
+select throws_ok(
+  $$select public.accept_invite('nope')$$,
+  'P0001',
+  'NOT_AUTHENTICATED',
+  'accept_invite without session is rejected'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$select public.accept_invite('nope')$$,
+  '42501',
+  null,
+  'anon cannot execute accept_invite'
+);
+
+reset role;
+
+-- Soft-deleted household: its invites die with it
+select tests.create_user('hana@test.dev', 'Hana') as hana \gset
+select tests.authenticate_as(:'ana');
+select token as del_token from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.clear_auth();
+update public.households set deleted_at = now() where id = '00000000-0000-0000-0000-0000000000a1';
+select tests.authenticate_as(:'hana');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'del_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'invite of a deleted household is invalid'
+);
+
+select tests.clear_auth();
 select * from finish();
 rollback;
