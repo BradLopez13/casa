@@ -71,9 +71,12 @@ export default function InviteScreen() {
     setAccepting(true);
     try {
       await acceptInvite(token);
-      await clearPending.mutateAsync();
-      // The guard moves to /today once membership refreshes.
+      // Accepted: from here on nothing may turn this into an error. Clear the stored token
+      // first (best effort) so the guard's pending-invite rule does not bring us back here.
+      await clearPending.mutateAsync().catch(() => undefined);
       await queryClient.invalidateQueries({ queryKey: membershipKey });
+      // Root lets the guard pick /today (it returns null for member + invite by design).
+      router.replace('/');
     } catch (e) {
       const code = toAppError(e).code;
       const terminal = TERMINAL.has(code);
