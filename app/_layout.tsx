@@ -29,7 +29,15 @@ if (Platform.OS !== 'web') {
   });
 }
 
-function MembershipError({ network, onRetry }: { network: boolean; onRetry: () => void }) {
+function MembershipError({
+  network,
+  retrying,
+  onRetry,
+}: {
+  network: boolean;
+  retrying: boolean;
+  onRetry: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}>
@@ -37,7 +45,12 @@ function MembershipError({ network, onRetry }: { network: boolean; onRetry: () =
         <Text style={{ color: colors.text, fontSize: 18 }}>
           {network ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </Text>
-        <Button testID="membership.retry" title={t('errors.retry')} onPress={onRetry} />
+        <Button
+          testID="membership.retry"
+          title={t('errors.retry')}
+          loading={retrying}
+          onPress={onRetry}
+        />
         <Button
           testID="membership.sign-out"
           title={t('auth.signOut')}
@@ -104,6 +117,7 @@ function Guard() {
       {failed ? (
         <MembershipError
           network={toAppError(membershipQuery.error).code === 'NETWORK'}
+          retrying={membershipQuery.isFetching}
           onRetry={() => void membershipQuery.refetch()}
         />
       ) : null}
