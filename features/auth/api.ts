@@ -34,8 +34,9 @@ export async function signIn({ email, password }: SignInArgs): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  // The default (global) sign-out needs the server. If it is unreachable, clear the local
-  // session anyway so the user is never stuck signed in.
+  // supabase-js already drops the local session (and emits SIGNED_OUT) when the global
+  // sign-out fails with a non-4xx error. Only if a session still remains do we fall back
+  // to a local sign-out, so the user is never stuck signed in.
   let failed = false;
   try {
     const result = await supabase.auth.signOut();
@@ -44,6 +45,13 @@ export async function signOut(): Promise<void> {
     failed = true;
   }
   if (!failed) return;
+  let remaining;
+  try {
+    remaining = (await supabase.auth.getSession()).data.session;
+  } catch {
+    remaining = null;
+  }
+  if (!remaining) return;
   let local;
   try {
     local = await supabase.auth.signOut({ scope: 'local' });
