@@ -29,8 +29,16 @@ begin
   values (v_name, v_user)
   returning id into v_id;
 
-  insert into public.household_members (household_id, user_id, role)
-  values (v_id, v_user, 'owner');
+  -- Two concurrent calls by the same user can both pass the exists check above;
+  -- the loser then hits household_members_one_active. Map it to the contract
+  -- error instead of leaking a raw 23505. The subtransaction rolls back the
+  -- household insert too.
+  begin
+    insert into public.household_members (household_id, user_id, role)
+    values (v_id, v_user, 'owner');
+  exception when unique_violation then
+    raise exception 'ALREADY_IN_HOUSEHOLD' using errcode = 'P0001';
+  end;
 
   return v_id;
 end;
