@@ -8,12 +8,12 @@ type Props = {
   member: Member;
   isSelf: boolean;
   /** Owner actions are shown only when the viewer owns the household and the row is not self. */
-  canManage?: boolean;
-  onMakeOwner?: () => void;
-  onRemove?: () => void;
+  canManage: boolean;
+  onMakeOwner: () => void;
+  onRemove: () => void;
 };
 
-export function MemberRow({ member, isSelf, canManage = false, onMakeOwner, onRemove }: Props) {
+export function MemberRow({ member, isSelf, canManage, onMakeOwner, onRemove }: Props) {
   const { colors, space } = useTheme();
   return (
     <View
@@ -51,7 +51,7 @@ export function MemberRow({ member, isSelf, canManage = false, onMakeOwner, onRe
           </Text>
         ) : null}
       </View>
-      {canManage && !isSelf && onMakeOwner && onRemove ? (
+      {canManage && !isSelf ? (
         <View style={{ gap: space(2) }}>
           <Button
             testID={`members.make-owner.${member.userId}`}
