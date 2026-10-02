@@ -14,14 +14,14 @@ const FIELD_MESSAGES: Readonly<Record<string, MessageKey>> = {
 /** First i18n error key per field for a failed Zod parse. */
 export function fieldErrors(
   error: z.ZodError,
-  emptyPassword?: boolean,
+  options: { form: 'signIn' | 'signUp' },
 ): Record<string, MessageKey> {
   const out: Record<string, MessageKey> = {};
   for (const issue of error.issues) {
     const field = String(issue.path[0] ?? '');
     if (field in out) continue;
     const key =
-      field === 'password' && emptyPassword && issue.code === 'too_small'
+      field === 'password' && options.form === 'signIn' && issue.code === 'too_small'
         ? 'auth.errors.passwordRequired'
         : FIELD_MESSAGES[`${field}:${issue.code}`];
     if (key) out[field] = key;

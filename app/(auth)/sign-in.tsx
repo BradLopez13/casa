@@ -25,7 +25,7 @@ export default function SignInScreen() {
     setFormError(null);
     const parsed = signInSchema.safeParse({ email: email.trim(), password });
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error, true));
+      setErrors(fieldErrors(parsed.error, { form: 'signIn' }));
       return;
     }
     setErrors({});
