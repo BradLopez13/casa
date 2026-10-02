@@ -1,0 +1,4 @@
+# pnpm 12 no ejecuta scripts de instalacion sin aprobarlos.
+# unrs-resolver (eslint-config-expo) trae binarios precompilados; su postinstall es solo un respaldo.
+allowBuilds:
+  unrs-resolver: false

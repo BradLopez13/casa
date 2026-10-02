@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+dist/
+.expo/
+ios/
+android/
+data/supabase/database.types.ts
