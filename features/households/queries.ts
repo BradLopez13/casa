@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AppError } from '@/data/supabase/errors';
+import { useSession } from '@/features/auth/SessionProvider';
 import { getMyMembership, listActiveInvites, listMembers } from './api';
 
 export const membershipKey = ['membership'] as const;
@@ -7,7 +8,12 @@ export const membersKey = (householdId: string | undefined) => ['members', house
 export const invitesKey = (householdId: string | undefined) => ['invites', householdId] as const;
 
 export function useMembership() {
-  return useQuery({ queryKey: membershipKey, queryFn: getMyMembership });
+  const { status } = useSession();
+  return useQuery({
+    queryKey: membershipKey,
+    queryFn: getMyMembership,
+    enabled: status === 'signed-in',
+  });
 }
 
 export function useMembers(householdId: string | undefined) {
