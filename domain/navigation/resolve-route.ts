@@ -2,7 +2,7 @@ export type RouteInput = {
   session: 'loading' | 'signed-out' | 'signed-in';
   membership: 'loading' | 'none' | 'member';
   hasPendingInvite: boolean;
-  group: 'auth' | 'onboarding' | 'invite' | 'app';
+  group: 'root' | 'auth' | 'onboarding' | 'invite' | 'app';
 };
 
 export type ResolvedRoute = '/sign-in' | '/onboarding' | '/invite' | '/today';
@@ -16,12 +16,12 @@ export function resolveRoute(input: RouteInput): ResolvedRoute | null {
   if (membership === 'loading') return null;
 
   if (membership === 'none') {
+    if (hasPendingInvite) return group === 'invite' ? null : '/invite';
     // The invite screen is reachable without a household (it is how you get one).
-    if (group === 'invite' || group === 'onboarding') return null;
-    return hasPendingInvite ? '/invite' : '/onboarding';
+    return group === 'invite' || group === 'onboarding' ? null : '/onboarding';
   }
 
   // member
   if (hasPendingInvite) return group === 'invite' ? null : '/invite';
-  return group === 'auth' || group === 'onboarding' ? '/today' : null;
+  return group === 'root' || group === 'auth' || group === 'onboarding' ? '/today' : null;
 }
