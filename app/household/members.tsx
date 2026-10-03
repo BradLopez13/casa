@@ -96,8 +96,7 @@ export default function MembersScreen() {
   const [action, setAction] = useState<'share' | 'copy' | null>(null);
   const [footerError, setFooterError] = useState<string | undefined>();
   // Synchronous guards: a second tap can land before the pending state re-renders.
-  const inviting = useRef(false);
-  const copying = useRef(false);
+  const inviteBusy = useRef(false);
   const confirming = useRef(false);
   // The confirmation fades after a few seconds; the timer is cleared on unmount or reset.
   useEffect(() => {
@@ -109,8 +108,8 @@ export default function MembersScreen() {
   const mustTransfer = isOwner && (members.data?.length ?? 0) > 1;
 
   async function onInvite() {
-    if (!householdId || inviting.current) return;
-    inviting.current = true;
+    if (!householdId || inviteBusy.current) return;
+    inviteBusy.current = true;
     setAction('share');
     setCopied(false);
     setError(undefined);
@@ -122,14 +121,14 @@ export default function MembersScreen() {
     } catch (e) {
       setError(errorText(e));
     } finally {
-      inviting.current = false;
+      inviteBusy.current = false;
       setAction(null);
     }
   }
 
   async function onCopyLink() {
-    if (!householdId || copying.current) return;
-    copying.current = true;
+    if (!householdId || inviteBusy.current) return;
+    inviteBusy.current = true;
     setAction('copy');
     setError(undefined);
     setCopied(false);
@@ -140,7 +139,7 @@ export default function MembersScreen() {
     } catch (e) {
       setError(errorText(e));
     } finally {
-      copying.current = false;
+      inviteBusy.current = false;
       setAction(null);
     }
   }
