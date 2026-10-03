@@ -94,11 +94,43 @@ export default function InviteScreen() {
     } catch (e) {
       const code = toAppError(e).code;
       const terminal = TERMINAL.has(code);
+      // A terminal error can mean we are already in: a lost response followed by a retry,
+      // or a stale membership. Check fresh before showing anything.
+      if (terminal && (await leaveIfMember())) return;
       setFailure({ code, terminal });
       if (terminal) await clearPending.mutateAsync().catch(() => undefined);
     } finally {
       setAccepting(false);
     }
+  }
+
+  /** Fetches membership fresh; if the user is a member, clears pending and goes to root. */
+  async function leaveIfMember(): Promise<boolean> {
+    try {
+      const membership = await queryClient.fetchQuery({
+        queryKey: membershipKey,
+        queryFn: getMyMembership,
+        staleTime: 0,
+      });
+      if (!membership) return false;
+    } catch {
+      return false;
+    }
+    setPhase('busy');
+    await clearPending.mutateAsync().catch(() => undefined);
+    router.replace('/');
+    return true;
+  }
+
+  async function onContinue() {
+    if (await leaveIfMember()) return;
+    router.replace('/');
+  }
+
+  async function onSignOut() {
+    // The stored token belongs to this account's session: don't hand it to the next one.
+    await clearPending.mutateAsync().catch(() => undefined);
+    await signOut().catch(() => undefined);
   }
 
   async function refreshMembershipAndLeave() {
@@ -169,7 +201,7 @@ export default function InviteScreen() {
           testID="invite.sign-out"
           title={t('auth.signOut')}
           variant="secondary"
-          onPress={() => void signOut().catch(() => undefined)}
+          onPress={() => void onSignOut()}
         />
       </Screen>
     );
@@ -192,7 +224,7 @@ export default function InviteScreen() {
         <Button
           testID="invite.continue"
           title={t('invite.continue')}
-          onPress={() => router.replace('/')}
+          onPress={() => void onContinue()}
         />
       </Screen>
     );
@@ -229,7 +261,7 @@ export default function InviteScreen() {
         testID="invite.sign-out"
         title={t('auth.signOut')}
         variant="secondary"
-        onPress={() => void signOut().catch(() => undefined)}
+        onPress={() => void onSignOut()}
       />
     </Screen>
   );
