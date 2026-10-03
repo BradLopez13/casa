@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
@@ -91,9 +92,11 @@ export default function MembersScreen() {
   const del = useHouseholdMutation(deleteHousehold);
   const [pending, setPending] = useState<Pending | null>(null);
   const [error, setError] = useState<string | undefined>();
+  const [copied, setCopied] = useState(false);
   const [footerError, setFooterError] = useState<string | undefined>();
   // Synchronous guards: a second tap can land before the pending state re-renders.
   const inviting = useRef(false);
+  const copying = useRef(false);
   const confirming = useRef(false);
   const onlyMember = isOwner && members.data?.length === 1;
   const mustTransfer = isOwner && (members.data?.length ?? 0) > 1;
@@ -111,6 +114,22 @@ export default function MembersScreen() {
       setError(errorText(e));
     } finally {
       inviting.current = false;
+    }
+  }
+
+  async function onCopyLink() {
+    if (!householdId || copying.current) return;
+    copying.current = true;
+    setError(undefined);
+    setCopied(false);
+    try {
+      const { token } = await invite.mutateAsync(householdId);
+      await Clipboard.setStringAsync(buildInviteUrl(token, Linking.createURL));
+      setCopied(true);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      copying.current = false;
     }
   }
 
@@ -227,6 +246,18 @@ export default function MembersScreen() {
         loading={invite.isPending}
         onPress={() => void onInvite()}
       />
+      <Button
+        testID="members.copy-link"
+        title={t('members.copyLink')}
+        variant="secondary"
+        loading={invite.isPending}
+        onPress={() => void onCopyLink()}
+      />
+      {copied ? (
+        <Text testID="members.copied" style={{ color: colors.muted, fontSize: 14 }}>
+          {t('members.copied')}
+        </Text>
+      ) : null}
       {error ? <ErrorText testID="members.error">{error}</ErrorText> : null}
 
       {heading('members.pendingTitle')}
