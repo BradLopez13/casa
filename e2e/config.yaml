@@ -1,0 +1,4 @@
+# Workspace config for `maestro test e2e/`. Maestro never runs this file as a flow.
+# Each flow declares its own appId (com.bradlopez13.casa).
+flows:
+  - '*.yaml'
