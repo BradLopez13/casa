@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(47);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -271,6 +271,54 @@ select throws_ok(
   'P0001',
   'INVITE_INVALID',
   'invite is single use'
+);
+
+-- Idempotent retry: the same user accepting the same token again (lost response).
+select tests.authenticate_as(:'bob');
+select public.accept_invite(:'inv_token') as retry_hid \gset
+
+select is(
+  :'retry_hid'::uuid,
+  '00000000-0000-0000-0000-0000000000a1'::uuid,
+  'the same user retrying an accepted token gets the same household id'
+);
+
+select is(
+  (select count(*) from public.household_members
+    where user_id = :'bob' and household_id = '00000000-0000-0000-0000-0000000000a1'),
+  1::bigint,
+  'the retry does not add a second membership'
+);
+
+select tests.authenticate_as(:'gus');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'inv_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'a different user still gets INVITE_INVALID for an accepted token'
+);
+
+-- Joined and then left: the retry must not re-join.
+select tests.clear_auth();
+select tests.create_user('eva@test.dev', 'Eva') as eva \gset
+select tests.authenticate_as(:'ana');
+select token as eva_token from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.authenticate_as(:'eva');
+select public.accept_invite(:'eva_token');
+select public.leave_household('00000000-0000-0000-0000-0000000000a1');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'eva_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'a user who accepted and then left gets INVITE_INVALID on retry'
+);
+
+select is(
+  (select count(*) from public.household_members where user_id = :'eva' and left_at is null),
+  0::bigint,
+  'the user who left is not re-joined'
 );
 
 select throws_ok(
