@@ -3,18 +3,20 @@ appId: com.bradlopez13.casa
 # Needs the fixtures: DEEPLINK_TOKEN = c3 x 24 (see supabase/e2e/fixtures.sql).
 - launchApp:
     clearState: true
-- extendedWaitUntil:
-    visible:
-      id: sign-in.go-sign-up
-    timeout: 30000
 - evalScript: ${output.email = 'carla' + Date.now() + '@e2e.dev'}
 
-# Open the invite link while signed out: the sign-in screen comes up
+# Open the invite link right after launch, while signed out. The invite screen stores the token
+# and redirects to sign-in; wait for the sign-in form and for the invite screen to be gone, so
+# nothing is tapped before the redirect has finished.
 - openLink: casa://invite?token=c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
 - extendedWaitUntil:
     visible:
-      id: sign-in.go-sign-up
-    timeout: 20000
+      id: sign-in.email
+    timeout: 30000
+- assertNotVisible:
+    id: invite.accept
+- assertNotVisible:
+    id: invite.error
 - tapOn:
     id: sign-in.go-sign-up
 - tapOn:
