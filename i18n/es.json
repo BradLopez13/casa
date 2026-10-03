@@ -59,6 +59,8 @@
   "members.owner": "Propietario",
   "members.you": "(tú)",
   "members.invite": "Invitar",
+  "members.copyLink": "Copiar enlace",
+  "members.copied": "Enlace copiado",
   "members.pendingTitle": "Invitaciones pendientes",
   "members.pendingEmpty": "No hay invitaciones pendientes.",
   "members.expires": "Caduca el {date}",
