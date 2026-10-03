@@ -21,6 +21,7 @@
   "auth.errors.WEAK_PASSWORD": "La contraseña es demasiado débil.",
   "auth.errors.NETWORK": "No hay conexión. Inténtalo de nuevo.",
   "auth.errors.UNKNOWN": "Algo ha ido mal. Inténtalo de nuevo.",
+  "auth.pendingInvite": "Tienes una invitación pendiente: inicia sesión o crea una cuenta para unirte.",
   "auth.signOut": "Cerrar sesión",
   "onboarding.title": "Crea tu hogar",
   "onboarding.defaultName": "Casa",

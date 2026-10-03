@@ -5,6 +5,7 @@ import { signIn } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
 import { signInSchema } from '@/features/auth/schemas';
+import { usePendingInvite } from '@/features/households/pending-invite';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -13,6 +14,7 @@ import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
 export default function SignInScreen() {
+  const { hasPendingInvite } = usePendingInvite();
   const { colors } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -53,6 +55,11 @@ export default function SignInScreen() {
       >
         {t('auth.signIn.title')}
       </Text>
+      {hasPendingInvite ? (
+        <Text testID="sign-in.pending-invite" style={{ color: colors.text, fontSize: 16 }}>
+          {t('auth.pendingInvite')}
+        </Text>
+      ) : null}
       <TextField
         testID="sign-in.email"
         label={t('auth.fields.email')}
