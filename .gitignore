@@ -45,3 +45,4 @@ yarn-error.*
 # env
 .env
 .env.e2e
+e2e-report.xml
