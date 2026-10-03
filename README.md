@@ -27,11 +27,11 @@ Fases 1–2 hechas: cuentas con email y contraseña, hogares, invitaciones por e
 
 **Un hogar activo por usuario.** Un índice único parcial sobre `household_members (user_id) where left_at is null` lo garantiza en la base de datos, no en el cliente. El modelo admite varios hogares más adelante; en v1 el índice lo impide.
 
-**Un solo propietario.** Otro índice único parcial, sobre `household_id where role = 'owner' and left_at is null`. El último propietario no puede salir sin transferir antes (`OWNER_MUST_TRANSFER`).
+**Un solo propietario.** Otro índice único parcial, sobre `household_id where role = 'owner' and left_at is null`. Si quedan otros miembros, el último propietario no puede salir sin transferir antes (`OWNER_MUST_TRANSFER`); si está solo, salir borra el hogar.
 
 **Invitaciones.** El token son 24 bytes aleatorios en hexadecimal. La base de datos guarda solo su SHA-256, así que una copia de la tabla no sirve para unirse a ningún hogar. Caduca a los 7 días, se usa una sola vez y se puede revocar. `accept_invite` no consume nada hasta haber comprobado que el usuario puede unirse: si falla, la invitación sigue valiendo para otra persona.
 
-**Orden de bloqueos.** Todas las RPC que tocan un hogar bloquean primero su fila y después las de invitación o miembro: `accept_invite` la toma compartida (`for share`) y las de administración (salir, expulsar, transferir, borrar), exclusiva. Con un orden fijo, dos operaciones simultáneas (aceptar una invitación mientras se borra el hogar) esperan en fila en vez de interbloquearse.
+**Orden de bloqueos.** Las RPC que pueden coincidir con un borrado del hogar bloquean primero su fila y después las de invitación o miembro: `accept_invite` la toma compartida (`for share`) y las de administración (salir, expulsar, transferir, borrar), exclusiva. `create_invite` y `revoke_invite` no toman el bloqueo del hogar: solo tocan la fila de la invitación. Con un orden fijo, dos operaciones simultáneas (aceptar una invitación mientras se borra el hogar) esperan en fila en vez de interbloquearse.
 
 **Sesión troceada en SecureStore.** `expo-secure-store` limita cada valor a unos 2048 bytes y una sesión de Supabase es mayor. El adaptador (`data/supabase/chunked-storage.ts`) la parte en trozos de 1800 unidades UTF-16 con un contador aparte, y nunca corta un par sustituto por la mitad, para que cada trozo sea UTF-16 válido al guardarlo como UTF-8. La clave `service_role` no llega nunca al cliente.
 
