@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
@@ -93,17 +93,26 @@ export default function MembersScreen() {
   const [pending, setPending] = useState<Pending | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [copied, setCopied] = useState(false);
+  const [action, setAction] = useState<'share' | 'copy' | null>(null);
   const [footerError, setFooterError] = useState<string | undefined>();
   // Synchronous guards: a second tap can land before the pending state re-renders.
   const inviting = useRef(false);
   const copying = useRef(false);
   const confirming = useRef(false);
+  // The confirmation fades after a few seconds; the timer is cleared on unmount or reset.
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 3000);
+    return () => clearTimeout(timer);
+  }, [copied]);
   const onlyMember = isOwner && members.data?.length === 1;
   const mustTransfer = isOwner && (members.data?.length ?? 0) > 1;
 
   async function onInvite() {
     if (!householdId || inviting.current) return;
     inviting.current = true;
+    setAction('share');
+    setCopied(false);
     setError(undefined);
     try {
       const { token } = await invite.mutateAsync(householdId);
@@ -114,12 +123,14 @@ export default function MembersScreen() {
       setError(errorText(e));
     } finally {
       inviting.current = false;
+      setAction(null);
     }
   }
 
   async function onCopyLink() {
     if (!householdId || copying.current) return;
     copying.current = true;
+    setAction('copy');
     setError(undefined);
     setCopied(false);
     try {
@@ -130,6 +141,7 @@ export default function MembersScreen() {
       setError(errorText(e));
     } finally {
       copying.current = false;
+      setAction(null);
     }
   }
 
@@ -144,6 +156,7 @@ export default function MembersScreen() {
   }
 
   function onRevoke(inviteId: string) {
+    setCopied(false);
     setError(undefined);
     revoke.mutate(inviteId, { onError: (e) => setError(errorText(e)) });
   }
@@ -243,14 +256,14 @@ export default function MembersScreen() {
       <Button
         testID="members.invite"
         title={t('members.invite')}
-        loading={invite.isPending}
+        loading={action === 'share'}
         onPress={() => void onInvite()}
       />
       <Button
         testID="members.copy-link"
         title={t('members.copyLink')}
         variant="secondary"
-        loading={invite.isPending}
+        loading={action === 'copy'}
         onPress={() => void onCopyLink()}
       />
       {copied ? (
