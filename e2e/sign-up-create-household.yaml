@@ -1,0 +1,79 @@
+appId: com.bradlopez13.casa
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: sign-in.go-sign-up
+    timeout: 30000
+- evalScript: ${output.email = 'zoe' + Date.now() + '@e2e.dev'}
+
+# Sign up
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Zoe
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# Onboarding: create the household
+- extendedWaitUntil:
+    visible:
+      id: onboarding.name
+    timeout: 20000
+- tapOn:
+    id: onboarding.name
+- eraseText: 60
+- inputText: Piso Zoe
+- hideKeyboard
+- tapOn:
+    id: onboarding.create
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Piso Zoe
+    timeout: 20000
+
+# Settings -> members -> copy link -> pending invite -> revoke
+- tapOn:
+    id: tab.settings
+- tapOn:
+    id: settings.members
+- extendedWaitUntil:
+    visible:
+      id: members.copy-link
+    timeout: 20000
+- tapOn:
+    id: members.copy-link
+- extendedWaitUntil:
+    visible:
+      id: members.copied
+    timeout: 20000
+- scrollUntilVisible:
+    element: Revocar
+- tapOn: Revocar
+- extendedWaitUntil:
+    visible: No hay invitaciones pendientes.
+    timeout: 20000
+- assertNotVisible: Revocar
+
+# Delete the household -> back to onboarding
+- scrollUntilVisible:
+    element:
+      id: members.delete-household
+- tapOn:
+    id: members.delete-household
+- tapOn:
+    id: members.confirm
+- extendedWaitUntil:
+    visible:
+      id: onboarding.create
+    timeout: 20000
