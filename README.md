@@ -1,16 +1,16 @@
 # Casa
 
-App móvil para llevar una casa compartida entre varias personas, para iOS y Android con una sola base de código (Expo y Supabase). Está construida para responder a una pregunta concreta: **¿cómo se hace que un grupo comparta datos en una app móvil sin que el cliente pueda escribir donde no debe?** Cada hogar solo ve sus datos, las escrituras pasan por funciones SQL con reglas fijas y todo eso se prueba en la base de datos, no solo en la interfaz.
+App móvil para llevar una casa compartida entre varias personas, para iOS y Android con una sola base de código (Expo y Supabase). Responde a una pregunta: **¿cómo se hace que un grupo comparta datos en una app móvil sin que el cliente pueda escribir donde no debe?**
 
 [![CI](https://github.com/BradLopez13/casa/actions/workflows/ci.yml/badge.svg)](https://github.com/BradLopez13/casa/actions/workflows/ci.yml)
 
 ## Por qué existe
 
-Para demostrar tres cosas que se pueden comprobar: que la seguridad de una app con Supabase vive en la base de datos (RLS y RPC con tests pgTAP), que un flujo con dos personas (crear un hogar, invitar, unirse, salir) funciona de punta a punta, y que ese flujo se prueba en un emulador en cada PR.
+Tres cosas que se pueden comprobar: que la seguridad de una app con Supabase vive en la base de datos (RLS y RPC con tests pgTAP), que un flujo con dos personas (crear un hogar, invitar, unirse, salir) funciona de punta a punta, y que ese flujo se prueba en un emulador en cada PR.
 
 ## Estado
 
-Fases 1–2 hechas: cuentas con email y contraseña, hogares, invitaciones por enlace, listado de miembros, expulsar, transferir la propiedad, salir y borrar el hogar. Siguientes: tareas, compra en tiempo real, notificaciones, borrado de cuenta y publicación en TestFlight y Google Play. Las capturas llegan con el plan 7.
+Fases 1–2 hechas: cuentas con email y contraseña, hogares, invitaciones por enlace, listado de miembros, expulsar, transferir la propiedad, salir y borrar el hogar. Siguientes: tareas, compra en tiempo real, notificaciones, borrado de cuenta y publicación en TestFlight y Google Play.
 
 ## Stack
 
@@ -37,21 +37,20 @@ Fases 1–2 hechas: cuentas con email y contraseña, hogares, invitaciones por e
 
 **La invitación pendiente sobrevive al registro.** Si alguien abre el enlace sin sesión, el token se guarda en SecureStore y se le lleva a iniciar sesión o crear cuenta. Al entrar, la app muestra la pantalla de la invitación en lugar del onboarding. Un enlace mal formado se rechaza y no sustituye al guardado.
 
-**El E2E corre en Android en CI.** Los runners de macOS de GitHub no tienen Docker, y el E2E necesita un Supabase local. Los mismos flujos Maestro valen para iOS (se localizan elementos por `testID` o texto, sin pasos propios de una plataforma) y se ejecutarán allí cuando haya build de EAS. Hasta entonces, iOS se cubre con `expo export --platform ios` en CI y con prueba manual en un iPhone físico con Expo Go.
+**El E2E corre en Android en CI.** Los runners de macOS de GitHub no tienen Docker, y el E2E necesita un Supabase local. Los mismos flujos Maestro valen para iOS (se localizan elementos por `testID` o texto, sin pasos propios de una plataforma) pero en CI solo se ejecutan en Android. iOS se cubre con `expo export --platform ios` en CI y con prueba manual en un iPhone físico con Expo Go.
 
 ## Tests
 
 Resultado de `pnpm db:test` contra el Supabase local:
 
 ```
-$ pnpm db:test
-
+$ supabase test db
 supabase/tests/households.test.sql ........ ok
 supabase/tests/invites.test.sql ........... ok
 supabase/tests/membership_admin.test.sql .. ok
 supabase/tests/profiles.test.sql .......... ok
 All tests successful.
-Files=4, Tests=124
+Files=4, Tests=124,  1 wallclock secs ( 0.04 usr  0.01 sys +  0.04 cusr  0.03 csys =  0.12 CPU)
 Result: PASS
 ```
 
