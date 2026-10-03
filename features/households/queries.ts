@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AppError } from '@/data/supabase/errors';
+import { toAppError, type AppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
 import { getMyMembership, listActiveInvites, listMembers } from './api';
 
@@ -35,14 +35,22 @@ export function useInvites(householdId: string | undefined) {
 /** Runs a household RPC and refreshes membership, members and invites on success. */
 export function useHouseholdMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: membershipKey }),
+      queryClient.invalidateQueries({ queryKey: ['members'] }),
+      queryClient.invalidateQueries({ queryKey: ['invites'] }),
+    ]);
   return useMutation<TResult, AppError, TArgs>({
     mutationFn: fn,
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: membershipKey }),
-        queryClient.invalidateQueries({ queryKey: ['members'] }),
-        queryClient.invalidateQueries({ queryKey: ['invites'] }),
-      ]);
+      await refresh();
+    },
+    // The server says our view of the household is stale (we were removed, or the owner
+    // changed): refetch so the UI and the route guard catch up.
+    onError: async (error) => {
+      const code = toAppError(error).code;
+      if (code === 'NOT_A_MEMBER' || code === 'NOT_OWNER') await refresh();
     },
   });
 }

@@ -35,6 +35,7 @@ const ERROR_KEYS: Partial<Record<string, MessageKey>> = {
   OWNER_MUST_TRANSFER: 'members.errors.OWNER_MUST_TRANSFER',
   NOT_OWNER: 'members.errors.NOT_OWNER',
   NOT_A_MEMBER: 'members.errors.NOT_A_MEMBER',
+  INVITE_INVALID: 'invite.errors.INVITE_INVALID',
   CANNOT_REMOVE_SELF: 'members.errors.CANNOT_REMOVE_SELF',
   NETWORK: 'members.errors.NETWORK',
 };
@@ -65,8 +66,12 @@ const DIALOGS: Record<
   },
 };
 
-function errorText(e: unknown): string {
-  return t(ERROR_KEYS[toAppError(e).code] ?? 'members.errors.UNKNOWN');
+// selfDirected: the action is about the current user (invite, leave, delete...), so a
+// NOT_A_MEMBER means "you are no longer in this household", not "that person left".
+function errorText(e: unknown, selfDirected = false): string {
+  const code = toAppError(e).code;
+  if (selfDirected && code === 'NOT_A_MEMBER') return t('members.errors.SELF_NOT_A_MEMBER');
+  return t(ERROR_KEYS[code] ?? 'members.errors.UNKNOWN');
 }
 
 function formatExpiry(expiresAt: string): string {
@@ -119,7 +124,7 @@ export default function MembersScreen() {
       // Dismissing the share sheet is not an error; Share.share resolves either way.
       await Share.share({ message: t('invite.shareMessage', { url }) });
     } catch (e) {
-      setError(errorText(e));
+      setError(errorText(e, true));
     } finally {
       inviteBusy.current = false;
       setAction(null);
@@ -137,7 +142,7 @@ export default function MembersScreen() {
       await Clipboard.setStringAsync(buildInviteUrl(token, Linking.createURL));
       setCopied(true);
     } catch (e) {
-      setError(errorText(e));
+      setError(errorText(e, true));
     } finally {
       inviteBusy.current = false;
       setAction(null);
@@ -157,7 +162,7 @@ export default function MembersScreen() {
   function onRevoke(inviteId: string) {
     setCopied(false);
     setError(undefined);
-    revoke.mutate(inviteId, { onError: (e) => setError(errorText(e)) });
+    revoke.mutate(inviteId, { onError: (e) => setError(errorText(e, true)) });
   }
 
   const target = pending?.userId
@@ -174,7 +179,7 @@ export default function MembersScreen() {
       onSuccess: () => setPending(null),
       onError: (e: unknown) => {
         setPending(null);
-        (footer ? setFooterError : setError)(errorText(e));
+        (footer ? setFooterError : setError)(errorText(e, footer));
       },
       onSettled: () => {
         confirming.current = false;
