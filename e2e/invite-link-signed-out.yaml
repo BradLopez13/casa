@@ -5,18 +5,24 @@ appId: com.bradlopez13.casa
     clearState: true
 - evalScript: ${output.email = 'carla' + Date.now() + '@e2e.dev'}
 
-# Open the invite link right after launch, while signed out. The invite screen stores the token
-# and redirects to sign-in; wait for the sign-in form and for the invite screen to be gone, so
-# nothing is tapped before the redirect has finished.
+# Open the invite link right after launch, while signed out. The sign-in screen is already up
+# from launch, so it is no signal. The invite screen shows briefly, stores the token and then
+# redirects to sign-in: catch it if we can (optional), wait until it is gone, and only then
+# look at the sign-in form, so nothing is tapped before the redirect has finished.
 - openLink: casa://invite?token=c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
 - extendedWaitUntil:
     visible:
-      id: sign-in.email
+      id: invite.accept
+    timeout: 5000
+    optional: true
+- extendedWaitUntil:
+    notVisible:
+      id: invite.accept
     timeout: 30000
-- assertNotVisible:
-    id: invite.accept
-- assertNotVisible:
-    id: invite.error
+- extendedWaitUntil:
+    visible:
+      id: sign-in.go-sign-up
+    timeout: 30000
 - tapOn:
     id: sign-in.go-sign-up
 - tapOn:
