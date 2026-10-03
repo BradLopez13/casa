@@ -94,7 +94,7 @@ export default function SignInScreen() {
         testID="sign-in.go-sign-up"
         title={t('auth.signIn.goSignUp')}
         variant="secondary"
-        onPress={() => router.push('/sign-up')}
+        onPress={() => router.replace('/sign-up')}
       />
     </Screen>
   );
