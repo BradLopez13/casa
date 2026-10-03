@@ -5,3 +5,5 @@ ios/
 android/
 data/supabase/database.types.ts
 supabase/.temp/
+.env.e2e
+e2e-report.xml
