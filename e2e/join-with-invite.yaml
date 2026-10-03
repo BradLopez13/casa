@@ -1,0 +1,100 @@
+appId: com.bradlopez13.casa
+---
+# Needs the fixtures: EXPIRED_TOKEN = b2 x 24, VALID_TOKEN = a1 x 24 (see supabase/e2e/fixtures.sql).
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: sign-in.go-sign-up
+    timeout: 30000
+- evalScript: ${output.email = 'bob' + Date.now() + '@e2e.dev'}
+
+# Sign up as Bob
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Bob
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+- extendedWaitUntil:
+    visible:
+      id: onboarding.link
+    timeout: 20000
+
+# Expired invite: shows the error
+- tapOn:
+    id: onboarding.link
+- inputText: b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
+- hideKeyboard
+- tapOn:
+    id: onboarding.join
+- extendedWaitUntil:
+    visible:
+      id: invite.accept
+    timeout: 20000
+- tapOn:
+    id: invite.accept
+- extendedWaitUntil:
+    visible:
+      id: invite.error
+      text: 'Esta invitación ha caducado.*'
+    timeout: 20000
+
+# Back to onboarding, paste the valid link
+- tapOn:
+    id: invite.continue
+- extendedWaitUntil:
+    visible:
+      id: onboarding.link
+    timeout: 20000
+- tapOn:
+    id: onboarding.link
+- eraseText: 100
+- inputText: casa://invite?token=a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
+- hideKeyboard
+- tapOn:
+    id: onboarding.join
+- extendedWaitUntil:
+    visible:
+      id: invite.accept
+    timeout: 20000
+- tapOn:
+    id: invite.accept
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Casa E2E
+    timeout: 20000
+
+# Members: Ana and Bob, and no owner actions for Bob
+- tapOn:
+    id: tab.settings
+- tapOn:
+    id: settings.members
+- extendedWaitUntil:
+    visible: Ana
+    timeout: 20000
+- assertVisible: Bob
+- assertNotVisible: Expulsar
+- assertNotVisible: Hacer propietario
+
+# Leave the household
+- scrollUntilVisible:
+    element:
+      id: members.leave
+- tapOn:
+    id: members.leave
+- tapOn:
+    id: members.confirm
+- extendedWaitUntil:
+    visible:
+      id: onboarding.create
+    timeout: 20000

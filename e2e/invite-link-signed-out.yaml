@@ -1,0 +1,46 @@
+appId: com.bradlopez13.casa
+---
+# Needs the fixtures: DEEPLINK_TOKEN = c3 x 24 (see supabase/e2e/fixtures.sql).
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: sign-in.go-sign-up
+    timeout: 30000
+- evalScript: ${output.email = 'carla' + Date.now() + '@e2e.dev'}
+
+# Open the invite link while signed out: the sign-in screen comes up
+- openLink: casa://invite?token=c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
+- extendedWaitUntil:
+    visible:
+      id: sign-in.go-sign-up
+    timeout: 20000
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Carla
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# The pending invite survives the sign-up: the invite screen shows, not the onboarding
+- extendedWaitUntil:
+    visible:
+      id: invite.accept
+    timeout: 20000
+- assertNotVisible:
+    id: onboarding.create
+- tapOn:
+    id: invite.accept
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Casa E2E
+    timeout: 20000
