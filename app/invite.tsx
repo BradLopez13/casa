@@ -96,9 +96,16 @@ export default function InviteScreen() {
       const terminal = TERMINAL.has(code);
       // A terminal error can mean we are already in: a lost response followed by a retry,
       // or a stale membership. Check fresh before showing anything.
-      if (terminal && (await leaveIfMember())) return;
+      // ALREADY_IN_HOUSEHOLD is the exception: the user must be told the invite was not used.
+      if (terminal && code !== 'ALREADY_IN_HOUSEHOLD' && (await leaveIfMember())) return;
       setFailure({ code, terminal });
       if (terminal) await clearPending.mutateAsync().catch(() => undefined);
+      // Refresh membership (best effort) so Continue lands on /today.
+      if (code === 'ALREADY_IN_HOUSEHOLD') {
+        await queryClient
+          .fetchQuery({ queryKey: membershipKey, queryFn: getMyMembership, staleTime: 0 })
+          .catch(() => undefined);
+      }
     } finally {
       setAccepting(false);
     }
