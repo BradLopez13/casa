@@ -89,6 +89,7 @@
   "members.errors.NOT_AUTHENTICATED": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
   "members.errors.OWNER_MUST_TRANSFER": "Eres el propietario: transfiere la propiedad a otro miembro antes de salir.",
   "members.errors.NOT_OWNER": "Solo el propietario puede hacer esto.",
+  "members.errors.INVITE_INVALID": "Esa invitación ya no está activa.",
   "members.errors.NOT_A_MEMBER": "Esa persona ya no es miembro del hogar.",
   "members.errors.SELF_NOT_A_MEMBER": "Ya no perteneces a este hogar.",
   "members.errors.CANNOT_REMOVE_SELF": "No puedes expulsarte a ti mismo. Usa «Salir del hogar».",

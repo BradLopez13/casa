@@ -35,7 +35,7 @@ const ERROR_KEYS: Partial<Record<string, MessageKey>> = {
   OWNER_MUST_TRANSFER: 'members.errors.OWNER_MUST_TRANSFER',
   NOT_OWNER: 'members.errors.NOT_OWNER',
   NOT_A_MEMBER: 'members.errors.NOT_A_MEMBER',
-  INVITE_INVALID: 'invite.errors.INVITE_INVALID',
+  INVITE_INVALID: 'members.errors.INVITE_INVALID',
   CANNOT_REMOVE_SELF: 'members.errors.CANNOT_REMOVE_SELF',
   NETWORK: 'members.errors.NETWORK',
 };
