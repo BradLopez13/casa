@@ -1,10 +1,10 @@
 begin;
-select plan(8);
+select plan(10);
 
 select is(
   (select count(*) from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity),
+    where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity),
   0::bigint,
   'every public table has RLS enabled'
 );
@@ -22,7 +22,7 @@ select is(
     where n.nspname = 'public'
       and not exists (
         select 1 from pg_depend d
-        where d.objid = p.oid and d.deptype = 'e'
+        where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e'
       )
       and has_function_privilege('anon', p.oid, 'execute')),
   0::bigint,
@@ -45,6 +45,27 @@ select is(
       and has_function_privilege('public', p.oid, 'execute')),
   0::bigint,
   'public cannot execute private functions'
+);
+
+select is(
+  (select count(*) from information_schema.column_privileges
+    where grantee = 'anon' and table_schema = 'public'),
+  0::bigint,
+  'anon has no column privileges in public'
+);
+
+select is(
+  (select count(*) from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public'
+      and privilege_type in ('INSERT', 'UPDATE')
+      and not (
+        table_name = 'profiles'
+        and privilege_type = 'UPDATE'
+        and column_name in ('display_name', 'avatar_url', 'locale')
+      )),
+  0::bigint,
+  'authenticated has no column write privileges in public beyond profiles'
 );
 
 select is(current_user::text, 'postgres', 'guard tests run as the migration role');
