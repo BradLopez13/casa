@@ -1,5 +1,4 @@
 begin;
-create extension if not exists pgtap with schema extensions;
 select plan(47);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
