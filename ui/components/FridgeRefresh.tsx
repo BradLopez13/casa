@@ -13,13 +13,12 @@ import {
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
-import { useTheme } from '../theme';
+import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
 import { DoorInsetContext } from './DoorHeader';
 
@@ -45,33 +44,34 @@ const FADE = { duration: 200 };
  *
  * iOS already moves the content down while refreshing, so there the light sits behind the
  * transparent list and shows through that gap. Android's spinner floats over the content, so
- * there the list itself slides down. With Reduce Motion nothing slides: the light fades in.
+ * there the list itself slides down. With Reduce Motion our door never moves: the light fades
+ * in over the top of the door instead (the native iOS refresh gap is the system's own).
  */
 export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const ios = Platform.OS === 'ios';
   const offset = useSharedValue(0);
-  const glow = useSharedValue(reduceMotion ? 0 : 1);
+  // Only the Reduce Motion band fades; the band behind the door is always lit.
+  const glow = useSharedValue(0);
 
   useEffect(() => {
     if (refreshing) AccessibilityInfo.announceForAccessibility(t('refresh.label'));
   }, [refreshing]);
 
   useEffect(() => {
-    const slide = !ios && refreshing ? DOOR_OPEN : 0;
     if (reduceMotion) {
-      offset.value = slide;
+      offset.value = 0;
       glow.value = withTiming(refreshing ? 1 : 0, FADE);
     } else {
-      offset.value = withTiming(slide, SLIDE);
-      glow.value = 1;
+      offset.value = withTiming(!ios && refreshing ? DOOR_OPEN : 0, SLIDE);
+      glow.value = 0;
     }
   }, [refreshing, reduceMotion, ios, offset, glow]);
 
   const door = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
-  const light = useAnimatedStyle(() => ({ opacity: glow.value }));
+  const fade = useAnimatedStyle(() => ({ opacity: glow.value }));
 
   const scrollable = cloneElement(children, {
     refreshControl: (
@@ -92,44 +92,51 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
     ],
   });
 
+  const band = (light: typeof fade | null) => (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      // Under Reduce Motion it lies over the door: it must never take a tap.
+      pointerEvents="none"
+      style={[
+        { position: 'absolute', left: 0, right: 0, top: insets.top, height: DOOR_OPEN },
+        light,
+      ]}
+    >
+      <LinearGradient colors={[colors.light.top, colors.page]} style={StyleSheet.absoluteFill} />
+      <View
+        style={{
+          position: 'absolute',
+          top: 18,
+          left: 26,
+          right: 26,
+          height: 3,
+          borderRadius: 2,
+          backgroundColor: colors.light.shelf,
+        }}
+      />
+      {/* The band has a fixed height, so the label's growth with text size is capped. */}
+      <Text
+        maxFontSizeMultiplier={1.6}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: ios ? 20 : 12,
+          textAlign: 'center',
+          color: colors.light.text,
+          fontSize: 13,
+          fontWeight: '600',
+        }}
+      >
+        {t('refresh.label')}
+      </Text>
+    </Animated.View>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.page, overflow: 'hidden' }}>
-      <Animated.View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={[
-          { position: 'absolute', left: 0, right: 0, top: insets.top, height: DOOR_OPEN },
-          light,
-        ]}
-      >
-        <LinearGradient colors={[colors.light.top, colors.page]} style={StyleSheet.absoluteFill} />
-        <View
-          style={{
-            position: 'absolute',
-            top: 18,
-            left: 26,
-            right: 26,
-            height: 3,
-            borderRadius: 2,
-            backgroundColor: colors.light.shelf,
-          }}
-        />
-        <Text
-          maxFontSizeMultiplier={1.6}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: ios ? 20 : 12,
-            textAlign: 'center',
-            color: colors.light.text,
-            fontSize: 13,
-            fontWeight: '600',
-          }}
-        >
-          {t('refresh.label')}
-        </Text>
-      </Animated.View>
+      {reduceMotion ? null : band(null)}
       <Animated.View
         style={[
           { flex: 1, marginTop: insets.top, backgroundColor: ios ? 'transparent' : colors.page },
@@ -138,6 +145,7 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
       >
         <DoorInsetContext.Provider value>{scrollable}</DoorInsetContext.Provider>
       </Animated.View>
+      {reduceMotion ? band(fade) : null}
       {/* The status bar keeps the door colour while the door itself moves. */}
       <View
         style={{
