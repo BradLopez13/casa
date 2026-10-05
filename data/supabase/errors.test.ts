@@ -8,6 +8,16 @@ describe('toAppError', () => {
     expect(error).toMatchObject({ code: 'INVITE_EXPIRED' });
   });
 
+  it.each([
+    'INVALID_TITLE',
+    'INVALID_ROOM',
+    'INVALID_ASSIGNEE',
+    'TASK_NOT_FOUND',
+    'CANNOT_DELETE_TASK',
+  ])('maps task code %s to itself', (code) => {
+    expect(toAppError({ code: 'P0001', message: code })).toMatchObject({ code });
+  });
+
   it('maps unknown P0001 messages to UNKNOWN', () => {
     expect(toAppError({ code: 'P0001', message: 'SOMETHING_ELSE' })).toMatchObject({
       code: 'UNKNOWN',
