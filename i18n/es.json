@@ -97,5 +97,16 @@
   "members.errors.UNKNOWN": "Algo ha ido mal. Inténtalo de nuevo.",
   "invite.shareMessage": "Te invito a mi hogar en Casa: {url}",
   "members.back": "Volver",
-  "members.loading": "Cargando…"
+  "members.loading": "Cargando…",
+  "tasks.due.today": "Hoy",
+  "tasks.due.tomorrow": "Mañana",
+  "tasks.due.yesterday": "Ayer",
+  "tasks.due.none": "Sin fecha",
+  "rooms.kitchen": "Cocina",
+  "rooms.bathroom": "Baño",
+  "rooms.living_room": "Salón",
+  "rooms.bedroom": "Dormitorio",
+  "rooms.laundry": "Lavadero",
+  "rooms.outdoor": "Exterior",
+  "rooms.other": "Otra"
 }
