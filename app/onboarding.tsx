@@ -11,6 +11,7 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Screen } from '@/ui/components/Screen';
+import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
@@ -66,12 +67,7 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
-      <Text
-        accessibilityRole="header"
-        style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}
-      >
-        {t('onboarding.title')}
-      </Text>
+      <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
       <TextField
         testID="onboarding.name"
         label={t('onboarding.nameLabel')}
@@ -86,7 +82,7 @@ export default function OnboardingScreen() {
         loading={create.isPending}
         onPress={submitCreate}
       />
-      <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>
+      <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
         {t('onboarding.linkTitle')}
       </Text>
       <TextField

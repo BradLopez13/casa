@@ -26,7 +26,7 @@ export function ConfirmDialog({
   destructive = false,
   loading = false,
 }: Props) {
-  const { colors, space } = useTheme();
+  const { colors, radii, space } = useTheme();
   // Keep the last content while the Modal fades out, so it doesn't blank or flash "¿Expulsar a ?".
   const live = { title, message, confirmLabel, destructive };
   const [content, setContent] = useState(live);
@@ -51,25 +51,25 @@ export function ConfirmDialog({
           flex: 1,
           justifyContent: 'center',
           padding: space(6),
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          backgroundColor: colors.scrim,
         }}
       >
         <View
           accessibilityViewIsModal
           style={{
             gap: space(3),
-            padding: space(5),
-            borderRadius: space(3),
-            backgroundColor: colors.surface,
+            padding: space(6),
+            borderRadius: radii.door,
+            backgroundColor: colors.note,
           }}
         >
           <Text
             accessibilityRole="header"
-            style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}
+            style={{ color: colors.ink, fontSize: 20, fontWeight: '700' }}
           >
             {content.title}
           </Text>
-          <Text style={{ color: colors.text, fontSize: 16 }}>{content.message}</Text>
+          <Text style={{ color: colors.ink, fontSize: 17 }}>{content.message}</Text>
           <Button
             testID="members.confirm"
             title={content.confirmLabel}

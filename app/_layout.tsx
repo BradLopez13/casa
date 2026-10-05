@@ -1,5 +1,7 @@
+import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
@@ -9,6 +11,7 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
+import { displayFont } from '@/ui/tokens';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { usePendingInvite } from '@/features/households/pending-invite';
@@ -41,9 +44,9 @@ function MembershipError({
 }) {
   const { colors } = useTheme();
   return (
-    <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}>
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.page }]}>
       <Screen>
-        <Text style={{ color: colors.text, fontSize: 18 }}>
+        <Text style={{ color: colors.ink, fontSize: 18 }}>
           {network ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </Text>
         <Button
@@ -79,7 +82,7 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
   }
 }
 
-function Guard() {
+function Guard({ fontsReady }: { fontsReady: boolean }) {
   const router = useRouter();
   const segments = useSegments();
   const session = useSession();
@@ -108,6 +111,7 @@ function Guard() {
   }, [target, router]);
 
   const ready =
+    fontsReady &&
     !pending.isLoading &&
     session.status !== 'loading' &&
     !(signedIn && membershipQuery.isPending) &&
@@ -131,10 +135,12 @@ function Guard() {
 }
 
 export default function RootLayout() {
+  // A font that fails to load falls back to the system face; it must not keep the splash up.
+  const [fontsLoaded, fontError] = useFonts({ [displayFont]: MPLUSRounded1c_800ExtraBold });
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <Guard />
+        <Guard fontsReady={fontsLoaded || fontError !== null} />
       </SessionProvider>
     </QueryClientProvider>
   );

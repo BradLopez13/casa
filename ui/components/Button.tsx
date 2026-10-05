@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
   testID?: string;
   loading?: boolean;
   disabled?: boolean;
+  /** primary: cobalt pill. secondary: outlined pill. danger: ink pill for irreversible actions. */
   variant?: 'primary' | 'secondary' | 'danger';
 };
 
@@ -18,37 +20,54 @@ export function Button({
   disabled = false,
   variant = 'primary',
 }: Props) {
-  const { colors, space } = useTheme();
+  const { colors, radii, space } = useTheme();
+  const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const filled = variant !== 'secondary';
-  const background = variant === 'danger' ? colors.danger : colors.primary;
-  const foreground = filled ? colors.bg : colors.primary;
+  const fill =
+    variant === 'primary' ? colors.cobalt : variant === 'danger' ? colors.ink : 'transparent';
+  const foreground =
+    variant === 'primary' ? colors.onCobalt : variant === 'danger' ? colors.page : colors.cobalt;
 
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled: inactive, busy: loading }}
-      disabled={inactive}
-      onPress={onPress}
+    // The outer ring shows keyboard focus without shifting the layout.
+    <View
       style={{
-        minHeight: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: space(4),
-        borderRadius: space(2),
-        borderWidth: 1,
-        borderColor: filled ? background : colors.border,
-        backgroundColor: filled ? background : 'transparent',
-        opacity: inactive ? 0.6 : 1,
+        borderRadius: radii.pill,
+        borderWidth: 2,
+        padding: 2,
+        borderColor: focused ? colors.cobalt : 'transparent',
       }}
     >
-      {loading ? (
-        <ActivityIndicator color={foreground} />
-      ) : (
-        <Text style={{ color: foreground, fontSize: 16, fontWeight: '600' }}>{title}</Text>
-      )}
-    </Pressable>
+      <Pressable
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: inactive, busy: loading }}
+        disabled={inactive}
+        onPress={onPress}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={({ pressed }) => ({
+          minHeight: 48,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: space(5),
+          paddingVertical: space(3),
+          borderRadius: radii.pill,
+          borderWidth: 1.5,
+          borderColor: variant === 'secondary' ? colors.cobalt : fill,
+          backgroundColor: fill,
+          opacity: inactive ? 0.5 : pressed ? 0.8 : 1,
+        })}
+      >
+        {loading ? (
+          <ActivityIndicator color={foreground} />
+        ) : (
+          <Text style={{ color: foreground, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>
+            {title}
+          </Text>
+        )}
+      </Pressable>
+    </View>
   );
 }
