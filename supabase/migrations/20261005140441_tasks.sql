@@ -5,19 +5,22 @@ create table public.task_series (
   room text check (room in ('kitchen','bathroom','living_room','bedroom','laundry','outdoor','other')),
   recurrence_rule jsonb,
   created_by uuid references auth.users on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (id, household_id)
 );
 
 create table public.task_occurrences (
   id uuid primary key default gen_random_uuid(),
-  series_id uuid not null references public.task_series on delete cascade,
+  series_id uuid not null,
   household_id uuid not null references public.households on delete cascade,
   due_on date,
   assignee_id uuid references public.profiles (user_id) on delete set null,
   completed_at timestamptz,
   completed_by uuid references auth.users on delete set null,
   created_at timestamptz not null default now(),
-  check (completed_by is null or completed_at is not null)
+  check (completed_by is null or completed_at is not null),
+  foreign key (series_id, household_id)
+    references public.task_series (id, household_id) on delete cascade
 );
 
 create index task_series_household on public.task_series (household_id);
