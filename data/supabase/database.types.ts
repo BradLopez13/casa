@@ -99,11 +99,11 @@ isOneToOne: false
       referencedRelation: "households"
       referencedColumns: ["id"]
     },{
-      foreignKeyName: "task_occurrences_series_id_fkey"
-      columns: ["series_id"]
+      foreignKeyName: "task_occurrences_series_id_household_id_fkey"
+      columns: ["series_id","household_id"]
 isOneToOne: false
       referencedRelation: "task_series"
-      referencedColumns: ["id"]
+      referencedColumns: ["id","household_id"]
     }
                   ]
                 },"task_series": {
