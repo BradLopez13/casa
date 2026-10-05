@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(20);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -96,6 +96,15 @@ select throws_ok(
   '23514', null, 'room must be a known key'
 );
 
+insert into public.households (id, name, created_by)
+values ('00000000-0000-0000-0000-0000000000a2', 'Otra', :'ana');
+
+select throws_ok(
+  $$insert into public.task_occurrences (series_id, household_id)
+    values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a2')$$,
+  '23503', null, 'occurrence household must match its series household'
+);
+
 -- Unassign on leaving ---------------------------------------------------------
 
 select tests.authenticate_as(:'bob');
@@ -112,6 +121,20 @@ select is(
   :'bob'::uuid,
   'leaving keeps my completed tasks assigned'
 );
+
+select is(
+  (select assignee_id from public.task_occurrences where id = '00000000-0000-0000-0000-0000000000c3'),
+  :'dani'::uuid,
+  'leaving does not touch other members open tasks'
+);
+
+select tests.authenticate_as(:'bob');
+select is(
+  (select count(*) from public.task_series)::text || '/' || (select count(*) from public.task_occurrences)::text,
+  '0/0',
+  'ex-member sees no tasks'
+);
+select tests.clear_auth();
 
 -- Unassign on removal ---------------------------------------------------------
 
