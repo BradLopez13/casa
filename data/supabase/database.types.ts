@@ -142,8 +142,14 @@ isOneToOne: false
               "expires_at": string,"invite_id": string,"token": string
             }[]
                            },
+"create_task":
+{ Args: { "p_assignee_id": string,"p_due_on": string,"p_household_id": string,"p_id": string,"p_room": string,"p_title": string }; Returns: string
+                           },
 "delete_household":
 { Args: { "p_household_id": string }; Returns: undefined
+                           },
+"delete_task":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "leave_household":
 { Args: { "p_household_id": string }; Returns: undefined
@@ -156,6 +162,9 @@ isOneToOne: false
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
+                           },
+"update_task":
+{ Args: { "p_assignee_id": string,"p_due_on": string,"p_id": string,"p_room": string,"p_title": string }; Returns: undefined
                            }
           }
           Enums: {
