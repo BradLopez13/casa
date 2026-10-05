@@ -8,3 +8,6 @@ export function t(key: MessageKey, vars?: Record<string, string | number>): stri
     return value === undefined ? placeholder : String(value);
   });
 }
+
+/** The one locale every Intl / toLocale* call in the app uses. */
+export const locale = 'es-ES';

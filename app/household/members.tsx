@@ -21,7 +21,7 @@ import {
   useMembership,
 } from '@/features/households/queries';
 import { toAppError } from '@/data/supabase/errors';
-import { t, type MessageKey } from '@/i18n';
+import { locale, t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
@@ -75,7 +75,7 @@ function errorText(e: unknown, selfDirected = false): string {
 }
 
 function formatExpiry(expiresAt: string): string {
-  return new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  return new Date(expiresAt).toLocaleDateString(locale, { day: 'numeric', month: 'long' });
 }
 
 export default function MembersScreen() {
