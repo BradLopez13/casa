@@ -82,7 +82,7 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
   }
 }
 
-function Guard({ fontsReady }: { fontsReady: boolean }) {
+function Guard() {
   const router = useRouter();
   const segments = useSegments();
   const session = useSession();
@@ -111,7 +111,6 @@ function Guard({ fontsReady }: { fontsReady: boolean }) {
   }, [target, router]);
 
   const ready =
-    fontsReady &&
     !pending.isLoading &&
     session.status !== 'loading' &&
     !(signedIn && membershipQuery.isPending) &&
@@ -135,13 +134,13 @@ function Guard({ fontsReady }: { fontsReady: boolean }) {
 }
 
 export default function RootLayout() {
+  // Nothing navigates or renders until the display font is registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
   const [fontsLoaded, fontError] = useFonts({ [displayFont]: MPLUSRounded1c_800ExtraBold });
+  const fontsReady = fontsLoaded || fontError !== null;
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <Guard fontsReady={fontsLoaded || fontError !== null} />
-      </SessionProvider>
+      <SessionProvider>{fontsReady ? <Guard /> : null}</SessionProvider>
     </QueryClientProvider>
   );
 }
