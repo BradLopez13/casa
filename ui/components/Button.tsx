@@ -29,15 +29,7 @@ export function Button({
     variant === 'primary' ? colors.onCobalt : variant === 'danger' ? colors.page : colors.cobalt;
 
   return (
-    // The outer ring shows keyboard focus without shifting the layout.
-    <View
-      style={{
-        borderRadius: radii.pill,
-        borderWidth: 2,
-        padding: 2,
-        borderColor: focused ? colors.cobalt : 'transparent',
-      }}
-    >
+    <View>
       <Pressable
         testID={testID}
         accessibilityRole="button"
@@ -68,6 +60,22 @@ export function Button({
           </Text>
         )}
       </Pressable>
+      {/* Keyboard focus ring, drawn outside the pill so the button keeps the field's width. */}
+      {focused ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: -4,
+            right: -4,
+            bottom: -4,
+            left: -4,
+            borderRadius: radii.pill,
+            borderWidth: 2,
+            borderColor: colors.cobalt,
+          }}
+        />
+      ) : null}
     </View>
   );
 }

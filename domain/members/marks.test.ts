@@ -63,7 +63,7 @@ describe('firstInitial', () => {
   });
 
   it('keeps a decomposed accent with its letter', () => {
-    expect(firstInitial('álvaro')).toBe('Á');
+    expect(firstInitial('a\u0301lvaro')).toBe('Á');
   });
 
   it('ignores leading spaces', () => {
@@ -73,7 +73,9 @@ describe('firstInitial', () => {
   it('keeps an emoji whole, including skin tones and joined sequences', () => {
     expect(firstInitial('🙂 Ana')).toBe('🙂');
     expect(firstInitial('👍🏽 Bob')).toBe('👍🏽');
-    expect(firstInitial('👩‍👩‍👧 Familia')).toBe('👩‍👩‍👧');
+    expect(firstInitial('\u{1F469}\u200D\u{1F469}\u200D\u{1F467} Familia')).toBe(
+      '\u{1F469}\u200D\u{1F469}\u200D\u{1F467}',
+    );
     expect(firstInitial('🇪🇸 Spain')).toBe('🇪🇸');
   });
 
