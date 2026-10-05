@@ -1,11 +1,12 @@
 begin;
-select plan(30);
+select plan(32);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
 select tests.create_user('carla@test.dev', 'Carla') as carla \gset
 select tests.create_user('dani@test.dev', 'Dani') as dani \gset
 select tests.create_user('eva@test.dev', 'Eva') as eva \gset
+select tests.create_user('fay@test.dev', 'Fay') as fay \gset
 
 -- Ana owns the household; Bob and Dani are members; Eva left; Carla is in another one.
 insert into public.households (id, name, created_by)
@@ -168,6 +169,30 @@ select throws_ok(
 select throws_ok(
   $$select public.update_task(gen_random_uuid(), 'x', null, null, null)$$,
   'P0001', 'TASK_NOT_FOUND', 'update of an unknown id is not found'
+);
+
+-- A completed task keeps its departed assignee; editing it must not force a change.
+select tests.clear_auth();
+insert into public.household_members (household_id, user_id, role)
+values ('00000000-0000-0000-0000-0000000000a1', :'fay', 'member');
+insert into public.task_series (id, household_id, title, created_by)
+values ('00000000-0000-0000-0000-0000000000e3', '00000000-0000-0000-0000-0000000000a1', 'Hecha', :'dani');
+insert into public.task_occurrences (id, series_id, household_id, assignee_id, completed_at, completed_by)
+values ('00000000-0000-0000-0000-0000000000f3', '00000000-0000-0000-0000-0000000000e3',
+        '00000000-0000-0000-0000-0000000000a1', :'fay', now(), :'fay');
+update public.household_members set left_at = now()
+where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'fay';
+
+select tests.authenticate_as(:'dani');
+
+select lives_ok(
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null)$$, :'fay'),
+  'update_task accepts the unchanged departed assignee'
+);
+
+select throws_ok(
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null)$$, :'eva'),
+  'P0001', 'INVALID_ASSIGNEE', 'update_task rejects a different departed assignee'
 );
 
 -- delete_task -----------------------------------------------------------------
