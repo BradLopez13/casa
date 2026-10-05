@@ -19,6 +19,7 @@ declare
   v_title text := btrim(coalesce(p_title, ''));
   v_hid uuid;
   v_series uuid;
+  v_current uuid;
 begin
   if v_user is null then
     raise exception 'NOT_AUTHENTICATED' using errcode = 'P0001';
@@ -40,7 +41,7 @@ begin
     raise exception 'TASK_NOT_FOUND' using errcode = 'P0001';
   end if;
 
-  select o.series_id into v_series
+  select o.series_id, o.assignee_id into v_series, v_current
   from public.task_occurrences o
   where o.id = p_id
   for update;
@@ -58,7 +59,11 @@ begin
     raise exception 'INVALID_ROOM' using errcode = 'P0001';
   end if;
 
-  if p_assignee_id is not null and not exists (
+  -- Re-sending the current assignee is always fine, even if they have left since:
+  -- a completed task keeps its assignee for history. Anyone else must be active.
+  if p_assignee_id is not null
+     and p_assignee_id is distinct from v_current
+     and not exists (
     select 1
     from public.household_members m
     where m.household_id = v_hid
