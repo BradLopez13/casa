@@ -21,6 +21,7 @@ import {
   useMembership,
 } from '@/features/households/queries';
 import { toAppError } from '@/data/supabase/errors';
+import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
 import { locale, t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -206,6 +207,9 @@ export default function MembersScreen() {
   }
 
   const dialog = pending ? DIALOGS[pending.kind] : null;
+  const marks = memberMarks(members.data ?? []);
+  const markOf = (m: { userId: string; displayName: string }): MemberMark =>
+    marks.get(m.userId) ?? { color: 'mustard', initial: firstInitial(m.displayName) };
 
   const heading = (key: MessageKey) => (
     <Text accessibilityRole="header" style={{ color: colors.ink, fontSize: 20, fontWeight: '700' }}>
@@ -239,6 +243,7 @@ export default function MembersScreen() {
             <MemberRow
               key={m.userId}
               member={m}
+              mark={markOf(m)}
               isSelf={m.userId === userId}
               canManage={isOwner}
               onMakeOwner={() => setPending({ kind: 'transfer', userId: m.userId })}
