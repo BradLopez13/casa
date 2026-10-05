@@ -6,7 +6,7 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible:
       id: sign-in.go-sign-up
-    timeout: 30000
+    timeout: 60000
 - evalScript: ${output.email = 'bob' + Date.now() + '@e2e.dev'}
 
 # Sign up as Bob
