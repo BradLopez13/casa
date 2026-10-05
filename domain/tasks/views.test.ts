@@ -133,3 +133,21 @@ describe('filterMine', () => {
     expect(filterMine([mine, theirs, nobody], 'me')).toEqual([mine]);
   });
 });
+
+describe('timestamp ordering', () => {
+  // As strings '...:00.5+00:00' < '...:00+00:00' ('.' < '+'), yet 10:00:00.5 is later.
+  const plain = '2026-10-05T10:00:00+00:00';
+  const fractional = '2026-10-05T10:00:00.5+00:00';
+
+  it('orders createdAt in Supabase format by instant', () => {
+    const early = task({ createdAt: plain });
+    const late = task({ createdAt: fractional });
+    expect(selectAll([late, early], '2026-10-05').undated).toEqual([early, late]);
+  });
+
+  it('orders completedAt in Supabase format by instant', () => {
+    const early = task({ completedAt: plain });
+    const late = task({ completedAt: fractional });
+    expect(selectAll([early, late], '2026-10-05').done).toEqual([late, early]);
+  });
+});

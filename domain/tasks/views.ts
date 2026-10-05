@@ -17,12 +17,12 @@ export type TaskItem = {
 const WEEK_DAYS = 7;
 
 const isOpen = (t: TaskItem) => t.completedAt === null;
-const byCreatedAt = (a: TaskItem, b: TaskItem) => a.createdAt.localeCompare(b.createdAt);
+const byCreatedAt = (a: TaskItem, b: TaskItem) => Date.parse(a.createdAt) - Date.parse(b.createdAt);
+// Compare instants numerically: Postgres timestamps vary in fractional digits and offset.
 const byDueOn = (a: TaskItem, b: TaskItem) =>
   (a.dueOn ?? '').localeCompare(b.dueOn ?? '') || byCreatedAt(a, b);
-// ISO instants share one format, so a plain comparison orders them in time.
 const byCompletedDesc = (a: TaskItem, b: TaskItem) =>
-  (b.completedAt ?? '').localeCompare(a.completedAt ?? '');
+  Date.parse(b.completedAt ?? '') - Date.parse(a.completedAt ?? '');
 
 /** Open and due before `today`. */
 export function isOverdue(t: TaskItem, today: string): boolean {
