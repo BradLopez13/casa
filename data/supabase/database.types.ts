@@ -75,6 +75,56 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"task_occurrences": {
+                  Row: {
+                    "assignee_id": string | null,"completed_at": string | null,"completed_by": string | null,"created_at": string,"due_on": string | null,"household_id": string,"id": string,"series_id": string
+                  }
+                  Insert: {
+                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"household_id": string,"id"?: string,"series_id": string
+                  }
+                  Update: {
+                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"household_id"?: string,"id"?: string,"series_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_occurrences_assignee_id_fkey"
+      columns: ["assignee_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["user_id"]
+    },{
+      foreignKeyName: "task_occurrences_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "task_occurrences_series_id_fkey"
+      columns: ["series_id"]
+isOneToOne: false
+      referencedRelation: "task_series"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"task_series": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"household_id": string,"id": string,"recurrence_rule": Json | null,"room": string | null,"title": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"household_id": string,"id"?: string,"recurrence_rule"?: Json | null,"room"?: string | null,"title": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"household_id"?: string,"id"?: string,"recurrence_rule"?: Json | null,"room"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_series_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
