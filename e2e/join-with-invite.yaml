@@ -1,12 +1,17 @@
 appId: com.bradlopez13.casa
 ---
 # Needs the fixtures: EXPIRED_TOKEN = b2 x 24, VALID_TOKEN = a1 x 24 (see supabase/e2e/fixtures.sql).
-- launchApp:
-    clearState: true
-- extendedWaitUntil:
-    visible:
-      id: sign-in.go-sign-up
-    timeout: 60000
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
 - evalScript: ${output.email = 'bob' + Date.now() + '@e2e.dev'}
 
 # Sign up as Bob

@@ -1,13 +1,18 @@
 appId: com.bradlopez13.casa
 ---
 # Needs the fixtures: DEEPLINK_TOKEN = c3 x 24 (see supabase/e2e/fixtures.sql).
-- launchApp:
-    clearState: true
+- clearState
 # Wait for the app to be ready first: a link opened during startup can be dropped.
-- extendedWaitUntil:
-    visible:
-      id: sign-in.go-sign-up
-    timeout: 60000
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
 - evalScript: ${output.email = 'carla' + Date.now() + '@e2e.dev'}
 
 # Open the invite link while signed out. The invite screen stores the token and redirects to
