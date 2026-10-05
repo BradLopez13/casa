@@ -134,6 +134,9 @@ isOneToOne: false
             "accept_invite":
 { Args: { "p_token": string }; Returns: string
                            },
+"complete_task":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "create_household":
 { Args: { "p_name": string }; Returns: string
                            },
@@ -156,6 +159,9 @@ isOneToOne: false
                            },
 "remove_member":
 { Args: { "p_household_id": string,"p_user_id": string }; Returns: undefined
+                           },
+"reopen_task":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "revoke_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
