@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(30);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -83,6 +83,21 @@ select throws_ok(
   'P0001', 'INVALID_ASSIGNEE', 'assignee who left is rejected'
 );
 
+select lives_ok(
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('x', 100), null, null, null)$$,
+  'a 100-char title is accepted'
+);
+
+select lives_ok(
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 100), null, null, null)$$,
+  '100 emoji (counted as characters) are accepted'
+);
+
+select throws_ok(
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 101), null, null, null)$$,
+  'P0001', 'INVALID_TITLE', '101 emoji are rejected'
+);
+
 select tests.authenticate_as(:'dani');
 
 select throws_ok(
@@ -131,6 +146,16 @@ select tests.authenticate_as(:'dani');
 select throws_ok(
   $$select public.update_task('00000000-0000-0000-0000-0000000000d1', '', null, null, null)$$,
   'P0001', 'INVALID_TITLE', 'update_task validates the title'
+);
+
+select throws_ok(
+  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', 'garage', null, null)$$,
+  'P0001', 'INVALID_ROOM', 'update_task validates the room'
+);
+
+select throws_ok(
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', null, %L, null)$$, :'eva'),
+  'P0001', 'INVALID_ASSIGNEE', 'update_task validates the assignee'
 );
 
 select tests.authenticate_as(:'carla');
