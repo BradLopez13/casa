@@ -108,5 +108,6 @@
   "rooms.bedroom": "Dormitorio",
   "rooms.laundry": "Lavadero",
   "rooms.outdoor": "Exterior",
-  "rooms.other": "Otra"
+  "rooms.other": "Otra",
+  "refresh.label": "Actualizando"
 }
