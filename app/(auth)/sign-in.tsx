@@ -10,6 +10,7 @@ import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Screen } from '@/ui/components/Screen';
+import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
@@ -49,14 +50,9 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <Text
-        accessibilityRole="header"
-        style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}
-      >
-        {t('auth.signIn.title')}
-      </Text>
+      <ScreenTitle>{t('auth.signIn.title')}</ScreenTitle>
       {hasPendingInvite ? (
-        <Text testID="sign-in.pending-invite" style={{ color: colors.text, fontSize: 16 }}>
+        <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
           {t('auth.pendingInvite')}
         </Text>
       ) : null}

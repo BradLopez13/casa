@@ -6,6 +6,7 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { Screen } from '@/ui/components/Screen';
+import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { useTheme } from '@/ui/theme';
 
 export default function SettingsScreen() {
@@ -18,14 +19,9 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Text
-        accessibilityRole="header"
-        style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}
-      >
-        {t('settings.title')}
-      </Text>
+      <ScreenTitle>{t('settings.title')}</ScreenTitle>
       <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.displayName')}</Text>
-      <Text testID="settings.display-name" style={{ color: colors.text, fontSize: 18 }}>
+      <Text testID="settings.display-name" style={{ color: colors.ink, fontSize: 18 }}>
         {displayName}
       </Text>
       <Button

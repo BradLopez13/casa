@@ -1,6 +1,26 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
+import type { ColorValue } from 'react-native';
 import { t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+function tabIcon(active: IconName, inactive: IconName) {
+  function TabIcon({
+    color,
+    size,
+    focused,
+  }: {
+    color: ColorValue;
+    size: number;
+    focused: boolean;
+  }) {
+    return <Ionicons name={focused ? active : inactive} color={color} size={size} />;
+  }
+  return TabIcon;
+}
 
 // Phase 1 has only Today and Settings; Tasks and Shopping arrive in their own plans.
 export default function TabsLayout() {
@@ -9,21 +29,27 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.cobalt,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        // Text-only tabs: no icon package, so nothing differs between iOS and Android.
-        tabBarIconStyle: { display: 'none' },
-        tabBarLabelStyle: { fontSize: 15, fontWeight: '600' },
+        tabBarStyle: { backgroundColor: colors.page, borderTopColor: colors.hairline },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
         name="today"
-        options={{ title: t('tabs.today'), tabBarButtonTestID: 'tab.today' }}
+        options={{
+          title: t('tabs.today'),
+          tabBarButtonTestID: 'tab.today',
+          tabBarIcon: tabIcon('sunny', 'sunny-outline'),
+        }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }}
+        options={{
+          title: t('tabs.settings'),
+          tabBarButtonTestID: 'tab.settings',
+          tabBarIcon: tabIcon('settings', 'settings-outline'),
+        }}
       />
     </Tabs>
   );

@@ -26,6 +26,7 @@ import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { Screen } from '@/ui/components/Screen';
+import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { useTheme } from '@/ui/theme';
 
 type Pending = { kind: 'remove' | 'transfer' | 'leave' | 'delete'; userId?: string };
@@ -207,10 +208,7 @@ export default function MembersScreen() {
   const dialog = pending ? DIALOGS[pending.kind] : null;
 
   const heading = (key: MessageKey) => (
-    <Text
-      accessibilityRole="header"
-      style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}
-    >
+    <Text accessibilityRole="header" style={{ color: colors.ink, fontSize: 20, fontWeight: '700' }}>
       {t(key)}
     </Text>
   );
@@ -223,12 +221,7 @@ export default function MembersScreen() {
         variant="secondary"
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
       />
-      <Text
-        accessibilityRole="header"
-        style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}
-      >
-        {t('members.title')}
-      </Text>
+      <ScreenTitle>{t('members.title')}</ScreenTitle>
 
       {members.isError ? (
         <>
@@ -294,7 +287,7 @@ export default function MembersScreen() {
         ) : (
           invites.data.map((inv) => (
             <View key={inv.id} testID={`members.invite-row.${inv.id}`} style={{ gap: 8 }}>
-              <Text style={{ color: colors.text, fontSize: 16 }}>
+              <Text style={{ color: colors.ink, fontSize: 16 }}>
                 {t('members.expires', { date: formatExpiry(inv.expiresAt) })}
               </Text>
               {isOwner || inv.createdBy === userId ? (

@@ -23,12 +23,12 @@ export function MemberRow({ member, isSelf, canManage, onMakeOwner, onRemove }: 
         padding: space(4),
         borderRadius: space(2),
         borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
+        borderColor: colors.hairline,
+        backgroundColor: colors.note,
       }}
     >
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(2) }}>
-        <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>
+        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '600' }}>
           {member.displayName}
         </Text>
         {isSelf ? (
@@ -37,11 +37,11 @@ export function MemberRow({ member, isSelf, canManage, onMakeOwner, onRemove }: 
         {member.role === 'owner' ? (
           <Text
             style={{
-              color: colors.primary,
+              color: colors.cobalt,
               fontSize: 13,
               fontWeight: '700',
               borderWidth: 1,
-              borderColor: colors.primary,
+              borderColor: colors.cobalt,
               borderRadius: space(2),
               paddingHorizontal: space(2),
               paddingVertical: 2,
