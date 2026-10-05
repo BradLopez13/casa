@@ -66,12 +66,31 @@ begin
     raise exception 'INVALID_ASSIGNEE' using errcode = 'P0001';
   end if;
 
-  insert into public.task_series (household_id, title, room, created_by)
-  values (p_household_id, v_title, p_room, v_user)
-  returning id into v_series;
+  -- Two concurrent calls with the same p_id both pass the exists check above (the
+  -- household lock is shared), so the loser hits the primary key of task_occurrences.
+  -- Its sub-transaction rolls back the series insert too (no orphan series); the handler
+  -- repeats the idempotency check instead of leaking a raw 23505. pgTAP cannot stage
+  -- this race.
+  begin
+    insert into public.task_series (household_id, title, room, created_by)
+    values (p_household_id, v_title, p_room, v_user)
+    returning id into v_series;
 
-  insert into public.task_occurrences (id, series_id, household_id, due_on, assignee_id)
-  values (p_id, v_series, p_household_id, p_due_on, p_assignee_id);
+    insert into public.task_occurrences (id, series_id, household_id, due_on, assignee_id)
+    values (p_id, v_series, p_household_id, p_due_on, p_assignee_id);
+  exception when unique_violation then
+    if exists (
+      select 1
+      from public.task_occurrences o
+      join public.task_series s on s.id = o.series_id and s.household_id = o.household_id
+      where o.id = p_id
+        and o.household_id = p_household_id
+        and s.created_by = v_user
+    ) then
+      return p_id;
+    end if;
+    raise exception 'TASK_NOT_FOUND' using errcode = 'P0001';
+  end;
 
   return p_id;
 end;
