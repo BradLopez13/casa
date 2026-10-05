@@ -20,8 +20,6 @@ type Props = {
   accessibilityLabel: string;
   testID?: string;
   onPress?: () => void;
-  /** Colour of the gap between the magnet and its ring: whatever the magnet sits on. */
-  ringGap?: string;
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
 };
@@ -38,7 +36,6 @@ export function Magnet({
   accessibilityLabel,
   testID,
   onPress,
-  ringGap,
   decorative = false,
 }: Props) {
   const { colors, shadows } = useTheme();
@@ -87,7 +84,7 @@ export function Magnet({
         borderWidth: RING,
         borderRadius: (diameter + 2 * (GAP + RING)) / 2,
         borderColor: selected ? colors.cobalt : 'transparent',
-        backgroundColor: selected ? (ringGap ?? colors.door) : 'transparent',
+        backgroundColor: selected ? colors.door : 'transparent',
       }}
     >
       {disc}
@@ -121,6 +118,7 @@ export function Magnet({
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
       accessibilityLabel={decorative ? undefined : accessibilityLabel}
+      accessibilityState={!decorative && selectable ? { selected } : undefined}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
     >

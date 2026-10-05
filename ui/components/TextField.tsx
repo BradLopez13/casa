@@ -17,7 +17,7 @@ export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps
       <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
       <TextInput
         testID={testID}
-        accessibilityLabel={label}
+        accessibilityLabel={error ? `${label}, ${error}` : label}
         placeholderTextColor={colors.muted}
         selectionColor={colors.cobalt}
         cursorColor={colors.cobalt}

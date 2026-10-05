@@ -9,9 +9,10 @@ type MarkInput = { userId: string; joinedAt: string; displayName: string };
 
 // Code points that stay attached to the one before them: combining accents, variation
 // selectors, emoji skin tones and emoji tag sequences.
-const EXTENDS = /^[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︀-️︠-︯\u{1F3FB}-\u{1F3FF}\u{E0020}-\u{E007F}]$/u;
+const EXTENDS =
+  /^[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE00-\uFE0F\uFE20-\uFE2F\u{1F3FB}-\u{1F3FF}\u{E0020}-\u{E007F}]$/u;
 const REGIONAL_INDICATOR = /^[\u{1F1E6}-\u{1F1FF}]$/u;
-const ZWJ = '‍';
+const ZWJ = '\u200D';
 
 /**
  * The first user-perceived character of a name, upper-cased. Hermes has no Intl.Segmenter, so

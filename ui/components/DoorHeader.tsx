@@ -46,8 +46,10 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
           position: 'absolute',
           right: space(4) + insets.right,
           top: top + space(6),
+          // Anchored to both edges so a short door never lets it hang past the rounded bottom.
+          bottom: radii.door,
+          maxHeight: 96,
           width: 8,
-          height: 96,
           borderRadius: 4,
           backgroundColor: colors.handle,
         }}
