@@ -37,7 +37,7 @@ export function templateTitle(template: TaskTemplate): string {
 }
 
 /** The tasks to create for the chosen templates, unassigned and in TEMPLATES order. */
-export function templateInputs(keys: string[], today: string): TaskInput[] {
+export function templateInputs(keys: readonly TemplateKey[], today: string): TaskInput[] {
   return TEMPLATES.filter((template) => keys.includes(template.key)).map((template) => ({
     title: templateTitle(template),
     room: template.room,

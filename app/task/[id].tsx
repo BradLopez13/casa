@@ -124,6 +124,8 @@ export default function EditTaskScreen() {
           skip.reset();
           save.submit({ input }, { onSuccess: close });
         }}
+        // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
+        repeatEditable={task.completedAt === null && task.skippedAt === null}
         footer={
           canSkip || canDelete ? (
             <View style={{ gap: space(3) }}>

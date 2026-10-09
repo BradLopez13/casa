@@ -41,6 +41,7 @@ export default function NewTaskScreen() {
       userId={userId}
       today={today}
       saving={save.isPending || save.isSuccess}
+      repeatEditable
       error={save.error ? taskErrorMessage(save.error) : null}
       onCancel={() => router.back()}
       onSave={(input) => {
