@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { forgetCachedData } from '@/data/query/persist';
 import { supabase } from '@/data/supabase/client';
 
 export type SessionState = {
@@ -23,8 +24,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return prev.status === status && prev.userId === userId ? prev : { status, userId };
       });
       if (event === 'SIGNED_OUT') {
-        // Never let the next user see the previous user's cached data.
-        queryClient.clear();
+        // Never let the next user see the previous user's cached data, here or on the device.
+        forgetCachedData(queryClient);
       } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         void queryClient.invalidateQueries({ queryKey: ['membership'] });
       }
