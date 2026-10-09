@@ -62,4 +62,9 @@ describe('weekStrip', () => {
     const [day] = weekStrip([task(null, today), done('a', today)], today, ['a']);
     expect(day).toEqual({ date: today, people: [], unassigned: true });
   });
+
+  it('ignores skipped tasks', () =>
+    expect(weekStrip([base({ dueOn: today, skippedAt: today })], today, [])[0]?.unassigned).toBe(
+      false,
+    ));
 });

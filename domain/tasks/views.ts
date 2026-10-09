@@ -20,7 +20,7 @@ export type TaskItem = {
 
 const WEEK_DAYS = 7;
 
-const isOpen = (t: TaskItem) => t.completedAt === null && t.skippedAt === null;
+export const isOpen = (t: TaskItem) => t.completedAt === null && t.skippedAt === null;
 const isDone = (t: TaskItem) => t.completedAt !== null && t.skippedAt === null;
 const byCreatedAt = (a: TaskItem, b: TaskItem) => Date.parse(a.createdAt) - Date.parse(b.createdAt);
 // Compare instants numerically: Postgres timestamps vary in fractional digits and offset.

@@ -9,6 +9,7 @@ import { useRef } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { localDateIso } from '@/domain/tasks/dates';
+import { isProvisional } from '@/domain/tasks/optimistic';
 import { listTasks, skipTask } from './api';
 import { buildToggleOptions, invalidateIfStale, type ToggleVars } from './toggle';
 
@@ -65,7 +66,10 @@ export function useSkipTask(_householdId: string | undefined) {
   return useTaskMutation((id: string) => skipTask(id, localDateIso(new Date())));
 }
 
-/** Completes or reopens a task, optimistically. Ignores taps while that task is in flight. */
+/**
+ * Completes or reopens a task, optimistically. Ignores taps while that task is in flight, and on
+ * provisional next occurrences, which only exist in the cache until the server creates the real one.
+ */
 export function useToggleTask(
   householdId: string | undefined,
   userId: string | null,
@@ -79,9 +83,9 @@ export function useToggleTask(
     filters: { mutationKey: ['tasks', 'toggle'], status: 'pending' },
     select: (m) => (m.state.variables as ToggleVars).id,
   });
-  const isBusy = (id: string) => pending.includes(id);
+  const isBusy = (id: string) => isProvisional({ id }) || pending.includes(id);
   const toggle = (vars: ToggleVars) => {
-    if (householdId === undefined || userId === null) return;
+    if (householdId === undefined || userId === null || isProvisional({ id: vars.id })) return;
     // Check the cache synchronously: render-time state lags behind a quick double tap.
     const inFlight = queryClient
       .getMutationCache()
