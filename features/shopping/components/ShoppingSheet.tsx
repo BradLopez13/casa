@@ -58,7 +58,7 @@ export function ShoppingSheet({
         buyerName={buyer ? names.get(buyer) : undefined}
         flash={flash?.id === item.id ? flash.count : 0}
         onToggle={() => onToggle(item)}
-        onOpen={() => onOpen(item.id)}
+        onOpen={item.boughtAt === null ? () => onOpen(item.id) : undefined}
       />
     );
   };

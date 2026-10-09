@@ -34,10 +34,11 @@ type Props = {
   /** Bumped each time the row should flash (an add that was already on the list). */
   flash: number;
   onToggle: () => void;
-  onOpen: () => void;
+  /** Only pending items can be edited, so only theirs is given; a bought name is plain text. */
+  onOpen: (() => void) | undefined;
 };
 
-/** One item on the sheet: a round checkbox, the name (opens it) and its quantity. */
+/** One item on the sheet: a round checkbox, the name (opens a pending one) and its quantity. */
 export function ShoppingRow({
   item,
   first,
@@ -69,6 +70,40 @@ export function ShoppingRow({
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onToggle();
   };
+
+  const label = item.quantity ? `${item.name}, ${item.quantity}` : item.name;
+  const nameStyle = {
+    flex: 1,
+    minHeight: MIN_TOUCH,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(3),
+    paddingVertical: space(2),
+    paddingLeft: space(1),
+  } as const;
+  const name = (
+    <>
+      <Text
+        maxFontSizeMultiplier={1.3}
+        style={{
+          flex: 1,
+          color: bought ? colors.muted : colors.ink,
+          fontSize: 17,
+          textDecorationLine: bought ? 'line-through' : 'none',
+        }}
+      >
+        {item.name}
+      </Text>
+      {item.quantity ? (
+        <Text
+          maxFontSizeMultiplier={1.3}
+          style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
+        >
+          {item.quantity}
+        </Text>
+      ) : null}
+    </>
+  );
 
   return (
     <Animated.View
@@ -119,42 +154,22 @@ export function ShoppingRow({
           {bought ? <Ionicons name="checkmark" size={16} color={colors.onCobalt} /> : null}
         </View>
       </Pressable>
-      <Pressable
-        testID={`shopping.item.${item.id}`}
-        onPress={onOpen}
-        accessibilityRole="button"
-        accessibilityLabel={item.quantity ? `${item.name}, ${item.quantity}` : item.name}
-        accessibilityHint={t('shopping.a11y.edit')}
-        style={{
-          flex: 1,
-          minHeight: MIN_TOUCH,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space(3),
-          paddingVertical: space(2),
-          paddingLeft: space(1),
-        }}
-      >
-        <Text
-          maxFontSizeMultiplier={1.3}
-          style={{
-            flex: 1,
-            color: bought ? colors.muted : colors.ink,
-            fontSize: 17,
-            textDecorationLine: bought ? 'line-through' : 'none',
-          }}
+      {onOpen ? (
+        <Pressable
+          testID={`shopping.item.${item.id}`}
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityHint={t('shopping.a11y.edit')}
+          style={nameStyle}
         >
-          {item.name}
-        </Text>
-        {item.quantity ? (
-          <Text
-            maxFontSizeMultiplier={1.3}
-            style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
-          >
-            {item.quantity}
-          </Text>
-        ) : null}
-      </Pressable>
+          {name}
+        </Pressable>
+      ) : (
+        <View accessible accessibilityLabel={label} style={nameStyle}>
+          {name}
+        </View>
+      )}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}
@@ -172,7 +187,7 @@ export function ShoppingRow({
             variant={buyerMark ? 'filled' : 'empty'}
             color={buyerMark?.color ?? 'mustard'}
             initial={buyerMark?.initial ?? ''}
-            accessibilityLabel={buyerName ?? ''}
+            accessibilityLabel={buyerName ? t('shopping.a11y.boughtBy', { name: buyerName }) : ''}
             decorative={buyerName === undefined}
           />
         </View>

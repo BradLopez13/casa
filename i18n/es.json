@@ -176,6 +176,7 @@
   "shopping.alreadyListed": "Ya está en la lista",
   "shopping.a11y.mark": "Marcar «{name}» como comprado",
   "shopping.a11y.unmark": "Desmarcar «{name}»",
+  "shopping.a11y.boughtBy": "Comprado por {name}",
   "shopping.a11y.edit": "Abre el producto para editarlo",
   "shopping.pending": "Pendiente de enviar",
   "shopping.boughtTitle": "Compradas ({n})",
