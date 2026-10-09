@@ -10,5 +10,9 @@
   { "input": "café", "expected": "cafe" },
   { "input": "Ñ", "expected": "n" },
   { "input": "12 huevos", "expected": "12 huevos" },
-  { "input": "Tomate\tcherry", "expected": "tomate cherry" }
+  { "input": "Tomate\tcherry", "expected": "tomate cherry" },
+  { "input": "Pan\u00a0bimbo", "expected": "pan bimbo" },
+  { "input": "\u00a0Leche\u00a0", "expected": "leche" },
+  { "input": "Sal\u000bfina", "expected": "sal fina" },
+  { "input": "Az\u00facar\ufeff", "expected": "azucar\ufeff" }
 ]

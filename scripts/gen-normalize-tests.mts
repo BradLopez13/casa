@@ -9,20 +9,25 @@ const root = join(import.meta.dirname, '..');
 const source = 'domain/shopping/normalize-cases.json';
 const target = 'supabase/tests/normalize_cases.test.sql';
 
-// Tabs and newlines are written as chr() calls so the SQL input equals the TS input.
+// Printable ASCII and letters stay literal; everything else (controls, NBSP, U+FEFF...)
+// becomes chr(n), so the SQL holds no invisible characters and equals the TS input.
 const literal = (value: string) => {
-  const parts = value
-    .split(/(\t|\n|\r)/)
-    .filter((part) => part !== '')
-    .map((part) =>
-      part === '\t'
-        ? 'chr(9)'
-        : part === '\n'
-          ? 'chr(10)'
-          : part === '\r'
-            ? 'chr(13)'
-            : `'${part.replaceAll("'", "''")}'`,
-    );
+  const parts: string[] = [];
+  let text = '';
+  const flush = () => {
+    if (text !== '') parts.push(`'${text.replaceAll("'", "''")}'`);
+    text = '';
+  };
+  for (const char of value) {
+    const code = char.codePointAt(0)!;
+    if ((code >= 0x20 && code <= 0x7e) || (code > 0x7f && /\p{L}/u.test(char))) {
+      text += char;
+    } else {
+      flush();
+      parts.push(`chr(${code})`);
+    }
+  }
+  flush();
   return parts.length === 0 ? "''" : parts.join(' || ');
 };
 
