@@ -1,14 +1,38 @@
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 import { supabase } from '@/data/supabase/client';
+import { openHouseholdChannel, type ChannelClient } from './householdChannel';
 import { createInvalidationBatcher } from './invalidations';
 
 const BATCH_DELAY_MS = 300;
 
-// supabase.channel() hands back an existing channel with the same topic, and a removed
-// channel only leaves that list once the server acknowledges the leave. A remount on the
-// same household waits for the previous removal so it never reuses a closing channel.
+const client: ChannelClient<RealtimeChannel> = {
+  // With no token, setAuth takes the current session's; supabase-js keeps it current
+  // afterwards (it calls setAuth on TOKEN_REFRESHED).
+  setAuth: () => supabase.realtime.setAuth(),
+  open: (topic, onChange, onStatus) =>
+    supabase
+      .channel(topic, { config: { private: true } })
+      .on('broadcast', { event: 'changed' }, ({ payload }: { payload?: unknown }) =>
+        onChange(payload),
+      )
+      .subscribe((status) => onStatus(status)),
+  remove: (channel) => supabase.removeChannel(channel),
+  teardown: (channel) => channel.teardown(),
+  isListed: (topic) => supabase.getChannels().some((c) => c.topic === `realtime:${topic}`),
+  // realtime-js only drops a channel from its list on close; after a failed leave the
+  // internal `_remove` is the only way to stop channel() handing back the dead one.
+  forget: (channel) => {
+    const realtime = supabase.realtime as unknown as {
+      _remove?: (channel: RealtimeChannel) => void;
+    };
+    realtime._remove?.call(supabase.realtime, channel);
+  },
+};
+
+// A remount waits for the previous channel to be removed: supabase.channel() would
+// otherwise hand back the one still closing. The chain never rejects.
 let previousRemoval: Promise<unknown> = Promise.resolve();
 
 /**
@@ -36,41 +60,18 @@ export function useHouseholdChannel(householdId: string | undefined): void {
       setTimer: setTimeout,
       clearTimer: clearTimeout,
     });
-
-    let cancelled = false;
-    let lostConnection = false;
-    let channel: RealtimeChannel | undefined;
-
-    const opened = Promise.all([
-      previousRemoval,
-      // The channel is private: the socket must carry the user's JWT before joining.
-      // supabase-js keeps it current afterwards (it calls setAuth on TOKEN_REFRESHED).
-      supabase.realtime.setAuth().catch(() => undefined),
-    ]).then(() => {
-      if (cancelled) return;
-      channel = supabase
-        .channel(`household:${householdId}`, { config: { private: true } })
-        .on('broadcast', { event: 'changed' }, ({ payload }: { payload?: unknown }) => {
-          const table = (payload as { table?: unknown } | undefined)?.table;
-          if (typeof table === 'string') batcher.push(table);
-        })
-        .subscribe((status) => {
-          if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
-            // Broadcasts sent while we were away are lost: refetch everything once.
-            if (lostConnection) batcher.flushAll();
-            lostConnection = false;
-          } else {
-            lostConnection = true;
-          }
-        });
+    const channel = openHouseholdChannel({
+      householdId,
+      client,
+      batcher,
+      after: previousRemoval,
+      setTimer: setTimeout,
+      clearTimer: clearTimeout,
     });
 
     return () => {
-      cancelled = true;
       batcher.dispose();
-      previousRemoval = opened.then(() =>
-        channel ? supabase.removeChannel(channel).catch(() => undefined) : undefined,
-      );
+      previousRemoval = channel.stop();
     };
   }, [householdId, queryClient]);
 }
