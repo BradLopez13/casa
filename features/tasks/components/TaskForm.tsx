@@ -103,13 +103,14 @@ export function TaskForm({
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
-  // A monthly rule follows the date; weekly days stay as the user chose them.
+  // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
+  // chosen day changes nothing, so a month-end rule on a short month keeps its day.
   const setDueOn = (dueOn: string | null) =>
-    setValues((current) => ({
-      ...current,
-      dueOn,
-      recurrence: syncMonthly(current.recurrence, dueOn),
-    }));
+    setValues((current) =>
+      dueOn === current.dueOn
+        ? current
+        : { ...current, dueOn, recurrence: syncMonthly(current.recurrence, dueOn) },
+    );
   // A repeating task needs a date: choosing a repeat without one starts it today.
   const setRecurrence = (recurrence: RecurrenceRule | null) =>
     setValues((current) => ({

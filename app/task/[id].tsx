@@ -85,16 +85,19 @@ export default function EditTaskScreen() {
     !isProvisional(task);
   const skipOnce = () => {
     if (task.recurrence === null) return;
-    // The occurrence the server creates next, as it computes it from the same date and today.
+    // The server computes the next occurrence from this same `today`, so the notice matches it.
     const next = calculateNextOccurrence(task.recurrence, task.dueOn ?? today, today);
     save.reset();
     remove.reset();
-    skip.submit(id, {
-      onSuccess: () => {
-        close();
-        notify(t('tasks.skipped', { date: dayHeading(next, today).toLowerCase() }));
+    skip.submit(
+      { id, today },
+      {
+        onSuccess: () => {
+          close();
+          notify(t('tasks.skipped', { date: dayHeading(next, today).toLowerCase() }));
+        },
       },
-    });
+    );
   };
   const initial: TaskInput = {
     title: task.title,

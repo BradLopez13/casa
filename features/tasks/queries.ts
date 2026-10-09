@@ -8,7 +8,6 @@ import {
 import { useRef } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
-import { localDateIso } from '@/domain/tasks/dates';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import { listTasks, skipTask } from './api';
 import { buildToggleOptions, invalidateIfStale, type ToggleVars } from './toggle';
@@ -61,9 +60,12 @@ export function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TRe
   return { ...mutation, submit };
 }
 
-/** Skips the current occurrence of a recurring task. */
+/**
+ * Skips the current occurrence of a recurring task. The caller passes its `today`, so whatever
+ * it shows about the next occurrence uses the same date the server does.
+ */
 export function useSkipTask(_householdId: string | undefined) {
-  return useTaskMutation((id: string) => skipTask(id, localDateIso(new Date())));
+  return useTaskMutation(({ id, today }: { id: string; today: string }) => skipTask(id, today));
 }
 
 /**

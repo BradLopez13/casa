@@ -30,12 +30,21 @@ export function ruleForChoice(choice: RepeatChoice, dueOn: string): RecurrenceRu
   }
 }
 
-/** A monthly rule follows the day of the date; any other rule stays as it is. */
+function lastDayOfMonth(dueOn: string): number {
+  const [y = 0, m = 1] = dueOn.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/**
+ * A monthly rule follows the day of the date; any other rule stays as it is. A date on the
+ * rule's own day, clamped to that month (the 30th of November for day 31), keeps the rule.
+ */
 export function syncMonthly(
   rule: RecurrenceRule | null,
   dueOn: string | null,
 ): RecurrenceRule | null {
   if (rule?.kind !== 'monthly' || dueOn === null) return rule;
   const day = dayOfMonth(dueOn);
-  return day === rule.day ? rule : { kind: 'monthly', day };
+  if (day === Math.min(rule.day, lastDayOfMonth(dueOn))) return rule;
+  return { kind: 'monthly', day };
 }

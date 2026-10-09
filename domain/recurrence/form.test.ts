@@ -51,6 +51,18 @@ describe('syncMonthly', () => {
     });
   });
 
+  it('keeps a month-end rule on a month that clamps it', () => {
+    const rule: RecurrenceRule = { kind: 'monthly', day: 31 };
+    expect(syncMonthly(rule, '2026-11-30')).toBe(rule);
+  });
+
+  it('moves a month-end rule to a day before the clamp', () => {
+    expect(syncMonthly({ kind: 'monthly', day: 31 }, '2026-11-15')).toEqual({
+      kind: 'monthly',
+      day: 15,
+    });
+  });
+
   it('returns any other rule unchanged', () => {
     const weekly: RecurrenceRule = { kind: 'weekly', days: [1] };
     expect(syncMonthly(weekly, '2026-10-20')).toBe(weekly);
