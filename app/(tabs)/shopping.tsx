@@ -79,6 +79,8 @@ export default function ShoppingScreen() {
   const refresh = async () => {
     // refetch() ignores `enabled`, so never fire the queries without a household.
     if (householdId === undefined) return;
+    // Offline the pull ends at once: the cached list and the offline band are all there is.
+    if (!online) return;
     setPulling(true);
     try {
       await Promise.all([itemsQuery.refetch(), historyQuery.refetch(), membersQuery.refetch()]);

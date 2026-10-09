@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { filterByAssignee, type TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -33,9 +34,15 @@ export function useTaskScreen() {
   const refresh = async () => {
     // refetch() ignores `enabled`, so never fire the queries without a household.
     if (householdId === undefined) return;
+    const refetch = () => Promise.all([tasksQuery.refetch(), membersQuery.refetch()]);
+    // Offline the pull ends at once: the refetch fails on its own and shows its error.
+    if (!onlineManager.isOnline()) {
+      void refetch();
+      return;
+    }
     setPulling(true);
     try {
-      await Promise.all([tasksQuery.refetch(), membersQuery.refetch()]);
+      await refetch();
     } finally {
       setPulling(false);
     }

@@ -19,6 +19,7 @@ import {
   boughtKey,
   invalidateShoppingWhenIdle,
   SHOPPING_SCOPE,
+  shoppingQueryOptions,
   type AddContext,
   type AddVars,
   type BoughtContext,
@@ -34,6 +35,7 @@ export function useShoppingItems(householdId: string | undefined) {
     queryKey: shoppingKey(householdId),
     queryFn: () => listShoppingItems(householdId as string),
     enabled: householdId !== undefined,
+    ...shoppingQueryOptions,
   });
 }
 
@@ -42,6 +44,7 @@ export function useShoppingHistory(householdId: string | undefined) {
     queryKey: shoppingHistoryKey(householdId),
     queryFn: () => shoppingHistory(householdId as string),
     enabled: householdId !== undefined,
+    ...shoppingQueryOptions,
   });
 }
 
