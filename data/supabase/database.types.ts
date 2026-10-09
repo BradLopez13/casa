@@ -75,6 +75,25 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"shopping_items": {
+                  Row: {
+                    "bought_at": string | null,"bought_by": string | null,"cleared_at": string | null,"created_at": string,"created_by": string | null,"household_id": string,"id": string,"name": string,"normalized_name": string | null,"quantity": string | null
+                  }
+                  Insert: {
+                    "bought_at"?: string | null,"bought_by"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id": string,"id": string,"name": string,"normalized_name"?: never,"quantity"?: string | null
+                  }
+                  Update: {
+                    "bought_at"?: string | null,"bought_by"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id"?: string,"id"?: string,"name"?: string,"normalized_name"?: never,"quantity"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shopping_items_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"task_occurrences": {
                   Row: {
                     "assignee_id": string | null,"completed_at": string | null,"completed_by": string | null,"created_at": string,"due_on": string | null,"generated_from": string | null,"household_id": string,"id": string,"series_id": string,"skipped_at": string | null,"skipped_by": string | null
@@ -140,6 +159,12 @@ isOneToOne: false
             "accept_invite":
 { Args: { "p_token": string }; Returns: string
                            },
+"add_shopping_item":
+{ Args: { "p_household_id": string,"p_id": string,"p_name": string,"p_quantity": string }; Returns: string
+                           },
+"clear_bought_items":
+{ Args: { "p_household_id": string }; Returns: undefined
+                           },
 "complete_task":
 { Args: { "p_id": string,"p_today": string }; Returns: undefined
                            },
@@ -157,6 +182,9 @@ isOneToOne: false
 "delete_household":
 { Args: { "p_household_id": string }; Returns: undefined
                            },
+"delete_shopping_item":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "delete_task":
 { Args: { "p_id": string }; Returns: undefined
                            },
@@ -172,11 +200,22 @@ isOneToOne: false
 "revoke_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
                            },
+"set_item_bought":
+{ Args: { "p_bought": boolean,"p_id": string }; Returns: undefined
+                           },
+"shopping_history":
+{ Args: { "p_household_id": string }; Returns: {
+              "last_used_at": string,"name": string,"normalized_name": string,"uses": number
+            }[]
+                           },
 "skip_task":
 { Args: { "p_id": string,"p_today": string }; Returns: undefined
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
+                           },
+"update_shopping_item":
+{ Args: { "p_id": string,"p_name": string,"p_quantity": string }; Returns: undefined
                            },
 "update_task":
 { Args: { "p_assignee_id": string,"p_due_on": string,"p_id": string,"p_recurrence": Json,"p_room": string,"p_title": string }; Returns: undefined
