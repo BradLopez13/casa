@@ -20,6 +20,8 @@ type Props = {
   accessibilityLabel: string;
   testID?: string;
   onPress?: () => void;
+  /** "radio" when the magnet is one choice in a radiogroup; defaults to a button. */
+  accessibilityRole?: 'button' | 'radio';
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
 };
@@ -36,6 +38,7 @@ export function Magnet({
   accessibilityLabel,
   testID,
   onPress,
+  accessibilityRole = 'button',
   decorative = false,
 }: Props) {
   const { colors, shadows } = useTheme();
@@ -102,9 +105,13 @@ export function Magnet({
         testID={testID}
         onPress={onPress}
         hitSlop={slop}
-        accessibilityRole="button"
+        accessibilityRole={accessibilityRole}
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={selectable ? { selected } : undefined}
+        accessibilityState={
+          selectable
+            ? { selected, ...(accessibilityRole === 'radio' ? { checked: selected } : null) }
+            : undefined
+        }
         style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
       >
         {ringed}

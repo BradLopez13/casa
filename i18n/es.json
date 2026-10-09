@@ -59,6 +59,7 @@
   "members.title": "Miembros del hogar",
   "members.owner": "Propietario",
   "members.you": "(tú)",
+  "members.youName": "Tú",
   "members.invite": "Invitar",
   "members.copyLink": "Copiar enlace",
   "members.copied": "Enlace copiado",
@@ -119,5 +120,11 @@
   "tasks.errors.TASK_NOT_FOUND": "Esta tarea ya no existe.",
   "tasks.errors.NOT_A_MEMBER": "Ya no formas parte de este hogar.",
   "tasks.errors.NETWORK": "Sin conexión. Inténtalo de nuevo.",
-  "tasks.errors.UNKNOWN": "Algo ha fallado. Inténtalo de nuevo."
+  "tasks.errors.UNKNOWN": "Algo ha fallado. Inténtalo de nuevo.",
+  "today.tally": "{done} de {total} hechas",
+  "today.tallyEmpty": "Nada para hoy",
+  "today.scope.mine": "Solo tus tareas",
+  "today.scope.person": "Las tareas de {name}",
+  "today.scope.all": "En toda la casa",
+  "tasks.filterLabel": "Filtrar por persona"
 }
