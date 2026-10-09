@@ -2,6 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MemberMark } from '@/domain/members/marks';
+import { syncMonthly } from '@/domain/recurrence/form';
+import { calculateNextOccurrence } from '@/domain/recurrence/next';
+import type { RecurrenceRule } from '@/domain/recurrence/rule';
+import { dayHeading } from '@/domain/tasks/labels';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -12,6 +16,7 @@ import type { TaskInput } from '../api';
 import { taskFormSchema } from '../schemas';
 import { AssigneePicker } from './AssigneePicker';
 import { DayCells } from './DayCells';
+import { RecurrencePicker } from './RecurrencePicker';
 import { RoomPicker } from './RoomPicker';
 
 type Props = {
@@ -96,17 +101,41 @@ export function TaskForm({
 }: Props) {
   const { colors, space } = useTheme();
   const [values, setValues] = useState<TaskInput>(initial);
+  const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
+  // A monthly rule follows the date; weekly days stay as the user chose them.
+  const setDueOn = (dueOn: string | null) =>
+    setValues((current) => ({
+      ...current,
+      dueOn,
+      recurrence: syncMonthly(current.recurrence, dueOn),
+    }));
+  // A repeating task needs a date: choosing a repeat without one starts it today.
+  const setRecurrence = (recurrence: RecurrenceRule | null) =>
+    setValues((current) => ({
+      ...current,
+      recurrence,
+      dueOn: recurrence !== null && current.dueOn === null ? today : current.dueOn,
+    }));
 
   const parsed = taskFormSchema.safeParse(values);
   const blank = values.title.trim() === '';
   // An empty title only disables Save; a too-long one says why.
   const titleInvalid =
     !blank && !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'title');
-  // Room, assignee and date come from pickers, so in practice only the title can fail.
+  // The pickers keep a date while a repeat is set; should one still be missing, say so on Save.
+  const needsDate = !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'dueOn');
   const save = () => {
     if (parsed.success) onSave(parsed.data);
+    else setTriedSave(true);
   };
+  const shownError =
+    error ?? (triedSave && needsDate ? t('tasks.errors.RECURRENCE_NEEDS_DATE') : null);
+  const repeating = values.recurrence !== null;
+  const nextDate =
+    values.recurrence !== null && values.dueOn !== null
+      ? dayHeading(calculateNextOccurrence(values.recurrence, values.dueOn, values.dueOn), today)
+      : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
@@ -183,9 +212,30 @@ export function TaskForm({
             />
           </Field>
           <Field label={t('taskForm.dueLabel')}>
-            <DayCells value={values.dueOn} today={today} onChange={(dueOn) => set({ dueOn })} />
+            <DayCells
+              value={values.dueOn}
+              today={today}
+              onChange={setDueOn}
+              noneDisabled={repeating}
+            />
           </Field>
-          {error ? <ErrorText testID="task-form.error">{error}</ErrorText> : null}
+          <Field label={t('taskForm.repeatLabel')}>
+            <RecurrencePicker
+              value={values.recurrence}
+              dueOn={values.dueOn ?? today}
+              onChange={setRecurrence}
+            />
+            {nextDate !== null ? (
+              <Text
+                testID="task-form.repeat.next"
+                maxFontSizeMultiplier={1.3}
+                style={{ color: colors.muted, fontSize: 13 }}
+              >
+                {t('taskForm.repeatNext', { date: nextDate })}
+              </Text>
+            ) : null}
+          </Field>
+          {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
           {footer}
         </ScrollView>
       </KeyboardAvoidingView>

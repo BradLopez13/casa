@@ -2,24 +2,29 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
+import { calculateNextOccurrence } from '@/domain/recurrence/next';
+import { dayHeading } from '@/domain/tasks/labels';
+import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
-import { useTaskMutation, useTasks } from '@/features/tasks/queries';
+import { useSkipTask, useTaskMutation, useTasks } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 
 export default function EditTaskScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
+  const notify = useNotice();
   const { id } = useLocalSearchParams<{ id: string }>();
   const today = useToday();
   const { userId } = useSession();
@@ -38,6 +43,7 @@ export default function EditTaskScreen() {
   const [confirming, setConfirming] = useState(false);
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const remove = useTaskMutation<void, void>(() => deleteTask(id));
+  const skip = useSkipTask(householdId);
   const close = () => router.back();
 
   if (task === undefined) {
@@ -63,7 +69,33 @@ export default function EditTaskScreen() {
   }
 
   const canDelete = task.createdBy === userId || membership?.role === 'owner';
-  const failure = remove.error ?? save.error;
+  const failure = skip.error ?? remove.error ?? save.error;
+  // Saving, deleting or skipping locks the other two, and a success keeps them locked while closing.
+  const busy =
+    save.isPending ||
+    save.isSuccess ||
+    remove.isPending ||
+    remove.isSuccess ||
+    skip.isPending ||
+    skip.isSuccess;
+  const canSkip =
+    task.recurrence !== null &&
+    task.completedAt === null &&
+    task.skippedAt === null &&
+    !isProvisional(task);
+  const skipOnce = () => {
+    if (task.recurrence === null) return;
+    // The occurrence the server creates next, as it computes it from the same date and today.
+    const next = calculateNextOccurrence(task.recurrence, task.dueOn ?? today, today);
+    save.reset();
+    remove.reset();
+    skip.submit(id, {
+      onSuccess: () => {
+        close();
+        notify(t('tasks.skipped', { date: dayHeading(next, today).toLowerCase() }));
+      },
+    });
+  };
   const initial: TaskInput = {
     title: task.title,
     room: task.room,
@@ -81,23 +113,43 @@ export default function EditTaskScreen() {
         marks={marks}
         userId={userId}
         today={today}
-        saving={save.isPending || save.isSuccess || remove.isPending || remove.isSuccess}
+        saving={busy}
         error={failure ? taskErrorMessage(failure) : null}
         onCancel={close}
         onSave={(input) => {
           remove.reset();
+          skip.reset();
           save.submit({ input }, { onSuccess: close });
         }}
         footer={
-          canDelete ? (
-            <Button
-              testID="task-form.delete"
-              title={t('taskForm.delete')}
-              variant="danger"
-              // A saved edit is already closing the modal: no confirm dialog on top of it.
-              disabled={save.isPending || save.isSuccess || remove.isSuccess}
-              onPress={() => setConfirming(true)}
-            />
+          canSkip || canDelete ? (
+            <View style={{ gap: space(3) }}>
+              {canSkip ? (
+                <Button
+                  testID="task-form.skip"
+                  title={t('taskForm.skip')}
+                  variant="secondary"
+                  disabled={busy}
+                  onPress={skipOnce}
+                />
+              ) : null}
+              {canDelete ? (
+                <Button
+                  testID="task-form.delete"
+                  title={t('taskForm.delete')}
+                  variant="danger"
+                  // A saved edit or skip is already closing the modal: no confirm dialog on top.
+                  disabled={
+                    save.isPending ||
+                    save.isSuccess ||
+                    remove.isSuccess ||
+                    skip.isPending ||
+                    skip.isSuccess
+                  }
+                  onPress={() => setConfirming(true)}
+                />
+              ) : null}
+            </View>
           ) : null
         }
       />
@@ -111,6 +163,7 @@ export default function EditTaskScreen() {
         onCancel={() => setConfirming(false)}
         onConfirm={() => {
           save.reset();
+          skip.reset();
           remove.submit(undefined, {
             onSuccess: () => {
               setConfirming(false);
