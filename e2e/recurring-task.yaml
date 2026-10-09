@@ -1,0 +1,97 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
+- evalScript: ${output.email = 'rita' + Date.now() + '@e2e.dev'}
+
+# Sign up
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Rita
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# Onboarding: create the household
+- extendedWaitUntil:
+    visible:
+      id: onboarding.name
+    timeout: 20000
+- tapOn:
+    id: onboarding.name
+- eraseText: 60
+- inputText: Piso Rita
+- hideKeyboard
+- tapOn:
+    id: onboarding.create
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Piso Rita
+    timeout: 20000
+
+# Create a daily recurring task from the modal form
+- tapOn:
+    id: today.new-task
+- extendedWaitUntil:
+    visible:
+      id: task-form.title
+    timeout: 20000
+- tapOn:
+    id: task-form.title
+- inputText: Sacar la basura
+- hideKeyboard
+- tapOn:
+    id: task-form.repeat.daily
+- hideKeyboard
+- tapOn:
+    id: task-form.save
+- extendedWaitUntil:
+    visible: Sacar la basura
+    timeout: 20000
+
+# Complete it: the note moves to the done tray
+- tapOn: Completar «Sacar la basura»
+- extendedWaitUntil:
+    visible: Hechas hoy
+    timeout: 20000
+
+# Tareas opens in the week view: the next occurrence shows up under "Mañana"
+- tapOn:
+    id: tab.tasks
+- extendedWaitUntil:
+    visible: Mañana
+    timeout: 20000
+- assertVisible: Sacar la basura
+
+# Reopen it from the done tray: it goes back to "Para hoy"
+- tapOn:
+    id: tab.today
+- tapOn: Reabrir «Sacar la basura».*
+- extendedWaitUntil:
+    visible: Para hoy
+    timeout: 20000
+
+# The successor for tomorrow is gone again once the list refetches
+- tapOn:
+    id: tab.tasks
+- extendedWaitUntil:
+    notVisible: Mañana
+    timeout: 20000
