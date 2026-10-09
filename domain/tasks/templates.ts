@@ -1,8 +1,7 @@
 import { firstDueOn } from '@/domain/recurrence/next';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
-// Type-only: the task input shape the create RPC takes; nothing from the data layer is loaded.
-import type { TaskInput } from '@/features/tasks/api';
 import { t } from '@/i18n';
+import type { TaskInput } from './input';
 import type { Room } from './rooms';
 
 export type TemplateKey =

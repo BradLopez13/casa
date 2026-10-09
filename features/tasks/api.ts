@@ -3,16 +3,11 @@ import type { Json } from '@/data/supabase/database.types';
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
 import { recurrenceRuleSchema, type RecurrenceRule } from '@/domain/recurrence/rule';
+import type { TaskInput } from '@/domain/tasks/input';
 import type { Room } from '@/domain/tasks/rooms';
 import type { TaskItem } from '@/domain/tasks/views';
 
-export type TaskInput = {
-  title: string;
-  room: Room | null;
-  assigneeId: string | null;
-  dueOn: string | null;
-  recurrence: RecurrenceRule | null;
-};
+export type { TaskInput };
 
 type Result<D> = PromiseLike<{ data: D; error: unknown }>;
 

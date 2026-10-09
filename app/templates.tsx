@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
@@ -83,6 +84,7 @@ export default function TemplatesScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
   const today = useToday();
+  const queryClient = useQueryClient();
   const householdId = useMembership().data?.householdId;
   const [selected, setSelected] = useState<ReadonlySet<TemplateKey>>(new Set());
   // One id per template: a retry sends the same ids, so a task created before a failure
@@ -113,7 +115,18 @@ export default function TemplatesScreen() {
       ids.get(key) as string,
       inputs[i] as TaskInput,
     ]);
-    save.submit({ tasks }, { onSuccess: () => router.back(), onError: () => setFailed(true) });
+    save.submit(
+      { tasks },
+      {
+        onSuccess: () => router.back(),
+        onError: () => {
+          setFailed(true);
+          // Some tasks may already exist: refresh the list so Hoy shows them (and drops the
+          // templates card) even if the user cancels instead of retrying.
+          void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        },
+      },
+    );
   };
 
   return (
