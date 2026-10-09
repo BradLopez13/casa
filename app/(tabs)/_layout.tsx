@@ -2,6 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
+import { useMembership } from '@/features/households/queries';
+import { useHouseholdChannel } from '@/features/realtime/useHouseholdChannel';
 import { TaskFilterProvider } from '@/features/tasks/filter';
 import { t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
@@ -26,6 +28,9 @@ function tabIcon(active: IconName, inactive: IconName) {
 // Today, Tasks and Settings; Shopping arrives in its own plan.
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const { data: membership } = useMembership();
+  // Keeps every member's lists in sync while the tabs are mounted.
+  useHouseholdChannel(membership?.householdId);
   return (
     <TaskFilterProvider>
       <Tabs
