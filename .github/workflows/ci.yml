@@ -103,7 +103,7 @@ jobs:
           disable-animations: true
           script: |
             adb install android/app/build/outputs/apk/release/app-release.apk
-            maestro test e2e/ --format junit --output e2e-report.xml
+            set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" e2e/ --format junit --output e2e-report.xml
 
       - uses: actions/upload-artifact@v4
         if: failure()

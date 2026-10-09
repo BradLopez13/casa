@@ -1,0 +1,91 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
+- evalScript: ${output.email = 'olga' + Date.now() + '@e2e.dev'}
+
+# Sign up
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Olga
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# Onboarding: create the household
+- extendedWaitUntil:
+    visible:
+      id: onboarding.name
+    timeout: 20000
+- tapOn:
+    id: onboarding.name
+- eraseText: 60
+- inputText: Piso Olga
+- hideKeyboard
+- tapOn:
+    id: onboarding.create
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Piso Olga
+    timeout: 20000
+
+# Open the list, then lose the connection
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible: Nada por comprar
+    timeout: 20000
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: shopping.offline
+    timeout: 20000
+
+# Add "Huevos" offline: it shows at once, marked as pending
+- tapOn:
+    id: shopping.input
+- inputText: Huevos
+- tapOn:
+    id: shopping.add
+- extendedWaitUntil:
+    visible: Huevos
+    timeout: 20000
+- assertVisible:
+    id: shopping.offline
+- assertVisible:
+    id: shopping.item.*.pending
+- hideKeyboard
+
+# Back online: the queue sends it and the pending mark goes away
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible:
+      id: shopping.item.*.pending
+    timeout: 30000
+
+# A pull to refresh brings it back from the server
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 800
+- extendedWaitUntil:
+    visible: Huevos
+    timeout: 20000

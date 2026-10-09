@@ -1,0 +1,55 @@
+appId: com.bradlopez13.casa
+---
+# Needs the fixtures (Ana and Berta in "Casa E2E", see supabase/e2e/fixtures.sql) and
+# `maestro test -e SUPABASE_KEY=<anon key>` for the script.
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
+
+# Sign in as Ana
+- tapOn:
+    id: sign-in.email
+- inputText: ana@e2e.dev
+- tapOn:
+    id: sign-in.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-in.submit
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Casa E2E
+    timeout: 20000
+
+# Open the list and let it load: the household channel is subscribed by then
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible:
+      id: shopping.input
+    timeout: 20000
+- extendedWaitUntil:
+    visible: Nada por comprar
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Berta adds "Pan" through the API, from outside the app
+- runScript:
+    file: scripts/berta-adds-bread.js
+    env:
+      SUPABASE_KEY: ${SUPABASE_KEY}
+
+# It shows up through the broadcast, without pulling to refresh
+- extendedWaitUntil:
+    visible: Pan
+    timeout: 10000
