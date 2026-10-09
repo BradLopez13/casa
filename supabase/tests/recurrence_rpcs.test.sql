@@ -1,10 +1,11 @@
 begin;
-select plan(23);
+select plan(28);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
 select tests.create_user('carla@test.dev', 'Carla') as carla \gset
 select tests.create_user('fay@test.dev', 'Fay') as fay \gset
+select tests.create_user('gus@test.dev', 'Gus') as gus \gset
 
 -- Ana owns the household and Bob is a member; Fay has already left; Carla is in another one.
 insert into public.households (id, name, created_by)
@@ -247,6 +248,70 @@ select throws_ok(
 select throws_ok(
   $$select public.update_task('00000000-0000-0000-0000-0000000000d5', 'x', null, null, current_date, '{"kind":"monthly","day":0}')$$,
   'P0001', 'INVALID_RECURRENCE', 'update_task rejects an invalid rule'
+);
+
+-- Closing an already closed occurrence does nothing, even once the series is one-off.
+select lives_ok(
+  $$select public.skip_task('00000000-0000-0000-0000-0000000000d6', current_date)$$,
+  'skipping a completed occurrence of a now one-off series does not fail'
+);
+
+select tests.clear_auth();
+
+select is(
+  (select count(*)::text || '|' || count(skipped_at) || '|'
+          || bool_or(id = '00000000-0000-0000-0000-0000000000d6' and completed_at is not null)
+   from public.task_occurrences
+   where series_id = (select series_id from public.task_occurrences
+                      where id = '00000000-0000-0000-0000-0000000000d6')),
+  '3|0|true',
+  'skipping an already closed occurrence changes nothing'
+);
+
+-- More closing and reopening ----------------------------------------------------
+
+select tests.authenticate_as(:'bob');
+select public.create_task('00000000-0000-0000-0000-0000000000d7', '00000000-0000-0000-0000-0000000000a1',
+                          'Ayer', null, null, current_date, null);
+
+select lives_ok(
+  $$select public.complete_task('00000000-0000-0000-0000-0000000000d7', current_date - 1)$$,
+  'complete_task accepts yesterday as today'
+);
+
+-- d8 is completed and its next m1 skipped.
+select public.create_task('00000000-0000-0000-0000-0000000000d8', '00000000-0000-0000-0000-0000000000a1',
+                          'Tender', null, null, current_date, '{"kind":"interval","every":1}');
+select public.complete_task('00000000-0000-0000-0000-0000000000d8', current_date);
+select tests.clear_auth();
+select id as m1 from public.task_occurrences where generated_from = '00000000-0000-0000-0000-0000000000d8' \gset
+select tests.authenticate_as(:'bob');
+select public.skip_task(:'m1', current_date);
+
+select throws_ok(
+  $$select public.reopen_task('00000000-0000-0000-0000-0000000000d8')$$,
+  'P0001', 'ALREADY_ADVANCED', 'a task whose next occurrence was skipped cannot be reopened'
+);
+
+-- Gus skips his recurring task and then leaves: the skipped one keeps him for history.
+select tests.clear_auth();
+insert into public.household_members (household_id, user_id, role)
+values ('00000000-0000-0000-0000-0000000000a1', :'gus', 'member');
+select tests.authenticate_as(:'bob');
+select public.create_task('00000000-0000-0000-0000-0000000000d9', '00000000-0000-0000-0000-0000000000a1',
+                          'De Gus', null, :'gus', current_date, '{"kind":"interval","every":1}');
+select public.skip_task('00000000-0000-0000-0000-0000000000d9', current_date);
+select tests.authenticate_as(:'gus');
+select public.leave_household('00000000-0000-0000-0000-0000000000a1');
+select tests.clear_auth();
+
+select is(
+  (select (assignee_id = :'gus') || '|'
+          || (select assignee_id is null from public.task_occurrences
+              where generated_from = '00000000-0000-0000-0000-0000000000d9')
+   from public.task_occurrences where id = '00000000-0000-0000-0000-0000000000d9'),
+  'true|true',
+  'leaving keeps a skipped occurrence assigned and unassigns the open one'
 );
 
 -- Not a member / anon ---------------------------------------------------------
