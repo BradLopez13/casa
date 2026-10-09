@@ -58,9 +58,11 @@ appId: com.bradlopez13.casa
     id: task-form.title
 - inputText: Sacar la basura
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: task-form.repeat.daily
 - tapOn:
     id: task-form.repeat.daily
-- hideKeyboard
 - tapOn:
     id: task-form.save
 - extendedWaitUntil:
