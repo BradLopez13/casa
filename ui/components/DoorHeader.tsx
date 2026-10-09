@@ -9,7 +9,8 @@ export const DoorInsetContext = createContext(false);
 
 type Props = {
   title: string;
-  subtitle?: string;
+  /** A string is painted in the muted subtitle style; any other node is painted as is. */
+  subtitle?: ReactNode;
   /** 'large' for Hoy (44), 'medium' for Tareas (38). */
   titleSize?: 'large' | 'medium';
   titleTestID?: string;
@@ -69,7 +70,7 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
       >
         {title}
       </Text>
-      {subtitle ? (
+      {typeof subtitle === 'string' && subtitle !== '' ? (
         <Text
           style={{
             marginTop: space(1),
@@ -80,6 +81,8 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
         >
           {subtitle}
         </Text>
+      ) : subtitle ? (
+        <View style={{ marginTop: space(1) }}>{subtitle}</View>
       ) : null}
       {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
     </View>

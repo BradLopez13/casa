@@ -130,5 +130,10 @@
   "today.scope.mine": "Solo tus tareas",
   "today.scope.person": "Las tareas de {name}",
   "today.scope.all": "En toda la casa",
-  "tasks.filterLabel": "Filtrar por persona"
+  "tasks.filterLabel": "Filtrar por persona",
+  "tasks.section.overdue": "Vencidas",
+  "tasks.section.today": "Para hoy",
+  "tasks.section.doneToday": "Hechas hoy",
+  "today.title": "Hoy",
+  "today.nothing": "Nada pendiente para hoy"
 }
