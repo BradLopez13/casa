@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { SectionList, Text, View, type TextStyle } from 'react-native';
-import { memberMarks } from '@/domain/members/marks';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { tallyToday } from '@/domain/tasks/tally';
 import { filterByAssignee, selectToday, type TaskItem } from '@/domain/tasks/views';
@@ -10,12 +9,14 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { DoneTray } from '@/features/tasks/components/DoneTray';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { NewTaskButton } from '@/features/tasks/components/NewTaskButton';
+import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TaskNote } from '@/features/tasks/components/TaskNote';
 import { useTaskFilter } from '@/features/tasks/filter';
 import { useTasks, useToggleTask } from '@/features/tasks/queries';
 import { scopeLabel } from '@/features/tasks/scope';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
+import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { useToday } from '@/features/tasks/useToday';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
@@ -52,14 +53,7 @@ export default function TodayScreen() {
   // A filter on someone who has left the household falls back to the whole household.
   const assigneeId = members.some((m) => m.userId === filter.assigneeId) ? filter.assigneeId : null;
 
-  const marks = useMemo(() => memberMarks(members), [members]);
-  const names = useMemo(
-    () =>
-      new Map(
-        members.map((m) => [m.userId, m.userId === userId ? t('members.youName') : m.displayName]),
-      ),
-    [members, userId],
-  );
+  const { marks, names } = useMemberLabels(members, userId);
   const filtered = useMemo(() => filterByAssignee(tasks, assigneeId), [tasks, assigneeId]);
   const tally = useMemo(() => tallyToday(filtered, today), [filtered, today]);
   const sections = useMemo(() => {
@@ -152,30 +146,7 @@ export default function TodayScreen() {
             </View>
           }
           renderSectionHeader={({ section }) => (
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                paddingHorizontal: space(5),
-                paddingTop: space(6),
-                paddingBottom: space(3),
-              }}
-            >
-              <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={1.3}
-                style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
-              >
-                {t(section.title)}
-              </Text>
-              <Text
-                maxFontSizeMultiplier={1.3}
-                style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
-              >
-                {section.count}
-              </Text>
-            </View>
+            <SectionHeader title={t(section.title)} count={section.count} />
           )}
           renderItem={({ item }) => (
             <View style={{ paddingHorizontal: space(5) }}>
