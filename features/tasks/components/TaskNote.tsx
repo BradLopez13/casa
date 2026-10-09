@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { Pressable, Text } from 'react-native';
 import Animated, {
@@ -10,13 +11,16 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
-import { dueLabel, overdueLabel } from '@/domain/tasks/labels';
-import { isOverdue, type TaskItem } from '@/domain/tasks/views';
+import { isProvisional } from '@/domain/tasks/optimistic';
+import type { TaskItem } from '@/domain/tasks/views';
+import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 
+// A note that is still being saved is drawn faded until the server confirms it.
+const PROVISIONAL_OPACITY = 0.6;
 const PRESS_MS = 80;
 const PRESS_SCALE = 0.9;
 const TOGGLE_SLOP = Math.ceil((MIN_TOUCH - magnetSizes.md) / 2);
@@ -39,13 +43,8 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
   const magnetStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const done = task.completedAt !== null;
-  const overdue = isOverdue(task, today);
-  const room = task.room ? t(`rooms.${task.room}`) : null;
-  const due = overdue && task.dueOn ? overdueLabel(task.dueOn, today) : dueLabel(task.dueOn, today);
-  // The magnet is hidden from screen readers, so the note itself says who it is for.
-  const label = [task.title, assigneeName ?? t('tasks.a11y.unassigned'), room, due]
-    .filter((part) => part !== null)
-    .join(', ');
+  const provisional = isProvisional(task);
+  const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);
 
   const press = () => {
     if (!reduceMotion) {
@@ -70,6 +69,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.note,
+        opacity: provisional ? PROVISIONAL_OPACITY : 1,
         borderRadius: radii.note,
         ...shadows.note,
       }}
@@ -99,10 +99,11 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
       </Pressable>
       <Pressable
         testID={`task-note.${task.id}`}
-        onPress={onOpen}
+        onPress={provisional ? undefined : onOpen}
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint={t('tasks.a11y.edit')}
+        accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
+        accessibilityState={{ disabled: provisional }}
         style={{
           flex: 1,
           minHeight: MIN_TOUCH,
@@ -124,6 +125,13 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
           >
             {due}
           </Text>
+          {repeat ? (
+            <>
+              {' · '}
+              <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
+              {` ${repeat}`}
+            </>
+          ) : null}
         </Text>
       </Pressable>
     </Animated.View>
