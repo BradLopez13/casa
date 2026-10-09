@@ -163,5 +163,19 @@
   "tasks.empty": "No hay tareas",
   "tasks.weekEmpty": "Nada en los próximos 7 días",
   "tasks.stripDay": "{day}, {count} tareas",
-  "tasks.stripDayOne": "{day}, 1 tarea"
+  "tasks.stripDayOne": "{day}, 1 tarea",
+  "recurrence.daily": "Cada día",
+  "recurrence.everyN": "Cada {n} días",
+  "recurrence.allDays": "Todos los días",
+  "recurrence.weekdays": "De lunes a viernes",
+  "recurrence.weekends": "Fines de semana",
+  "recurrence.monthly": "El día {day} de cada mes",
+  "recurrence.monthlyLast": "El último día de cada mes",
+  "weekdays.1": "lunes",
+  "weekdays.2": "martes",
+  "weekdays.3": "miércoles",
+  "weekdays.4": "jueves",
+  "weekdays.5": "viernes",
+  "weekdays.6": "sábado",
+  "weekdays.7": "domingo"
 }
