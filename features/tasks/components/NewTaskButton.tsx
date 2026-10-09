@@ -1,0 +1,49 @@
+import { useRouter, type RelativePathString } from 'expo-router';
+import { Pressable, Text } from 'react-native';
+import { t } from '@/i18n';
+import { useTheme } from '@/ui/theme';
+import { MIN_TOUCH } from '@/ui/tokens';
+
+/** Floating pill that opens the new-task form, pre-filling the assignee when one is chosen. */
+export function NewTaskButton({
+  testID,
+  assigneeId,
+}: {
+  testID: string;
+  assigneeId: string | null;
+}) {
+  const router = useRouter();
+  const { colors, shadows, radii, space } = useTheme();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      onPress={() =>
+        // Cast until the task/new route file exists (Task 8) and typed routes include it.
+        router.push({
+          pathname: '/task/new' as RelativePathString,
+          params: assigneeId ? { assignee: assigneeId } : {},
+        })
+      }
+      style={({ pressed }) => ({
+        position: 'absolute',
+        right: space(4),
+        bottom: space(4),
+        minHeight: MIN_TOUCH,
+        paddingHorizontal: space(5),
+        justifyContent: 'center',
+        borderRadius: radii.pill,
+        backgroundColor: colors.cobalt,
+        opacity: pressed ? 0.85 : 1,
+        ...shadows.note,
+      })}
+    >
+      <Text
+        maxFontSizeMultiplier={1.3}
+        style={{ color: colors.onCobalt, fontSize: 16, fontWeight: '600' }}
+      >
+        {`+ ${t('tasks.new')}`}
+      </Text>
+    </Pressable>
+  );
+}
