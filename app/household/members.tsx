@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
@@ -20,6 +21,7 @@ import {
   useMembers,
   useMembership,
 } from '@/features/households/queries';
+import { forgetHouseholdData } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
 import { locale, t, type MessageKey } from '@/i18n';
@@ -83,6 +85,7 @@ function formatExpiry(expiresAt: string): string {
 export default function MembersScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { userId } = useSession();
   const membership = useMembership().data;
   const householdId = membership?.householdId;
@@ -95,8 +98,15 @@ export default function MembersScreen() {
   const transfer = useHouseholdMutation((id: string) =>
     transferOwnership(householdId as string, id),
   );
-  const leave = useHouseholdMutation(leaveHousehold);
-  const del = useHouseholdMutation(deleteHousehold);
+  // Out of the household: its shopping data must not stay on the device.
+  const leave = useHouseholdMutation(async (id: string) => {
+    await leaveHousehold(id);
+    forgetHouseholdData(queryClient);
+  });
+  const del = useHouseholdMutation(async (id: string) => {
+    await deleteHousehold(id);
+    forgetHouseholdData(queryClient);
+  });
   const [pending, setPending] = useState<Pending | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [copied, setCopied] = useState(false);

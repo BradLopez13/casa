@@ -1,15 +1,24 @@
 import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
-import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
+import {
+  focusManager,
+  onlineManager,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import Constants from 'expo-constants';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { persister } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
-import { NoticeProvider } from '@/ui/components/Notice';
+import { NoticeProvider, useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
@@ -17,6 +26,14 @@ import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
+import {
+  addKey,
+  boughtKey,
+  buildShoppingMutationDefaults,
+  persistBuster,
+  shouldPersistMutation,
+  shouldPersistQuery,
+} from '@/features/shopping/offline';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +49,57 @@ if (Platform.OS !== 'web') {
     });
     return () => subscription.remove();
   });
+  // Mutations pause while offline and resume when the connection is back. On the web the
+  // default listener (the browser's online and offline events) already does this.
+  onlineManager.setEventListener((setOnline) =>
+    NetInfo.addEventListener((state) => {
+      setOnline(state.isConnected === true && state.isInternetReachable !== false);
+    }),
+  );
+}
+
+const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const appVersion = Constants.expoConfig?.version ?? '0';
+
+/**
+ * Restores the shopping list and its offline queue, and keeps them on the device. It waits for
+ * the session (the splash stays up) because the persisted cache belongs to one user: a cache
+ * saved under someone else is discarded. A change of user remounts it, so from then on the
+ * cache is saved under the new user.
+ */
+function PersistedQueries({ children }: { children: ReactNode }) {
+  const notify = useNotice();
+  const { status, userId } = useSession();
+  // The queued mutations' functions must be registered before the cache is restored. The
+  // notice is reachable from here, so the defaults use it directly.
+  useState(() => {
+    const defaults = buildShoppingMutationDefaults(queryClient, notify);
+    queryClient.setMutationDefaults(addKey, defaults.add);
+    queryClient.setMutationDefaults(boughtKey, defaults.bought);
+    return null;
+  });
+  if (status === 'loading') return null;
+  const buster = persistBuster(appVersion, userId);
+  return (
+    <PersistQueryClientProvider
+      key={buster}
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: PERSIST_MAX_AGE_MS,
+        buster,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            shouldPersistQuery(query.queryKey) && query.state.status === 'success',
+          shouldDehydrateMutation: (mutation) =>
+            mutation.state.isPaused && shouldPersistMutation(mutation.options.mutationKey),
+        },
+      }}
+      onSuccess={() => queryClient.resumePausedMutations()}
+    >
+      {children}
+    </PersistQueryClientProvider>
+  );
 }
 
 function MembershipError({
@@ -146,7 +214,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <NoticeProvider>
-        <SessionProvider>{fontsReady ? <Guard /> : null}</SessionProvider>
+        <SessionProvider>
+          <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+        </SessionProvider>
       </NoticeProvider>
     </QueryClientProvider>
   );

@@ -166,6 +166,7 @@
   "shopping.errors.NOT_A_MEMBER": "Ya no formas parte de este hogar.",
   "shopping.errors.NETWORK": "Sin conexión. Inténtalo de nuevo.",
   "shopping.errors.UNKNOWN": "Algo ha fallado. Inténtalo de nuevo.",
+  "shopping.syncFailed": "No se pudo guardar «{name}»",
   "today.tally": "{done} de {total} hechas",
   "today.tallyEmpty": "Nada para hoy",
   "today.scope.mine": "Solo tus tareas",
