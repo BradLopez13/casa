@@ -10,7 +10,7 @@ describe('normalizeItemName', () => {
 
 describe('trimItemText', () => {
   it('trims only the pinned whitespace class', () => {
-    expect(trimItemText(' \t\n\r\f\v Leche  ')).toBe('Leche');
-    expect(trimItemText('﻿Leche')).toBe('﻿Leche');
+    expect(trimItemText(' \t\n\r\f\v\u00a0Leche\u00a0 ')).toBe('Leche');
+    expect(trimItemText('\ufeffLeche')).toBe('\ufeffLeche');
   });
 });

@@ -28,6 +28,19 @@ describe('sortList', () => {
   });
 });
 
+describe('sortList ties', () => {
+  it('breaks equal timestamps by id, whatever the input order', () => {
+    const at = '2026-10-01T10:00:00.000Z';
+    const a = make('a', 'A', { createdAt: at });
+    const b = make('b', 'B', { createdAt: at });
+    const c = make('c', 'C', { boughtAt: at });
+    const d = make('d', 'D', { boughtAt: at });
+    expect(sortList([b, a, d, c]).pending.map((i) => i.id)).toEqual(['a', 'b']);
+    expect(sortList([a, b, c, d]).pending.map((i) => i.id)).toEqual(['a', 'b']);
+    expect(sortList([d, c]).bought.map((i) => i.id)).toEqual(['c', 'd']);
+  });
+});
+
 describe('findPending', () => {
   it('matches by normalized name and ignores bought items', () => {
     const items = [make('a', 'Leche'), make('b', 'Pan', { boughtAt: '2026-10-04T10:00:00.000Z' })];
@@ -52,6 +65,13 @@ describe('applyAdd', () => {
     const items = [make('a', 'Leche'), make('b', 'Leche')];
     const next = applyAdd(items, make('b', 'Leche'), 'a');
     expect(next.map((i) => i.id)).toEqual(['a']);
+  });
+
+  it('rebinds the optimistic item when the existing one is not cached', () => {
+    const items = [make('b', 'Leche')];
+    const next = applyAdd(items, make('b', 'Leche'), 'a');
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({ id: 'a', name: 'Leche' });
   });
 
   it('adds a bought duplicate as a new pending item', () => {
