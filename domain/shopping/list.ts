@@ -11,7 +11,9 @@ export type ShoppingItem = {
   boughtBy: string | null;
 };
 
-const byDescending = (a: string, b: string) => (a < b ? 1 : a > b ? -1 : 0);
+// Newest first; ties fall back to the id so the order is stable across refetches.
+const byDescending = (a: string, b: string, idA: string, idB: string) =>
+  a < b ? 1 : a > b ? -1 : idA < idB ? -1 : idA > idB ? 1 : 0;
 
 /** Pending items newest first; bought items most recently bought first. */
 export function sortList(items: readonly ShoppingItem[]): {
@@ -20,10 +22,10 @@ export function sortList(items: readonly ShoppingItem[]): {
 } {
   const pending = items
     .filter((i) => i.boughtAt === null)
-    .sort((a, b) => byDescending(a.createdAt, b.createdAt));
+    .sort((a, b) => byDescending(a.createdAt, b.createdAt, a.id, b.id));
   const bought = items
     .filter((i) => i.boughtAt !== null)
-    .sort((a, b) => byDescending(a.boughtAt ?? '', b.boughtAt ?? ''));
+    .sort((a, b) => byDescending(a.boughtAt ?? '', b.boughtAt ?? '', a.id, b.id));
   return { pending, bought };
 }
 
@@ -46,7 +48,9 @@ export function applyAdd(
   resolvedId?: string,
 ): ShoppingItem[] {
   if (resolvedId !== undefined && resolvedId !== item.id) {
-    return items.some((i) => i.id === item.id) ? items.filter((i) => i.id !== item.id) : items;
+    if (items.some((i) => i.id === resolvedId)) return items.filter((i) => i.id !== item.id);
+    // The existing item isn't cached (merged with another member's add): keep ours, rebound.
+    return items.map((i) => (i.id === item.id ? { ...i, id: resolvedId } : i));
   }
   if (findPending(items, item.name)) return items;
   return [...items, item];

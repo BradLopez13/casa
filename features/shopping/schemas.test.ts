@@ -8,13 +8,13 @@ describe('shoppingNameSchema', () => {
   });
 
   it('trims with the pinned whitespace class, not String.trim', () => {
-    expect(shoppingNameSchema.safeParse(' Leche ').data).toBe('Leche');
+    expect(shoppingNameSchema.safeParse('\u00a0Leche\u00a0').data).toBe('Leche');
     // U+FEFF is trimmed by String.trim but is not in the pinned class.
-    expect(shoppingNameSchema.safeParse('﻿Leche').data).toBe('﻿Leche');
+    expect(shoppingNameSchema.safeParse('\ufeffLeche').data).toBe('\ufeffLeche');
   });
 
   it('rejects blank names', () => {
-    expect(shoppingNameSchema.safeParse('    ').success).toBe(false);
+    expect(shoppingNameSchema.safeParse('  \u00a0 ').success).toBe(false);
   });
 
   it('accepts 60 and rejects 61 code points', () => {
@@ -30,7 +30,7 @@ describe('shoppingQuantitySchema', () => {
 
   it('turns blank into null', () => {
     expect(shoppingQuantitySchema.parse('   ')).toBeNull();
-    expect(shoppingQuantitySchema.parse(' \t')).toBeNull();
+    expect(shoppingQuantitySchema.parse('\u00a0\t')).toBeNull();
     expect(shoppingQuantitySchema.parse('')).toBeNull();
   });
 
