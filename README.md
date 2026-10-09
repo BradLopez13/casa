@@ -93,7 +93,7 @@ set -a; . ./.env.e2e; set +a
 E2E=1 pnpm expo prebuild --platform android --clean
 cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 && cd ..
 adb install android/app/build/outputs/apk/release/app-release.apk
-maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" e2e/   # un script del flujo de tiempo real usa la clave
+pnpm e2e                            # maestro test con la clave de .env.e2e, que usa el flujo de tiempo real
 ```
 
 ## Ejecutar la app

@@ -1,4 +1,7 @@
 appId: com.bradlopez13.casa
+# Runs even when the flow fails: an emulator left offline would break every later flow.
+onFlowComplete:
+  - setAirplaneMode: disabled
 ---
 - clearState
 # Android can kill the first start while the cleared task is still being removed: retry it.
@@ -80,6 +83,11 @@ appId: com.bradlopez13.casa
     notVisible:
       id: shopping.item.*.pending
     timeout: 30000
+- extendedWaitUntil:
+    notVisible:
+      id: shopping.offline
+    timeout: 20000
+- assertNotVisible: No se pudo guardar.*
 
 # A pull to refresh brings it back from the server
 - swipe:

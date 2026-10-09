@@ -40,8 +40,13 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible: Nada por comprar
     timeout: 20000
-- waitForAnimationToEnd:
-    timeout: 3000
+# A fixed 5 s for the channel to be SUBSCRIBED (the UI shows no signal for it): wait for an
+# id that never exists, and `optional` turns the timeout into a warning.
+- extendedWaitUntil:
+    visible:
+      id: e2e.never-present
+    timeout: 5000
+    optional: true
 
 # Berta adds "Pan" through the API, from outside the app
 - runScript:
