@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toAppError, type AppError } from '@/data/supabase/errors';
-import { membershipKey } from '@/features/households/queries';
+import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AppError } from '@/data/supabase/errors';
+import { useNotice } from '@/ui/components/Notice';
 import { listTasks } from './api';
+import { buildToggleOptions, invalidateIfStale, type ToggleVars } from './toggle';
 
 export const tasksKey = (householdId: string | undefined) => ['tasks', householdId] as const;
 
@@ -27,17 +28,28 @@ export function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TRe
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
-    // Our view of the household is stale (task gone, we left, or the assignee left): refetch
-    // tasks, membership and members so the UI and the route guard catch up.
-    onError: async (error) => {
-      const code = toAppError(error).code;
-      if (code === 'TASK_NOT_FOUND' || code === 'NOT_A_MEMBER' || code === 'INVALID_ASSIGNEE') {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-          queryClient.invalidateQueries({ queryKey: membershipKey }),
-          queryClient.invalidateQueries({ queryKey: ['members'] }),
-        ]);
-      }
-    },
+    onError: (error) => invalidateIfStale(queryClient, error),
   });
+}
+
+/** Completes or reopens a task, optimistically. Ignores taps while that task is in flight. */
+export function useToggleTask(
+  householdId: string | undefined,
+  userId: string | null,
+): { toggle: (vars: ToggleVars) => void; isBusy: (id: string) => boolean } {
+  const queryClient = useQueryClient();
+  const notify = useNotice();
+  const mutation = useMutation(
+    buildToggleOptions(queryClient, householdId ?? '', userId ?? '', notify),
+  );
+  const pending = useMutationState({
+    filters: { mutationKey: ['tasks', 'toggle'], status: 'pending' },
+    select: (m) => (m.state.variables as ToggleVars).id,
+  });
+  const isBusy = (id: string) => pending.includes(id);
+  const toggle = (vars: ToggleVars) => {
+    if (householdId === undefined || userId === null || isBusy(vars.id)) return;
+    mutation.mutate(vars);
+  };
+  return { toggle, isBusy };
 }
