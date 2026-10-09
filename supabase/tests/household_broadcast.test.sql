@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(23);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -113,6 +113,39 @@ select is(
   'the occurrence removed by cascade sends a task_occurrences message'
 );
 
+select tests.authenticate_as(:'bob');
+select public.add_shopping_item(
+  '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000a1', 'Pan', null
+);
+select tests.clear_auth();
+
+select count(*) as all_before from realtime.messages
+where topic = 'household:00000000-0000-0000-0000-0000000000a1' \gset
+select pg_temp.casa_messages('shopping_items') as items_before \gset
+
+select tests.authenticate_as(:'bob');
+select public.set_item_bought('00000000-0000-0000-0000-0000000000d2', true);
+select tests.clear_auth();
+
+select is(
+  (select count(*) from realtime.messages
+   where topic = 'household:00000000-0000-0000-0000-0000000000a1') - :all_before,
+  1::bigint,
+  'marking an item bought sends exactly one message on the household topic'
+);
+select is(
+  pg_temp.casa_messages('shopping_items') - :items_before,
+  1::bigint,
+  'that update message is a shopping_items broadcast'
+);
+
+-- Carla's household gets its own message, so other topics exist in the table.
+select tests.authenticate_as(:'carla');
+select public.add_shopping_item(
+  '00000000-0000-0000-0000-0000000000d3', '00000000-0000-0000-0000-0000000000a2', 'Sal', null
+);
+select tests.clear_auth();
+
 -- 2. Topic parsing ------------------------------------------------------------
 
 select is(
@@ -145,6 +178,14 @@ select ok(
 
 select pg_temp.casa_messages() as casa_total \gset
 
+select cmp_ok(
+  (select count(*) from realtime.messages
+   where topic = 'household:00000000-0000-0000-0000-0000000000a2'),
+  '>',
+  0::bigint,
+  'another household topic has messages too'
+);
+
 select tests.authenticate_as(:'bob');
 select set_config('realtime.topic', 'household:00000000-0000-0000-0000-0000000000a1', true);
 
@@ -154,6 +195,12 @@ select is(
    where topic = 'household:00000000-0000-0000-0000-0000000000a1'),
   :casa_total::bigint,
   'a member receives the messages of their household topic'
+);
+select is(
+  (select count(*) from realtime.messages
+   where topic <> 'household:00000000-0000-0000-0000-0000000000a1'),
+  0::bigint,
+  'with their own topic set, a member reads no message of any other topic'
 );
 
 select set_config('realtime.topic', 'household:00000000-0000-0000-0000-0000000000a2', true);
