@@ -1,4 +1,4 @@
-import { useRouter, type RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 import { t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
@@ -19,9 +19,8 @@ export function NewTaskButton({
       testID={testID}
       accessibilityRole="button"
       onPress={() =>
-        // Cast until the task/new route file exists (Task 8) and typed routes include it.
         router.push({
-          pathname: '/task/new' as RelativePathString,
+          pathname: '/task/new',
           params: assigneeId ? { assignee: assigneeId } : {},
         })
       }

@@ -122,7 +122,10 @@ function Guard() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="task/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
+      </Stack>
       {failed ? (
         <MembershipError
           network={toAppError(membershipQuery.error).code === 'NETWORK'}

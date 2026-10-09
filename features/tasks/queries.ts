@@ -1,4 +1,11 @@
-import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+  type MutateOptions,
+} from '@tanstack/react-query';
+import { useRef } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { listTasks } from './api';
@@ -20,16 +27,36 @@ export function useTasks(householdId: string | undefined) {
   });
 }
 
-/** Runs a task RPC and refreshes the task list on success. */
+/**
+ * Runs a task RPC and refreshes the task list on success.
+ *
+ * `submit` is `mutate` for forms that close on success: it ignores calls while one is in flight
+ * or after one succeeded, so a quick double tap runs the RPC (and the close) only once. The check
+ * is synchronous because render-time `isPending` lags behind a double tap. A failure unlocks it
+ * so the user can try again.
+ */
 export function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const queryClient = useQueryClient();
-  return useMutation<TResult, AppError, TArgs>({
+  const locked = useRef(false);
+  const mutation = useMutation<TResult, AppError, TArgs>({
     mutationFn: fn,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error) => invalidateIfStale(queryClient, error),
   });
+  const submit = (args: TArgs, options?: MutateOptions<TResult, AppError, TArgs>) => {
+    if (locked.current) return;
+    locked.current = true;
+    mutation.mutate(args, {
+      ...options,
+      onError: (...params) => {
+        locked.current = false;
+        options?.onError?.(...params);
+      },
+    });
+  };
+  return { ...mutation, submit };
 }
 
 /** Completes or reopens a task, optimistically. Ignores taps while that task is in flight. */

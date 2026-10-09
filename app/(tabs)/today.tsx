@@ -1,4 +1,4 @@
-import { useRouter, type RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
@@ -94,9 +94,7 @@ export default function TodayScreen() {
     }
   };
 
-  const openTask = (id: string) =>
-    // Cast until the task/[id] route file exists (Task 8); remove once Task 8 adds the route.
-    router.push({ pathname: '/task/[id]' as RelativePathString, params: { id } });
+  const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
 
   const empty =
     members.length === 1 ? (
