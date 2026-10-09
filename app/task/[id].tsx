@@ -69,6 +69,7 @@ export default function EditTaskScreen() {
     room: task.room,
     assigneeId: task.assigneeId,
     dueOn: task.dueOn,
+    recurrence: task.recurrence,
   };
 
   return (

@@ -8,7 +8,8 @@ import {
 import { useRef } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
-import { listTasks } from './api';
+import { localDateIso } from '@/domain/tasks/dates';
+import { listTasks, skipTask } from './api';
 import { buildToggleOptions, invalidateIfStale, type ToggleVars } from './toggle';
 
 export const tasksKey = (householdId: string | undefined) => ['tasks', householdId] as const;
@@ -57,6 +58,11 @@ export function useTaskMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TRe
     });
   };
   return { ...mutation, submit };
+}
+
+/** Skips the current occurrence of a recurring task. */
+export function useSkipTask(_householdId: string | undefined) {
+  return useTaskMutation((id: string) => skipTask(id, localDateIso(new Date())));
 }
 
 /** Completes or reopens a task, optimistically. Ignores taps while that task is in flight. */

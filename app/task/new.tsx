@@ -29,6 +29,7 @@ export default function NewTaskScreen() {
     room: null,
     assigneeId: params.assignee ?? null,
     dueOn: today,
+    recurrence: null,
   };
 
   return (

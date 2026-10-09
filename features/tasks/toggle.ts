@@ -1,6 +1,7 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { membershipKey } from '@/features/households/keys';
+import { localDateIso } from '@/domain/tasks/dates';
 import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
@@ -35,7 +36,8 @@ export function buildToggleOptions(
   const key = ['tasks', householdId];
   return {
     mutationKey: TOGGLE_KEY,
-    mutationFn: ({ id, done }) => (done ? completeTask(id) : reopenTask(id)),
+    mutationFn: ({ id, done }) =>
+      done ? completeTask(id, localDateIso(new Date())) : reopenTask(id),
     onMutate: async ({ id, done }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<TaskItem[]>(key)?.find((task) => task.id === id);

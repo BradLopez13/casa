@@ -5,7 +5,7 @@ import { recurrenceRuleSchema, type RecurrenceRule } from './rule';
 
 const typedCases = cases.map((c) => ({
   ...c,
-  rule: recurrenceRuleSchema.parse(c.rule) as RecurrenceRule,
+  rule: recurrenceRuleSchema.parse(c.rule),
 }));
 
 describe('calculateNextOccurrence', () => {

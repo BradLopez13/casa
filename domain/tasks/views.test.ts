@@ -14,6 +14,9 @@ function task(over: Partial<TaskItem> = {}): TaskItem {
     dueOn: null,
     completedAt: null,
     completedBy: null,
+    recurrence: null,
+    skippedAt: null,
+    generatedFrom: null,
     createdBy: null,
     createdAt: new Date(2026, 9, 1, 8, seq).toISOString(),
     ...over,
@@ -150,5 +153,35 @@ describe('timestamp ordering', () => {
     const early = task({ completedAt: plain });
     const late = task({ completedAt: fractional });
     expect(selectAll([early, late], '2026-10-05').done).toEqual([late, early]);
+  });
+});
+
+describe('skipped tasks', () => {
+  const skipped = (over: Partial<TaskItem> = {}) =>
+    task({ skippedAt: new Date(2026, 9, 4, 9, 0).toISOString(), ...over });
+
+  it('never appear in selectToday', () => {
+    const overdue = skipped({ dueOn: '2026-10-01' });
+    const dueToday = skipped({ dueOn: '2026-10-04' });
+    const doneToday = skipped({ completedAt: new Date(2026, 9, 4, 9, 0).toISOString() });
+    expect(selectToday([overdue, dueToday, doneToday], '2026-10-04')).toEqual({
+      overdue: [],
+      dueToday: [],
+      doneToday: [],
+    });
+  });
+
+  it('never appear in selectAll', () => {
+    const out = selectAll([skipped({ dueOn: '2026-10-04' }), skipped()], '2026-10-04');
+    expect(out).toEqual({ dated: [], undated: [], done: [] });
+  });
+
+  it('never appear in selectWeek', () => {
+    const out = selectWeek(
+      [skipped({ dueOn: '2026-10-01' }), skipped({ dueOn: '2026-10-05' })],
+      '2026-10-04',
+    );
+    expect(out.overdue).toEqual([]);
+    expect(out.days.every((d) => d.tasks.length === 0)).toBe(true);
   });
 });

@@ -1,7 +1,8 @@
 import * as Crypto from 'expo-crypto';
+import type { Json } from '@/data/supabase/database.types';
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
-import { localDateIso } from '@/domain/tasks/dates';
+import { recurrenceRuleSchema, type RecurrenceRule } from '@/domain/recurrence/rule';
 import type { Room } from '@/domain/tasks/rooms';
 import type { TaskItem } from '@/domain/tasks/views';
 
@@ -10,6 +11,7 @@ export type TaskInput = {
   room: Room | null;
   assigneeId: string | null;
   dueOn: string | null;
+  recurrence: RecurrenceRule | null;
 };
 
 type Result<D> = PromiseLike<{ data: D; error: unknown }>;
@@ -35,16 +37,22 @@ async function unwrap<D>(promise: Result<D>): Promise<NonNullable<D>> {
 
 export const newTaskId = (): string => Crypto.randomUUID();
 
+/** An unreadable stored rule degrades to a non-recurring task. */
+function parseRule(raw: unknown): RecurrenceRule | null {
+  const parsed = recurrenceRuleSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}
+
 /** Open tasks plus those completed since `since` (ISO instant). */
 export async function listTasks(householdId: string, since: string): Promise<TaskItem[]> {
   const data = await unwrap(
     supabase
       .from('task_occurrences')
       .select(
-        'id, due_on, assignee_id, completed_at, completed_by, created_at, series_id, task_series(title, room, created_by)',
+        'id, due_on, assignee_id, completed_at, completed_by, created_at, series_id, skipped_at, generated_from, task_series(title, room, created_by, recurrence_rule)',
       )
       .eq('household_id', householdId)
-      .or(`completed_at.is.null,completed_at.gte.${since}`),
+      .or(`and(completed_at.is.null,skipped_at.is.null),completed_at.gte.${since}`),
   );
   return data.map((row) => ({
     id: row.id,
@@ -58,6 +66,9 @@ export async function listTasks(householdId: string, since: string): Promise<Tas
     completedBy: row.completed_by,
     createdBy: row.task_series?.created_by ?? null,
     createdAt: new Date(row.created_at).toISOString(),
+    recurrence: parseRule(row.task_series?.recurrence_rule),
+    skippedAt: row.skipped_at === null ? null : new Date(row.skipped_at).toISOString(),
+    generatedFrom: row.generated_from,
   }));
 }
 
@@ -77,7 +88,7 @@ export async function createTask(
       p_room: nullable(input.room),
       p_assignee_id: nullable(input.assigneeId),
       p_due_on: nullable(input.dueOn),
-      p_recurrence: null,
+      p_recurrence: input.recurrence as Json,
     }),
   );
 }
@@ -90,7 +101,7 @@ export async function updateTask(id: string, input: TaskInput): Promise<void> {
       p_room: nullable(input.room),
       p_assignee_id: nullable(input.assigneeId),
       p_due_on: nullable(input.dueOn),
-      p_recurrence: null,
+      p_recurrence: input.recurrence as Json,
     }),
   );
 }
@@ -99,8 +110,12 @@ export async function deleteTask(id: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('delete_task', { p_id: id }));
 }
 
-export async function completeTask(id: string): Promise<void> {
-  await unwrapMaybe(supabase.rpc('complete_task', { p_id: id, p_today: localDateIso(new Date()) }));
+export async function completeTask(id: string, today: string): Promise<void> {
+  await unwrapMaybe(supabase.rpc('complete_task', { p_id: id, p_today: today }));
+}
+
+export async function skipTask(id: string, today: string): Promise<void> {
+  await unwrapMaybe(supabase.rpc('skip_task', { p_id: id, p_today: today }));
 }
 
 export async function reopenTask(id: string): Promise<void> {

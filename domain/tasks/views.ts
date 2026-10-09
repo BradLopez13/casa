@@ -1,4 +1,5 @@
 import { addDays, localDateIso } from './dates';
+import type { RecurrenceRule } from '@/domain/recurrence/rule';
 import type { Room } from './rooms';
 
 export type TaskItem = {
@@ -12,11 +13,15 @@ export type TaskItem = {
   completedBy: string | null;
   createdBy: string | null;
   createdAt: string;
+  recurrence: RecurrenceRule | null;
+  skippedAt: string | null;
+  generatedFrom: string | null;
 };
 
 const WEEK_DAYS = 7;
 
-const isOpen = (t: TaskItem) => t.completedAt === null;
+const isOpen = (t: TaskItem) => t.completedAt === null && t.skippedAt === null;
+const isDone = (t: TaskItem) => t.completedAt !== null && t.skippedAt === null;
 const byCreatedAt = (a: TaskItem, b: TaskItem) => Date.parse(a.createdAt) - Date.parse(b.createdAt);
 // Compare instants numerically: Postgres timestamps vary in fractional digits and offset.
 const byDueOn = (a: TaskItem, b: TaskItem) =>
@@ -37,7 +42,12 @@ export function selectToday(
     overdue: tasks.filter((t) => isOverdue(t, today)).sort(byDueOn),
     dueToday: tasks.filter((t) => isOpen(t) && t.dueOn === today).sort(byCreatedAt),
     doneToday: tasks
-      .filter((t) => t.completedAt !== null && localDateIso(new Date(t.completedAt)) === today)
+      .filter(
+        (t) =>
+          t.completedAt !== null &&
+          t.skippedAt === null &&
+          localDateIso(new Date(t.completedAt)) === today,
+      )
       .sort(byCompletedDesc),
   };
 }
@@ -61,7 +71,7 @@ export function selectAll(
   return {
     dated: tasks.filter((t) => isOpen(t) && t.dueOn !== null).sort(byDueOn),
     undated: tasks.filter((t) => isOpen(t) && t.dueOn === null).sort(byCreatedAt),
-    done: tasks.filter((t) => !isOpen(t)).sort(byCompletedDesc),
+    done: tasks.filter(isDone).sort(byCompletedDesc),
   };
 }
 
