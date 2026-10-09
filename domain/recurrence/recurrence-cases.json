@@ -1,0 +1,184 @@
+[
+  {
+    "name": "interval-1-on-time",
+    "rule": { "kind": "interval", "every": 1 },
+    "dueOn": "2026-10-09",
+    "today": "2026-10-09",
+    "expected": "2026-10-10"
+  },
+  {
+    "name": "interval-1-early",
+    "rule": { "kind": "interval", "every": 1 },
+    "dueOn": "2026-10-12",
+    "today": "2026-10-09",
+    "expected": "2026-10-13"
+  },
+  {
+    "name": "interval-3-late",
+    "rule": { "kind": "interval", "every": 3 },
+    "dueOn": "2026-10-01",
+    "today": "2026-10-11",
+    "expected": "2026-10-14"
+  },
+  {
+    "name": "interval-365",
+    "rule": { "kind": "interval", "every": 365 },
+    "dueOn": "2026-10-09",
+    "today": "2026-10-09",
+    "expected": "2027-10-09"
+  },
+  {
+    "name": "weekly-mon-thu-on-time",
+    "rule": { "kind": "weekly", "days": [1, 4] },
+    "dueOn": "2026-10-05",
+    "today": "2026-10-05",
+    "expected": "2026-10-08"
+  },
+  {
+    "name": "weekly-mon-thu-late",
+    "rule": { "kind": "weekly", "days": [1, 4] },
+    "dueOn": "2026-10-05",
+    "today": "2026-10-07",
+    "expected": "2026-10-08"
+  },
+  {
+    "name": "weekly-mon-thu-early",
+    "rule": { "kind": "weekly", "days": [1, 4] },
+    "dueOn": "2026-10-08",
+    "today": "2026-10-06",
+    "expected": "2026-10-12"
+  },
+  {
+    "name": "weekly-single-saturday",
+    "rule": { "kind": "weekly", "days": [6] },
+    "dueOn": "2026-10-10",
+    "today": "2026-10-10",
+    "expected": "2026-10-17"
+  },
+  {
+    "name": "weekly-all-days",
+    "rule": { "kind": "weekly", "days": [1, 2, 3, 4, 5, 6, 7] },
+    "dueOn": "2026-10-09",
+    "today": "2026-10-09",
+    "expected": "2026-10-10"
+  },
+  {
+    "name": "weekly-edited",
+    "rule": { "kind": "weekly", "days": [3] },
+    "dueOn": "2026-10-05",
+    "today": "2026-10-05",
+    "expected": "2026-10-07"
+  },
+  {
+    "name": "weekly-late-weeks",
+    "rule": { "kind": "weekly", "days": [1] },
+    "dueOn": "2026-09-07",
+    "today": "2026-10-09",
+    "expected": "2026-10-12"
+  },
+  {
+    "name": "monthly-31-jan-common",
+    "rule": { "kind": "monthly", "day": 31 },
+    "dueOn": "2027-01-31",
+    "today": "2027-01-31",
+    "expected": "2027-02-28"
+  },
+  {
+    "name": "monthly-31-jan-leap",
+    "rule": { "kind": "monthly", "day": 31 },
+    "dueOn": "2028-01-31",
+    "today": "2028-01-31",
+    "expected": "2028-02-29"
+  },
+  {
+    "name": "monthly-31-back-to-31",
+    "rule": { "kind": "monthly", "day": 31 },
+    "dueOn": "2027-02-28",
+    "today": "2027-02-28",
+    "expected": "2027-03-31"
+  },
+  {
+    "name": "monthly-29-leap",
+    "rule": { "kind": "monthly", "day": 29 },
+    "dueOn": "2028-02-29",
+    "today": "2028-02-29",
+    "expected": "2028-03-29"
+  },
+  {
+    "name": "monthly-29-common-feb",
+    "rule": { "kind": "monthly", "day": 29 },
+    "dueOn": "2029-01-29",
+    "today": "2029-01-29",
+    "expected": "2029-02-28"
+  },
+  {
+    "name": "monthly-29-year-change",
+    "rule": { "kind": "monthly", "day": 29 },
+    "dueOn": "2028-12-29",
+    "today": "2028-12-29",
+    "expected": "2029-01-29"
+  },
+  {
+    "name": "monthly-on-time",
+    "rule": { "kind": "monthly", "day": 9 },
+    "dueOn": "2026-10-09",
+    "today": "2026-10-09",
+    "expected": "2026-11-09"
+  },
+  {
+    "name": "monthly-early",
+    "rule": { "kind": "monthly", "day": 15 },
+    "dueOn": "2026-10-15",
+    "today": "2026-10-09",
+    "expected": "2026-11-15"
+  },
+  {
+    "name": "monthly-late-before-day",
+    "rule": { "kind": "monthly", "day": 15 },
+    "dueOn": "2026-09-15",
+    "today": "2026-10-03",
+    "expected": "2026-10-15"
+  },
+  {
+    "name": "monthly-late-after-day",
+    "rule": { "kind": "monthly", "day": 15 },
+    "dueOn": "2026-09-15",
+    "today": "2026-10-20",
+    "expected": "2026-11-15"
+  },
+  {
+    "name": "dst-march",
+    "rule": { "kind": "interval", "every": 1 },
+    "dueOn": "2026-03-29",
+    "today": "2026-03-29",
+    "expected": "2026-03-30"
+  },
+  {
+    "name": "dst-october",
+    "rule": { "kind": "interval", "every": 1 },
+    "dueOn": "2026-10-25",
+    "today": "2026-10-25",
+    "expected": "2026-10-26"
+  },
+  {
+    "name": "dst-october-weekly",
+    "rule": { "kind": "weekly", "days": [7] },
+    "dueOn": "2026-10-25",
+    "today": "2026-10-25",
+    "expected": "2026-11-01"
+  },
+  {
+    "name": "year-change-interval",
+    "rule": { "kind": "interval", "every": 1 },
+    "dueOn": "2026-12-31",
+    "today": "2026-12-31",
+    "expected": "2027-01-01"
+  },
+  {
+    "name": "year-change-weekly",
+    "rule": { "kind": "weekly", "days": [5] },
+    "dueOn": "2026-12-31",
+    "today": "2026-12-31",
+    "expected": "2027-01-01"
+  }
+]

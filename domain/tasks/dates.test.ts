@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysBetween, localDateIso, toLocalDate } from './dates';
+import { addDays, daysBetween, isoWeekday, localDateIso, toLocalDate } from './dates';
 
 describe('addDays', () => {
   it.each<[string, number, string]>([
@@ -47,5 +47,12 @@ describe('toLocalDate', () => {
     for (const iso of ['2026-01-01', '2028-02-29', '2026-03-29', '2026-10-25', '2026-12-31']) {
       expect(localDateIso(toLocalDate(iso))).toBe(iso);
     }
+  });
+});
+
+describe('isoWeekday', () => {
+  it('numbers Monday 1 to Sunday 7', () => {
+    expect(isoWeekday('2026-10-05')).toBe(1);
+    expect(isoWeekday('2026-10-11')).toBe(7);
   });
 });
