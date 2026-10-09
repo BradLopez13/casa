@@ -14,7 +14,7 @@ module.exports = defineConfig([
   ]),
   expoConfig,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx}', 'scripts/**/*.mts'],
     extends: [tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: { projectService: true },
