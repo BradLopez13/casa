@@ -10,17 +10,25 @@ type Props = {
   tasks: TaskItem[];
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
+  /** The signed-in user, read out as "hecha por ti". */
+  userId: string | null;
   onReopen: (task: TaskItem) => void;
 };
 
 /** Finished tasks as small pills; tapping one reopens it. */
-export function DoneTray({ tasks, marks, names, onReopen }: Props) {
+export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
   const { colors, radii, space } = useTheme();
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
       {tasks.map((task) => {
         const mark = task.completedBy ? marks.get(task.completedBy) : undefined;
         const name = task.completedBy ? names.get(task.completedBy) : undefined;
+        const label =
+          task.completedBy !== null && task.completedBy === userId
+            ? t('tasks.a11y.reopenByYou', { title: task.title })
+            : name
+              ? t('tasks.a11y.reopenBy', { title: task.title, name })
+              : t('tasks.a11y.reopen', { title: task.title });
         return (
           <Pressable
             key={task.id}
@@ -28,12 +36,13 @@ export function DoneTray({ tasks, marks, names, onReopen }: Props) {
             onPress={() => onReopen(task)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: true }}
-            accessibilityLabel={t('tasks.a11y.reopen', { title: task.title })}
+            accessibilityLabel={label}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: space(2),
               minHeight: MIN_TOUCH,
+              maxWidth: '100%',
               paddingLeft: space(2),
               paddingRight: space(3),
               borderRadius: radii.pill,
@@ -50,8 +59,14 @@ export function DoneTray({ tasks, marks, names, onReopen }: Props) {
               accessibilityLabel={name ?? ''}
             />
             <Text
+              numberOfLines={2}
               maxFontSizeMultiplier={1.3}
-              style={{ color: colors.muted, fontSize: 14, textDecorationLine: 'line-through' }}
+              style={{
+                flexShrink: 1,
+                color: colors.muted,
+                fontSize: 14,
+                textDecorationLine: 'line-through',
+              }}
             >
               {task.title}
             </Text>

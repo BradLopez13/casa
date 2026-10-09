@@ -42,6 +42,10 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
   const overdue = isOverdue(task, today);
   const room = task.room ? t(`rooms.${task.room}`) : null;
   const due = overdue && task.dueOn ? overdueLabel(task.dueOn, today) : dueLabel(task.dueOn, today);
+  // The magnet is hidden from screen readers, so the note itself says who it is for.
+  const label = [task.title, assigneeName ?? t('tasks.a11y.unassigned'), room, due]
+    .filter((part) => part !== null)
+    .join(', ');
 
   const press = () => {
     if (!reduceMotion) {
@@ -97,6 +101,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         testID={`task-note.${task.id}`}
         onPress={onOpen}
         accessibilityRole="button"
+        accessibilityLabel={label}
         accessibilityHint={t('tasks.a11y.edit')}
         style={{
           flex: 1,

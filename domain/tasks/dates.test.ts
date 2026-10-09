@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysBetween, localDateIso } from './dates';
+import { addDays, daysBetween, localDateIso, toLocalDate } from './dates';
 
 describe('addDays', () => {
   it.each<[string, number, string]>([
@@ -34,5 +34,18 @@ describe('localDateIso', () => {
   });
   it('pads month and day', () => {
     expect(localDateIso(new Date(2026, 0, 2, 12, 0))).toBe('2026-01-02');
+  });
+});
+
+describe('toLocalDate', () => {
+  it('reads the local calendar fields at midnight', () => {
+    const date = toLocalDate('2026-10-09');
+    expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 9, 9]);
+    expect([date.getHours(), date.getMinutes()]).toEqual([0, 0]);
+  });
+  it('round-trips through localDateIso', () => {
+    for (const iso of ['2026-01-01', '2028-02-29', '2026-03-29', '2026-10-25', '2026-12-31']) {
+      expect(localDateIso(toLocalDate(iso))).toBe(iso);
+    }
   });
 });

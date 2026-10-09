@@ -13,11 +13,12 @@ export function NewTaskButton({
   assigneeId: string | null;
 }) {
   const router = useRouter();
-  const { colors, shadows, radii, space } = useTheme();
+  const { colors, radii, space } = useTheme();
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={t('tasks.new')}
       onPress={() =>
         router.push({
           pathname: '/task/new',
@@ -34,7 +35,6 @@ export function NewTaskButton({
         borderRadius: radii.pill,
         backgroundColor: colors.cobalt,
         opacity: pressed ? 0.85 : 1,
-        ...shadows.note,
       })}
     >
       <Text

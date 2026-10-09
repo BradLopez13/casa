@@ -1,6 +1,6 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Platform, Pressable, Text, View } from 'react-native';
-import { addDays, localDateIso } from '@/domain/tasks/dates';
+import { addDays, localDateIso, toLocalDate } from '@/domain/tasks/dates';
 import { isQuickDay, quickDays } from '@/domain/tasks/day-cells';
 import { locale, t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
@@ -13,12 +13,6 @@ type Props = {
   /** Phase 4 hides "Sin fecha" for tasks that must have a date. */
   noneDisabled?: boolean;
 };
-
-/** A local Date from YYYY-MM-DD (local fields, never UTC). */
-function toDate(iso: string): Date {
-  const [y = 1970, m = 1, d = 1] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
 
 type CellProps = {
   testID: string;
@@ -87,13 +81,13 @@ export function DayCells({ value, today, onChange, noneDisabled }: Props) {
 
   const otherLabel =
     otherValue !== null
-      ? toDate(otherValue).toLocaleDateString(locale, { weekday: 'short', day: 'numeric' })
+      ? toLocalDate(otherValue).toLocaleDateString(locale, { weekday: 'short', day: 'numeric' })
       : t('taskForm.dueOther');
 
   const openOther = () => {
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
-        value: toDate(value ?? today),
+        value: toLocalDate(value ?? today),
         mode: 'date',
         minimumDate: undefined,
         onChange: (event, date) => {
@@ -117,12 +111,12 @@ export function DayCells({ value, today, onChange, noneDisabled }: Props) {
           <Cell
             key={day}
             testID={`task-form.due.${day}`}
-            top={String(toDate(day).getDate())}
+            top={String(toLocalDate(day).getDate())}
             topIsDisplay
             label={
               i === 0
                 ? t('tasks.due.today')
-                : toDate(day).toLocaleDateString(locale, { weekday: 'short' })
+                : toLocalDate(day).toLocaleDateString(locale, { weekday: 'short' })
             }
             selected={value === day}
             onPress={() => onChange(day)}
@@ -144,7 +138,7 @@ export function DayCells({ value, today, onChange, noneDisabled }: Props) {
       </View>
       {showIosPicker ? (
         <DateTimePicker
-          value={toDate(otherValue)}
+          value={toLocalDate(otherValue)}
           mode="date"
           display="inline"
           onChange={(_event, date) => {
