@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(28);
 
 -- valid_recurrence: the same shapes recurrenceRuleSchema accepts ---------------
 
@@ -26,6 +26,27 @@ select ok(not private.valid_recurrence('{"kind":"interval","every":2,"extra":1}'
 select ok(not private.valid_recurrence('null'::jsonb), 'rejects json null');
 select ok(not private.valid_recurrence('[]'::jsonb), 'rejects an array');
 select ok(not private.valid_recurrence('{"kind":"interval","every":"2"}'), 'rejects a numeric string');
+
+-- next_due_on: integral numbers that are not canonical ints --------------------
+
+select is(
+  private.next_due_on('{"kind":"interval","every":3.0}', '2026-10-09', '2026-10-09'),
+  '2026-10-12'::date,
+  'next_due_on reads an interval written as 3.0'
+);
+
+select is(
+  private.next_due_on('{"kind":"monthly","day":9.0}', '2026-10-09', '2026-10-09'),
+  '2026-11-09'::date,
+  'next_due_on reads a monthly day written as 9.0'
+);
+
+select throws_ok(
+  $$select private.next_due_on('{"kind":"yearly"}', '2026-10-09', '2026-10-09')$$,
+  '22023',
+  null,
+  'next_due_on raises on an invalid rule'
+);
 
 -- the check constraint on task_series -------------------------------------------
 
@@ -58,6 +79,11 @@ select ok(
 select ok(
   not has_function_privilege('authenticated', 'private.next_due_on(jsonb, date, date)', 'execute'),
   'authenticated cannot execute next_due_on'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'private.close_occurrence(uuid, date, boolean)', 'execute'),
+  'authenticated cannot execute close_occurrence'
 );
 
 select * from finish();
