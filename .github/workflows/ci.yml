@@ -46,6 +46,7 @@ jobs:
           version: 2.119.0
       - run: supabase db start
       - run: supabase test db
+      - run: pnpm gen:recurrence-tests && git diff --exit-code supabase/tests/recurrence_cases.test.sql
       - run: pnpm db:types && git diff --exit-code data/supabase/database.types.ts
 
   e2e-android:
