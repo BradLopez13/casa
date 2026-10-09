@@ -31,8 +31,8 @@ import {
   boughtKey,
   buildShoppingMutationDefaults,
   persistBuster,
-  shouldPersistMutation,
-  shouldPersistQuery,
+  persistDehydrateOptions,
+  resumeShoppingQueue,
 } from '@/features/shopping/offline';
 
 void SplashScreen.preventAutoHideAsync();
@@ -88,14 +88,13 @@ function PersistedQueries({ children }: { children: ReactNode }) {
         persister,
         maxAge: PERSIST_MAX_AGE_MS,
         buster,
-        dehydrateOptions: {
-          shouldDehydrateQuery: (query) =>
-            shouldPersistQuery(query.queryKey) && query.state.status === 'success',
-          shouldDehydrateMutation: (mutation) =>
-            mutation.state.isPaused && shouldPersistMutation(mutation.options.mutationKey),
-        },
+        dehydrateOptions: persistDehydrateOptions,
       }}
-      onSuccess={() => queryClient.resumePausedMutations()}
+      // Not awaited: the provider stays in its restoring state until onSuccess settles, and the
+      // queue may take as long as the connection does.
+      onSuccess={() => {
+        void resumeShoppingQueue(queryClient);
+      }}
     >
       {children}
     </PersistQueryClientProvider>

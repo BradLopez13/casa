@@ -1,4 +1,10 @@
-import type { MutationKey, MutationOptions, QueryClient, QueryKey } from '@tanstack/react-query';
+import type {
+  DehydrateOptions,
+  MutationKey,
+  MutationOptions,
+  QueryClient,
+  QueryKey,
+} from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
@@ -22,9 +28,17 @@ export type AddContext = { item: ShoppingItem; added: boolean };
 export type BoughtVars = { id: string; householdId: string; bought: boolean; userId: string };
 export type BoughtContext = { previous: ShoppingItem | undefined };
 
-const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set(['shopping', 'shopping-history']);
+const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
+  'shopping',
+  'shopping-history',
+  'membership',
+  'members',
+]);
 
-/** Only the shopping list and its history are kept on the device. */
+/**
+ * Kept on the device: the shopping list and its history, plus the membership (an offline cold
+ * start gets past the route guard) and the members (the buyers' magnets).
+ */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {
   return PERSISTED_QUERIES.has(queryKey[0]);
 }
@@ -38,6 +52,29 @@ export function shouldPersistMutation(mutationKey: MutationKey | undefined): boo
     mutationKey?.[0] === 'shopping' &&
     (mutationKey[1] === addKey[1] || mutationKey[1] === boughtKey[1])
   );
+}
+
+/**
+ * What goes on the device: settled persisted queries, and every queued add or bought still
+ * pending. That includes one in flight or waiting to retry when the app closes; resending it is
+ * safe, because the add is idempotent by id and the bought sets an absolute value.
+ */
+export const persistDehydrateOptions: DehydrateOptions = {
+  shouldDehydrateQuery: (query) =>
+    shouldPersistQuery(query.queryKey) && query.state.status === 'success',
+  shouldDehydrateMutation: (mutation) =>
+    mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey),
+};
+
+/**
+ * Resumes the restored queue, in order (the scope serializes it). `resumePausedMutations` alone
+ * would skip the mutations that were in flight when the app closed: they restore unpaused.
+ */
+export function resumeShoppingQueue(queryClient: QueryClient): Promise<unknown> {
+  const queued = queryClient
+    .getMutationCache()
+    .findAll({ status: 'pending', predicate: (m) => shouldPersistMutation(m.options.mutationKey) });
+  return Promise.all(queued.map((m) => m.continue().catch(() => undefined)));
 }
 
 /** A persisted cache from another app version or another user is discarded. */
@@ -57,10 +94,13 @@ export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Prom
   }
 }
 
-// A request that never reached the server keeps the mutation queued (retries pause while
-// offline) instead of dropping it; any other error is final.
-const retryOnNetwork = (_failureCount: number, error: AppError) =>
-  toAppError(error).code === 'NETWORK';
+export const NETWORK_RETRIES = 10;
+
+// A request that never reached the server is retried (retries pause while offline), with the
+// default backoff capped at 30 s. The cap keeps one stuck item from holding the scope, and with
+// it edits, deletes and clears, forever. Any other error is final.
+const retryOnNetwork = (failureCount: number, error: AppError) =>
+  failureCount < NETWORK_RETRIES && toAppError(error).code === 'NETWORK';
 
 export function buildShoppingMutationDefaults(
   queryClient: QueryClient,
@@ -107,8 +147,8 @@ export function buildShoppingMutationDefaults(
         current ? applyAdd(current, context.item, resolvedId) : current,
       );
     },
-    onError: (error, { id, householdId, name }, context) => {
-      if (toAppError(error).code === 'NETWORK') return;
+    // Offline the mutation pauses instead of failing, so this is a final error.
+    onError: (_error, { id, householdId, name }, context) => {
       if (context?.added) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
           current?.filter((i) => i.id !== id),
@@ -135,12 +175,12 @@ export function buildShoppingMutationDefaults(
       return { previous };
     },
     // Roll back only this item's bought state: other changes in flight keep theirs.
-    onError: (error, { id, householdId }, context) => {
-      if (toAppError(error).code === 'NETWORK') return;
+    onError: (_error, { id, householdId }, context) => {
+      const key = listKey(householdId);
+      const target = resolve(id);
       const previous = context?.previous;
       if (previous) {
-        const target = resolve(id);
-        queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
+        queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
           current?.map((i) =>
             i.id === target
               ? { ...i, boughtAt: previous.boughtAt, boughtBy: previous.boughtBy }
@@ -148,7 +188,9 @@ export function buildShoppingMutationDefaults(
           ),
         );
       }
-      syncFailed(previous?.name ?? '');
+      // An item no longer on the list has nothing to explain.
+      const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
+      if (item) syncFailed(item.name);
     },
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
