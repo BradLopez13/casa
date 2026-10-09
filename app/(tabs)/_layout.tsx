@@ -23,7 +23,7 @@ function tabIcon(active: IconName, inactive: IconName) {
   return TabIcon;
 }
 
-// Phase 1 has only Today and Settings; Tasks and Shopping arrive in their own plans.
+// Today, Tasks and Settings; Shopping arrives in its own plan.
 export default function TabsLayout() {
   const { colors } = useTheme();
   return (
@@ -43,6 +43,14 @@ export default function TabsLayout() {
             title: t('tabs.today'),
             tabBarButtonTestID: 'tab.today',
             tabBarIcon: tabIcon('sunny', 'sunny-outline'),
+          }}
+        />
+        <Tabs.Screen
+          name="tasks"
+          options={{
+            title: t('tabs.tasks'),
+            tabBarButtonTestID: 'tab.tasks',
+            tabBarIcon: tabIcon('list', 'list-outline'),
           }}
         />
         <Tabs.Screen

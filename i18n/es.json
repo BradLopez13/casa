@@ -49,6 +49,7 @@
   "errors.membershipNetwork": "No hay conexión. Comprueba tu red e inténtalo de nuevo.",
   "errors.retry": "Reintentar",
   "tabs.today": "Hoy",
+  "tabs.tasks": "Tareas",
   "tabs.settings": "Ajustes",
   "today.empty.title": "Todavía no hay nadie más en casa",
   "today.empty.body": "Invita a las personas con las que vives para compartir tareas y compra.",
@@ -149,5 +150,13 @@
   "tasks.section.today": "Para hoy",
   "tasks.section.doneToday": "Hechas hoy",
   "today.title": "Hoy",
-  "today.nothing": "Nada pendiente para hoy"
+  "today.nothing": "Nada pendiente para hoy",
+  "tasks.title": "Tareas",
+  "tasks.mode.week": "Semana",
+  "tasks.mode.all": "Todas",
+  "tasks.section.dated": "Con fecha",
+  "tasks.section.undated": "Sin fecha",
+  "tasks.section.done": "Hechas",
+  "tasks.empty": "No hay tareas",
+  "tasks.stripDay": "{day}, {count} tareas"
 }
