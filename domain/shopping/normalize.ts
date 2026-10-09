@@ -10,10 +10,16 @@ const accents = new Map([...FROM].map((char, index) => [char, TO[index]]));
 const runs = /[ \t\n\r\f\v\u00a0]+/g;
 const edges = /^[ \t\n\r\f\v\u00a0]+|[ \t\n\r\f\v\u00a0]+$/g;
 
+/** Trims with the pinned whitespace class, matching private.trim_item_text in SQL. */
+export function trimItemText(text: string): string {
+  return text.replace(edges, '');
+}
+
 export function normalizeItemName(name: string): string {
-  return [...name.toLowerCase()]
-    .map((char) => accents.get(char) ?? char)
-    .join('')
-    .replace(runs, ' ')
-    .replace(edges, '');
+  return trimItemText(
+    [...name.toLowerCase()]
+      .map((char) => accents.get(char) ?? char)
+      .join('')
+      .replace(runs, ' '),
+  );
 }
