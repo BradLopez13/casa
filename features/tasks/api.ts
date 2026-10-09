@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
+import { localDateIso } from '@/domain/tasks/dates';
 import type { Room } from '@/domain/tasks/rooms';
 import type { TaskItem } from '@/domain/tasks/views';
 
@@ -76,6 +77,7 @@ export async function createTask(
       p_room: nullable(input.room),
       p_assignee_id: nullable(input.assigneeId),
       p_due_on: nullable(input.dueOn),
+      p_recurrence: null,
     }),
   );
 }
@@ -88,6 +90,7 @@ export async function updateTask(id: string, input: TaskInput): Promise<void> {
       p_room: nullable(input.room),
       p_assignee_id: nullable(input.assigneeId),
       p_due_on: nullable(input.dueOn),
+      p_recurrence: null,
     }),
   );
 }
@@ -97,7 +100,7 @@ export async function deleteTask(id: string): Promise<void> {
 }
 
 export async function completeTask(id: string): Promise<void> {
-  await unwrapMaybe(supabase.rpc('complete_task', { p_id: id }));
+  await unwrapMaybe(supabase.rpc('complete_task', { p_id: id, p_today: localDateIso(new Date()) }));
 }
 
 export async function reopenTask(id: string): Promise<void> {

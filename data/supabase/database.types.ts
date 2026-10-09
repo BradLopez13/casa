@@ -77,13 +77,13 @@ isOneToOne: false
                   ]
                 },"task_occurrences": {
                   Row: {
-                    "assignee_id": string | null,"completed_at": string | null,"completed_by": string | null,"created_at": string,"due_on": string | null,"household_id": string,"id": string,"series_id": string
+                    "assignee_id": string | null,"completed_at": string | null,"completed_by": string | null,"created_at": string,"due_on": string | null,"generated_from": string | null,"household_id": string,"id": string,"series_id": string,"skipped_at": string | null,"skipped_by": string | null
                   }
                   Insert: {
-                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"household_id": string,"id"?: string,"series_id": string
+                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"generated_from"?: string | null,"household_id": string,"id"?: string,"series_id": string,"skipped_at"?: string | null,"skipped_by"?: string | null
                   }
                   Update: {
-                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"household_id"?: string,"id"?: string,"series_id"?: string
+                    "assignee_id"?: string | null,"completed_at"?: string | null,"completed_by"?: string | null,"created_at"?: string,"due_on"?: string | null,"generated_from"?: string | null,"household_id"?: string,"id"?: string,"series_id"?: string,"skipped_at"?: string | null,"skipped_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -92,6 +92,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["user_id"]
+    },{
+      foreignKeyName: "task_occurrences_generated_from_fkey"
+      columns: ["generated_from"]
+isOneToOne: false
+      referencedRelation: "task_occurrences"
+      referencedColumns: ["id"]
     },{
       foreignKeyName: "task_occurrences_household_id_fkey"
       columns: ["household_id"]
@@ -135,7 +141,7 @@ isOneToOne: false
 { Args: { "p_token": string }; Returns: string
                            },
 "complete_task":
-{ Args: { "p_id": string }; Returns: undefined
+{ Args: { "p_id": string,"p_today": string }; Returns: undefined
                            },
 "create_household":
 { Args: { "p_name": string }; Returns: string
@@ -146,7 +152,7 @@ isOneToOne: false
             }[]
                            },
 "create_task":
-{ Args: { "p_assignee_id": string,"p_due_on": string,"p_household_id": string,"p_id": string,"p_room": string,"p_title": string }; Returns: string
+{ Args: { "p_assignee_id": string,"p_due_on": string,"p_household_id": string,"p_id": string,"p_recurrence": Json,"p_room": string,"p_title": string }; Returns: string
                            },
 "delete_household":
 { Args: { "p_household_id": string }; Returns: undefined
@@ -166,11 +172,14 @@ isOneToOne: false
 "revoke_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
                            },
+"skip_task":
+{ Args: { "p_id": string,"p_today": string }; Returns: undefined
+                           },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
                            },
 "update_task":
-{ Args: { "p_assignee_id": string,"p_due_on": string,"p_id": string,"p_room": string,"p_title": string }; Returns: undefined
+{ Args: { "p_assignee_id": string,"p_due_on": string,"p_id": string,"p_recurrence": Json,"p_room": string,"p_title": string }; Returns: undefined
                            }
           }
           Enums: {
