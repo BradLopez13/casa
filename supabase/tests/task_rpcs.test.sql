@@ -27,7 +27,7 @@ select tests.authenticate_as(:'bob');
 
 select is(
   public.create_task('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1',
-                     '  Fregar  ', 'kitchen', :'ana', '2026-10-10'),
+                     '  Fregar  ', 'kitchen', :'ana', '2026-10-10', null),
   '00000000-0000-0000-0000-0000000000d1'::uuid,
   'create_task returns the given id'
 );
@@ -42,7 +42,7 @@ select is(
 
 select is(
   public.create_task('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1',
-                     '  Fregar  ', 'kitchen', :'ana', '2026-10-10'),
+                     '  Fregar  ', 'kitchen', :'ana', '2026-10-10', null),
   '00000000-0000-0000-0000-0000000000d1'::uuid,
   'create_task with a repeated id returns the existing task'
 );
@@ -55,61 +55,61 @@ select is(
 
 select lives_ok(
   $$select public.create_task('00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000a1',
-                              'Sin fecha', null, null, null)$$,
+                              'Sin fecha', null, null, null, null)$$,
   'create_task without room, date or assignee'
 );
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', '   ', null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', '   ', null, null, null, null)$$,
   'P0001', 'INVALID_TITLE', 'blank title is rejected'
 );
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('x', 101), null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('x', 101), null, null, null, null)$$,
   'P0001', 'INVALID_TITLE', '101-char title is rejected'
 );
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', 'garage', null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', 'garage', null, null, null)$$,
   'P0001', 'INVALID_ROOM', 'unknown room is rejected'
 );
 
 select throws_ok(
-  format($$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, %L, null)$$, :'carla'),
+  format($$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, %L, null, null)$$, :'carla'),
   'P0001', 'INVALID_ASSIGNEE', 'assignee from another household is rejected'
 );
 
 select throws_ok(
-  format($$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, %L, null)$$, :'eva'),
+  format($$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, %L, null, null)$$, :'eva'),
   'P0001', 'INVALID_ASSIGNEE', 'assignee who left is rejected'
 );
 
 select lives_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('x', 100), null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('x', 100), null, null, null, null)$$,
   'a 100-char title is accepted'
 );
 
 select lives_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 100), null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 100), null, null, null, null)$$,
   '100 emoji (counted as characters) are accepted'
 );
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 101), null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', repeat('😀', 101), null, null, null, null)$$,
   'P0001', 'INVALID_TITLE', '101 emoji are rejected'
 );
 
 select tests.authenticate_as(:'dani');
 
 select throws_ok(
-  $$select public.create_task('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null)$$,
+  $$select public.create_task('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null, null)$$,
   'P0001', 'TASK_NOT_FOUND', 'repeated id from another author looks like not found'
 );
 
 select tests.authenticate_as(:'carla');
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null, null)$$,
   'P0001', 'NOT_A_MEMBER', 'non-member cannot create'
 );
 
@@ -117,7 +117,7 @@ select tests.clear_auth();
 set local role anon;
 
 select throws_ok(
-  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null)$$,
+  $$select public.create_task(gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'x', null, null, null, null)$$,
   '42501', null, 'anon cannot execute create_task'
 );
 
@@ -128,7 +128,7 @@ reset role;
 select tests.authenticate_as(:'dani');
 
 select lives_ok(
-  format($$select public.update_task('00000000-0000-0000-0000-0000000000d1', ' Barrer ', 'bedroom', %L, '2026-11-01')$$, :'dani'),
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000d1', ' Barrer ', 'bedroom', %L, '2026-11-01', null)$$, :'dani'),
   'member updates a task'
 );
 
@@ -145,29 +145,29 @@ select is(
 select tests.authenticate_as(:'dani');
 
 select throws_ok(
-  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', '', null, null, null)$$,
+  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', '', null, null, null, null)$$,
   'P0001', 'INVALID_TITLE', 'update_task validates the title'
 );
 
 select throws_ok(
-  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', 'garage', null, null)$$,
+  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', 'garage', null, null, null)$$,
   'P0001', 'INVALID_ROOM', 'update_task validates the room'
 );
 
 select throws_ok(
-  format($$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', null, %L, null)$$, :'eva'),
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', null, %L, null, null)$$, :'eva'),
   'P0001', 'INVALID_ASSIGNEE', 'update_task validates the assignee'
 );
 
 select tests.authenticate_as(:'carla');
 
 select throws_ok(
-  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', null, null, null)$$,
+  $$select public.update_task('00000000-0000-0000-0000-0000000000d1', 'x', null, null, null, null)$$,
   'P0001', 'TASK_NOT_FOUND', 'non-member update looks like not found'
 );
 
 select throws_ok(
-  $$select public.update_task(gen_random_uuid(), 'x', null, null, null)$$,
+  $$select public.update_task(gen_random_uuid(), 'x', null, null, null, null)$$,
   'P0001', 'TASK_NOT_FOUND', 'update of an unknown id is not found'
 );
 
@@ -186,12 +186,12 @@ where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'fay'
 select tests.authenticate_as(:'dani');
 
 select lives_ok(
-  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null)$$, :'fay'),
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null, null)$$, :'fay'),
   'update_task accepts the unchanged departed assignee'
 );
 
 select throws_ok(
-  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null)$$, :'eva'),
+  format($$select public.update_task('00000000-0000-0000-0000-0000000000f3', 'Hecha 2', null, %L, null, null)$$, :'eva'),
   'P0001', 'INVALID_ASSIGNEE', 'update_task rejects a different departed assignee'
 );
 
@@ -254,7 +254,7 @@ select tests.clear_auth();
 set local role anon;
 
 select throws_ok(
-  $$select public.update_task(gen_random_uuid(), 'x', null, null, null)$$,
+  $$select public.update_task(gen_random_uuid(), 'x', null, null, null, null)$$,
   '42501', null, 'anon cannot execute update_task'
 );
 

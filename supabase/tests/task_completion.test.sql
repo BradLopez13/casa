@@ -40,7 +40,7 @@ values
 -- complete_task ---------------------------------------------------------------
 
 select tests.authenticate_as(:'bob');
-select public.complete_task('00000000-0000-0000-0000-0000000000f1');
+select public.complete_task('00000000-0000-0000-0000-0000000000f1', current_date);
 
 select is(
   (select (completed_at is not null) || '|' || (completed_by = :'bob')
@@ -52,7 +52,7 @@ select is(
 select tests.authenticate_as(:'dani');
 
 select lives_ok(
-  $$select public.complete_task('00000000-0000-0000-0000-0000000000f1')$$,
+  $$select public.complete_task('00000000-0000-0000-0000-0000000000f1', current_date)$$,
   'completing an already completed task does not fail'
 );
 
@@ -93,7 +93,7 @@ select is(
 select tests.authenticate_as(:'carla');
 
 select throws_ok(
-  $$select public.complete_task('00000000-0000-0000-0000-0000000000f1')$$,
+  $$select public.complete_task('00000000-0000-0000-0000-0000000000f1', current_date)$$,
   'P0001', 'TASK_NOT_FOUND', 'non-member completion looks like not found'
 );
 
@@ -105,7 +105,7 @@ select throws_ok(
 select tests.authenticate_as(:'gus');
 
 select throws_ok(
-  $$select public.complete_task('00000000-0000-0000-0000-0000000000f4')$$,
+  $$select public.complete_task('00000000-0000-0000-0000-0000000000f4', current_date)$$,
   'P0001', 'TASK_NOT_FOUND', 'tasks of a deleted household are invisible to complete_task'
 );
 
@@ -118,7 +118,7 @@ select throws_ok(
 
 -- Fay completes her task and then leaves: the completed task keeps her for history.
 select tests.authenticate_as(:'fay');
-select public.complete_task('00000000-0000-0000-0000-0000000000f2');
+select public.complete_task('00000000-0000-0000-0000-0000000000f2', current_date);
 select tests.clear_auth();
 update public.household_members set left_at = now()
 where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'fay';
@@ -140,7 +140,7 @@ select is(
 );
 
 select tests.authenticate_as(:'bob');
-select public.complete_task('00000000-0000-0000-0000-0000000000f3');
+select public.complete_task('00000000-0000-0000-0000-0000000000f3', current_date);
 select tests.authenticate_as(:'dani');
 select public.reopen_task('00000000-0000-0000-0000-0000000000f3');
 
@@ -157,7 +157,7 @@ select tests.clear_auth();
 set local role anon;
 
 select throws_ok(
-  $$select public.complete_task(gen_random_uuid())$$,
+  $$select public.complete_task(gen_random_uuid(), current_date)$$,
   '42501', null, 'anon cannot execute complete_task'
 );
 

@@ -16,8 +16,9 @@ values
   ('00000000-0000-0000-0000-0000000000a1', :'dani', 'member');
 
 insert into public.task_series (id, household_id, title, room, created_by)
-values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1',
-        'Fregar', 'kitchen', :'ana');
+values
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1', 'Fregar', 'kitchen', :'ana'),
+  ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a1', 'Barrer', null, :'ana');
 
 insert into public.task_occurrences (id, series_id, household_id, due_on, assignee_id, completed_at, completed_by)
 values
@@ -25,9 +26,9 @@ values
    '00000000-0000-0000-0000-0000000000a1', current_date, :'bob', null, null),
   ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000b1',
    '00000000-0000-0000-0000-0000000000a1', current_date, :'bob', now(), :'bob'),
-  ('00000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000b1',
+  ('00000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000b2',
    '00000000-0000-0000-0000-0000000000a1', current_date, :'dani', null, null),
-  ('00000000-0000-0000-0000-0000000000c4', '00000000-0000-0000-0000-0000000000b1',
+  ('00000000-0000-0000-0000-0000000000c4', '00000000-0000-0000-0000-0000000000b2',
    '00000000-0000-0000-0000-0000000000a1', current_date, :'dani', now(), :'dani');
 
 -- Reads -----------------------------------------------------------------------
@@ -36,7 +37,7 @@ select tests.authenticate_as(:'bob');
 
 select is(
   (select count(*) from public.task_series)::text || '/' || (select count(*) from public.task_occurrences)::text,
-  '1/4',
+  '2/4',
   'member reads tasks of their household'
 );
 
@@ -100,8 +101,8 @@ insert into public.households (id, name, created_by)
 values ('00000000-0000-0000-0000-0000000000a2', 'Otra', :'ana');
 
 select throws_ok(
-  $$insert into public.task_occurrences (series_id, household_id)
-    values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a2')$$,
+  $$insert into public.task_occurrences (series_id, household_id, completed_at)
+    values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a2', now())$$,
   '23503', null, 'occurrence household must match its series household'
 );
 
