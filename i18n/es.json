@@ -158,5 +158,6 @@
   "tasks.section.undated": "Sin fecha",
   "tasks.section.done": "Hechas",
   "tasks.empty": "No hay tareas",
+  "tasks.weekEmpty": "Nada en los próximos 7 días",
   "tasks.stripDay": "{day}, {count} tareas"
 }

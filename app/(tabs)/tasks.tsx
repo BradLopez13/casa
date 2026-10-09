@@ -16,6 +16,7 @@ import { TaskNote } from '@/features/tasks/components/TaskNote';
 import { useTaskFilter } from '@/features/tasks/filter';
 import { useTasks, useToggleTask } from '@/features/tasks/queries';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
+import { sectionIndexFor } from '@/features/tasks/sectionTarget';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
@@ -47,16 +48,22 @@ export default function TasksScreen() {
   const [mode, setMode] = useState<TasksMode>('week');
   const [pulling, setPulling] = useState(false);
   const listRef = useRef<SectionList<Row, Section>>(null);
-  // The section a strip tap is aiming for, kept for one retry if the first scroll fails.
-  const pendingScroll = useRef<number | null>(null);
+  // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
+  const pendingScroll = useRef<string | null>(null);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read by the deferred retry, which must see the list as it is then, not as it was at the tap.
+  const modeRef = useRef<TasksMode>(mode);
+  const sectionsRef = useRef<Section[]>([]);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    modeRef.current = mode;
+    // Leaving a mode (or the screen) drops any scroll still aimed at it.
+    return () => {
       if (retryTimer.current) clearTimeout(retryTimer.current);
-    },
-    [],
-  );
+      retryTimer.current = null;
+      pendingScroll.current = null;
+    };
+  }, [mode]);
 
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const tasks = tasksQuery.data ?? NO_TASKS;
@@ -124,11 +131,23 @@ export default function TasksScreen() {
     return all.filter((section) => section.count > 0);
   }, [mode, week, filtered, today]);
 
+  useEffect(() => {
+    sectionsRef.current = sections;
+  }, [sections]);
+
   const scrollToDay = (date: string) => {
-    const sectionIndex = sections.findIndex((section) => section.key === date);
+    const sectionIndex = sectionIndexFor(date, sections);
     // A day with nothing on it has no section: the tap does nothing.
-    if (sectionIndex === -1) return;
-    pendingScroll.current = sectionIndex;
+    if (sectionIndex === null) return;
+    pendingScroll.current = date;
+    listRef.current?.scrollToLocation({ sectionIndex, itemIndex: 0, viewPosition: 0 });
+  };
+
+  const retryScroll = (date: string) => {
+    // The list may have changed since the tap: aim again only if that day still has a section.
+    if (modeRef.current !== 'week') return;
+    const sectionIndex = sectionIndexFor(date, sectionsRef.current);
+    if (sectionIndex === null) return;
     listRef.current?.scrollToLocation({ sectionIndex, itemIndex: 0, viewPosition: 0 });
   };
 
@@ -183,7 +202,10 @@ export default function TasksScreen() {
               <TaskListStates
                 query={tasksQuery}
                 empty={
-                  <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.empty')}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 16 }}>
+                    {/* Semana can be empty while Todas still has undated, later or done tasks. */}
+                    {t(mode === 'week' && filtered.length > 0 ? 'tasks.weekEmpty' : 'tasks.empty')}
+                  </Text>
                 }
               />
             </View>
@@ -227,11 +249,7 @@ export default function TasksScreen() {
             if (retryTimer.current) clearTimeout(retryTimer.current);
             retryTimer.current = setTimeout(() => {
               retryTimer.current = null;
-              listRef.current?.scrollToLocation({
-                sectionIndex: target,
-                itemIndex: 0,
-                viewPosition: 0,
-              });
+              retryScroll(target);
             }, SCROLL_RETRY_MS);
           }}
           // Room under the last note so the floating "Nueva tarea" pill never covers it.
