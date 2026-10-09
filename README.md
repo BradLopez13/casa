@@ -87,13 +87,13 @@ E2E en local. Necesita Android Studio (emulador y `adb`), Docker y `psql`:
 ```bash
 pnpm supabase start
 pnpm db:reset                       # las invitaciones son de un solo uso: reinicia antes de cada ejecución
-pnpm e2e:fixtures                   # crea a Ana, su hogar y las invitaciones de prueba (usa psql)
+pnpm e2e:fixtures                   # crea a Ana y Berta, su hogar y las invitaciones de prueba (usa psql)
 pnpm e2e:env                        # escribe .env.e2e con la clave local y 10.0.2.2 como host
 set -a; . ./.env.e2e; set +a
 E2E=1 pnpm expo prebuild --platform android --clean
 cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 && cd ..
 adb install android/app/build/outputs/apk/release/app-release.apk
-pnpm e2e
+maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" e2e/   # un script del flujo de tiempo real usa la clave
 ```
 
 ## Ejecutar la app

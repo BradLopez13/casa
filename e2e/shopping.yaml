@@ -1,0 +1,97 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
+- evalScript: ${output.email = 'sara' + Date.now() + '@e2e.dev'}
+
+# Sign up
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Sara
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# Onboarding: create the household
+- extendedWaitUntil:
+    visible:
+      id: onboarding.name
+    timeout: 20000
+- tapOn:
+    id: onboarding.name
+- eraseText: 60
+- inputText: Piso Sara
+- hideKeyboard
+- tapOn:
+    id: onboarding.create
+- extendedWaitUntil:
+    visible:
+      id: today.household-name
+      text: Piso Sara
+    timeout: 20000
+
+# Add "Leche" from the field on the door
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible: Nada por comprar
+    timeout: 20000
+- tapOn:
+    id: shopping.input
+- inputText: Leche
+- tapOn:
+    id: shopping.add
+- extendedWaitUntil:
+    visible: Leche
+    timeout: 20000
+
+# The same name again (in any case) is not added twice
+- tapOn:
+    id: shopping.input
+- inputText: leche
+- tapOn:
+    id: shopping.add
+- extendedWaitUntil:
+    visible: Ya está en la lista
+    timeout: 20000
+- hideKeyboard
+
+# Mark it as bought: it moves under "Compradas"
+- tapOn: Marcar «Leche» como comprado
+- extendedWaitUntil:
+    visible: Compradas \(1\)
+    timeout: 20000
+
+# Clear the bought ones: the section goes away (it fades out after the server answers)
+- tapOn:
+    id: shopping.clear
+- extendedWaitUntil:
+    notVisible: Compradas.*
+    timeout: 20000
+- assertNotVisible: Compradas.*
+
+# The history suggests it again while typing
+- tapOn:
+    id: shopping.input
+- inputText: le
+- extendedWaitUntil:
+    visible:
+      id: shopping.suggestion.leche
+    timeout: 20000
