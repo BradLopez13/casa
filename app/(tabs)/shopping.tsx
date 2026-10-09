@@ -1,4 +1,4 @@
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
@@ -74,9 +74,7 @@ export default function ShoppingScreen() {
     );
   };
 
-  const open = (id: string) =>
-    // remove once Task 8 adds the route: the typed routes don't list /shopping/[id] yet.
-    router.push({ pathname: '/shopping/[id]', params: { id } } as unknown as Href);
+  const open = (id: string) => router.push({ pathname: '/shopping/[id]', params: { id } });
 
   const refresh = async () => {
     // refetch() ignores `enabled`, so never fire the queries without a household.

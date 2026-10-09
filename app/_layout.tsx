@@ -192,6 +192,7 @@ function Guard() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="task/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="shopping/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="templates" options={{ presentation: 'modal' }} />
       </Stack>
       {failed ? (
