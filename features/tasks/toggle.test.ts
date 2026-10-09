@@ -120,6 +120,58 @@ describe('buildToggleOptions', () => {
     await p2;
   });
 
+  describe('recurring', () => {
+    const daily: TaskItem = {
+      ...a,
+      id: 'r',
+      dueOn: '2026-10-09',
+      recurrence: { kind: 'interval', every: 1 },
+    };
+    const doneDaily: TaskItem = {
+      ...daily,
+      completedAt: '2026-10-09T10:00:00.000Z',
+      completedBy: 'me',
+    };
+    const next: TaskItem = { ...daily, id: 'n', dueOn: '2026-10-10', generatedFrom: 'r' };
+
+    it('drops the provisional next one and reopens the original when completing fails', async () => {
+      const { queryClient, run } = setup();
+      queryClient.setQueryData(key, [daily, b]);
+      const d = deferred();
+      vi.mocked(completeTask).mockReturnValue(d.promise);
+      const pending = run({ id: 'r', done: true }).catch(() => undefined);
+      await vi.waitFor(() => expect(queryClient.getQueryData<TaskItem[]>(key)).toHaveLength(3));
+      d.reject(new AppError('NETWORK'));
+      await pending;
+      expect(queryClient.getQueryData(key)).toEqual([daily, b]);
+    });
+
+    it('brings back the next one when reopening fails with ALREADY_ADVANCED', async () => {
+      const { queryClient, notify, run } = setup();
+      queryClient.setQueryData(key, [doneDaily, next, b]);
+      const d = deferred();
+      vi.mocked(reopenTask).mockReturnValue(d.promise);
+      const pending = run({ id: 'r', done: false }).catch(() => undefined);
+      await vi.waitFor(() => expect(queryClient.getQueryData<TaskItem[]>(key)).toHaveLength(2));
+      d.reject(new AppError('ALREADY_ADVANCED'));
+      await pending;
+      const list = queryClient.getQueryData<TaskItem[]>(key);
+      expect(list).toContainEqual(next);
+      expect(list?.find((t) => t.id === 'r')).toEqual(doneDaily);
+      expect(notify).toHaveBeenCalledWith('La siguiente ya está hecha; no se puede reabrir esta.');
+    });
+
+    it('explains INVALID_TODAY', async () => {
+      const { queryClient, notify, run } = setup();
+      queryClient.setQueryData(key, [daily]);
+      vi.mocked(completeTask).mockRejectedValue(new AppError('INVALID_TODAY'));
+      await run({ id: 'r', done: true }).catch(() => undefined);
+      expect(notify).toHaveBeenCalledWith(
+        'La fecha del móvil no parece correcta. Revísala e inténtalo de nuevo.',
+      );
+    });
+  });
+
   it('invalidates tasks, membership and members on TASK_NOT_FOUND', async () => {
     const { queryClient, run } = setup();
     queryClient.setQueryData(key, [a]);

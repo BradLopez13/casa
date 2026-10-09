@@ -1,5 +1,5 @@
 import { addDays } from './dates';
-import type { TaskItem } from './views';
+import { isOpen, type TaskItem } from './views';
 
 export type StripDay = { date: string; people: string[]; unassigned: boolean };
 
@@ -9,7 +9,7 @@ const WEEK_DAYS = 7;
 export function weekStrip(tasks: TaskItem[], today: string, order: readonly string[]): StripDay[] {
   return Array.from({ length: WEEK_DAYS }, (_, i) => {
     const date = addDays(today, i);
-    const open = tasks.filter((t) => t.completedAt === null && t.dueOn === date);
+    const open = tasks.filter((t) => isOpen(t) && t.dueOn === date);
     const assignees = new Set(open.map((t) => t.assigneeId));
     return {
       date,
