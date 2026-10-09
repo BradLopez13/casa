@@ -10,6 +10,12 @@ export function localDateIso(d: Date): string {
   return `${pad(d.getFullYear(), 4)}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** A Date at local midnight of YYYY-MM-DD (local fields, never UTC), for display and pickers. */
+export function toLocalDate(iso: string): Date {
+  const [y, m, d] = parts(iso);
+  return new Date(y, m - 1, d);
+}
+
 /** Calendar arithmetic on a YYYY-MM-DD string; UTC fields so clock changes never shift it. */
 export function addDays(iso: string, n: number): string {
   const [y, m, d] = parts(iso);

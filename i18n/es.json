@@ -131,6 +131,9 @@
   "tasks.new": "Nueva tarea",
   "tasks.a11y.complete": "Completar «{title}»",
   "tasks.a11y.reopen": "Reabrir «{title}»",
+  "tasks.a11y.reopenBy": "Reabrir «{title}», hecha por {name}",
+  "tasks.a11y.reopenByYou": "Reabrir «{title}», hecha por ti",
+  "tasks.a11y.unassigned": "Sin responsable",
   "tasks.a11y.edit": "Abre la tarea para editarla",
   "tasks.toggleFailed": "No se pudo completar. Inténtalo de nuevo.",
   "tasks.errors.INVALID_TITLE": "Escribe un título de hasta 100 caracteres.",
@@ -159,5 +162,6 @@
   "tasks.section.done": "Hechas",
   "tasks.empty": "No hay tareas",
   "tasks.weekEmpty": "Nada en los próximos 7 días",
-  "tasks.stripDay": "{day}, {count} tareas"
+  "tasks.stripDay": "{day}, {count} tareas",
+  "tasks.stripDayOne": "{day}, 1 tarea"
 }

@@ -93,7 +93,8 @@ export default function EditTaskScreen() {
               testID="task-form.delete"
               title={t('taskForm.delete')}
               variant="danger"
-              disabled={save.isPending || remove.isSuccess}
+              // A saved edit is already closing the modal: no confirm dialog on top of it.
+              disabled={save.isPending || save.isSuccess || remove.isSuccess}
               onPress={() => setConfirming(true)}
             />
           ) : null

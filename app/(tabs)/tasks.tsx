@@ -1,59 +1,47 @@
-import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
-import { dayHeading } from '@/domain/tasks/labels';
 import { weekStrip } from '@/domain/tasks/strip';
-import { filterByAssignee, selectAll, selectWeek, type TaskItem } from '@/domain/tasks/views';
-import { useSession } from '@/features/auth/SessionProvider';
-import { useMembers, useMembership } from '@/features/households/queries';
+import { selectWeek } from '@/domain/tasks/views';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
-import { DoneTray } from '@/features/tasks/components/DoneTray';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
 import { NewTaskButton } from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
-import { TaskNote } from '@/features/tasks/components/TaskNote';
-import { useTaskFilter } from '@/features/tasks/filter';
-import { useTasks, useToggleTask } from '@/features/tasks/queries';
+import {
+  TaskRow,
+  TaskRowSeparator,
+  taskListContentStyle,
+  taskRowKey,
+} from '@/features/tasks/components/TaskRow';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { sectionIndexFor } from '@/features/tasks/sectionTarget';
-import { useMemberLabels } from '@/features/tasks/useMemberLabels';
-import { useToday } from '@/features/tasks/useToday';
+import {
+  allSections,
+  weekSections,
+  type TaskListRow,
+  type TaskListSection,
+} from '@/features/tasks/sections';
+import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
 
-type Row = { kind: 'note'; task: TaskItem } | { kind: 'tray'; tasks: TaskItem[] };
-type Section = { key: string; title: string; count: number; data: Row[] };
-
-const NO_TASKS: TaskItem[] = [];
 /** Wait for the rows near the target to render before trying the scroll again. */
 const SCROLL_RETRY_MS = 100;
 
-const notes = (list: TaskItem[]) => list.map((task): Row => ({ kind: 'note', task }));
-
 export default function TasksScreen() {
   const { colors, space } = useTheme();
-  const router = useRouter();
-  const today = useToday();
-  const { userId } = useSession();
-  const membership = useMembership().data;
-  const householdId = membership?.householdId;
-  const membersQuery = useMembers(householdId);
-  const tasksQuery = useTasks(householdId);
-  const { toggle, isBusy } = useToggleTask(householdId, userId);
-  const filter = useTaskFilter();
+  const screen = useTaskScreen();
+  const { today, userId, members, tasksQuery, assigneeId, filtered, marks } = screen;
   const [mode, setMode] = useState<TasksMode>('week');
-  const [pulling, setPulling] = useState(false);
-  const listRef = useRef<SectionList<Row, Section>>(null);
+  const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
   const pendingScroll = useRef<string | null>(null);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Read by the deferred retry, which must see the list as it is then, not as it was at the tap.
   const modeRef = useRef<TasksMode>(mode);
-  const sectionsRef = useRef<Section[]>([]);
+  const sectionsRef = useRef<TaskListSection[]>([]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -65,13 +53,6 @@ export default function TasksScreen() {
     };
   }, [mode]);
 
-  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
-  const tasks = tasksQuery.data ?? NO_TASKS;
-  // A filter on someone who has left the household falls back to the whole household.
-  const assigneeId = members.some((m) => m.userId === filter.assigneeId) ? filter.assigneeId : null;
-
-  const { marks, names } = useMemberLabels(members, userId);
-  const filtered = useMemo(() => filterByAssignee(tasks, assigneeId), [tasks, assigneeId]);
   const week = useMemo(() => selectWeek(filtered, today), [filtered, today]);
   // Members arrive ordered by joined_at, so the dots follow join order.
   const strip = useMemo(
@@ -88,48 +69,10 @@ export default function TasksScreen() {
     [week],
   );
 
-  const sections = useMemo(() => {
-    let all: Section[];
-    if (mode === 'week') {
-      all = [
-        {
-          key: 'overdue',
-          title: t('tasks.section.overdue'),
-          count: week.overdue.length,
-          data: notes(week.overdue),
-        },
-        ...week.days.map((day) => ({
-          key: day.date,
-          title: dayHeading(day.date, today),
-          count: day.tasks.length,
-          data: notes(day.tasks),
-        })),
-      ];
-    } else {
-      const { dated, undated, done } = selectAll(filtered, today);
-      all = [
-        {
-          key: 'dated',
-          title: t('tasks.section.dated'),
-          count: dated.length,
-          data: notes(dated),
-        },
-        {
-          key: 'undated',
-          title: t('tasks.section.undated'),
-          count: undated.length,
-          data: notes(undated),
-        },
-        {
-          key: 'done',
-          title: t('tasks.section.done'),
-          count: done.length,
-          data: [{ kind: 'tray', tasks: done }],
-        },
-      ];
-    }
-    return all.filter((section) => section.count > 0);
-  }, [mode, week, filtered, today]);
+  const sections = useMemo(
+    () => (mode === 'week' ? weekSections(week, today) : allSections(filtered, today)),
+    [mode, week, filtered, today],
+  );
 
   useEffect(() => {
     sectionsRef.current = sections;
@@ -151,19 +94,6 @@ export default function TasksScreen() {
     listRef.current?.scrollToLocation({ sectionIndex, itemIndex: 0, viewPosition: 0 });
   };
 
-  const refresh = async () => {
-    // refetch() ignores `enabled`, so never fire the queries without a household.
-    if (householdId === undefined) return;
-    setPulling(true);
-    try {
-      await Promise.all([tasksQuery.refetch(), membersQuery.refetch()]);
-    } finally {
-      setPulling(false);
-    }
-  };
-
-  const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
-
   const door = (
     <DoorHeader title={t('tasks.title')} titleSize="medium">
       <View style={{ gap: space(4) }}>
@@ -172,7 +102,7 @@ export default function TasksScreen() {
           marks={marks}
           userId={userId}
           selected={assigneeId}
-          onToggle={filter.toggle}
+          onToggle={screen.toggleFilter}
         />
         <ModeSwitch value={mode} onChange={setMode} />
         {mode === 'week' ? (
@@ -190,11 +120,11 @@ export default function TasksScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
-      <FridgeRefresh refreshing={pulling} onRefresh={() => void refresh()}>
+      <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
         <SectionList
           ref={listRef}
           sections={sections}
-          keyExtractor={(row) => (row.kind === 'note' ? row.task.id : 'done-tray')}
+          keyExtractor={taskRowKey}
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={door}
           ListEmptyComponent={
@@ -214,28 +144,17 @@ export default function TasksScreen() {
             <SectionHeader title={section.title} count={section.count} />
           )}
           renderItem={({ item }) => (
-            <View style={{ paddingHorizontal: space(5) }}>
-              {item.kind === 'note' ? (
-                <TaskNote
-                  task={item.task}
-                  today={today}
-                  mark={item.task.assigneeId ? marks.get(item.task.assigneeId) : undefined}
-                  assigneeName={item.task.assigneeId ? names.get(item.task.assigneeId) : undefined}
-                  busy={isBusy(item.task.id)}
-                  onToggle={() => toggle({ id: item.task.id, done: true })}
-                  onOpen={() => openTask(item.task.id)}
-                />
-              ) : (
-                <DoneTray
-                  tasks={item.tasks}
-                  marks={marks}
-                  names={names}
-                  onReopen={(task) => toggle({ id: task.id, done: false })}
-                />
-              )}
-            </View>
+            <TaskRow
+              row={item}
+              today={today}
+              marks={marks}
+              names={screen.names}
+              userId={userId}
+              isBusy={screen.isBusy}
+              toggle={screen.toggle}
+            />
           )}
-          ItemSeparatorComponent={() => <View style={{ height: space(3) }} />}
+          ItemSeparatorComponent={TaskRowSeparator}
           // Rows vary in height, so a far section may not be measured yet: jump close to it,
           // let those rows render, then aim again.
           onScrollToIndexFailed={(info) => {
@@ -252,8 +171,7 @@ export default function TasksScreen() {
               retryScroll(target);
             }, SCROLL_RETRY_MS);
           }}
-          // Room under the last note so the floating "Nueva tarea" pill never covers it.
-          contentContainerStyle={{ paddingBottom: MIN_TOUCH + space(12) }}
+          contentContainerStyle={taskListContentStyle}
         />
       </FridgeRefresh>
       <NewTaskButton testID="tasks.new-task" assigneeId={assigneeId} />

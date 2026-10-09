@@ -1,5 +1,5 @@
 import { locale, t } from '@/i18n';
-import { addDays, daysBetween } from './dates';
+import { addDays, daysBetween, toLocalDate } from './dates';
 
 /** Human label for a due date: relative for yesterday..tomorrow, else a long local date. */
 export function dueLabel(dueOn: string | null, today: string): string {
@@ -10,14 +10,9 @@ export function dueLabel(dueOn: string | null, today: string): string {
   return longDateLabel(dueOn);
 }
 
-function localDate(iso: string): Date {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1);
-}
-
 /** "jueves, 9 de octubre". */
 export function longDateLabel(iso: string): string {
-  return localDate(iso).toLocaleDateString(locale, {
+  return toLocalDate(iso).toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -30,8 +25,8 @@ export function overdueLabel(dueOn: string, today: string): string {
   if (late <= 1) return t('tasks.overdue.yesterday');
   const date =
     late < 7
-      ? localDate(dueOn).toLocaleDateString(locale, { weekday: 'long', day: 'numeric' })
-      : localDate(dueOn).toLocaleDateString(locale, { day: 'numeric', month: 'long' });
+      ? toLocalDate(dueOn).toLocaleDateString(locale, { weekday: 'long', day: 'numeric' })
+      : toLocalDate(dueOn).toLocaleDateString(locale, { day: 'numeric', month: 'long' });
   return t('tasks.overdue.on', { date });
 }
 
@@ -39,5 +34,5 @@ export function overdueLabel(dueOn: string, today: string): string {
 export function dayHeading(date: string, today: string): string {
   if (date === today) return t('tasks.due.today');
   if (date === addDays(today, 1)) return t('tasks.due.tomorrow');
-  return localDate(date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric' });
+  return toLocalDate(date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric' });
 }

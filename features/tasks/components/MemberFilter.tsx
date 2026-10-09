@@ -40,9 +40,12 @@ export function MemberFilter({ members, marks, userId, selected, onToggle }: Pro
               testID={`member-filter.${member.userId}`}
               onPress={() => onToggle(member.userId)}
             />
+            {/* The magnet already carries the name for screen readers. */}
             <Text
               numberOfLines={1}
               maxFontSizeMultiplier={1.3}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={{ color: colors.muted, fontSize: 13 }}
             >
               {name}

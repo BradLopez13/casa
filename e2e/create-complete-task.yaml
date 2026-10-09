@@ -73,8 +73,8 @@ appId: com.bradlopez13.casa
 # The scope label shares the same Text (" · En toda la casa"), so match the prefix.
 - assertVisible: 1 de 1 hechas.*
 
-# Reopen it from the tray: it goes back to "Para hoy"
-- tapOn: Reabrir «Regar las plantas»
+# Reopen it from the tray: it goes back to "Para hoy". The pill also names who did it.
+- tapOn: Reabrir «Regar las plantas».*
 - extendedWaitUntil:
     visible: Para hoy
     timeout: 20000

@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
+import { toLocalDate } from '@/domain/tasks/dates';
 import { dayHeading } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { locale, t } from '@/i18n';
@@ -17,11 +18,6 @@ type Props = {
 
 const DOT = 6;
 
-function toDate(iso: string): Date {
-  const [y = 0, m = 1, d = 1] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
 /** The next seven days as flat cells, with a dot for each person who has something that day. */
 export function DayStrip({ days, today, marks, counts, onSelect }: Props) {
   const { colors, radii, space } = useTheme();
@@ -29,16 +25,19 @@ export function DayStrip({ days, today, marks, counts, onSelect }: Props) {
     <View style={{ flexDirection: 'row', gap: space(1) }}>
       {days.map((day) => {
         const isToday = day.date === today;
-        const date = toDate(day.date);
+        const date = toLocalDate(day.date);
+        const count = counts.get(day.date) ?? 0;
+        const heading = dayHeading(day.date, today);
         return (
           <Pressable
             key={day.date}
             testID={`day-strip.${day.date}`}
             accessibilityRole="button"
-            accessibilityLabel={t('tasks.stripDay', {
-              day: dayHeading(day.date, today),
-              count: counts.get(day.date) ?? 0,
-            })}
+            accessibilityLabel={
+              count === 1
+                ? t('tasks.stripDayOne', { day: heading })
+                : t('tasks.stripDay', { day: heading, count })
+            }
             onPress={() => onSelect(day.date)}
             style={({ pressed }) => ({
               flex: 1,
