@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { localDateIso } from './dates';
-import { filterMine, selectAll, selectToday, selectWeek, type TaskItem } from './views';
+import { filterByAssignee, selectAll, selectToday, selectWeek, type TaskItem } from './views';
 
 let seq = 0;
 function task(over: Partial<TaskItem> = {}): TaskItem {
@@ -125,13 +125,14 @@ describe('selectAll', () => {
   });
 });
 
-describe('filterMine', () => {
-  it('filterMine keeps only my assigned tasks', () => {
-    const mine = task({ assigneeId: 'me' });
-    const theirs = task({ assigneeId: 'other' });
-    const nobody = task();
-    expect(filterMine([mine, theirs, nobody], 'me')).toEqual([mine]);
-  });
+describe('filterByAssignee', () => {
+  const mine = task({ assigneeId: 'me' });
+  const theirs = task({ assigneeId: 'other' });
+  const nobody = task();
+  it('keeps only the given assignee', () =>
+    expect(filterByAssignee([mine, theirs, nobody], 'me')).toEqual([mine]));
+  it('returns every task for the whole household', () =>
+    expect(filterByAssignee([mine, theirs, nobody], null)).toEqual([mine, theirs, nobody]));
 });
 
 describe('timestamp ordering', () => {

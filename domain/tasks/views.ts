@@ -65,6 +65,7 @@ export function selectAll(
   };
 }
 
-export function filterMine(tasks: TaskItem[], userId: string): TaskItem[] {
-  return tasks.filter((t) => t.assigneeId === userId);
+/** `null` means the whole household: no filtering. */
+export function filterByAssignee(tasks: TaskItem[], assigneeId: string | null): TaskItem[] {
+  return assigneeId === null ? tasks : tasks.filter((t) => t.assigneeId === assigneeId);
 }

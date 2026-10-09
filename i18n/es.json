@@ -102,6 +102,8 @@
   "tasks.due.tomorrow": "Mañana",
   "tasks.due.yesterday": "Ayer",
   "tasks.due.none": "Sin fecha",
+  "tasks.overdue.yesterday": "Vencida ayer",
+  "tasks.overdue.on": "Vencida el {date}",
   "rooms.kitchen": "Cocina",
   "rooms.bathroom": "Baño",
   "rooms.living_room": "Salón",
