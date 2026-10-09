@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@/data/supabase/errors';
 import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, reopenTask } from './api';
+import { membershipKey } from '@/features/households/keys';
 import { buildToggleOptions } from './toggle';
 
 vi.mock('./api', () => ({ completeTask: vi.fn(), reopenTask: vi.fn() }));
@@ -96,5 +97,35 @@ describe('buildToggleOptions', () => {
     d2.resolve();
     await p2;
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('rolls back only the failed task, keeping other toggles', async () => {
+    const { queryClient, run } = setup();
+    queryClient.setQueryData(key, [a, b]);
+    const d1 = deferred();
+    const d2 = deferred();
+    vi.mocked(completeTask).mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
+    const p1 = run({ id: 'a', done: true }).catch(() => undefined);
+    const p2 = run({ id: 'b', done: true });
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(2));
+    d1.reject(new AppError('NETWORK'));
+    await p1;
+    const list = queryClient.getQueryData<TaskItem[]>(key);
+    expect(list?.find((t) => t.id === 'a')?.completedAt).toBeNull();
+    expect(list?.find((t) => t.id === 'b')?.completedAt).not.toBeNull();
+    d2.resolve();
+    await p2;
+  });
+
+  it('invalidates tasks, membership and members on TASK_NOT_FOUND', async () => {
+    const { queryClient, run } = setup();
+    queryClient.setQueryData(key, [a]);
+    const spy = vi.spyOn(queryClient, 'invalidateQueries');
+    vi.mocked(completeTask).mockRejectedValue(new AppError('TASK_NOT_FOUND'));
+    await run({ id: 'a', done: true }).catch(() => undefined);
+    const keys = spy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(['tasks']);
+    expect(keys).toContainEqual(membershipKey);
+    expect(keys).toContainEqual(['members']);
   });
 });
