@@ -1,0 +1,14 @@
+[
+  { "input": "Leche", "expected": "leche" },
+  { "input": "leche ", "expected": "leche" },
+  { "input": "LÉCHE", "expected": "leche" },
+  { "input": "  Pan   de  molde ", "expected": "pan de molde" },
+  { "input": "Piñones", "expected": "pinones" },
+  { "input": "Pingüino", "expected": "pinguino" },
+  { "input": "ÁÉÍÓÚ", "expected": "aeiou" },
+  { "input": "Àgua", "expected": "agua" },
+  { "input": "café", "expected": "cafe" },
+  { "input": "Ñ", "expected": "n" },
+  { "input": "12 huevos", "expected": "12 huevos" },
+  { "input": "Tomate\tcherry", "expected": "tomate cherry" }
+]
