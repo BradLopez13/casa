@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { taskFormSchema } from './schemas';
 
-const base = { title: 'Fregar', room: null, assigneeId: null, dueOn: null };
+const base = { title: 'Fregar', room: null, assigneeId: null, dueOn: null, recurrence: null };
 const parse = (over: Record<string, unknown>) => taskFormSchema.safeParse({ ...base, ...over });
 
 describe('taskFormSchema', () => {
@@ -41,5 +41,25 @@ describe('taskFormSchema', () => {
 
   it('accepts nulls for room, assigneeId and dueOn', () => {
     expect(parse({}).success).toBe(true);
+  });
+});
+
+describe('taskFormSchema recurrence', () => {
+  const rule = { kind: 'interval', every: 3 };
+
+  it('rejects a rule without a date, flagging dueOn', () => {
+    const r = parse({ recurrence: rule, dueOn: null });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === 'dueOn')).toBe(true);
+  });
+
+  it('accepts a rule with a date', () => {
+    expect(parse({ recurrence: rule, dueOn: '2026-10-05' }).success).toBe(true);
+  });
+
+  it('rejects an invalid rule', () => {
+    expect(parse({ recurrence: { kind: 'interval', every: 0 }, dueOn: '2026-10-05' }).success).toBe(
+      false,
+    );
   });
 });

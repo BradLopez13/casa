@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { recurrenceRuleSchema } from '@/domain/recurrence/rule';
 import { ROOMS } from '@/domain/tasks/rooms';
 
 const TITLE_MAX = 100;
@@ -12,12 +13,19 @@ const title = z
     return length >= 1 && length <= TITLE_MAX;
   });
 
-export const taskFormSchema = z.object({
-  title,
-  room: z.enum(ROOMS).nullable(),
-  assigneeId: z.uuid().nullable(),
-  dueOn: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable(),
-});
+export const taskFormSchema = z
+  .object({
+    title,
+    room: z.enum(ROOMS).nullable(),
+    assigneeId: z.uuid().nullable(),
+    dueOn: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable(),
+    recurrence: recurrenceRuleSchema.nullable(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.recurrence !== null && value.dueOn === null) {
+      ctx.addIssue({ code: 'custom', path: ['dueOn'], message: 'RECURRENCE_NEEDS_DATE' });
+    }
+  });

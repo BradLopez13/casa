@@ -13,7 +13,9 @@ const weekdays = z
   .min(1)
   .refine((days) => days.every((d, i) => i === 0 || d > (days[i - 1] ?? 0)), {
     message: 'days must be unique and in ascending order',
-  });
+  })
+  // The refinements above guarantee 1..7; narrow to IsoWeekday so parsed rules are RecurrenceRule.
+  .transform((days) => days as IsoWeekday[]);
 
 export const recurrenceRuleSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('interval'), every: z.number().int().min(1).max(365) }),

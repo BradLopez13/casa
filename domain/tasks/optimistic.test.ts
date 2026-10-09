@@ -11,6 +11,9 @@ const base: TaskItem = {
   dueOn: null,
   completedAt: null,
   completedBy: null,
+  recurrence: null,
+  skippedAt: null,
+  generatedFrom: null,
   createdBy: null,
   createdAt: '2026-10-01T00:00:00.000Z',
 };
