@@ -25,7 +25,7 @@ function tabIcon(active: IconName, inactive: IconName) {
   return TabIcon;
 }
 
-// Today, Tasks and Settings; Shopping arrives in its own plan.
+// Today, Tasks, Shopping and Settings.
 export default function TabsLayout() {
   const { colors } = useTheme();
   const { data: membership } = useMembership();
@@ -56,6 +56,14 @@ export default function TabsLayout() {
             title: t('tabs.tasks'),
             tabBarButtonTestID: 'tab.tasks',
             tabBarIcon: tabIcon('list', 'list-outline'),
+          }}
+        />
+        <Tabs.Screen
+          name="shopping"
+          options={{
+            title: t('tabs.shopping'),
+            tabBarButtonTestID: 'tab.shopping',
+            tabBarIcon: tabIcon('basket', 'basket-outline'),
           }}
         />
         <Tabs.Screen
