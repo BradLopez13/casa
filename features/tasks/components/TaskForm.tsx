@@ -31,6 +31,11 @@ type Props = {
   onCancel: () => void;
   onSave: (input: TaskInput) => void;
   footer?: ReactNode;
+  /**
+   * False on a completed or skipped occurrence: a rule added there would start a series that
+   * never generates a successor. The row is hidden and the rule saves as it was.
+   */
+  repeatEditable?: boolean;
 };
 
 export function HeaderAction({
@@ -98,18 +103,26 @@ export function TaskForm({
   onCancel,
   onSave,
   footer,
+  repeatEditable = true,
 }: Props) {
   const { colors, space } = useTheme();
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
-  // chosen day changes nothing, so a month-end rule on a short month keeps its day.
+  // chosen day changes nothing, so a month-end rule on a short month keeps its day. Without the
+  // repeat row the rule is not the user's to change, so it stays as it is.
   const setDueOn = (dueOn: string | null) =>
     setValues((current) =>
       dueOn === current.dueOn
         ? current
-        : { ...current, dueOn, recurrence: syncMonthly(current.recurrence, dueOn) },
+        : {
+            ...current,
+            dueOn,
+            recurrence: repeatEditable
+              ? syncMonthly(current.recurrence, dueOn)
+              : current.recurrence,
+          },
     );
   // A repeating task needs a date: choosing a repeat without one starts it today.
   const setRecurrence = (recurrence: RecurrenceRule | null) =>
@@ -133,9 +146,14 @@ export function TaskForm({
   const shownError =
     error ?? (triedSave && needsDate ? t('tasks.errors.RECURRENCE_NEEDS_DATE') : null);
   const repeating = values.recurrence !== null;
+  // What completing it today would produce, as the server computes it: the first date after
+  // max(dueOn, today).
   const nextDate =
     values.recurrence !== null && values.dueOn !== null
-      ? dayHeading(calculateNextOccurrence(values.recurrence, values.dueOn, values.dueOn), today)
+      ? dayHeading(
+          calculateNextOccurrence(values.recurrence, values.dueOn, today),
+          today,
+        ).toLowerCase()
       : null;
 
   return (
@@ -220,22 +238,24 @@ export function TaskForm({
               noneDisabled={repeating}
             />
           </Field>
-          <Field label={t('taskForm.repeatLabel')}>
-            <RecurrencePicker
-              value={values.recurrence}
-              dueOn={values.dueOn ?? today}
-              onChange={setRecurrence}
-            />
-            {nextDate !== null ? (
-              <Text
-                testID="task-form.repeat.next"
-                maxFontSizeMultiplier={1.3}
-                style={{ color: colors.muted, fontSize: 13 }}
-              >
-                {t('taskForm.repeatNext', { date: nextDate })}
-              </Text>
-            ) : null}
-          </Field>
+          {repeatEditable ? (
+            <Field label={t('taskForm.repeatLabel')}>
+              <RecurrencePicker
+                value={values.recurrence}
+                dueOn={values.dueOn ?? today}
+                onChange={setRecurrence}
+              />
+              {nextDate !== null ? (
+                <Text
+                  testID="task-form.repeat.next"
+                  maxFontSizeMultiplier={1.3}
+                  style={{ color: colors.muted, fontSize: 13 }}
+                >
+                  {t('taskForm.repeatNext', { date: nextDate })}
+                </Text>
+              ) : null}
+            </Field>
+          ) : null}
           {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
           {footer}
         </ScrollView>

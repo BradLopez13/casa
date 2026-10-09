@@ -18,7 +18,11 @@ export function TemplatesCard() {
         ...shadows.note,
       }}
     >
-      <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
+      <Text
+        accessibilityRole="header"
+        maxFontSizeMultiplier={1.3}
+        style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}
+      >
         {t('templates.cardTitle')}
       </Text>
       <Button

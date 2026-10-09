@@ -32,6 +32,11 @@ describe('templateInputs (today = Friday 2026-10-09)', () => {
   it('returns nothing for no keys', () => {
     expect(templateInputs([], today)).toEqual([]);
   });
+
+  it('only takes template keys', () => {
+    // @ts-expect-error 'windows' is not a template key.
+    expect(templateInputs(['windows'], today)).toEqual([]);
+  });
 });
 
 describe('TEMPLATES', () => {
