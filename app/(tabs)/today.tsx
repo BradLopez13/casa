@@ -7,6 +7,7 @@ import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { NewTaskButton } from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TallyView } from '@/features/tasks/components/Tally';
+import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import {
   TaskRow,
   TaskRowSeparator,
@@ -88,7 +89,9 @@ export default function TodayScreen() {
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={door}
           ListEmptyComponent={
-            <View style={{ paddingHorizontal: space(5), paddingTop: space(6) }}>
+            <View style={{ paddingHorizontal: space(5), paddingTop: space(6), gap: space(6) }}>
+              {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
+              {tasksQuery.isSuccess && tasksQuery.data.length === 0 ? <TemplatesCard /> : null}
               <TaskListStates query={tasksQuery} empty={empty} />
             </View>
           }

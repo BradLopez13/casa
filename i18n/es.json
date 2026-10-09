@@ -200,5 +200,21 @@
   "weekdays.short.4": "J",
   "weekdays.short.5": "V",
   "weekdays.short.6": "S",
-  "weekdays.short.7": "D"
+  "weekdays.short.7": "D",
+  "templates.cardTitle": "Empieza con tareas típicas",
+  "templates.cardAction": "Ver tareas típicas",
+  "templates.title": "Tareas típicas",
+  "templates.cancel": "Cancelar",
+  "templates.add": "Añadir ({n})",
+  "templates.retry": "Reintentar",
+  "templates.dishes": "Fregar los platos",
+  "templates.trash": "Sacar la basura",
+  "templates.laundry": "Poner una lavadora",
+  "templates.bathroom": "Limpiar el baño",
+  "templates.sheets": "Cambiar las sábanas",
+  "templates.vacuum": "Pasar la aspiradora",
+  "templates.mop": "Fregar el suelo",
+  "templates.plants": "Regar las plantas",
+  "templates.fridge": "Limpiar la nevera",
+  "templates.oven": "Limpiar el horno"
 }

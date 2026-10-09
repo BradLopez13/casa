@@ -33,7 +33,7 @@ type Props = {
   footer?: ReactNode;
 };
 
-function HeaderAction({
+export function HeaderAction({
   testID,
   label,
   onPress,
