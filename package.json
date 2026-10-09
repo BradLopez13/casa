@@ -54,7 +54,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "test": "vitest run",
     "db:start": "supabase db start",
@@ -62,7 +62,7 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > data/supabase/database.types.ts",
     "e2e:env": "bash scripts/e2e-env.sh",
-    "gen:recurrence-tests": "node scripts/gen-recurrence-tests.ts",
+    "gen:recurrence-tests": "node scripts/gen-recurrence-tests.mts",
     "e2e:fixtures": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/e2e/fixtures.sql",
     "e2e": "maestro test e2e/"
   },
