@@ -9,6 +9,7 @@ import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { NoticeProvider } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
@@ -140,7 +141,9 @@ export default function RootLayout() {
   const fontsReady = fontsLoaded || fontError !== null;
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>{fontsReady ? <Guard /> : null}</SessionProvider>
+      <NoticeProvider>
+        <SessionProvider>{fontsReady ? <Guard /> : null}</SessionProvider>
+      </NoticeProvider>
     </QueryClientProvider>
   );
 }

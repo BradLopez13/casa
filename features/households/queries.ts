@@ -2,10 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
 import { getMyMembership, listActiveInvites, listMembers } from './api';
+import { invitesKey, membersKey, membershipKey } from './keys';
 
-export const membershipKey = ['membership'] as const;
-export const membersKey = (householdId: string | undefined) => ['members', householdId] as const;
-export const invitesKey = (householdId: string | undefined) => ['invites', householdId] as const;
+export { invitesKey, membersKey, membershipKey };
 
 export function useMembership() {
   const { status } = useSession();

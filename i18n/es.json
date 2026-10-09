@@ -111,5 +111,13 @@
   "rooms.laundry": "Lavadero",
   "rooms.outdoor": "Exterior",
   "rooms.other": "Otra",
-  "refresh.label": "Actualizando"
+  "refresh.label": "Actualizando",
+  "tasks.toggleFailed": "No se pudo completar. Inténtalo de nuevo.",
+  "tasks.errors.INVALID_TITLE": "Escribe un título de hasta 100 caracteres.",
+  "tasks.errors.INVALID_ROOM": "Esa estancia no es válida.",
+  "tasks.errors.INVALID_ASSIGNEE": "Esa persona ya no está en el hogar.",
+  "tasks.errors.TASK_NOT_FOUND": "Esta tarea ya no existe.",
+  "tasks.errors.NOT_A_MEMBER": "Ya no formas parte de este hogar.",
+  "tasks.errors.NETWORK": "Sin conexión. Inténtalo de nuevo.",
+  "tasks.errors.UNKNOWN": "Algo ha fallado. Inténtalo de nuevo."
 }
