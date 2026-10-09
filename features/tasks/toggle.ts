@@ -7,7 +7,7 @@ import { t } from '@/i18n';
 import { completeTask, reopenTask } from './api';
 
 export type ToggleVars = { id: string; done: boolean };
-type Context = { previous: TaskItem[] | undefined };
+type Context = { previous: TaskItem | undefined };
 
 const TOGGLE_KEY = ['tasks', 'toggle'] as const;
 
@@ -38,17 +38,20 @@ export function buildToggleOptions(
     mutationFn: ({ id, done }) => (done ? completeTask(id) : reopenTask(id)),
     onMutate: async ({ id, done }) => {
       await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<TaskItem[]>(key);
-      if (previous) {
-        queryClient.setQueryData<TaskItem[]>(
-          key,
-          applyToggle(previous, id, done, userId, new Date().toISOString()),
-        );
-      }
+      const previous = queryClient.getQueryData<TaskItem[]>(key)?.find((task) => task.id === id);
+      queryClient.setQueryData<TaskItem[]>(key, (current) =>
+        current ? applyToggle(current, id, done, userId, new Date().toISOString()) : current,
+      );
       return { previous };
     },
-    onError: async (error, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    // Roll back only this task: other toggles in flight keep their optimistic state.
+    onError: async (error, { id }, context) => {
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<TaskItem[]>(key, (current) =>
+          current?.map((task) => (task.id === id ? previous : task)),
+        );
+      }
       notify(t('tasks.toggleFailed'));
       await invalidateIfStale(queryClient, error);
     },

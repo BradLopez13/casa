@@ -48,7 +48,13 @@ export function useToggleTask(
   });
   const isBusy = (id: string) => pending.includes(id);
   const toggle = (vars: ToggleVars) => {
-    if (householdId === undefined || userId === null || isBusy(vars.id)) return;
+    if (householdId === undefined || userId === null) return;
+    // Check the cache synchronously: render-time state lags behind a quick double tap.
+    const inFlight = queryClient
+      .getMutationCache()
+      .findAll({ mutationKey: ['tasks', 'toggle'], status: 'pending' })
+      .some((m) => (m.state.variables as ToggleVars | undefined)?.id === vars.id);
+    if (inFlight) return;
     mutation.mutate(vars);
   };
   return { toggle, isBusy };
