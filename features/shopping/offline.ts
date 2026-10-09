@@ -1,9 +1,10 @@
-import type {
-  DehydrateOptions,
-  MutationKey,
-  MutationOptions,
-  QueryClient,
-  QueryKey,
+import {
+  onlineManager,
+  type DehydrateOptions,
+  type MutationKey,
+  type MutationOptions,
+  type QueryClient,
+  type QueryKey,
 } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, type ShoppingItem } from '@/domain/shopping/list';
@@ -94,6 +95,19 @@ export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Prom
   }
 }
 
+/**
+ * The shopping list and its history load offline first: a load is tried even while offline
+ * (the connection state can lag), and an offline failure is final at once instead of waiting
+ * for the connection. The cached list stays on screen with the offline band; with nothing
+ * cached the screen shows its error and its retry. Back online, the reconnect refetches it.
+ * The app's default ('always') would retry offline too; 'online' would leave a list never
+ * loaded spinning until the connection is back.
+ */
+export const shoppingQueryOptions = {
+  networkMode: 'offlineFirst',
+  retry: (failureCount: number) => failureCount < 1 && onlineManager.isOnline(),
+} as const;
+
 export const NETWORK_RETRIES = 10;
 
 // A request that never reached the server is retried (retries pause while offline), with the
@@ -118,6 +132,8 @@ export function buildShoppingMutationDefaults(
   const add: MutationOptions<string, AppError, AddVars, AddContext> = {
     mutationKey: addKey,
     scope: SHOPPING_SCOPE,
+    // Offline it waits for the connection, unlike the rest of the app.
+    networkMode: 'online',
     retry: retryOnNetwork,
     mutationFn: ({ id, householdId, name, quantity }) =>
       addShoppingItem(id, householdId, name, quantity),
@@ -143,9 +159,12 @@ export function buildShoppingMutationDefaults(
     onSuccess: (resolvedId, { id, householdId }, context) => {
       if (resolvedId === id) return;
       resolved.set(id, resolvedId);
-      queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
-        current ? applyAdd(current, context.item, resolvedId) : current,
-      );
+      // A restored add can come without its context (the app closed during onMutate): its
+      // optimistic item, if it reached the list, is found by id.
+      queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) => {
+        const item = context?.item ?? current?.find((i) => i.id === id);
+        return current && item ? applyAdd(current, item, resolvedId) : current;
+      });
     },
     // Offline the mutation pauses instead of failing, so this is a final error.
     onError: (_error, { id, householdId, name }, context) => {
@@ -162,6 +181,7 @@ export function buildShoppingMutationDefaults(
   const bought: MutationOptions<void, AppError, BoughtVars, BoughtContext> = {
     mutationKey: boughtKey,
     scope: SHOPPING_SCOPE,
+    networkMode: 'online',
     retry: retryOnNetwork,
     mutationFn: ({ id, bought: value }) => setItemBought(resolve(id), value),
     onMutate: async ({ id, householdId, bought: value, userId }) => {

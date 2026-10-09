@@ -7,6 +7,7 @@ import {
   QueryClient,
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { appQueryDefaults } from '@/data/query/defaults';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { addShoppingItem, setItemBought } from './api';
@@ -18,6 +19,7 @@ import {
   persistBuster,
   persistDehydrateOptions,
   resumeShoppingQueue,
+  shoppingQueryOptions,
   shouldPersistMutation,
   shouldPersistQuery,
   type AddVars,
@@ -41,7 +43,8 @@ const existing: ShoppingItem = {
   boughtBy: null,
 };
 
-function setup(queryClient = new QueryClient()) {
+// The app's defaults: outside shopping, queries and mutations fail fast offline.
+function setup(queryClient = new QueryClient({ defaultOptions: appQueryDefaults })) {
   const notify = vi.fn();
   const defaults = buildShoppingMutationDefaults(queryClient, notify);
   queryClient.setMutationDefaults(addKey, defaults.add);
@@ -129,6 +132,17 @@ describe('buildShoppingMutationDefaults', () => {
     expect(vi.mocked(addShoppingItem).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(setItemBought).mock.invocationCallOrder[0] as number,
     );
+  });
+
+  it('pauses a queued add offline even though the app defaults fail fast', async () => {
+    const { queryClient, add } = setup();
+    queryClient.setQueryData(key, []);
+    onlineManager.setOnline(false);
+    void add(milk).catch(() => undefined);
+    await vi.waitFor(() => {
+      expect(list(queryClient)?.map((i) => i.id)).toEqual(['a']);
+      expect(queryClient.getMutationCache().getAll()[0]?.state.isPaused).toBe(true);
+    });
   });
 
   it('keeps a single item with the server id when the add merged into another', async () => {
@@ -297,6 +311,28 @@ describe('restart', () => {
     expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
   });
 
+  it('rebinds a restored add that lost its context (the app closed during onMutate)', async () => {
+    const before = setup();
+    before.queryClient.setQueryData(key, []);
+    onlineManager.setOnline(false);
+    void before.add(milk).catch(() => undefined);
+    await vi.waitFor(() => expect(list(before.queryClient)).toHaveLength(1));
+
+    const saved = JSON.parse(
+      JSON.stringify(dehydrate(before.queryClient, persistDehydrateOptions)),
+    ) as DehydratedState;
+    for (const mutation of saved.mutations) mutation.state.context = undefined;
+    const after = setup();
+    hydrate(after.queryClient, saved);
+
+    vi.mocked(addShoppingItem).mockResolvedValue('x');
+    onlineManager.setOnline(true);
+    await resumeShoppingQueue(after.queryClient);
+
+    expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
+    expect(list(after.queryClient)?.map((i) => i.id)).toEqual(['x']);
+  });
+
   it('keeps a restored queue paused while still offline', async () => {
     const before = setup();
     before.queryClient.setQueryData(key, []);
@@ -310,5 +346,44 @@ describe('restart', () => {
       expect(after.queryClient.getMutationCache().getAll()[0]?.state.isPaused).toBe(true),
     );
     expect(addShoppingItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('shoppingQueryOptions', () => {
+  const network = () => Promise.reject(new AppError('NETWORK'));
+
+  it('keeps the cached list when a refetch fails offline, without pausing', async () => {
+    const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
+    queryClient.setQueryData(key, [existing]);
+    onlineManager.setOnline(false);
+    await queryClient
+      .fetchQuery({ queryKey: key, queryFn: network, ...shoppingQueryOptions, staleTime: 0 })
+      .catch(() => undefined);
+    expect(list(queryClient)).toEqual([existing]);
+    expect(queryClient.getQueryState(key)?.fetchStatus).toBe('idle');
+  });
+
+  it('fails with NETWORK offline when nothing is cached, instead of loading forever', async () => {
+    const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
+    onlineManager.setOnline(false);
+    await expect(
+      queryClient.fetchQuery({ queryKey: key, queryFn: network, ...shoppingQueryOptions }),
+    ).rejects.toMatchObject({ code: 'NETWORK' });
+    expect(queryClient.getQueryState(key)).toMatchObject({ status: 'error', fetchStatus: 'idle' });
+  });
+
+  it('still retries a failed load once online', async () => {
+    const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
+    const queryFn = vi
+      .fn<() => Promise<ShoppingItem[]>>()
+      .mockRejectedValueOnce(new AppError('NETWORK'))
+      .mockResolvedValue([existing]);
+    await queryClient.fetchQuery({
+      queryKey: key,
+      queryFn,
+      ...shoppingQueryOptions,
+      retryDelay: 0,
+    });
+    expect(queryFn).toHaveBeenCalledTimes(2);
   });
 });

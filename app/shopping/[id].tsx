@@ -49,7 +49,13 @@ export default function EditShoppingItemScreen() {
 
   const [confirming, setConfirming] = useState(false);
   const locked = useRef(false);
-  const close = () => router.back();
+  // Cancel isn't covered by the submit lock: only the first close goes back.
+  const closed = useRef(false);
+  const close = () => {
+    if (closed.current) return;
+    closed.current = true;
+    router.back();
+  };
 
   if (item === undefined) {
     const loading = itemsQuery.data === undefined && !itemsQuery.isError;

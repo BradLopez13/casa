@@ -5,6 +5,7 @@ import {
   onlineManager,
   QueryClient,
   QueryClientProvider,
+  useQueryClient,
 } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
@@ -13,7 +14,9 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
-import { persister } from '@/data/query/persist';
+import { appQueryDefaults } from '@/data/query/defaults';
+import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
+import { forgetEndedHousehold, persister } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
@@ -37,9 +40,7 @@ import {
 
 void SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1 } },
-});
+const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
 
 // Refetch stale queries when the app returns to the foreground.
 if (Platform.OS !== 'web') {
@@ -49,8 +50,9 @@ if (Platform.OS !== 'web') {
     });
     return () => subscription.remove();
   });
-  // Mutations pause while offline and resume when the connection is back. On the web the
-  // default listener (the browser's online and offline events) already does this.
+  // Tracks the connection: the shopping queue pauses while offline and resumes when it is
+  // back, and the offline band shows. On the web the default listener (the browser's online
+  // and offline events) already does this.
   onlineManager.setEventListener((setOnline) =>
     NetInfo.addEventListener((state) => {
       setOnline(state.isConnected === true && state.isInternetReachable !== false);
@@ -150,12 +152,27 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
   }
 }
 
+/**
+ * A membership that ended from someone else's side (removed, or the household deleted) must
+ * not leave that household's data on the device: once the membership resolves to none or to
+ * another household, the old one's is forgotten.
+ */
+function useForgetEndedHousehold(membership: { householdId: string } | null | undefined) {
+  const client = useQueryClient();
+  useEffect(() => {
+    for (const id of endedHouseholdIds(cachedHouseholdIds(client), membership)) {
+      forgetEndedHousehold(client, id);
+    }
+  }, [client, membership]);
+}
+
 function Guard() {
   const router = useRouter();
   const segments = useSegments();
   const session = useSession();
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
+  useForgetEndedHousehold(membershipQuery.data);
 
   const signedIn = session.status === 'signed-in';
   const hasData = membershipQuery.data !== undefined;
