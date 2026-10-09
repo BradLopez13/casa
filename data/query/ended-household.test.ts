@@ -32,11 +32,9 @@ describe('cachedHouseholdIds', () => {
     queryClient.setQueryData(['members', 'k'], []);
     queryClient.setQueryData(['tasks', 't'], []);
     queryClient.setQueryData(['membership'], { householdId: 'm' });
-    queryClient
-      .getMutationCache()
-      .build(queryClient, { mutationKey: ['shopping', 'add'] }, {
-        variables: { householdId: 'q' },
-      } as never);
+    queryClient.getMutationCache().build(queryClient, { mutationKey: ['shopping', 'add'] }, {
+      variables: { householdId: 'q' },
+    } as never);
     expect(cachedHouseholdIds(queryClient).sort()).toEqual(['h', 'k', 'q']);
   });
 
