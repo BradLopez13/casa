@@ -94,7 +94,11 @@ export function onReminderTapped(cb: () => void): () => void {
     cb();
   }
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    if (isReminder(response)) cb();
+    if (isReminder(response)) {
+      // Also forget it here, so a remount does not replay this tap as a launch tap.
+      Notifications.clearLastNotificationResponse();
+      cb();
+    }
   });
   return () => subscription.remove();
 }

@@ -202,6 +202,14 @@ describe('scheduleReminders', () => {
     expect(find(rs, 'evening-2026-10-26')?.fireAt.getHours()).toBe(20);
   });
 
+  it('terminates on a malformed rule that never advances', () => {
+    const bad = task({
+      dueOn: TODAY,
+      recurrence: { kind: 'interval', every: 0 } as unknown as TaskItem['recurrence'],
+    });
+    expect(run([bad]).length).toBeGreaterThan(0);
+  });
+
   it('uses the configured times', () => {
     const rs = run([task({ dueOn: TODAY })], {
       settings: { enabled: true, morning: '08:30', evening: '19:45' },
