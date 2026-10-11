@@ -2,8 +2,13 @@
 -- reports what happened; inserts into the outbox wake it through pg_net, and a pg_cron job
 -- retries every ten minutes. The function URL and its shared secret live in Supabase Vault.
 
--- Pending rows, oldest first, with every token of the recipient. Rows are locked with
--- skip locked first and only then joined to their tokens (no aggregates next to the lock).
+-- Senders hold a two-minute lease on the rows they claim. PostgREST runs each RPC in its own
+-- transaction, so row locks alone end when the claim returns; the lease is what keeps two
+-- overlapping senders (insert wake + cron retry) from sending the same notice.
+alter table private.push_outbox add column claimed_at timestamptz;
+
+-- Pending, unleased rows, oldest first, with every token of the recipient. One statement:
+-- lock with skip locked, stamp the lease, then join the updated rows to their tokens.
 create function public.claim_push_batch(p_limit int default 100)
 returns table (id bigint, recipient_id uuid, title text, body text, data jsonb, tokens text[])
 language sql
@@ -11,22 +16,29 @@ volatile
 security definer
 set search_path = ''
 as $$
-  with batch as (
-    select o.id, o.recipient_id, o.title, o.body, o.data
-    from private.push_outbox o
-    where o.sent_at is null and o.attempts < 5
-    order by o.id
-    limit greatest(coalesce(p_limit, 100), 0)
-    for update skip locked
+  with claimed as (
+    update private.push_outbox o
+    set claimed_at = now()
+    where o.id in (
+      select p.id
+      from private.push_outbox p
+      where p.sent_at is null
+        and p.attempts < 5
+        and (p.claimed_at is null or p.claimed_at < now() - interval '2 minutes')
+      order by p.id
+      limit greatest(coalesce(p_limit, 100), 0)
+      for update skip locked
+    )
+    returning o.id, o.recipient_id, o.title, o.body, o.data
   )
-  select b.id, b.recipient_id, b.title, b.body, b.data,
+  select c.id, c.recipient_id, c.title, c.body, c.data,
          coalesce(
            (select array_agg(t.token order by t.token)
             from public.push_tokens t
-            where t.user_id = b.recipient_id),
+            where t.user_id = c.recipient_id),
            '{}'::text[])
-  from batch b
-  order by b.id;
+  from claimed c
+  order by c.id;
 $$;
 
 create function public.mark_push_result(
@@ -47,7 +59,8 @@ as $$
 
   update private.push_outbox
   set attempts = attempts + 1,
-      last_error = left(p_error, 1000)
+      last_error = left(p_error, 1000),
+      claimed_at = null
   where id = any (p_failed) and sent_at is null;
 
   delete from public.push_tokens where token = any (p_dead_tokens);
