@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(18);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -31,6 +31,16 @@ select throws_ok($$select public.set_time_zone(null)$$, 'P0001', 'INVALID_TIME_Z
                  'a null zone is rejected');
 select is((select time_zone from public.profiles where user_id = :'ana'), 'Europe/Madrid',
           'a rejected zone leaves the stored one');
+
+-- The zone is only writable through set_time_zone, and today_for is not callable.
+select throws_ok(
+  $$update public.profiles set time_zone = 'Asia/Tokyo' where user_id = auth.uid()$$,
+  '42501', null, 'authenticated cannot update profiles.time_zone directly'
+);
+select throws_ok(
+  $$select private.today_for(auth.uid())$$,
+  '42501', null, 'authenticated cannot execute private.today_for'
+);
 
 -- today_for -------------------------------------------------------------------
 
