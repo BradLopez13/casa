@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(32);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -79,23 +79,46 @@ select id as dead_row from private.push_outbox where body = 'Agotada' \gset
 
 -- claim_push_batch ----------------------------------------------------------------
 
-set local role service_role;
+-- Each claim takes a lease, so keep the first batch to inspect it.
+create temp table first_claim (
+  id bigint, recipient_id uuid, title text, body text, data jsonb, tokens text[]
+);
+grant all on first_claim to service_role;
 
-select is((select count(*) from public.claim_push_batch(10)), 3::bigint,
+set local role service_role;
+insert into first_claim select * from public.claim_push_batch(10);
+reset role;
+
+select is((select array_agg(id order by id) from first_claim),
+          array[:ana_row, :bob_row, :carla_row]::bigint[],
           'three pending rows are claimed; exhausted and sent rows are not');
-select is((select array_agg(id) from public.claim_push_batch(2)),
-          array[:ana_row, :bob_row]::bigint[],
-          'the limit is honoured, oldest first');
-select is((select tokens from public.claim_push_batch(10) where id = :ana_row),
+select is((select tokens from first_claim where id = :ana_row),
           array['ExponentPushToken[ana-phone]', 'ExponentPushToken[ana-tablet]'],
           'every token of the recipient comes with the row');
-select is((select tokens from public.claim_push_batch(10) where id = :carla_row),
+select is((select tokens from first_claim where id = :carla_row),
           '{}'::text[], 'a recipient without tokens gets an empty array');
-select is((select row(recipient_id, title, body, data)::text from public.claim_push_batch(10) where id = :ana_row),
+select is((select row(recipient_id, title, body, data)::text from first_claim where id = :ana_row),
           row(:'ana'::uuid, 'Tienes una tarea nueva', 'Fregar', '{"url":"/tasks"}'::jsonb)::text,
           'recipient, title, body and data come with the row');
-select ok((select count(*) = 0 from public.claim_push_batch(10) where id = :dead_row),
+select ok((select count(*) = 0 from first_claim where id = :dead_row),
           'a row with five attempts is not claimed');
+select is((select count(*) from private.push_outbox where claimed_at is not null), 3::bigint,
+          'claimed rows carry a lease');
+
+set local role service_role;
+select is((select count(*) from public.claim_push_batch(10)), 0::bigint,
+          'a second claim right away gets none of the leased rows');
+reset role;
+
+-- The lease lasts two minutes.
+update private.push_outbox set claimed_at = now() - interval '3 minutes' where claimed_at is not null;
+
+set local role service_role;
+select is((select array_agg(id) from public.claim_push_batch(2)),
+          array[:ana_row, :bob_row]::bigint[],
+          'expired leases are claimable again; the limit is honoured, oldest first');
+select is((select array_agg(id) from public.claim_push_batch(10)),
+          array[:carla_row]::bigint[], 'the next claim only gets what is left');
 
 -- mark_push_result ----------------------------------------------------------------
 
@@ -113,6 +136,8 @@ select is((select array_agg(attempts order by id) from private.push_outbox where
           array[1, 1], 'failed rows add an attempt');
 select is((select last_error from private.push_outbox where id = :bob_row), 'DeviceNotRegistered',
           'failed rows keep the error');
+select is((select count(*) from private.push_outbox where id in (:bob_row, :carla_row) and claimed_at is not null),
+          0::bigint, 'failed rows drop their lease');
 select is((select count(*) from public.push_tokens where token = 'ExponentPushToken[bob-phone]'), 0::bigint,
           'dead tokens are deleted');
 select is((select count(*) from public.push_tokens where user_id = :'ana'), 2::bigint,
@@ -120,7 +145,14 @@ select is((select count(*) from public.push_tokens where user_id = :'ana'), 2::b
 
 set local role service_role;
 select is((select array_agg(id order by id) from public.claim_push_batch(10)),
-          array[:bob_row, :carla_row]::bigint[], 'a sent row is not claimed again');
+          array[:bob_row, :carla_row]::bigint[],
+          'failed rows are claimable again at once; the sent row is not');
+reset role;
+
+update private.push_outbox set claimed_at = now() - interval '3 minutes';
+set local role service_role;
+select ok((select count(*) = 0 from public.claim_push_batch(10) where id = :ana_row),
+          'a sent row never comes back, lease or not');
 reset role;
 
 -- Locking: pgTAP cannot open two sessions, so check the definition.
