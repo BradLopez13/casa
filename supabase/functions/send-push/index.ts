@@ -9,6 +9,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
+  alignTickets,
   buildExpoMessages,
   chunk,
   classifyResponse,
@@ -68,11 +69,8 @@ async function sendBatch(
       await response.body?.cancel();
       return errorTickets(messages.length, classifyResponse([], response.status).error);
     }
-    const payload = (await response.json()) as { data?: unknown };
-    if (!Array.isArray(payload.data)) {
-      return errorTickets(messages.length, 'Expo push response without tickets');
-    }
-    return payload.data as ExpoTicket[];
+    const payload = (await response.json()) as { data?: unknown } | null;
+    return alignTickets(messages.length, payload?.data);
   } catch (error) {
     return errorTickets(messages.length, `${classifyResponse([], 0).error}: ${errorText(error)}`);
   }
