@@ -1,0 +1,61 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.go-sign-up
+          timeout: 30000
+- evalScript: ${output.email = 'ines' + Date.now() + '@e2e.dev'}
+
+# Sign up
+- tapOn:
+    id: sign-in.go-sign-up
+- tapOn:
+    id: sign-up.name
+- inputText: Ines
+- tapOn:
+    id: sign-up.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-up.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-up.submit
+
+# Onboarding: no household yet -> delete the account from here
+- extendedWaitUntil:
+    visible:
+      id: onboarding.delete-account
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: onboarding.delete-account
+- tapOn:
+    id: onboarding.delete-account
+- tapOn:
+    id: members.confirm
+- extendedWaitUntil:
+    visible:
+      id: sign-in.email
+    timeout: 20000
+
+# The deleted account can no longer sign in
+- tapOn:
+    id: sign-in.email
+- inputText: ${output.email}
+- tapOn:
+    id: sign-in.password
+- inputText: e2e-password-2026
+- hideKeyboard
+- tapOn:
+    id: sign-in.submit
+- extendedWaitUntil:
+    visible: El correo o la contraseña no son correctos.
+    timeout: 20000
