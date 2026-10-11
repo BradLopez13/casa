@@ -62,6 +62,25 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"notification_prefs": {
+                  Row: {
+                    "member_joined": boolean,"task_assigned": boolean,"user_id": string
+                  }
+                  Insert: {
+                    "member_joined"?: boolean,"task_assigned"?: boolean,"user_id": string
+                  }
+                  Update: {
+                    "member_joined"?: boolean,"task_assigned"?: boolean,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_prefs_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["user_id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "avatar_url": string | null,"created_at": string,"display_name": string,"locale": string,"time_zone": string | null,"user_id": string
@@ -74,6 +93,25 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"push_tokens": {
+                  Row: {
+                    "platform": string,"token": string,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "platform": string,"token": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "platform"?: string,"token"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_tokens_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["user_id"]
+    }
                   ]
                 },"shopping_items": {
                   Row: {
@@ -162,6 +200,11 @@ isOneToOne: false
 "add_shopping_item":
 { Args: { "p_household_id": string,"p_id": string,"p_name": string,"p_quantity": string }; Returns: string
                            },
+"claim_push_batch":
+{ Args: { "p_limit"?: number }; Returns: {
+              "body": string,"data": Json,"id": number,"recipient_id": string,"title": string,"tokens": (string)[]
+            }[]
+                           },
 "clear_bought_items":
 { Args: { "p_household_id": string }; Returns: undefined
                            },
@@ -194,6 +237,12 @@ isOneToOne: false
 "leave_household":
 { Args: { "p_household_id": string }; Returns: undefined
                            },
+"mark_push_result":
+{ Args: { "p_dead_tokens": (string)[],"p_error": string,"p_failed": (number)[],"p_sent": (number)[] }; Returns: undefined
+                           },
+"register_push_token":
+{ Args: { "p_platform": string,"p_token": string }; Returns: undefined
+                           },
 "remove_member":
 { Args: { "p_household_id": string,"p_user_id": string }; Returns: undefined
                            },
@@ -205,6 +254,9 @@ isOneToOne: false
                            },
 "set_item_bought":
 { Args: { "p_bought": boolean,"p_id": string }; Returns: undefined
+                           },
+"set_notification_prefs":
+{ Args: { "p_member_joined": boolean,"p_task_assigned": boolean }; Returns: undefined
                            },
 "set_time_zone":
 { Args: { "p_tz": string }; Returns: undefined
@@ -219,6 +271,9 @@ isOneToOne: false
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
+                           },
+"unregister_push_token":
+{ Args: { "p_token": string }; Returns: undefined
                            },
 "update_shopping_item":
 { Args: { "p_id": string,"p_name": string,"p_quantity": string }; Returns: undefined

@@ -15,6 +15,8 @@ describe('toAppError', () => {
     'TASK_NOT_FOUND',
     'CANNOT_DELETE_TASK',
     'INVALID_TIME_ZONE',
+    'INVALID_PUSH_TOKEN',
+    'INVALID_PREFS',
   ])('maps task code %s to itself', (code) => {
     expect(toAppError({ code: 'P0001', message: code })).toMatchObject({ code });
   });
