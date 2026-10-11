@@ -27,6 +27,7 @@ import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
+import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
 import {
@@ -175,6 +176,7 @@ function Guard() {
   useForgetEndedHousehold(membershipQuery.data);
 
   const signedIn = session.status === 'signed-in';
+  useSyncTimeZone(signedIn ? session.userId : null);
   const hasData = membershipQuery.data !== undefined;
   const failed = signedIn && membershipQuery.isError && !hasData;
   const membership: RouteInput['membership'] =
