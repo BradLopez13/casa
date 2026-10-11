@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Nido symbol master (mono). Traced from the large symbol of the approved signature.
+       Two people of the same size: round heads at the same level and diameter over rounded
+       bodies that interlock around a shared central hollow. Full width, centred vertically. -->
+  <g id="left" fill="currentColor">
+    <!-- left head -->
+    <circle cx="130" cy="95.5" r="68"/>
+    <!-- left body: top bar, outer column and base. In one ink the base stops a 7-unit seam short of the
+         right figure's tongue (offset of its rounded end) so the two people stay apart -->
+    <path d="M0 254.5A80 80 0 0 1 80 174.5H178A42 42 0 0 1 220 216.5V276.5H149A13 13 0 0 0 136 289.5V369.5A13 13 0 0 0 149 382.5H198.34A37 37 0 0 0 183 412.5V454.5A37 37 0 0 0 198.34 484.5H114A114 114 0 0 1 0 370.5Z"/>
+  </g>
+  <g id="right" fill="currentColor">
+    <!-- right head -->
+    <circle cx="382" cy="95.5" r="68"/>
+    <!-- right body: mirrored top bar and outer column; its base reaches left below the hollow -->
+    <path d="M512 254.5V370.5A114 114 0 0 1 398 484.5H220A30 30 0 0 1 190 454.5V412.5A30 30 0 0 1 220 382.5H363A13 13 0 0 0 376 369.5V289.5A13 13 0 0 0 363 276.5H292V216.5A42 42 0 0 1 334 174.5H432A80 80 0 0 1 512 254.5Z"/>
+  </g>
+</svg>
