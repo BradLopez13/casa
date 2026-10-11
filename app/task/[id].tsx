@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
@@ -20,10 +20,10 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
+import { useCloseModal } from '@/ui/useCloseModal';
 
 export default function EditTaskScreen() {
   const { colors, space } = useTheme();
-  const router = useRouter();
   const notify = useNotice();
   const { id } = useLocalSearchParams<{ id: string }>();
   const today = useToday();
@@ -44,7 +44,7 @@ export default function EditTaskScreen() {
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const remove = useTaskMutation<void, void>(() => deleteTask(id));
   const skip = useSkipTask(householdId);
-  const close = () => router.back();
+  const close = useCloseModal('/today');
 
   if (task === undefined) {
     const loading = tasksQuery.data === undefined && !tasksQuery.isError;

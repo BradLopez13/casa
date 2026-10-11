@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,10 +29,11 @@ import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
+import { useCloseModal } from '@/ui/useCloseModal';
 
 export default function EditShoppingItemScreen() {
   const { colors, space } = useTheme();
-  const router = useRouter();
+  const closeModal = useCloseModal('/shopping');
   const { id } = useLocalSearchParams<{ id: string }>();
   const householdId = useMembership().data?.householdId;
   const itemsQuery = useShoppingItems(householdId);
@@ -54,7 +55,7 @@ export default function EditShoppingItemScreen() {
   const close = () => {
     if (closed.current) return;
     closed.current = true;
-    router.back();
+    closeModal();
   };
 
   if (item === undefined) {
