@@ -181,7 +181,11 @@ export function ReminderSettingsSection() {
       </View>
       {denied ? (
         <>
-          <Text testID="settings.reminders.denied" style={{ color: colors.ink, fontSize: 14 }}>
+          <Text
+            testID="settings.reminders.denied"
+            accessibilityLiveRegion="polite"
+            style={{ color: colors.ink, fontSize: 14 }}
+          >
             {t('settings.remindersDenied')}
           </Text>
           <Button

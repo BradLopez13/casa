@@ -35,7 +35,10 @@ function withProjections(tasks: TaskItem[], today: string, end: string): TaskIte
         known.add(key);
         projected.push({ ...t, id: `${t.id}@${date}`, dueOn: date, generatedFrom: t.id });
       }
-      date = calculateNextOccurrence(t.recurrence, date, date);
+      const next = calculateNextOccurrence(t.recurrence, date, date);
+      // Defensive: a malformed rule that does not move forward must not loop forever.
+      if (next <= date) break;
+      date = next;
     }
   }
   return [...tasks, ...projected];
