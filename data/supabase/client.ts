@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
 import { AppState, Platform } from 'react-native';
+import { secureStore } from '../secure-store';
 import { createChunkedStorage } from './chunked-storage';
 import type { Database } from './database.types';
 
@@ -16,7 +16,7 @@ if (typeof url !== 'string' || !url || typeof key !== 'string' || !key) {
 
 export const supabase = createClient<Database>(url, key, {
   auth: {
-    storage: createChunkedStorage(SecureStore),
+    storage: createChunkedStorage(secureStore),
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
