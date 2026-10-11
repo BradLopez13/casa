@@ -6,9 +6,9 @@ import type { SecureKeyValue } from './supabase/chunked-storage';
  * every read is empty (signed out), and the browser takes over once it hydrates. A browser that
  * blocks storage (private mode, blocked site data) throws on access: treated as empty too.
  */
-function withStorage<T>(fallback: T, use: (storage: Storage) => T): Promise<T> {
+function withStorage<T>(fallback: T, read: (storage: Storage) => T): Promise<T> {
   try {
-    return Promise.resolve(typeof window === 'undefined' ? fallback : use(window.localStorage));
+    return Promise.resolve(typeof window === 'undefined' ? fallback : read(window.localStorage));
   } catch {
     return Promise.resolve(fallback);
   }
