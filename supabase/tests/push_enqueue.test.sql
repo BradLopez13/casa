@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(30);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -105,6 +105,19 @@ select tests.clear_auth();
 select is((select count(*) from private.push_outbox where recipient_id = :'bob'), 5::bigint,
           'task_assigned off queues nothing');
 delete from public.notification_prefs where user_id = :'bob';
+
+-- A person reassigning a recurrence-generated occurrence does notify.
+select tests.authenticate_as(:'ana');
+select public.create_task('00000000-0000-0000-0000-0000000000ca', '00000000-0000-0000-0000-0000000000a1',
+  'Semanal', null, null, :'bob_today'::date, '{"kind":"interval","every":7}');
+select public.complete_task('00000000-0000-0000-0000-0000000000ca', :'bob_today'::date);
+select id as gen_id from public.task_occurrences
+  where generated_from = '00000000-0000-0000-0000-0000000000ca' \gset
+select ok(:'gen_id' is not null, 'completing created a generated occurrence');
+select public.update_task(:'gen_id', 'Semanal', null, :'bob', :'bob_today'::date + 7, '{"kind":"interval","every":7}');
+select tests.clear_auth();
+select is((select count(*) from private.push_outbox where recipient_id = :'bob' and body like 'Semanal%'), 1::bigint,
+          'reassigning a generated occurrence queues one row');
 
 -- New members -----------------------------------------------------------------
 
