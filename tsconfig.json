@@ -15,6 +15,7 @@
     "jest.config.js",
     "android",
     "ios",
-    "scripts"
+    "scripts",
+    "supabase/functions/send-push"
   ]
 }
