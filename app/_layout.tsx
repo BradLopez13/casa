@@ -30,6 +30,8 @@ import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
+import { onReminderTapped } from '@/features/reminders/notifications';
+import { useReminders } from '@/features/reminders/useReminders';
 import {
   addKey,
   boughtKey,
@@ -177,6 +179,7 @@ function Guard() {
 
   const signedIn = session.status === 'signed-in';
   useSyncTimeZone(signedIn ? session.userId : null);
+  useReminders();
   const hasData = membershipQuery.data !== undefined;
   const failed = signedIn && membershipQuery.isError && !hasData;
   const membership: RouteInput['membership'] =
@@ -205,6 +208,14 @@ function Guard() {
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
+
+  // A tapped reminder opens Hoy, once the app has settled on a member's screens (so the
+  // redirects above do not undo it). A tap that launched the app is handled here too.
+  const inHousehold = ready && membership === 'member';
+  useEffect(() => {
+    if (!inHousehold) return;
+    return onReminderTapped(() => router.push('/today'));
+  }, [inHousehold, router]);
 
   return (
     <>
