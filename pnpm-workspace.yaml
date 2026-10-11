@@ -1,5 +1,8 @@
 # pnpm 12 no ejecuta scripts de instalacion sin aprobarlos.
 # unrs-resolver (eslint-config-expo) trae binarios precompilados; su postinstall es solo un respaldo.
+# node_modules plano: React Native lo necesita, y en Windows las rutas de .pnpm superan el limite
+# que acepta ninja al compilar los modulos nativos. pnpm 12 ya no lee node-linker de .npmrc.
+nodeLinker: hoisted
 allowBuilds:
   unrs-resolver: false
   supabase: true
