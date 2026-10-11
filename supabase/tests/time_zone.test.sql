@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(16);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -78,6 +78,20 @@ select lives_ok(
   $$select public.complete_task('00000000-0000-0000-0000-0000000000d2', current_date + 30)$$,
   'with a zone, p_today is not validated'
 );
+select tests.clear_auth();
+select is(
+  (select o.due_on from public.task_occurrences o
+   where o.generated_from = '00000000-0000-0000-0000-0000000000d2'),
+  greatest((now() at time zone 'utc')::date, (now() at time zone 'Pacific/Kiritimati')::date) + 1,
+  'the next occurrence ignores a far p_today and uses the zone date'
+);
+select isnt(
+  (select o.due_on from public.task_occurrences o
+   where o.generated_from = '00000000-0000-0000-0000-0000000000d2'),
+  current_date + 31,
+  'p_today does not feed the next occurrence'
+);
+select tests.authenticate_as(:'ana');
 
 -- ...but checked as before without one.
 select tests.clear_auth();
