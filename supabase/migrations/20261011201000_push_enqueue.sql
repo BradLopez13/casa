@@ -31,7 +31,7 @@ declare
 begin
   if new.assignee_id is null
      or (tg_op = 'UPDATE' and new.assignee_id is not distinct from old.assignee_id)
-     or new.generated_from is not null
+     or (tg_op = 'INSERT' and new.generated_from is not null)
      or v_actor is null
      or new.assignee_id = v_actor
      or new.completed_at is not null
