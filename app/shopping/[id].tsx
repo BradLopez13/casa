@@ -54,8 +54,7 @@ export default function EditShoppingItemScreen() {
   const closed = useRef(false);
   const close = () => {
     if (closed.current) return;
-    closed.current = true;
-    closeModal();
+    closed.current = closeModal();
   };
 
   if (item === undefined) {
