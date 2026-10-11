@@ -57,6 +57,36 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+function toTicket(value: unknown): ExpoTicket {
+  if (isRecord(value) && value.status === 'ok') return { status: 'ok' };
+  if (isRecord(value) && value.status === 'error') {
+    const ticket: ExpoTicket = { status: 'error' };
+    if (typeof value.message === 'string') ticket.message = value.message;
+    if (isRecord(value.details) && typeof value.details.error === 'string') {
+      ticket.details = { error: value.details.error };
+    }
+    return ticket;
+  }
+  return { status: 'error', message: 'invalid ticket' };
+}
+
+// Tickets of one Expo request, one per message in order. Expo's `data` is trusted only when
+// it is an array with exactly one entry per message; anything else becomes error tickets for
+// the whole request, so tickets never shift onto another request's messages and no token is
+// declared dead on a guess.
+export function alignTickets(messageCount: number, tickets: unknown): ExpoTicket[] {
+  if (!Array.isArray(tickets) || tickets.length !== messageCount) {
+    const message = Array.isArray(tickets)
+      ? `Expo push returned ${tickets.length} tickets for ${messageCount} messages`
+      : 'Expo push response without tickets';
+    return Array.from({ length: messageCount }, () => ({ status: 'error' as const, message }));
+  }
+  return tickets.map(toTicket);
+}
+
 // A row is sent when any of its tickets is ok, failed when none is. Rows with no messages
 // (recipient without tokens) count as sent: there is nothing left to deliver. A missing
 // ticket counts as an error so the row is retried.

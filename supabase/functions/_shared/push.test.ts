@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  alignTickets,
   buildExpoMessages,
   chunk,
   classifyResponse,
@@ -108,5 +109,56 @@ describe('classifyResponse', () => {
     expect(result.failed).toEqual([7, 8]);
     expect(result.deadTokens).toEqual([]);
     expect(result.error).toContain('500');
+  });
+});
+
+describe('alignTickets', () => {
+  const dead = { status: 'error', message: 'gone', details: { error: 'DeviceNotRegistered' } };
+
+  it('keeps tickets whose count matches the messages', () => {
+    expect(alignTickets(2, [{ status: 'ok' }, dead])).toEqual([{ status: 'ok' }, dead]);
+  });
+
+  it('turns a length mismatch into error tickets that mark no token dead', () => {
+    const tickets = alignTickets(2, [dead]);
+    expect(tickets).toHaveLength(2);
+    expect(tickets.every((t) => t.status === 'error')).toBe(true);
+
+    const { messages, owner } = buildExpoMessages([withTokens]);
+    const result = classifyTickets([7], owner, messages, tickets);
+    expect(result.failed).toEqual([7]);
+    expect(result.deadTokens).toEqual([]);
+  });
+
+  it('turns a non-array data into error tickets', () => {
+    for (const data of [undefined, null, { status: 'ok' }, 'ok']) {
+      const tickets = alignTickets(3, data);
+      expect(tickets).toHaveLength(3);
+      expect(tickets.every((t) => t.status === 'error')).toBe(true);
+    }
+  });
+
+  it('never shifts a dead token from a later batch onto an earlier one', () => {
+    const other: OutboxRow = { ...withoutTokens, id: 9, tokens: ['ExponentPushToken[ccc]'] };
+    const { messages, owner } = buildExpoMessages([withTokens, other]);
+    const [first, second] = chunk(messages, 2);
+
+    // Batch 1 (two messages of row 7) comes back one ticket short; batch 2 (row 9) is dead.
+    const tickets = [
+      ...alignTickets(first!.length, [{ status: 'ok' }]),
+      ...alignTickets(second!.length, [dead]),
+    ];
+
+    const result = classifyTickets([7, 9], owner, messages, tickets);
+    expect(result.deadTokens).toEqual(['ExponentPushToken[ccc]']);
+    expect(result.sent).toEqual([]);
+    expect(result.failed).toEqual([7, 9]);
+  });
+
+  it('turns entries that are not tickets into errors', () => {
+    expect(alignTickets(2, [{ status: 'ok' }, 42])).toEqual([
+      { status: 'ok' },
+      { status: 'error', message: 'invalid ticket' },
+    ]);
   });
 });
