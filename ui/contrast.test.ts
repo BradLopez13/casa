@@ -51,7 +51,7 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
   it.each([
     ['page', p.page],
     ['note', p.note],
-  ])('overdue red on %s', (_, ground) => {
+  ])('overdue and danger red on %s', (_, ground) => {
     expect(contrastRatio(p.red, ground)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
