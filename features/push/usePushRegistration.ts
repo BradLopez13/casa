@@ -6,8 +6,7 @@ import {
   getExpoPushToken,
   getPermission,
 } from '@/features/reminders/notifications';
-import { registerPushToken } from './api';
-import { loadPushRegistration, savePushRegistration, shouldRegister } from './registration';
+import { loadPushRegistration, registerAndSave, shouldRegister } from './registration';
 
 /** Read at call time: undefined until the EAS project is configured. */
 function easProjectId(): string | null {
@@ -45,8 +44,7 @@ export function usePushRegistration(userId: string | null): void {
         const token = await getExpoPushToken(projectId);
         const current = { userId, token };
         if (!shouldRegister(await loadPushRegistration(), current)) return;
-        await registerPushToken(token, platform);
-        if (!stale) await savePushRegistration(current);
+        await registerAndSave(current, platform, () => !stale);
       } catch {
         // Silent by design: retried on the next foreground.
       } finally {
