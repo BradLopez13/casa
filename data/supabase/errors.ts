@@ -22,6 +22,7 @@ export const APP_ERROR_CODES = [
   'INVALID_QUANTITY',
   'ITEM_NOT_FOUND',
   'ITEM_ALREADY_LISTED',
+  'INVALID_TIME_ZONE',
   'NETWORK',
   'UNKNOWN',
 ] as const;

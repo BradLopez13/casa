@@ -1,5 +1,6 @@
 import { supabase } from '@/data/supabase/client';
 import { AuthFailure, toAuthFailure } from './errors';
+import { toAppError } from '@/data/supabase/errors';
 
 export { AuthFailure, toAuthFailure } from './errors';
 export type { AuthErrorCode } from './errors';
@@ -59,4 +60,26 @@ export async function signOut(): Promise<void> {
     throw toAuthFailure(e);
   }
   if (local.error) throw toAuthFailure(local.error);
+}
+
+/** Deletes the account on the server. Does not sign out: the caller cleans up first. */
+export async function deleteAccount(): Promise<void> {
+  let result;
+  try {
+    result = await supabase.rpc('delete_account');
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (result.error) throw toAppError(result.error);
+}
+
+/** Drops the local session only (the server-side token is already gone after deletion). */
+export async function signOutLocally(): Promise<void> {
+  let result;
+  try {
+    result = await supabase.auth.signOut({ scope: 'local' });
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (result.error) throw toAuthFailure(result.error);
 }
