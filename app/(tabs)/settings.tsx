@@ -4,6 +4,7 @@ import { isOwnerAlone } from '@/domain/account/delete';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
+import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection';
 import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { t } from '@/i18n';
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
         onPress={() => router.push('/household/members')}
       />
       <ReminderSettingsSection />
+      <HouseholdNoticesSection />
       <Button
         testID="settings.sign-out"
         title={t('auth.signOut')}
