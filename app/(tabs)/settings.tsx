@@ -6,6 +6,7 @@ import { deleteFailureKind, isOwnerAlone, type DeleteFailure } from '@/domain/ac
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useDeleteAccount } from '@/features/auth/useDeleteAccount';
+import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
         variant="secondary"
         onPress={() => router.push('/household/members')}
       />
+      <ReminderSettingsSection />
       <Button
         testID="settings.sign-out"
         title={t('auth.signOut')}
