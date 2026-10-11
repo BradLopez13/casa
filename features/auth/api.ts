@@ -1,6 +1,7 @@
 import { supabase } from '@/data/supabase/client';
 import { AuthFailure, toAuthFailure } from './errors';
 import { toAppError } from '@/data/supabase/errors';
+import { forgetPushRegistration } from '@/features/push/registration';
 
 export { AuthFailure, toAuthFailure } from './errors';
 export type { AuthErrorCode } from './errors';
@@ -35,6 +36,9 @@ export async function signIn({ email, password }: SignInArgs): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  // While still signed in, stop the server sending to this phone. Best effort: a failure here
+  // never blocks the sign-out.
+  await forgetPushRegistration().catch(() => undefined);
   // supabase-js already drops the local session (and emits SIGNED_OUT) when the global
   // sign-out fails with a non-4xx error. Only if a session still remains do we fall back
   // to a local sign-out, so the user is never stuck signed in.

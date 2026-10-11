@@ -6,7 +6,8 @@ import { t } from '@/i18n';
 import type { NotificationPermission, ScheduledReminder } from './plan';
 
 const CHANNEL_ID = 'reminders';
-/** Marks our notifications, so a tap on anything else is not taken for a reminder. */
+const HOUSEHOLD_CHANNEL_ID = 'household';
+/** Marks our reminders (push notices carry `casa: 'push'`); taps are routed by this field. */
 const REMINDER_DATA = { casa: 'reminder' } as const;
 
 // Local notifications do not exist on the web: every call is a quiet no-op there.
@@ -78,27 +79,38 @@ export function cancelAll(): Promise<void> {
   return serial(() => Notifications.cancelAllScheduledNotificationsAsync());
 }
 
-const isReminder = (response: Notifications.NotificationResponse | null): boolean =>
-  response?.notification.request.content.data?.casa === REMINDER_DATA.casa;
+/** Creates the Android channel for household push notices (the server sends to it). */
+export async function ensureHouseholdChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(HOUSEHOLD_CHANNEL_ID, {
+    name: t('push.channelName'),
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+}
+
+/** This phone's Expo push token. Only call it with the permission granted. */
+export async function getExpoPushToken(projectId: string): Promise<string> {
+  const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
+  return data;
+}
 
 /**
- * Calls `cb` when the user taps a reminder, including the tap that opened the app. Returns
- * the unsubscribe function.
+ * Calls `cb` with the `data` of any tapped notification (reminders and push notices),
+ * including the tap that opened the app. Where it leads is decided by the caller. Returns the
+ * unsubscribe function.
  */
-export function onReminderTapped(cb: () => void): () => void {
+export function onNotificationTapped(cb: (data: unknown) => void): () => void {
   if (!supported) return () => undefined;
   const launch = Notifications.getLastNotificationResponse();
-  if (isReminder(launch)) {
-    // Handled once: a later remount must not open Hoy again.
+  if (launch) {
+    // Handled once: a later remount must not replay it.
     Notifications.clearLastNotificationResponse();
-    cb();
+    cb(launch.notification.request.content.data);
   }
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    if (isReminder(response)) {
-      // Also forget it here, so a remount does not replay this tap as a launch tap.
-      Notifications.clearLastNotificationResponse();
-      cb();
-    }
+    // Also forget it here, so a remount does not replay this tap as a launch tap.
+    Notifications.clearLastNotificationResponse();
+    cb(response.notification.request.content.data);
   });
   return () => subscription.remove();
 }

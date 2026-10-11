@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { pendingInvite } from '@/features/households/pending-invite';
+import { clearPushRegistration } from '@/features/push/registration';
 import { clearReminderSettings } from '@/features/reminders/storage';
 import { deleteAccount, signOutLocally } from './api';
 import { useSession } from './SessionProvider';
@@ -18,6 +19,8 @@ export function useDeleteAccount() {
       await deleteAccount();
       await pendingInvite.clear().catch(() => undefined);
       if (userId) await clearReminderSettings(userId);
+      // The server already dropped this user's push tokens with the account.
+      await clearPushRegistration();
       await signOutLocally();
     },
     onSettled: () => {
