@@ -77,6 +77,7 @@
   "reminders.overdueSuffixOne": " (1 vencida)",
   "reminders.eveningTitleOne": "Te queda 1 tarea de hoy",
   "reminders.eveningTitleOther": "Te quedan {count} tareas de hoy",
+  "push.channelName": "Avisos de la casa",
   "members.title": "Miembros del hogar",
   "members.owner": "Propietario",
   "members.you": "(tú)",
