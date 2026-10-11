@@ -64,13 +64,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"created_at": string,"display_name": string,"locale": string,"user_id": string
+                    "avatar_url": string | null,"created_at": string,"display_name": string,"locale": string,"time_zone": string | null,"user_id": string
                   }
                   Insert: {
-                    "avatar_url"?: string | null,"created_at"?: string,"display_name": string,"locale"?: string,"user_id": string
+                    "avatar_url"?: string | null,"created_at"?: string,"display_name": string,"locale"?: string,"time_zone"?: string | null,"user_id": string
                   }
                   Update: {
-                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string,"locale"?: string,"user_id"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string,"locale"?: string,"time_zone"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -179,6 +179,9 @@ isOneToOne: false
 "create_task":
 { Args: { "p_assignee_id": string,"p_due_on": string,"p_household_id": string,"p_id": string,"p_recurrence": Json,"p_room": string,"p_title": string }; Returns: string
                            },
+"delete_account":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "delete_household":
 { Args: { "p_household_id": string }; Returns: undefined
                            },
@@ -202,6 +205,9 @@ isOneToOne: false
                            },
 "set_item_bought":
 { Args: { "p_bought": boolean,"p_id": string }; Returns: undefined
+                           },
+"set_time_zone":
+{ Args: { "p_tz": string }; Returns: undefined
                            },
 "shopping_history":
 { Args: { "p_household_id": string }; Returns: {
