@@ -1,6 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { useCloseModal } from '@/ui/useCloseModal';
 
 const CHECK_SIZE = 26;
 
@@ -82,7 +82,7 @@ function TemplateRow({
 
 export default function TemplatesScreen() {
   const { colors, space } = useTheme();
-  const router = useRouter();
+  const close = useCloseModal('/today');
   const today = useToday();
   const queryClient = useQueryClient();
   const householdId = useMembership().data?.householdId;
@@ -118,7 +118,7 @@ export default function TemplatesScreen() {
     save.submit(
       { tasks },
       {
-        onSuccess: () => router.back(),
+        onSuccess: close,
         onError: () => {
           setFailed(true);
           // Some tasks may already exist: refresh the list so Hoy shows them (and drops the
@@ -142,11 +142,7 @@ export default function TemplatesScreen() {
           borderBottomColor: colors.hairline,
         }}
       >
-        <HeaderAction
-          testID="templates.cancel"
-          label={t('templates.cancel')}
-          onPress={() => router.back()}
-        />
+        <HeaderAction testID="templates.cancel" label={t('templates.cancel')} onPress={close} />
         <Text
           accessibilityRole="header"
           numberOfLines={1}

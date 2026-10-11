@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -9,9 +9,10 @@ import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
+import { useCloseModal } from '@/ui/useCloseModal';
 
 export default function NewTaskScreen() {
-  const router = useRouter();
+  const close = useCloseModal('/today');
   const params = useLocalSearchParams<{ assignee?: string }>();
   const today = useToday();
   const { userId } = useSession();
@@ -43,10 +44,10 @@ export default function NewTaskScreen() {
       saving={save.isPending || save.isSuccess}
       repeatEditable
       error={save.error ? taskErrorMessage(save.error) : null}
-      onCancel={() => router.back()}
+      onCancel={close}
       onSave={(input) => {
         if (householdId === undefined) return;
-        save.submit({ input }, { onSuccess: () => router.back() });
+        save.submit({ input }, { onSuccess: close });
       }}
     />
   );
