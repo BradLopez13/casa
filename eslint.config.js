@@ -11,6 +11,7 @@ module.exports = defineConfig([
     '.expo/',
     'dist/',
     'expo-env.d.ts',
+    'supabase/functions/send-push/',
   ]),
   expoConfig,
   {
