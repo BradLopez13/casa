@@ -8,7 +8,10 @@ type Props = {
   testID?: string;
   loading?: boolean;
   disabled?: boolean;
-  /** primary: cobalt pill. secondary: outlined pill. danger: ink pill for irreversible actions. */
+  /**
+   * primary: cobalt pill. secondary: outlined pill. danger: red outlined pill for irreversible
+   * actions, quieter than primary so it never reads as the main action.
+   */
   variant?: 'primary' | 'secondary' | 'danger';
 };
 
@@ -23,10 +26,10 @@ export function Button({
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const fill =
-    variant === 'primary' ? colors.cobalt : variant === 'danger' ? colors.ink : 'transparent';
+  const fill = variant === 'primary' ? colors.cobalt : 'transparent';
   const foreground =
-    variant === 'primary' ? colors.onCobalt : variant === 'danger' ? colors.page : colors.cobalt;
+    variant === 'primary' ? colors.onCobalt : variant === 'danger' ? colors.red : colors.cobalt;
+  const border = variant === 'danger' ? colors.red : colors.cobalt;
 
   return (
     <View>
@@ -47,7 +50,7 @@ export function Button({
           paddingVertical: space(3),
           borderRadius: radii.pill,
           borderWidth: 1.5,
-          borderColor: variant === 'secondary' ? colors.cobalt : fill,
+          borderColor: border,
           backgroundColor: fill,
           opacity: inactive ? 0.5 : pressed ? 0.8 : 1,
         })}

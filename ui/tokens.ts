@@ -18,7 +18,7 @@ export type Palette = {
   cobalt: string;
   /** Text and icons on a cobalt fill. */
   onCobalt: string;
-  /** Only for overdue tasks, always next to the written word. */
+  /** Only for overdue tasks and irreversible actions, always next to the written word. */
   red: string;
   /** Quiet separators that carry no meaning on their own. */
   hairline: string;
