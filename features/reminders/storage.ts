@@ -18,6 +18,15 @@ export async function loadReminderSettings(userId: string): Promise<ReminderSett
   }
 }
 
+/** Forgets the user's settings on this device (account deleted). Errors are ignored. */
+export async function clearReminderSettings(userId: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(keyFor(userId));
+  } catch {
+    // Nothing to do: the account is gone either way.
+  }
+}
+
 export async function saveReminderSettings(userId: string, s: ReminderSettings): Promise<void> {
   await AsyncStorage.setItem(keyFor(userId), JSON.stringify(s));
 }

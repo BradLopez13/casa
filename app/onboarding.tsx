@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { signOut } from '@/features/auth/api';
+import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
 import { createHousehold } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
 import { householdNameSchema } from '@/features/households/schemas';
@@ -106,6 +107,7 @@ export default function OnboardingScreen() {
         variant="secondary"
         onPress={() => void signOut().catch(() => undefined)}
       />
+      <DeleteAccountButton testID="onboarding.delete-account" />
     </Screen>
   );
 }
