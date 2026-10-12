@@ -25,13 +25,24 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 
-export default function EditShoppingItemScreen() {
+/** Mounted once inside its frame, so rotating never remounts the form. */
+export default function EditShoppingItemRoute() {
+  return (
+    <ModalSheet>
+      <EditShoppingItemScreen />
+    </ModalSheet>
+  );
+}
+
+function EditShoppingItemScreen() {
   const { colors, space } = useTheme();
   const closeModal = useCloseModal('/shopping');
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -150,6 +161,8 @@ function EditForm({
   onDelete: () => void;
 }) {
   const { colors, space } = useTheme();
+  const { fill, avoidKeyboard } = useModalFill();
+  const { scroll, reveal } = useRevealFocusedField();
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
 
@@ -164,7 +177,7 @@ function EditForm({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',
@@ -207,10 +220,12 @@ function EditForm({
       </View>
       {online ? null : <OfflineBand />}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          {...scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
@@ -224,6 +239,7 @@ function EditForm({
             label={t('shopping.edit.name')}
             value={name}
             onChangeText={setName}
+            onFocus={reveal}
             returnKeyType="done"
             error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
           />
@@ -232,6 +248,7 @@ function EditForm({
             label={t('shopping.edit.quantity')}
             value={quantity}
             onChangeText={setQuantity}
+            onFocus={reveal}
             returnKeyType="done"
             error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
           />

@@ -23,8 +23,10 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
+import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
+import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
@@ -173,6 +175,7 @@ function useForgetEndedHousehold(membership: { householdId: string } | null | un
 
 function Guard() {
   const router = useRouter();
+  const modalFrame = modalFrameFor(useLayout());
   const segments = useSegments();
   const session = useSession();
   const membershipQuery = useMembership();
@@ -221,13 +224,22 @@ function Guard() {
     return onNotificationTapped((data) => router.push(routeForNotification(data)));
   }, [inHousehold, router]);
 
+  // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
+  // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
+  // change while a screen is shown, so a fixed one lets a rotation swap the frame without
+  // remounting the form. The sheet fades in and out; the full screen keeps the platform's slide.
+  const modal = {
+    presentation: 'transparentModal',
+    animation: modalFrame === 'sheet' ? 'fade' : undefined,
+  } as const;
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="task/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="shopping/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="templates" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="task/new" options={modal} />
+        <Stack.Screen name="task/[id]" options={modal} />
+        <Stack.Screen name="shopping/[id]" options={modal} />
+        <Stack.Screen name="templates" options={modal} />
       </Stack>
       {failed ? (
         <MembershipError

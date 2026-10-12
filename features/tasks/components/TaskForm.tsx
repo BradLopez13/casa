@@ -9,9 +9,11 @@ import { dayHeading } from '@/domain/tasks/labels';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
 import { taskFormSchema } from '../schemas';
 import { AssigneePicker } from './AssigneePicker';
@@ -127,6 +129,8 @@ export function TaskForm({
   repeatEditable = true,
 }: Props) {
   const { colors, space } = useTheme();
+  const { fill, avoidKeyboard } = useModalFill();
+  const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
@@ -178,7 +182,7 @@ export function TaskForm({
       : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',
@@ -216,10 +220,12 @@ export function TaskForm({
         />
       </View>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          {...scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
@@ -233,6 +239,7 @@ export function TaskForm({
             label={t('taskForm.titleLabel')}
             value={values.title}
             onChangeText={(text) => set({ title: text })}
+            onFocus={reveal}
             // Only a new task starts with an empty title.
             autoFocus={initial.title === ''}
             maxLength={200}

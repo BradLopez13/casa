@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { useLayout } from '../useLayout';
+import { useModalFill } from './ModalSheet';
 
 /**
  * A plain scrolling screen. The content keeps the class gutter at the sides and never grows past
@@ -11,13 +12,16 @@ import { useLayout } from '../useLayout';
 export function Screen({ children }: { children: ReactNode }) {
   const { colors, space } = useTheme();
   const { contentMax, gutter } = useLayout();
+  // Inside a modal sheet it is only as tall as its content (see ModalSheet).
+  const { fill, avoidKeyboard } = useModalFill();
   return (
     <SafeAreaView
       edges={['top', 'right', 'bottom', 'left']}
-      style={{ flex: 1, backgroundColor: colors.page }}
+      style={[fill, { backgroundColor: colors.page }]}
     >
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
