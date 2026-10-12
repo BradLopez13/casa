@@ -77,7 +77,8 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#DBC7BD',
     cobalt: '#F0AD83',
     onCobalt: '#263663',
-    red: '#F08A80',
+    // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
+    red: '#F2808F',
     hairline: '#353C54',
     // Kept cool and grey so an unselected border never looks like the apricot selection.
     outline: '#918B98',
@@ -96,6 +97,18 @@ export const palettes: Record<Scheme, Palette> = {
   },
 };
 
+export type NoteEdge = { borderWidth: number; borderColor: string };
+
+/**
+ * The edge of a note (and of anything drawn as one). In dark mode the note is barely lighter than
+ * the page and the shadow is lost on navy, so a 1 dp hairline gives the paper its edge back; in
+ * light mode the shadow is enough.
+ */
+export const noteEdges: Record<Scheme, NoteEdge> = {
+  light: { borderWidth: 0, borderColor: 'transparent' },
+  dark: { borderWidth: 1, borderColor: palettes.dark.hairline },
+};
+
 export const radii = { day: 12, note: 14, door: 30, pill: 999 } as const;
 
 export const magnetSizes = { lg: 50, md: 38, sm: 26 } as const;
@@ -108,6 +121,18 @@ export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, md: 16, 
 export const displayFont = 'MPLUSRounded1c_800ExtraBold';
 
 export const MIN_TOUCH = 44;
+
+/**
+ * Least height of a text field, a Button and the New task pill: a touch target and a little air.
+ * A minimum, never a fixed height, so the control grows with the system text size.
+ */
+export const CONTROL_HEIGHT = 48;
+
+/**
+ * Least height of a small outlined pill drawn inside a full touch target (a form's Guardar, a
+ * reminder's time): the Pressable around it keeps MIN_TOUCH. Grows with the text too.
+ */
+export const INLINE_PILL_HEIGHT = 36;
 
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;

@@ -17,12 +17,22 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalSheet } from '@/ui/components/ModalSheet';
 import { useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { useCloseModal } from '@/ui/useCloseModal';
 
-export default function EditTaskScreen() {
+/** Mounted once inside its frame, so rotating never remounts the form. */
+export default function EditTaskRoute() {
+  return (
+    <ModalSheet>
+      <EditTaskScreen />
+    </ModalSheet>
+  );
+}
+
+function EditTaskScreen() {
   const { colors, space } = useTheme();
   const notify = useNotice();
   const { id } = useLocalSearchParams<{ id: string }>();

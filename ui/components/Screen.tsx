@@ -1,27 +1,47 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { useLayout } from '../useLayout';
+import { useModalFill } from './ModalSheet';
 
+/**
+ * A plain scrolling screen. The content keeps the class gutter at the sides and never grows past
+ * `contentMax`, centred; all four safe-area edges are kept clear (a side notch in landscape),
+ * except inside a modal sheet, which is clear of them already.
+ */
 export function Screen({ children }: { children: ReactNode }) {
   const { colors, space } = useTheme();
+  const { contentMax, gutter } = useLayout();
+  // Inside a modal sheet it is only as tall as its content and adds no safe area (see ModalSheet).
+  const { fill, avoidKeyboard, edges } = useModalFill();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            paddingHorizontal: space(5),
+            paddingHorizontal: gutter,
             paddingTop: space(6),
             paddingBottom: space(8),
-            gap: space(4),
           }}
           keyboardShouldPersistTaps="handled"
         >
-          {children}
+          <View
+            style={{
+              flexGrow: 1,
+              width: '100%',
+              maxWidth: contentMax,
+              alignSelf: 'center',
+              gap: space(4),
+            }}
+          >
+            {children}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

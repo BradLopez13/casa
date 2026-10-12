@@ -70,7 +70,7 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible: Hechas hoy
     timeout: 20000
-# The scope label shares the same Text (" · En toda la casa"), so match the prefix.
+# The scope label shares the same Text (" · En todo el hogar"), so match the prefix.
 - assertVisible: 1 de 1 hechas.*
 
 # Reopen it from the tray: it goes back to "Para hoy". The pill also names who did it.

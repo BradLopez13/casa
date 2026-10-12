@@ -16,7 +16,7 @@ import { membershipKey } from '@/features/households/queries';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { Screen } from '@/ui/components/Screen';
+import { CenteredCard } from '@/ui/components/CenteredCard';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { useTheme } from '@/ui/theme';
 
@@ -168,27 +168,27 @@ export default function InviteScreen() {
 
   if (signedOut && hasParam && !paramToken) {
     return (
-      <Screen>
+      <CenteredCard>
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button
           testID="invite.back"
           title={t('invite.back')}
           onPress={() => router.replace('/sign-in')}
         />
-      </Screen>
+      </CenteredCard>
     );
   }
 
   if (signedOut && persistFailed) {
     return (
-      <Screen>
+      <CenteredCard>
         <ErrorText testID="invite.error">{t('invite.errors.UNKNOWN')}</ErrorText>
         <Button
           testID="invite.back"
           title={t('invite.back')}
           onPress={() => router.replace('/sign-in')}
         />
-      </Screen>
+      </CenteredCard>
     );
   }
 
@@ -196,7 +196,7 @@ export default function InviteScreen() {
 
   if (phase === 'failed') {
     return (
-      <Screen>
+      <CenteredCard>
         <ErrorText testID="invite.error">
           {refreshNetwork ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </ErrorText>
@@ -211,7 +211,7 @@ export default function InviteScreen() {
           variant="secondary"
           onPress={() => void onSignOut()}
         />
-      </Screen>
+      </CenteredCard>
     );
   }
 
@@ -219,7 +219,7 @@ export default function InviteScreen() {
 
   if (failure?.terminal) {
     return (
-      <Screen>
+      <CenteredCard>
         {title}
         <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText>
         <Button
@@ -227,22 +227,22 @@ export default function InviteScreen() {
           title={t('invite.continue')}
           onPress={() => void onContinue()}
         />
-      </Screen>
+      </CenteredCard>
     );
   }
 
   if (!token) {
     return (
-      <Screen>
+      <CenteredCard>
         {title}
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button testID="invite.back" title={t('invite.back')} onPress={() => router.replace('/')} />
-      </Screen>
+      </CenteredCard>
     );
   }
 
   return (
-    <Screen>
+    <CenteredCard>
       {title}
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('invite.body')}</Text>
       {failure ? <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText> : null}
@@ -264,6 +264,6 @@ export default function InviteScreen() {
         variant="secondary"
         onPress={() => void onSignOut()}
       />
-    </Screen>
+    </CenteredCard>
   );
 }

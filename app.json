@@ -3,11 +3,12 @@
     "name": "Nido",
     "slug": "casa",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "casa",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "supportsTablet": true,
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.bradlopez13.casa"
     },

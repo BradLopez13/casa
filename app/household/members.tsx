@@ -4,6 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
   createInvite,
@@ -28,9 +29,12 @@ import { locale, t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
-import { Screen } from '@/ui/components/Screen';
+import { PaneHeader } from '@/ui/components/PaneHeader';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
+import { TwoPane } from '@/ui/components/TwoPane';
+import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
+import { useLayout } from '@/ui/useLayout';
 
 type Pending = { kind: 'remove' | 'transfer' | 'leave' | 'delete'; userId?: string };
 
@@ -83,7 +87,8 @@ function formatExpiry(expiresAt: string): string {
 }
 
 export default function MembersScreen() {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
+  const split = paneMode(useLayout()) === 'split';
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useSession();
@@ -231,16 +236,9 @@ export default function MembersScreen() {
     </Text>
   );
 
-  return (
-    <Screen>
-      <Button
-        testID="members.back"
-        title={t('members.back')}
-        variant="secondary"
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
-      />
-      <ScreenTitle>{t('members.title')}</ScreenTitle>
-
+  // Left pane: the people in the household.
+  const people = (
+    <View style={{ gap: space(4) }}>
       {members.isError ? (
         <>
           <ErrorText testID="members.load-error">{t('members.loadError')}</ErrorText>
@@ -268,7 +266,13 @@ export default function MembersScreen() {
       ) : (
         <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
       )}
+    </View>
+  );
 
+  // Right pane: bringing people in, and leaving. In one column it follows the people, a step
+  // below them like every other item.
+  const household = (
+    <View style={{ gap: space(4), paddingTop: split ? 0 : space(4) }}>
       <Button
         testID="members.invite"
         title={t('members.invite')}
@@ -308,13 +312,14 @@ export default function MembersScreen() {
             <View
               key={inv.id}
               testID={`members.invite-row.${inv.id}`}
-              // A pending invite is a note on the page, like the member rows above.
+              // A pending invite is a note on the page, like the member rows.
               style={{
                 gap: space(3),
                 padding: space(4),
                 borderRadius: radii.note,
                 backgroundColor: colors.note,
                 ...shadows.note,
+                ...noteEdge,
               }}
             >
               <Text style={{ color: colors.ink, fontSize: 16 }}>
@@ -355,6 +360,41 @@ export default function MembersScreen() {
         />
       ) : null}
       {footerError ? <ErrorText testID="members.footer-error">{footerError}</ErrorText> : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
+      {/* Outside the tabs: no rail beside it, so the panes keep clear of a side notch. */}
+      <TwoPane
+        besideRail={false}
+        contentContainerStyle={{ paddingBottom: space(8) }}
+        header={
+          <PaneHeader besideRail={false}>
+            {/* On two panes the button keeps its own size beside the title, not a long bar
+                across the screen, and the header stays low above panes that scroll. */}
+            <View
+              style={
+                split
+                  ? { flexDirection: 'row', alignItems: 'center', gap: space(4) }
+                  : { gap: space(4) }
+              }
+            >
+              <Button
+                testID="members.back"
+                title={t('members.back')}
+                variant="secondary"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
+              />
+              <View style={{ flexShrink: 1 }}>
+                <ScreenTitle>{t('members.title')}</ScreenTitle>
+              </View>
+            </View>
+          </PaneHeader>
+        }
+        left={people}
+        right={household}
+      />
 
       <ConfirmDialog
         visible={pending !== null}
@@ -374,6 +414,6 @@ export default function MembersScreen() {
         onConfirm={confirm}
         onCancel={() => setPending(null)}
       />
-    </Screen>
+    </SafeAreaView>
   );
 }

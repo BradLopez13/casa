@@ -37,7 +37,7 @@ type Props = {
 
 /** A task as a paper note; its magnet (the assignee) sticks out of the left edge and completes it. */
 export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOpen }: Props) {
-  const { colors, shadows, radii, space } = useTheme();
+  const { colors, shadows, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
   const magnetStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -72,6 +72,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         opacity: provisional ? PROVISIONAL_OPACITY : 1,
         borderRadius: radii.note,
         ...shadows.note,
+        ...noteEdge,
       }}
     >
       <Pressable
@@ -112,13 +113,8 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
           padding: space(3),
         }}
       >
-        <Text
-          maxFontSizeMultiplier={1.3}
-          style={{ color: colors.ink, fontSize: 17, fontWeight: '600' }}
-        >
-          {task.title}
-        </Text>
-        <Text maxFontSizeMultiplier={1.3} style={{ color: colors.muted, fontSize: 14 }}>
+        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '600' }}>{task.title}</Text>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>
           {room ? `${room} · ` : ''}
           {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no
               pill or outline around it (in dark mode red and the apricot actions are close). */}

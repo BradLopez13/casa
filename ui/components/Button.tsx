@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { buttonLook, pressedOpacity } from '../buttonLook';
 import { useTheme } from '../theme';
+import { CONTROL_HEIGHT } from '../tokens';
 
 type Props = {
   title: string;
@@ -10,7 +12,8 @@ type Props = {
   disabled?: boolean;
   /**
    * primary: cobalt pill. secondary: outlined pill. danger: red outlined pill for irreversible
-   * actions, quieter than primary so it never reads as the main action.
+   * actions, quieter than primary so it never reads as the main action. Disabled, every variant is
+   * an empty pill with an outline border and muted text (see `buttonLook`).
    */
   variant?: 'primary' | 'secondary' | 'danger';
 };
@@ -26,10 +29,11 @@ export function Button({
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const fill = variant === 'primary' ? colors.cobalt : 'transparent';
-  const foreground =
-    variant === 'primary' ? colors.onCobalt : variant === 'danger' ? colors.red : colors.cobalt;
-  const border = variant === 'danger' ? colors.red : colors.cobalt;
+  const { fill, border, foreground } = buttonLook(
+    variant,
+    loading ? 'busy' : disabled ? 'disabled' : 'enabled',
+    colors,
+  );
 
   return (
     <View>
@@ -43,7 +47,7 @@ export function Button({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({
-          minHeight: 48,
+          minHeight: CONTROL_HEIGHT,
           alignItems: 'center',
           justifyContent: 'center',
           paddingHorizontal: space(5),
@@ -52,7 +56,7 @@ export function Button({
           borderWidth: 1.5,
           borderColor: border,
           backgroundColor: fill,
-          opacity: inactive ? 0.5 : pressed ? 0.8 : 1,
+          opacity: pressedOpacity(pressed),
         })}
       >
         {loading ? (

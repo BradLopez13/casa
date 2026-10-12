@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { pendingNames, planAdd } from '@/domain/shopping/screen';
@@ -6,11 +6,12 @@ import { suggest, type HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { useFocusReveal } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { CONTROL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 
-type Props = {
+type EntryOptions = {
   items: readonly ShoppingItem[];
   history: readonly HistoryEntry[];
   onAdd: (name: string) => void;
@@ -18,18 +19,24 @@ type Props = {
   onListed: (id: string) => void;
 };
 
-/** The field on the door: type a name and send it, or tap one of the suggestions. */
-export function AddItemField({ items, history, onAdd, onListed }: Props) {
-  const { colors, radii, space } = useTheme();
+/**
+ * What is being typed, its error and the history's suggestions for it. Held by the screen, so a
+ * turn of the tablet (the field moves from the door to the left pane) keeps the text.
+ */
+export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
-  const [focused, setFocused] = useState(false);
 
   const pendingSet = useMemo(() => pendingNames(items), [items]);
   const suggestions = useMemo(
     () => suggest(history, text, pendingSet),
     [history, text, pendingSet],
   );
+
+  const change = (next: string) => {
+    setText(next);
+    setError(undefined);
+  };
 
   const submit = (name: string) => {
     const parsed = shoppingNameSchema.safeParse(name);
@@ -50,16 +57,35 @@ export function AddItemField({ items, history, onAdd, onListed }: Props) {
     onAdd(plan.name);
   };
 
+  return { text, error, suggestions, change, submit };
+}
+
+export type ItemEntry = ReturnType<typeof useItemEntry>;
+
+/**
+ * The field: type a name and send it, or tap one of the suggestions that follow under it while
+ * typing. On the door in one column, at the top of the left pane on two.
+ */
+export function AddItemField({ entry }: { entry: ItemEntry }) {
+  const { colors, radii, space } = useTheme();
+  const [focused, setFocused] = useState(false);
+  const { text, error, change, submit } = entry;
+  // In Compra's left pane, the field with its error and suggestions stays above the keyboard;
+  // elsewhere (on the door) this does nothing.
+  const reveal = useFocusReveal();
+  const block = useRef<View>(null);
+  const shown = entry.suggestions.length;
+  useEffect(() => {
+    if (focused) reveal(block.current);
+  }, [focused, error, shown, reveal]);
+
   return (
-    <View style={{ gap: space(3) }}>
+    <View ref={block} style={{ gap: space(3) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
         <TextInput
           testID="shopping.input"
           value={text}
-          onChangeText={(next) => {
-            setText(next);
-            setError(undefined);
-          }}
+          onChangeText={change}
           onSubmitEditing={() => submit(text)}
           returnKeyType="done"
           // Keeps the keyboard up so several items go in one after another.
@@ -75,7 +101,7 @@ export function AddItemField({ items, history, onAdd, onListed }: Props) {
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
-            minHeight: 48,
+            minHeight: CONTROL_HEIGHT,
             paddingHorizontal: space(4),
             paddingVertical: space(3),
             borderRadius: radii.note,
@@ -95,33 +121,38 @@ export function AddItemField({ items, history, onAdd, onListed }: Props) {
         />
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
-      {suggestions.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-          {suggestions.map((entry) => (
-            <Pressable
-              key={entry.normalizedName}
-              testID={`shopping.suggestion.${entry.normalizedName}`}
-              onPress={() => submit(entry.name)}
-              accessibilityRole="button"
-              accessibilityLabel={entry.name}
-              style={({ pressed }) => ({
-                minHeight: MIN_TOUCH,
-                justifyContent: 'center',
-                paddingHorizontal: space(4),
-                borderRadius: radii.pill,
-                borderWidth: 1.5,
-                borderColor: colors.cobalt,
-                backgroundColor: colors.note,
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Text maxFontSizeMultiplier={1.3} style={{ color: colors.cobalt, fontSize: 15 }}>
-                {entry.name}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      <ItemSuggestions entry={entry} />
+    </View>
+  );
+}
+
+/** The history's names that match what is typed, as pills; a tap adds that name. */
+function ItemSuggestions({ entry }: { entry: ItemEntry }) {
+  const { colors, radii, space } = useTheme();
+  if (entry.suggestions.length === 0) return null;
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+      {entry.suggestions.map((suggestion) => (
+        <Pressable
+          key={suggestion.normalizedName}
+          testID={`shopping.suggestion.${suggestion.normalizedName}`}
+          onPress={() => entry.submit(suggestion.name)}
+          accessibilityRole="button"
+          accessibilityLabel={suggestion.name}
+          style={({ pressed }) => ({
+            minHeight: MIN_TOUCH,
+            justifyContent: 'center',
+            paddingHorizontal: space(4),
+            borderRadius: radii.pill,
+            borderWidth: 1.5,
+            borderColor: colors.cobalt,
+            backgroundColor: colors.note,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text style={{ color: colors.cobalt, fontSize: 15 }}>{suggestion.name}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }

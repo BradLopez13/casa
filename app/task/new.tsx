@@ -9,9 +9,19 @@ import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
+import { ModalSheet } from '@/ui/components/ModalSheet';
 import { useCloseModal } from '@/ui/useCloseModal';
 
-export default function NewTaskScreen() {
+/** Mounted once inside its frame, so rotating never remounts the form. */
+export default function NewTaskRoute() {
+  return (
+    <ModalSheet>
+      <NewTaskScreen />
+    </ModalSheet>
+  );
+}
+
+function NewTaskScreen() {
   const close = useCloseModal('/today');
   const params = useLocalSearchParams<{ assignee?: string }>();
   const today = useToday();

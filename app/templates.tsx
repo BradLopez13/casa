@@ -19,6 +19,7 @@ import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
@@ -73,15 +74,23 @@ function TemplateRow({
           <Ionicons name="checkmark" size={18} color={colors.onCobalt} accessible={false} />
         ) : null}
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={{ flex: 1, color: colors.ink, fontSize: 16 }}>
-        {label}
-      </Text>
+      <Text style={{ flex: 1, color: colors.ink, fontSize: 16 }}>{label}</Text>
     </Pressable>
   );
 }
 
-export default function TemplatesScreen() {
+/** Mounted once inside its frame, so rotating never remounts the list. */
+export default function TemplatesRoute() {
+  return (
+    <ModalSheet>
+      <TemplatesScreen />
+    </ModalSheet>
+  );
+}
+
+function TemplatesScreen() {
   const { colors, space } = useTheme();
+  const { fill, edges } = useModalFill();
   const close = useCloseModal('/today');
   const today = useToday();
   const queryClient = useQueryClient();
@@ -130,7 +139,7 @@ export default function TemplatesScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',

@@ -88,7 +88,7 @@ appId: com.bradlopez13.casa
     visible: Ana
     timeout: 20000
 - assertVisible: Bob
-- assertNotVisible: Expulsar
+- assertNotVisible: Quitar del hogar
 - assertNotVisible: Hacer propietario
 
 # Leave the household

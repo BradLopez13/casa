@@ -1,0 +1,184 @@
+import { describe, expect, it } from 'vitest';
+
+import { layoutFor } from './layout';
+import {
+  clearRightLane,
+  columnRoom,
+  oneColumn,
+  paneColumn,
+  paneFlex,
+  paneMode,
+  paneWidths,
+} from './panes';
+
+describe('paneMode', () => {
+  it('stacks on a compact phone in portrait', () => {
+    expect(paneMode(layoutFor(390, 844))).toBe('stack');
+  });
+
+  it('stacks just below expanded', () => {
+    expect(paneMode(layoutFor(599, 900))).toBe('stack');
+    expect(paneMode(layoutFor(600, 900))).toBe('stack');
+    expect(paneMode(layoutFor(839, 1100))).toBe('stack');
+  });
+
+  it('splits from expanded', () => {
+    expect(paneMode(layoutFor(840, 1100))).toBe('split');
+    expect(paneMode(layoutFor(1199, 800))).toBe('split');
+  });
+
+  it('splits on large screens', () => {
+    expect(paneMode(layoutFor(1200, 800))).toBe('split');
+    expect(paneMode(layoutFor(1920, 1080))).toBe('split');
+  });
+
+  it('splits a phone in landscape wide enough to be expanded', () => {
+    expect(paneMode(layoutFor(844, 390))).toBe('split');
+  });
+});
+
+describe('paneColumn', () => {
+  const insets = { left: 47, right: 34 };
+
+  it('is the gutter alone with no safe areas', () => {
+    expect(paneColumn(layoutFor(390, 844), { left: 0, right: 0 }, false)).toEqual({
+      paddingLeft: 20,
+      paddingRight: 20,
+      maxWidth: 680,
+    });
+  });
+
+  it('adds both side safe areas away from the rail', () => {
+    expect(paneColumn(layoutFor(844, 390), insets, false)).toEqual({
+      paddingLeft: 32 + 47,
+      paddingRight: 32 + 34,
+      maxWidth: 1200 + 79 + 66,
+    });
+  });
+
+  it('leaves the left safe area to the rail beside it', () => {
+    expect(paneColumn(layoutFor(844, 390), insets, true)).toEqual({
+      paddingLeft: 32,
+      paddingRight: 32 + 34,
+      maxWidth: 1200 + 32 + 66,
+    });
+  });
+
+  it('keeps the large gutter on large screens', () => {
+    const column = paneColumn(layoutFor(1440, 900), { left: 0, right: 0 }, true);
+    expect(column.paddingLeft).toBe(48);
+    expect(column.maxWidth).toBe(1296);
+  });
+});
+
+describe('oneColumn', () => {
+  const insets = { left: 47, right: 34 };
+
+  it('gives a compact phone in portrait the 20 dp each side it has always had', () => {
+    expect(oneColumn(layoutFor(390, 844), { left: 0, right: 0 }, false)).toEqual({
+      paddingLeft: 20,
+      paddingRight: 20,
+      maxWidth: 680,
+    });
+  });
+
+  it('caps a medium tablet in portrait at the one-column width', () => {
+    expect(oneColumn(layoutFor(768, 1024), { left: 0, right: 0 }, false)).toEqual({
+      paddingLeft: 24,
+      paddingRight: 24,
+      maxWidth: 640 + 48,
+    });
+  });
+
+  it('keeps a medium phone on its side clear of both side safe areas', () => {
+    expect(oneColumn(layoutFor(800, 360), insets, false)).toEqual({
+      paddingLeft: 24 + 47,
+      paddingRight: 24 + 34,
+      maxWidth: 640 + 71 + 58,
+    });
+  });
+
+  it('stays at the one-column width on a wide screen, beside the rail', () => {
+    expect(oneColumn(layoutFor(1440, 900), insets, true)).toEqual({
+      paddingLeft: 48,
+      paddingRight: 48 + 34,
+      maxWidth: 640 + 48 + 82,
+    });
+  });
+});
+
+describe('paneFlex', () => {
+  it('gives the left pane 60% by default', () => {
+    expect(paneFlex()).toEqual({ left: 3, right: 2 });
+    expect(paneFlex('left')).toEqual({ left: 3, right: 2 });
+  });
+
+  it('gives the right pane 60% for a list beside its detail (Semana)', () => {
+    expect(paneFlex('right')).toEqual({ left: 2, right: 3 });
+  });
+});
+
+describe('paneWidths', () => {
+  it('splits what is left after the gap 60/40, the left pane wide by default', () => {
+    // 1055 inside the column, 32 between: 1023 to share.
+    expect(paneWidths(1055, 32)).toEqual({ left: 614, right: 409 });
+  });
+
+  it('turns the split round for Semana', () => {
+    expect(paneWidths(1055, 32, 'right')).toEqual({ left: 409, right: 614 });
+  });
+
+  it('always adds up to the room there is', () => {
+    const { left, right } = paneWidths(1000, 48);
+    expect(left + right).toBe(952);
+  });
+
+  it('never goes below zero in a column too narrow for the gap', () => {
+    expect(paneWidths(20, 32)).toEqual({ left: 0, right: 0 });
+  });
+});
+
+describe('columnRoom', () => {
+  it('is the whole window without the rail', () => {
+    expect(columnRoom(817, false, 48)).toBe(817);
+  });
+
+  it('takes off the rail and the left safe area it covers', () => {
+    expect(columnRoom(915, true, 0)).toBe(915 - 88);
+    expect(columnRoom(915, true, 30)).toBe(915 - 88 - 30);
+  });
+});
+
+describe('clearRightLane', () => {
+  const lane = 16 + 56 + 12;
+
+  it('leaves the column alone when no lane is asked for', () => {
+    const column = oneColumn(layoutFor(390, 844), { left: 0, right: 0 }, false);
+    expect(clearRightLane(column, 390, 0)).toEqual(column);
+  });
+
+  it('pushes the content of a phone on its side clear of the round button', () => {
+    // 817 x 375 dp, a camera cut-out on the left: the centred column reached under the button.
+    const layout = layoutFor(817, 375);
+    const column = oneColumn(layout, { left: 48, right: 0 }, layout.rail);
+    const cleared = clearRightLane(column, 817, lane);
+    const frame = Math.min(817, cleared.maxWidth);
+    expect((817 - frame) / 2 + cleared.paddingRight).toBeGreaterThanOrEqual(lane);
+    expect(cleared.paddingLeft).toBe(column.paddingLeft);
+    expect(cleared.maxWidth).toBe(column.maxWidth);
+  });
+
+  it('adds nothing when the centring margin already clears the lane', () => {
+    const column = oneColumn(layoutFor(1600, 400), { left: 0, right: 0 }, true);
+    expect(clearRightLane(column, 1600 - 88, lane)).toEqual(column);
+  });
+
+  it('clears the right pane of two panes on a wide phone on its side', () => {
+    const layout = layoutFor(915, 412);
+    const column = paneColumn(layout, { left: 0, right: 0 }, true);
+    const room = columnRoom(915, true, 0);
+    const cleared = clearRightLane(column, room, lane);
+    const frame = Math.min(room, cleared.maxWidth);
+    expect((room - frame) / 2 + cleared.paddingRight).toBe(lane);
+  });
+});

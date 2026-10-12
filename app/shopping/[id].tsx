@@ -25,13 +25,27 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
+import { FocusRevealContext } from '@/ui/focusReveal';
+import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { useLayout } from '@/ui/useLayout';
+import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 
-export default function EditShoppingItemScreen() {
+/** Mounted once inside its frame, so rotating never remounts the form. */
+export default function EditShoppingItemRoute() {
+  return (
+    <ModalSheet>
+      <EditShoppingItemScreen />
+    </ModalSheet>
+  );
+}
+
+function EditShoppingItemScreen() {
   const { colors, space } = useTheme();
   const closeModal = useCloseModal('/shopping');
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -150,6 +164,9 @@ function EditForm({
   onDelete: () => void;
 }) {
   const { colors, space } = useTheme();
+  const { fill, avoidKeyboard, edges } = useModalFill();
+  const density = formDensity(useLayout());
+  const { scroll, reveal } = useRevealFocusedField();
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
 
@@ -164,14 +181,14 @@ function EditForm({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: space(2),
           paddingHorizontal: space(4),
-          paddingVertical: space(2),
+          paddingVertical: space(density.headerStep),
           borderBottomWidth: 1,
           borderBottomColor: colors.hairline,
         }}
@@ -207,42 +224,47 @@ function EditForm({
       </View>
       {online ? null : <OfflineBand />}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          {...scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
-            paddingTop: space(5),
-            paddingBottom: space(8),
-            gap: space(6),
+            paddingTop: space(density.topStep),
+            paddingBottom: space(density.bottomStep),
+            gap: space(density.gapStep),
           }}
         >
-          <TextField
-            testID="shopping.edit.name"
-            label={t('shopping.edit.name')}
-            value={name}
-            onChangeText={setName}
-            returnKeyType="done"
-            error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
-          />
-          <TextField
-            testID="shopping.edit.quantity"
-            label={t('shopping.edit.quantity')}
-            value={quantity}
-            onChangeText={setQuantity}
-            returnKeyType="done"
-            error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
-          />
-          {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
-          <Button
-            testID="shopping.edit.delete"
-            title={t('shopping.edit.delete')}
-            variant="danger"
-            disabled={!online || busy}
-            onPress={onDelete}
-          />
+          {/* Every field asks for it on focus, as in CenteredCard. */}
+          <FocusRevealContext.Provider value={reveal}>
+            <TextField
+              testID="shopping.edit.name"
+              label={t('shopping.edit.name')}
+              value={name}
+              onChangeText={setName}
+              returnKeyType="done"
+              error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
+            />
+            <TextField
+              testID="shopping.edit.quantity"
+              label={t('shopping.edit.quantity')}
+              value={quantity}
+              onChangeText={setQuantity}
+              returnKeyType="done"
+              error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
+            />
+            {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
+            <Button
+              testID="shopping.edit.delete"
+              title={t('shopping.edit.delete')}
+              variant="danger"
+              disabled={!online || busy}
+              onPress={onDelete}
+            />
+          </FocusRevealContext.Provider>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

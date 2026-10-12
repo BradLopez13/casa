@@ -4,7 +4,6 @@ import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
 import type { ToggleVars } from '@/features/tasks/toggle';
 import { space } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
 import { DoneTray } from './DoneTray';
 import { TaskNote } from './TaskNote';
 
@@ -16,14 +15,25 @@ type Props = {
   userId: string | null;
   isBusy: (id: string) => boolean;
   toggle: (vars: ToggleVars) => void;
+  /** No side padding, for a pane whose container already brings the gutter. */
+  flush?: boolean;
 };
 
 /** One list row: an open task as a note (opens its form), or the tray of finished ones. */
-export function TaskRow({ row, today, marks, names, userId, isBusy, toggle }: Props) {
+export function TaskRow({
+  row,
+  today,
+  marks,
+  names,
+  userId,
+  isBusy,
+  toggle,
+  flush = false,
+}: Props) {
   const router = useRouter();
   const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   return (
-    <View style={{ paddingHorizontal: space(5) }}>
+    <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
       {row.kind === 'note' ? (
         <TaskNote
           task={row.task}
@@ -53,6 +63,3 @@ export const taskRowKey = (row: TaskListRow) => (row.kind === 'note' ? row.task.
 export function TaskRowSeparator() {
   return <View style={{ height: space(3) }} />;
 }
-
-/** Room under the last note so the floating "Nueva tarea" pill never covers it. */
-export const taskListContentStyle = { paddingBottom: MIN_TOUCH + space(12) };

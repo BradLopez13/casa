@@ -9,9 +9,15 @@ import { dayHeading } from '@/domain/tasks/labels';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
+import { buttonLook } from '@/ui/buttonLook';
+import { FocusRevealContext } from '@/ui/focusReveal';
+import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { useLayout } from '@/ui/useLayout';
+import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
 import { taskFormSchema } from '../schemas';
 import { AssigneePicker } from './AssigneePicker';
@@ -54,6 +60,9 @@ export function HeaderAction({
   strong?: boolean;
 }) {
   const { colors, radii, space } = useTheme();
+  // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
+  // turns muted. Neither is faded, so the label stays readable.
+  const look = buttonLook('primary', disabled ? 'disabled' : 'enabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -68,7 +77,7 @@ export function HeaderAction({
         minHeight: MIN_TOUCH,
         alignItems: strong ? 'flex-end' : 'flex-start',
         justifyContent: 'center',
-        opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
       {/* The main action is a small cobalt pill, so it stands apart from "Cancelar" by shape and
@@ -77,11 +86,13 @@ export function HeaderAction({
         style={
           strong
             ? {
-                minHeight: 36,
+                minHeight: INLINE_PILL_HEIGHT,
                 justifyContent: 'center',
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
-                backgroundColor: colors.cobalt,
+                borderWidth: 1.5,
+                borderColor: look.border,
+                backgroundColor: look.fill,
               }
             : null
         }
@@ -89,7 +100,7 @@ export function HeaderAction({
         <Text
           maxFontSizeMultiplier={1.3}
           style={{
-            color: strong ? colors.onCobalt : colors.cobalt,
+            color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: 17,
             fontWeight: strong ? '600' : '400',
           }}
@@ -127,6 +138,9 @@ export function TaskForm({
   repeatEditable = true,
 }: Props) {
   const { colors, space } = useTheme();
+  const { fill, avoidKeyboard, edges } = useModalFill();
+  const density = formDensity(useLayout());
+  const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
@@ -178,14 +192,14 @@ export function TaskForm({
       : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: space(2),
           paddingHorizontal: space(4),
-          paddingVertical: space(2),
+          paddingVertical: space(density.headerStep),
           borderBottomWidth: 1,
           borderBottomColor: colors.hairline,
         }}
@@ -216,69 +230,74 @@ export function TaskForm({
         />
       </View>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        enabled={avoidKeyboard}
+        style={fill}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          {...scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
-            paddingTop: space(5),
-            paddingBottom: space(8),
-            gap: space(6),
+            paddingTop: space(density.topStep),
+            paddingBottom: space(density.bottomStep),
+            gap: space(density.gapStep),
           }}
         >
-          <TextField
-            testID="task-form.title"
-            label={t('taskForm.titleLabel')}
-            value={values.title}
-            onChangeText={(text) => set({ title: text })}
-            // Only a new task starts with an empty title.
-            autoFocus={initial.title === ''}
-            maxLength={200}
-            returnKeyType="done"
-            error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
-          />
-          <Field label={t('taskForm.roomLabel')}>
-            <RoomPicker value={values.room} onChange={(room) => set({ room })} />
-          </Field>
-          <Field label={t('taskForm.assigneeLabel')}>
-            <AssigneePicker
-              value={values.assigneeId}
-              members={members}
-              marks={marks}
-              userId={userId}
-              onChange={(assigneeId) => set({ assigneeId })}
+          {/* Every field asks for it on focus, as in CenteredCard. */}
+          <FocusRevealContext.Provider value={reveal}>
+            <TextField
+              testID="task-form.title"
+              label={t('taskForm.titleLabel')}
+              value={values.title}
+              onChangeText={(text) => set({ title: text })}
+              // Only a new task starts with an empty title; on a short window the keyboard would
+              // hide the rest of the form, so there the field waits for a tap.
+              autoFocus={initial.title === '' && density.autoFocusTitle}
+              maxLength={200}
+              returnKeyType="done"
+              error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
             />
-          </Field>
-          <Field label={t('taskForm.dueLabel')}>
-            <DayCells
-              value={values.dueOn}
-              today={today}
-              onChange={setDueOn}
-              noneDisabled={repeating}
-            />
-          </Field>
-          {repeatEditable ? (
-            <Field label={t('taskForm.repeatLabel')}>
-              <RecurrencePicker
-                value={values.recurrence}
-                dueOn={values.dueOn ?? today}
-                onChange={setRecurrence}
-              />
-              {nextDate !== null ? (
-                <Text
-                  testID="task-form.repeat.next"
-                  maxFontSizeMultiplier={1.3}
-                  style={{ color: colors.muted, fontSize: 13 }}
-                >
-                  {t('taskForm.repeatNext', { date: nextDate })}
-                </Text>
-              ) : null}
+            <Field label={t('taskForm.roomLabel')}>
+              <RoomPicker value={values.room} onChange={(room) => set({ room })} />
             </Field>
-          ) : null}
-          {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
-          {footer}
+            <Field label={t('taskForm.assigneeLabel')}>
+              <AssigneePicker
+                value={values.assigneeId}
+                members={members}
+                marks={marks}
+                userId={userId}
+                onChange={(assigneeId) => set({ assigneeId })}
+              />
+            </Field>
+            <Field label={t('taskForm.dueLabel')}>
+              <DayCells
+                value={values.dueOn}
+                today={today}
+                onChange={setDueOn}
+                noneDisabled={repeating}
+              />
+            </Field>
+            {repeatEditable ? (
+              <Field label={t('taskForm.repeatLabel')}>
+                <RecurrencePicker
+                  value={values.recurrence}
+                  dueOn={values.dueOn ?? today}
+                  onChange={setRecurrence}
+                />
+                {nextDate !== null ? (
+                  <Text
+                    testID="task-form.repeat.next"
+                    style={{ color: colors.muted, fontSize: 13 }}
+                  >
+                    {t('taskForm.repeatNext', { date: nextDate })}
+                  </Text>
+                ) : null}
+              </Field>
+            ) : null}
+            {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
+            {footer}
+          </FocusRevealContext.Provider>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

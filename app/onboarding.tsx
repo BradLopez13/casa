@@ -11,7 +11,7 @@ import { membershipKey, useHouseholdMutation } from '@/features/households/queri
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { Screen } from '@/ui/components/Screen';
+import { CenteredCard } from '@/ui/components/CenteredCard';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
@@ -67,7 +67,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Screen>
+    <CenteredCard>
       <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
       <TextField
         testID="onboarding.name"
@@ -114,6 +114,6 @@ export default function OnboardingScreen() {
         />
         <DeleteAccountButton testID="onboarding.delete-account" />
       </View>
-    </Screen>
+    </CenteredCard>
   );
 }

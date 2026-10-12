@@ -60,7 +60,6 @@ export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
             />
             <Text
               numberOfLines={2}
-              maxFontSizeMultiplier={1.3}
               style={{
                 flexShrink: 1,
                 color: colors.muted,

@@ -23,11 +23,33 @@ type Props = {
   onToggle: (item: ShoppingItem) => void;
   onOpen: (id: string) => void;
   onClear: () => void;
+  /** No side margin of its own: inside a TwoPane pane, which already keeps the gutter. */
+  flush?: boolean;
 };
+
+/** «Compradas (n)»: the heading of the bought rows, also over the empty right pane on two. */
+export function BoughtTitle({ count }: { count: number }) {
+  const { colors } = useTheme();
+  return (
+    <Text
+      accessibilityRole="header"
+      style={{
+        color: colors.muted,
+        fontSize: 15,
+        fontWeight: '600',
+        fontVariant: ['tabular-nums'],
+      }}
+    >
+      {t('shopping.boughtTitle', { n: count })}
+    </Text>
+  );
+}
 
 /**
  * The list as one white sheet on the page: what is left to buy, then "Compradas". Every row is a
- * child of the same view, so a row that is marked keeps its identity and slides down.
+ * child of the same view, so a row that is marked keeps its identity and slides down. On two
+ * panes each side gets a sheet of its own (one of `pending` or `bought` empty), so a marked row
+ * moves across instead.
  */
 export function ShoppingSheet({
   pending,
@@ -41,8 +63,9 @@ export function ShoppingSheet({
   onToggle,
   onOpen,
   onClear,
+  flush = false,
 }: Props) {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const layout = reduceMotion ? undefined : LinearTransition;
 
@@ -66,10 +89,11 @@ export function ShoppingSheet({
   return (
     <View
       style={{
-        marginHorizontal: space(5),
+        marginHorizontal: flush ? 0 : space(5),
         borderRadius: radii.note,
         backgroundColor: colors.note,
         ...shadows.note,
+        ...noteEdge,
       }}
     >
       {/* Clips the rows' flash to the rounded corners; the outer view keeps the shadow. */}
@@ -96,18 +120,7 @@ export function ShoppingSheet({
                 borderTopColor: colors.hairline,
               }}
             >
-              <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={1.3}
-                style={{
-                  color: colors.muted,
-                  fontSize: 15,
-                  fontWeight: '600',
-                  fontVariant: ['tabular-nums'],
-                }}
-              >
-                {t('shopping.boughtTitle', { n: bought.length })}
-              </Text>
+              <BoughtTitle count={bought.length} />
               <Button
                 testID="shopping.clear"
                 title={t('shopping.clear')}

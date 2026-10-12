@@ -38,7 +38,7 @@ function usePermission(): [NotificationPermission | null, (p: NotificationPermis
 }
 
 /**
- * "Avisos de la casa" in Settings. The switches are always there, with or without permission.
+ * "Avisos del hogar" in Settings. The switches are always there, with or without permission.
  * The permission is asked only by the "Activar notificaciones" button.
  */
 export function HouseholdNoticesSection() {

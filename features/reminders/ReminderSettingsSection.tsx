@@ -7,7 +7,7 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { getPermission, requestPermission } from './notifications';
 import type { NotificationPermission } from './plan';
 import { useReminderSettings, useSaveReminderSettings } from './useReminders';
@@ -108,7 +108,7 @@ function TimeRow({
           text (in light mode cobalt is the colour of the text). */}
       <View
         style={{
-          minHeight: 36,
+          minHeight: INLINE_PILL_HEIGHT,
           justifyContent: 'center',
           paddingHorizontal: space(4),
           borderRadius: radii.pill,

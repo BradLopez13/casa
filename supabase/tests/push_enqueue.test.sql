@@ -135,7 +135,7 @@ select is((select count(*) from private.push_outbox where recipient_id in (:'ber
 select is((select distinct body from private.push_outbox where kind = 'member_joined'),
           'Berta se ha unido a Piso 4B', 'the body names the newcomer and the household');
 select is((select distinct title || data::text from private.push_outbox where kind = 'member_joined'),
-          'Alguien nuevo en casa{"route": "/household/members"}', 'title and route of the joined notice');
+          'Alguien nuevo en el hogar{"route": "/household/members"}', 'title and route of the joined notice');
 
 -- Creating a household queues nothing.
 delete from private.push_outbox;

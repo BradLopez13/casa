@@ -28,3 +28,20 @@ export function contrastRatio(fg: string, bg: string): number {
   const b = luminance(bg);
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
+
+/** Hue in degrees (0–360) of an sRGB colour; 0 for a grey. */
+function hue(hex: string): number {
+  const [r, g, b] = channels(hex).map((c) => c / 255) as [number, number, number];
+  const max = Math.max(r, g, b);
+  const delta = max - Math.min(r, g, b);
+  if (delta === 0) return 0;
+  const sector =
+    max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+  return (sector * 60 + 360) % 360;
+}
+
+/** How far apart two colours sit on the colour wheel, the short way round (0–180). */
+export function hueDistance(a: string, b: string): number {
+  const d = Math.abs(hue(a) - hue(b));
+  return Math.min(d, 360 - d);
+}

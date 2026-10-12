@@ -6,7 +6,7 @@ import { useTheme } from '@/ui/theme';
 
 /** A plain note (no magnet: it is nobody's task) inviting an empty household to start from templates. */
 export function TemplatesCard() {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
   const router = useRouter();
   return (
     <View
@@ -16,6 +16,7 @@ export function TemplatesCard() {
         backgroundColor: colors.note,
         borderRadius: radii.note,
         ...shadows.note,
+        ...noteEdge,
       }}
     >
       <Text

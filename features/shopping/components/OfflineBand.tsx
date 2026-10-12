@@ -27,10 +27,7 @@ export function OfflineBand() {
         }}
       >
         <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
-        <Text
-          maxFontSizeMultiplier={1.6}
-          style={{ color: colors.muted, fontSize: 14, fontWeight: '600' }}
-        >
+        <Text style={{ flexShrink: 1, color: colors.muted, fontSize: 14, fontWeight: '600' }}>
           {t('shopping.offline')}
         </Text>
       </View>

@@ -12,7 +12,8 @@ import Constants from 'expo-constants';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState, type ReactNode } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
@@ -23,8 +24,10 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
+import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
+import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
@@ -173,6 +176,7 @@ function useForgetEndedHousehold(membership: { householdId: string } | null | un
 
 function Guard() {
   const router = useRouter();
+  const modalFrame = modalFrameFor(useLayout());
   const segments = useSegments();
   const session = useSession();
   const membershipQuery = useMembership();
@@ -221,13 +225,27 @@ function Guard() {
     return onNotificationTapped((data) => router.push(routeForNotification(data)));
   }, [inHousehold, router]);
 
+  // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
+  // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
+  // change while a screen is shown, so a fixed one lets a rotation swap the frame without
+  // remounting the form. The sheet fades in and out; the full screen keeps the platform's slide.
+  // Kept by frame, so a resize within the same frame hands the stack the same options.
+  const modal = useMemo(
+    () =>
+      ({
+        presentation: 'transparentModal',
+        animation: modalFrame === 'sheet' ? 'fade' : undefined,
+      }) as const,
+    [modalFrame],
+  );
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="task/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="shopping/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="templates" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="task/new" options={modal} />
+        <Stack.Screen name="task/[id]" options={modal} />
+        <Stack.Screen name="shopping/[id]" options={modal} />
+        <Stack.Screen name="templates" options={modal} />
       </Stack>
       {failed ? (
         <MembershipError
@@ -240,6 +258,16 @@ function Guard() {
   );
 }
 
+/**
+ * The status bar follows the theme: dark clock and icons on the cream light theme, light ones on
+ * the dark theme. Kept the same under a modal sheet: the light scrim is still pale enough for
+ * dark icons, and the dark scrim for light ones.
+ */
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   // Nothing navigates or renders until the display font is registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
@@ -247,6 +275,7 @@ export default function RootLayout() {
   const fontsReady = fontsLoaded || fontError !== null;
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemedStatusBar />
       <NoticeProvider>
         <SessionProvider>
           <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
