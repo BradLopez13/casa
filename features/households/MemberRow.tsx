@@ -17,7 +17,7 @@ type Props = {
 };
 
 export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemove }: Props) {
-  const { colors, radii, space } = useTheme();
+  const { colors, radii, shadows, space } = useTheme();
   return (
     <View
       testID={`members.row.${member.userId}`}
@@ -26,6 +26,8 @@ export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemo
         padding: space(4),
         borderRadius: radii.note,
         backgroundColor: colors.note,
+        // A member is a note held by their magnet, with the same depth as a task note.
+        ...shadows.note,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
