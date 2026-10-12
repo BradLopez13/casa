@@ -293,6 +293,8 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
       header={door}
       leftTestID="tasks.pane.days"
       rightTestID="tasks.pane.day"
+      // A list beside its detail: the days keep a narrow column, the chosen day takes the room.
+      wide="right"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
       left={

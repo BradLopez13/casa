@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { layoutFor } from './layout';
-import { oneColumn, paneColumn, paneMode } from './panes';
+import { oneColumn, paneColumn, paneFlex, paneMode } from './panes';
 
 describe('paneMode', () => {
   it('stacks on a compact phone in portrait', () => {
@@ -96,5 +96,16 @@ describe('oneColumn', () => {
       paddingRight: 48 + 34,
       maxWidth: 640 + 48 + 82,
     });
+  });
+});
+
+describe('paneFlex', () => {
+  it('gives the left pane 60% by default', () => {
+    expect(paneFlex()).toEqual({ left: 3, right: 2 });
+    expect(paneFlex('left')).toEqual({ left: 3, right: 2 });
+  });
+
+  it('gives the right pane 60% for a list beside its detail (Semana)', () => {
+    expect(paneFlex('right')).toEqual({ left: 2, right: 3 });
   });
 });

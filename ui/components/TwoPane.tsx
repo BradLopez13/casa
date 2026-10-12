@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { paneGap } from '../layout';
-import { paneColumn, paneMode } from '../panes';
+import { paneColumn, paneFlex, paneMode, type WidePane } from '../panes';
 import { useLayout } from '../useLayout';
 
 type Props = {
@@ -38,11 +38,13 @@ type Props = {
    * drawn there, to keep clear of a side notch itself.
    */
   besideRail?: boolean;
+  /** Which pane takes 60 % in split; the left one unless the screen says otherwise. */
+  wide?: WidePane;
 };
 
 /**
- * Two panes in a 60/40 split from `expanded`, each with its own scroll, the pair kept within
- * `contentMax` and centred. Below `expanded`, one column: `left` then `right` in a single scroll.
+ * Two panes in a 60/40 split from `expanded` (`wide` picks the side that gets 60), each with its
+ * own scroll, the pair kept within `contentMax` and centred. Below `expanded`, one column: `left` then `right` in a single scroll.
  *
  * TwoPane owns the side gutter in both modes, plus the side safe areas (a phone on its side);
  * beside the rail, the rail already takes the left one (`paneColumn`). Pane content brings no
@@ -59,8 +61,10 @@ export function TwoPane({
   contentContainerStyle,
   contentInsetAdjustmentBehavior,
   besideRail,
+  wide,
 }: Props) {
   const layout = useLayout();
+  const flex = paneFlex(wide);
   const insets = useSafeAreaInsets();
   const column = {
     ...paneColumn(layout, insets, besideRail ?? layout.rail),
@@ -91,13 +95,13 @@ export function TwoPane({
       <View style={{ ...column, flex: 1, flexDirection: 'row', gap: paneGap(layout.size) }}>
         <ScrollView
           testID={leftTestID}
-          style={{ flex: 3 }}
+          style={{ flex: flex.left }}
           refreshControl={refreshControl}
           {...scrollProps}
         >
           {left}
         </ScrollView>
-        <ScrollView testID={rightTestID} style={{ flex: 2 }} {...scrollProps}>
+        <ScrollView testID={rightTestID} style={{ flex: flex.right }} {...scrollProps}>
           {right}
         </ScrollView>
       </View>

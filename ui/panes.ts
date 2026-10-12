@@ -7,6 +7,18 @@ export function paneMode(layout: Pick<Layout, 'twoPane'>): PaneMode {
   return layout.twoPane ? 'split' : 'stack';
 }
 
+/** Which of the two panes takes the larger share. */
+export type WidePane = 'left' | 'right';
+
+/**
+ * The 60/40 split as flex weights. The left pane is the wide one by default (what is pending, the
+ * screen's main list). A list beside its detail (Semana's days beside the chosen day) turns it
+ * round: the list keeps a contained width and the detail takes the room.
+ */
+export function paneFlex(wide: WidePane = 'left'): { left: number; right: number } {
+  return wide === 'left' ? { left: 3, right: 2 } : { left: 2, right: 3 };
+}
+
 export type PaneColumn = { paddingLeft: number; paddingRight: number; maxWidth: number };
 
 /**
