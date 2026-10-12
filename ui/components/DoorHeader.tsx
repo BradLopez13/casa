@@ -3,6 +3,7 @@ import { Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { displayFont } from '../tokens';
+import { useLayout } from '../useLayout';
 
 /** True when a parent (FridgeRefresh) already paints the door colour under the status bar. */
 export const DoorInsetContext = createContext(false);
@@ -23,6 +24,9 @@ const TITLE_SIZES = { large: 44, medium: 38 } as const;
 export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, children }: Props) {
   const { colors, radii, space } = useTheme();
   const insets = useSafeAreaInsets();
+  const { rail } = useLayout();
+  // Beside the rail, the rail already takes the left inset (a landscape notch).
+  const left = rail ? 0 : insets.left;
   const insetHandled = useContext(DoorInsetContext);
   const top = insetHandled ? 0 : insets.top;
   const size = TITLE_SIZES[titleSize];
@@ -35,7 +39,7 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
         borderBottomRightRadius: radii.door,
         paddingTop: top + space(3),
         paddingBottom: space(6),
-        paddingLeft: space(5) + insets.left,
+        paddingLeft: space(5) + left,
         // Room for the handle, so nothing runs under it.
         paddingRight: space(10) + insets.right,
       }}
