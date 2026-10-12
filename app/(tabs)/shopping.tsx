@@ -9,7 +9,6 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { newShoppingItemId } from '@/features/shopping/api';
 import {
   AddItemField,
-  ItemSuggestions,
   useItemEntry,
   type ItemEntry,
 } from '@/features/shopping/components/AddItemField';
@@ -95,8 +94,8 @@ export default function ShoppingScreen() {
     addItem.mutate({ id: newShoppingItemId(), householdId, name, quantity: null, userId });
   };
 
-  // Held by the screen, not the field: on two panes the suggestions sit apart from the field,
-  // and a turn of the tablet keeps what was typed.
+  // Held by the screen, not the field: a turn of the tablet moves the field between the door and
+  // the left pane, and keeps what was typed.
   const entry = useItemEntry({
     items,
     history,
@@ -236,8 +235,9 @@ function ShoppingStack({
 
 /**
  * Two panes (wide screens), under a fixed door and the offline band: the field and what is left
- * to buy on the left; the history's suggestions, level with the field, then the bought ones on
- * the right. The door is outside any scroll, so the left pane takes the pull-to-refresh.
+ * to buy on the left (the history's suggestions under the field while typing, as on the door);
+ * the bought ones on the right. The door is outside any scroll, so the left pane takes the
+ * pull-to-refresh.
  */
 function ShoppingSplit({
   entry,
@@ -271,7 +271,7 @@ function ShoppingSplit({
       contentContainerStyle={{ paddingBottom: space(10) }}
       left={
         <View style={pane}>
-          <AddItemField entry={entry} withSuggestions={false} />
+          <AddItemField entry={entry} />
           {panes.leftState ? stateView : null}
           {panes.pendingSheet ? (
             <ShoppingSheet flush pending={pending} bought={NO_ITEMS} {...sheet} />
@@ -280,7 +280,6 @@ function ShoppingSplit({
       }
       right={
         <View style={pane}>
-          <ItemSuggestions entry={entry} />
           {panes.boughtSheet ? (
             <ShoppingSheet flush pending={NO_ITEMS} bought={bought} {...sheet} />
           ) : null}

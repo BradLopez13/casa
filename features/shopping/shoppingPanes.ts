@@ -25,9 +25,9 @@ export type ShoppingPanes = {
 };
 
 /**
- * Compra on two panes: the field and what is left to buy on the left, the bought ones (and the
- * history's suggestions) on the right. A sheet with no rows is not drawn at all, so a pane never
- * shows an empty white card.
+ * Compra on two panes: the field (with its suggestions) and what is left to buy on the left, the
+ * bought ones on the right. A sheet with no rows is not drawn at all, so a pane never shows an
+ * empty white card.
  */
 export function shoppingPanes(
   state: ShoppingState,

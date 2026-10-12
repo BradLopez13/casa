@@ -19,8 +19,8 @@ type EntryOptions = {
 };
 
 /**
- * What is being typed, its error and the history's suggestions for it. Held by the screen, so the
- * field and the suggestions can sit apart (two panes) and a turn of the tablet keeps the text.
+ * What is being typed, its error and the history's suggestions for it. Held by the screen, so a
+ * turn of the tablet (the field moves from the door to the left pane) keeps the text.
  */
 export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) {
   const [text, setText] = useState('');
@@ -62,16 +62,10 @@ export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) 
 export type ItemEntry = ReturnType<typeof useItemEntry>;
 
 /**
- * The field: type a name and send it. With `withSuggestions` (one column, on the door) the
- * history's suggestions follow under it; on two panes they have the right pane to themselves.
+ * The field: type a name and send it, or tap one of the suggestions that follow under it while
+ * typing. On the door in one column, at the top of the left pane on two.
  */
-export function AddItemField({
-  entry,
-  withSuggestions = true,
-}: {
-  entry: ItemEntry;
-  withSuggestions?: boolean;
-}) {
+export function AddItemField({ entry }: { entry: ItemEntry }) {
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   const { text, error, change, submit } = entry;
@@ -118,13 +112,13 @@ export function AddItemField({
         />
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
-      {withSuggestions ? <ItemSuggestions entry={entry} /> : null}
+      <ItemSuggestions entry={entry} />
     </View>
   );
 }
 
 /** The history's names that match what is typed, as pills; a tap adds that name. */
-export function ItemSuggestions({ entry }: { entry: ItemEntry }) {
+function ItemSuggestions({ entry }: { entry: ItemEntry }) {
   const { colors, radii, space } = useTheme();
   if (entry.suggestions.length === 0) return null;
   return (
