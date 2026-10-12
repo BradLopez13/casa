@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(26);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -51,6 +51,28 @@ select throws_ok($$select public.register_push_token(null, 'android')$$,
                  'P0001', 'INVALID_PUSH_TOKEN', 'a null token is rejected');
 select throws_ok($$select public.register_push_token('ExponentPushToken[bbbbbbbbbb]', null)$$,
                  'P0001', 'INVALID_PUSH_TOKEN', 'a null platform is rejected');
+select throws_ok($$select public.register_push_token('garbage-token-123', 'android')$$,
+                 'P0001', 'INVALID_PUSH_TOKEN', 'a token that is not an Expo push token is rejected');
+select lives_ok($$select public.register_push_token('ExpoPushToken[cccccccccc]', 'ios')$$,
+                'the ExpoPushToken[...] form is accepted too');
+
+-- Ten tokens per user at most: the eleventh evicts the oldest.
+select tests.clear_auth();
+update public.push_tokens set updated_at = now() - interval '1 hour'
+where token = 'ExpoPushToken[cccccccccc]';
+select tests.authenticate_as(:'ana');
+do $$
+begin
+  perform public.register_push_token(format('ExponentPushToken[ana-%s]', n), 'android')
+  from generate_series(2, 11) n;
+end;
+$$;
+select tests.clear_auth();
+select is((select count(*) from public.push_tokens where user_id = :'ana'), 10::bigint,
+          'a user keeps at most ten tokens');
+select ok(not exists (select 1 from public.push_tokens where token = 'ExpoPushToken[cccccccccc]'),
+          'the eleventh token evicts the oldest');
+delete from public.push_tokens where user_id = :'ana';
 
 select tests.authenticate_as(:'bob');
 select public.unregister_push_token('ExponentPushToken[aaaaaaaaaa]');
