@@ -10,10 +10,24 @@ const KEY = 'casa-push-registration';
 /** How long sign-out waits for a registration that is still on its way to the server. */
 const PENDING_WAIT_MS = 3000;
 
-// The registration in flight, if any: sign-out waits for it so its unregister reaches the
-// server after the register, never before (or the phone would keep getting the old user's
-// notices).
-let pending: Promise<void> | null = null;
+// Registrations in flight: sign-out waits for them so its unregister reaches the server after
+// the register, never before (or the phone would keep getting the old user's notices).
+const pending = new Set<Promise<void>>();
+
+/**
+ * Marks a registration run as in flight from its very start (before the permission check and
+ * the token request), so a sign-out that arrives meanwhile waits for it. Call the returned
+ * function when the run ends, however it ends.
+ */
+export function beginRegistration(): () => void {
+  let end: () => void = () => undefined;
+  const settled = new Promise<void>((resolve) => {
+    end = resolve;
+  });
+  pending.add(settled);
+  void settled.then(() => pending.delete(settled));
+  return end;
+}
 
 /** True when the server does not know this token for this user yet. */
 export function shouldRegister(last: PushRegistration | null, current: PushRegistration): boolean {
@@ -60,18 +74,12 @@ export function registerAndSave(
   platform: 'android' | 'ios',
   keep: () => boolean = () => true,
 ): Promise<void> {
+  const end = beginRegistration();
   const job = (async () => {
     await registerPushToken(current.token, platform);
     if (keep()) await savePushRegistration(current);
   })();
-  const settled: Promise<void> = job.then(
-    () => undefined,
-    () => undefined,
-  );
-  pending = settled;
-  void settled.then(() => {
-    if (pending === settled) pending = null;
-  });
+  void job.then(end, end);
   return job;
 }
 
@@ -85,19 +93,24 @@ function settleWithin(promise: Promise<void>, ms: number): Promise<void> {
 }
 
 /**
- * On sign-out: waits (up to 3 s) for a registration in flight, then tells the server to stop
- * sending to the saved token (errors ignored, so the sign-out is never blocked) and forgets it
- * locally.
+ * On sign-out: waits (up to 3 s) for registrations in flight, then tells the server to stop
+ * sending to the saved token (up to 3 s more, errors ignored, so the sign-out is never
+ * blocked) and forgets it locally.
  */
 export async function forgetPushRegistration(): Promise<void> {
   // A registration still in flight saves before we read, so its token is unregistered too.
-  if (pending) await settleWithin(pending, PENDING_WAIT_MS);
+  if (pending.size > 0) {
+    await settleWithin(
+      Promise.all(pending).then(() => undefined),
+      PENDING_WAIT_MS,
+    );
+  }
   const saved = await loadPushRegistration();
   if (!saved) return;
-  try {
-    await unregisterPushToken(saved.token);
-  } catch {
-    // Best effort: the server also drops tokens Expo reports as gone.
-  }
+  // Best effort: the server also drops tokens Expo reports as gone.
+  await settleWithin(
+    unregisterPushToken(saved.token).catch(() => undefined),
+    PENDING_WAIT_MS,
+  );
   await clearPushRegistration();
 }

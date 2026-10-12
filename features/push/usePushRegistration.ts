@@ -6,7 +6,12 @@ import {
   getExpoPushToken,
   getPermission,
 } from '@/features/reminders/notifications';
-import { loadPushRegistration, registerAndSave, shouldRegister } from './registration';
+import {
+  beginRegistration,
+  loadPushRegistration,
+  registerAndSave,
+  shouldRegister,
+} from './registration';
 
 /** Read at call time: undefined until the EAS project is configured. */
 function easProjectId(): string | null {
@@ -38,6 +43,9 @@ export function usePushRegistration(userId: string | null): void {
       const projectId = easProjectId();
       if (!projectId) return;
       inFlight.current = true;
+      // Pending from the start, not only once the token is known: a sign-out during the
+      // permission check or the token request still waits for this run.
+      const end = beginRegistration();
       try {
         if ((await getPermission()) !== 'granted') return;
         await ensureHouseholdChannel();
@@ -48,6 +56,7 @@ export function usePushRegistration(userId: string | null): void {
       } catch {
         // Silent by design: retried on the next foreground.
       } finally {
+        end();
         inFlight.current = false;
       }
     };
