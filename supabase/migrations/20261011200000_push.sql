@@ -65,7 +65,9 @@ begin
     raise exception 'NOT_AUTHENTICATED' using errcode = 'P0001';
   end if;
 
+  -- Only Expo push tokens: ExponentPushToken[...] or ExpoPushToken[...].
   if p_token is null or char_length(p_token) not between 10 and 200
+     or p_token !~ '^Expo(nent)?PushToken\[[^\]]+\]$'
      or p_platform is null or p_platform not in ('android', 'ios') then
     raise exception 'INVALID_PUSH_TOKEN' using errcode = 'P0001';
   end if;
@@ -76,6 +78,17 @@ begin
     set user_id = excluded.user_id,
         platform = excluded.platform,
         updated_at = now();
+
+  -- Ten devices per user at most: the newest ten stay (the one just registered always does).
+  delete from public.push_tokens t
+  where t.user_id = v_user
+    and t.token not in (
+      select k.token
+      from public.push_tokens k
+      where k.user_id = v_user
+      order by (k.token = p_token) desc, k.updated_at desc, k.token
+      limit 10
+    );
 end;
 $$;
 
