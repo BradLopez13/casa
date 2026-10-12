@@ -9,7 +9,7 @@ import { usePendingInvite } from '@/features/households/pending-invite';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { Screen } from '@/ui/components/Screen';
+import { CenteredCard } from '@/ui/components/CenteredCard';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
@@ -50,7 +50,7 @@ export default function SignUpScreen() {
   };
 
   return (
-    <Screen>
+    <CenteredCard>
       <ScreenTitle>{t('auth.signUp.title')}</ScreenTitle>
       {hasPendingInvite ? (
         <Text testID="sign-up.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
@@ -103,6 +103,6 @@ export default function SignUpScreen() {
         variant="secondary"
         onPress={() => router.replace('/sign-in')}
       />
-    </Screen>
+    </CenteredCard>
   );
 }

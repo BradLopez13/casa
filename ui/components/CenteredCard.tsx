@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FocusRevealContext } from '../focusReveal';
 import { useTheme } from '../theme';
 import { useLayout } from '../useLayout';
+import { useRevealFocusedField } from '../useRevealFocusedField';
 
 /** About the width of a phone in portrait: a form never reads wider than this. */
 const CARD_WIDTH = 480;
@@ -11,11 +13,13 @@ const CARD_WIDTH = 480;
  * The screen for sign-in, sign-up, onboarding and invite. On a phone in portrait (`compact`) it is
  * a plain column across the width, inside the gutter, exactly like `Screen`. From `medium` it is
  * one note on the fridge: about 480 dp wide, centred both ways, with the note's own depth. The
- * fields already carry an outline, so they still read on the note colour.
+ * fields already carry an outline, so they still read on the note colour. With the keyboard up,
+ * the focused field is kept in view (every TextField inside asks for it on focus).
  */
 export function CenteredCard({ children }: { children: ReactNode }) {
   const { colors, radii, shadows, space } = useTheme();
   const { size, gutter, shortHeight } = useLayout();
+  const { scroll, reveal } = useRevealFocusedField();
   const card = size !== 'compact';
   // A phone on its side has little height: less air around and inside the card.
   const air = shortHeight ? space(4) : space(8);
@@ -30,6 +34,7 @@ export function CenteredCard({ children }: { children: ReactNode }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          {...scroll}
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: gutter,
@@ -55,7 +60,7 @@ export function CenteredCard({ children }: { children: ReactNode }) {
                 : null,
             ]}
           >
-            {children}
+            <FocusRevealContext.Provider value={reveal}>{children}</FocusRevealContext.Provider>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

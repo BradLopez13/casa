@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
+import { useFocusReveal } from '../focusReveal';
 import { useTheme } from '../theme';
 import { ErrorText } from './ErrorText';
 
@@ -12,6 +13,8 @@ type Props = Omit<TextInputProps, 'style'> & {
 export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps }: Props) {
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
+  // Inside a form that keeps the focused field above the keyboard (CenteredCard).
+  const reveal = useFocusReveal();
   return (
     <View style={{ gap: space(2) }}>
       <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
@@ -23,6 +26,7 @@ export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps
         cursorColor={colors.cobalt}
         onFocus={(e) => {
           setFocused(true);
+          reveal();
           onFocus?.(e);
         }}
         onBlur={(e) => {
