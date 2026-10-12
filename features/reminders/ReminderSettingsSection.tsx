@@ -1,10 +1,11 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useEffect, useState } from 'react';
-import { AppState, Linking, Platform, Pressable, Switch, Text, View } from 'react-native';
+import { AppState, Linking, Platform, Pressable, Text, View } from 'react-native';
 import type { ReminderSettings } from '@/domain/reminders/settings';
 import { useSession } from '@/features/auth/SessionProvider';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { getPermission, requestPermission } from './notifications';
@@ -195,14 +196,12 @@ export function ReminderSettingsSection() {
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.remindersToggle')}
         </Text>
-        <Switch
+        <Toggle
           testID="settings.reminders.toggle"
           accessibilityLabel={t('settings.remindersToggle')}
           value={on || asking}
           disabled={asking}
           onValueChange={toggle}
-          trackColor={{ true: colors.cobalt, false: colors.outline }}
-          ios_backgroundColor={colors.outline}
         />
       </View>
       {denied ? (
