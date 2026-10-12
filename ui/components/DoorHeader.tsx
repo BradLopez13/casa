@@ -56,17 +56,17 @@ const COMPACT_CHILDREN_MIN = 240;
  * The enamel door at the top of a main screen, with its handle on the right edge.
  *
  * The door's colour runs edge to edge; its content stays within `contentMax`, centred, so on a
- * wide screen it lines up with the panes below. On a short window (a phone on its side) the door
- * turns compact: a smaller title with the controls beside it, no handle, and never more than 40 %
- * of the window. If enlarged text still needs more, the door's content scrolls inside it rather
+ * wide screen it lines up with the panes below. On a short window (a phone on its side), or above
+ * two panes when the full door would crowd them (`doorFor`), the door turns compact: a smaller
+ * title with the controls beside it, no handle, and never more than 40 % of the window. If enlarged text still needs more, the door's content scrolls inside it rather
  * than being cut.
  */
 export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, children }: Props) {
   const { colors, radii, space } = useTheme();
   const insets = useSafeAreaInsets();
   const layout = useLayout();
-  const { height } = useWindowDimensions();
-  const door = doorFor(layout, height, titleSize);
+  const { height, fontScale } = useWindowDimensions();
+  const door = doorFor(layout, height, titleSize, fontScale);
   const { rail, contentMax, gutter } = layout;
   // Beside the rail, the rail already takes the left inset (a landscape notch).
   const left = rail ? 0 : insets.left;
