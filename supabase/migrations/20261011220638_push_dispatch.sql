@@ -7,8 +7,9 @@
 -- overlapping senders (insert wake + cron retry) from sending the same notice.
 alter table private.push_outbox add column claimed_at timestamptz;
 
--- Pending, unleased rows, oldest first, with every token of the recipient. One statement:
--- lock with skip locked, stamp the lease, then join the updated rows to their tokens.
+-- Pending, unleased rows from the last day (an older notice is stale and never sent), oldest
+-- first, with every token of the recipient. One statement: lock with skip locked, stamp the
+-- lease, then join the updated rows to their tokens.
 create function public.claim_push_batch(p_limit int default 100)
 returns table (id bigint, recipient_id uuid, title text, body text, data jsonb, tokens text[])
 language sql
@@ -24,6 +25,7 @@ as $$
       from private.push_outbox p
       where p.sent_at is null
         and p.attempts < 5
+        and p.created_at > now() - interval '1 day'
         and (p.claimed_at is null or p.claimed_at < now() - interval '2 minutes')
       order by p.id
       limit greatest(coalesce(p_limit, 100), 0)
@@ -103,7 +105,8 @@ begin
   perform net.http_post(
     url => v_url,
     body => '{}'::jsonb,
-    headers => jsonb_build_object('x-push-secret', v_secret, 'content-type', 'application/json')
+    headers => jsonb_build_object('x-push-secret', v_secret, 'content-type', 'application/json'),
+    timeout_milliseconds => 30000
   );
 exception
   when others then

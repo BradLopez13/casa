@@ -1,5 +1,5 @@
 begin;
-select plan(32);
+select plan(34);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -71,11 +71,15 @@ insert into private.push_outbox (recipient_id, kind, title, body, attempts)
 values (:'bob', 'task_assigned', 'Tienes una tarea nueva', 'Agotada', 5);
 insert into private.push_outbox (recipient_id, kind, title, body, sent_at)
 values (:'bob', 'task_assigned', 'Tienes una tarea nueva', 'Enviada', now());
+-- And one is pending but older than a day.
+insert into private.push_outbox (recipient_id, kind, title, body, created_at)
+values (:'bob', 'task_assigned', 'Tienes una tarea nueva', 'Rancia', now() - interval '25 hours');
 
 select id as ana_row from private.push_outbox where body = 'Fregar' \gset
 select id as bob_row from private.push_outbox where body = 'Barrer' \gset
 select id as carla_row from private.push_outbox where body like 'Bob se ha unido%' \gset
 select id as dead_row from private.push_outbox where body = 'Agotada' \gset
+select id as stale_row from private.push_outbox where body = 'Rancia' \gset
 
 -- claim_push_batch ----------------------------------------------------------------
 
@@ -102,6 +106,8 @@ select is((select row(recipient_id, title, body, data)::text from first_claim wh
           'recipient, title, body and data come with the row');
 select ok((select count(*) = 0 from first_claim where id = :dead_row),
           'a row with five attempts is not claimed');
+select ok((select count(*) = 0 from first_claim where id = :stale_row),
+          'a pending row older than a day is stale and not claimed');
 select is((select count(*) from private.push_outbox where claimed_at is not null), 3::bigint,
           'claimed rows carry a lease');
 
@@ -175,6 +181,12 @@ select is(
       and headers ->> 'x-push-secret' = 's3cret-for-tests'),
   1::bigint,
   'one insert statement queues exactly one POST with the secret header'
+);
+select is(
+  (select timeout_milliseconds from net.http_request_queue
+    where url = 'http://example.test/functions/v1/send-push'),
+  30000,
+  'the wake request waits up to 30 seconds'
 );
 
 -- Retry job -------------------------------------------------------------------------
