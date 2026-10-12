@@ -7,13 +7,14 @@
 // grow, a poison row stops after five tries). Only a failing mark_push_result can leave rows
 // unmarked, and their lease expiry hands them to the next run.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import {
   alignTickets,
   buildExpoMessages,
   chunk,
   classifyResponse,
   classifyTickets,
+  sameSecret,
   type ExpoMessage,
   type ExpoTicket,
   type OutboxRow,
@@ -24,6 +25,8 @@ const DEFAULT_EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const CLAIM_LIMIT = 100;
 const EXPO_BATCH_SIZE = 100;
 const MAX_BATCHES = 10;
+// A hung Expo request must not outlive the two-minute lease; a timeout is an error ticket.
+const EXPO_TIMEOUT_MS = 20_000;
 
 type ClaimedRow = {
   id: number;
@@ -64,6 +67,7 @@ async function sendBatch(
       method: 'POST',
       headers,
       body: JSON.stringify(messages),
+      signal: AbortSignal.timeout(EXPO_TIMEOUT_MS),
     });
     if (!response.ok) {
       await response.body?.cancel();
@@ -95,8 +99,7 @@ async function sendRows(rows: OutboxRow[]): Promise<PushResult> {
 }
 
 Deno.serve(async (req) => {
-  const secret = Deno.env.get('PUSH_WEBHOOK_SECRET');
-  if (!secret || req.headers.get('x-push-secret') !== secret) {
+  if (!sameSecret(req.headers.get('x-push-secret'), Deno.env.get('PUSH_WEBHOOK_SECRET'))) {
     return json({ error: 'unauthorized' }, 401);
   }
 

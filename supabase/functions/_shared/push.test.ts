@@ -5,6 +5,7 @@ import {
   chunk,
   classifyResponse,
   classifyTickets,
+  sameSecret,
   type ExpoTicket,
   type OutboxRow,
 } from './push';
@@ -39,6 +40,39 @@ describe('buildExpoMessages', () => {
       expect(message.channelId).toBe('household');
       expect(message.sound).toBe('default');
     }
+  });
+});
+
+describe('buildExpoMessages with malformed tokens', () => {
+  it('skips tokens that are not Expo push tokens', () => {
+    const mixed: OutboxRow = {
+      ...withTokens,
+      tokens: [
+        'garbage-token-123',
+        'ExpoPushToken[ccc]',
+        'ExponentPushToken[]',
+        'ExponentPushToken[ddd] ',
+      ],
+    };
+
+    const { messages, owner } = buildExpoMessages([mixed]);
+
+    expect(messages.map((m) => m.to)).toEqual(['ExpoPushToken[ccc]']);
+    expect(owner).toEqual([7]);
+  });
+
+  it('treats a row whose tokens are all malformed as a row without tokens (sent)', () => {
+    const bad: OutboxRow = { ...withTokens, tokens: ['garbage-token-123'] };
+
+    const { messages, owner } = buildExpoMessages([bad]);
+
+    expect(messages).toEqual([]);
+    expect(classifyTickets([7], owner, messages, [])).toEqual({
+      sent: [7],
+      failed: [],
+      deadTokens: [],
+      error: null,
+    });
   });
 });
 
@@ -160,5 +194,26 @@ describe('alignTickets', () => {
       { status: 'ok' },
       { status: 'error', message: 'invalid ticket' },
     ]);
+  });
+});
+
+describe('sameSecret', () => {
+  it('accepts the exact secret', () => {
+    expect(sameSecret('s3cret-for-tests', 's3cret-for-tests')).toBe(true);
+  });
+
+  it('rejects a different secret of the same length', () => {
+    expect(sameSecret('s3cret-for-tests', 's3cret-for-tesTs')).toBe(false);
+  });
+
+  it('rejects a missing, shorter or longer header', () => {
+    expect(sameSecret(null, 's3cret')).toBe(false);
+    expect(sameSecret('s3cre', 's3cret')).toBe(false);
+    expect(sameSecret('s3crett', 's3cret')).toBe(false);
+  });
+
+  it('rejects everything when no secret is configured', () => {
+    expect(sameSecret('', '')).toBe(false);
+    expect(sameSecret('anything', undefined)).toBe(false);
   });
 });

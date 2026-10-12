@@ -28,12 +28,17 @@ export type PushResult = {
   error: string | null;
 };
 
-// One message per token; owner[i] is the outbox row id of messages[i].
+// Same shape register_push_token accepts: ExponentPushToken[...] or ExpoPushToken[...].
+const EXPO_TOKEN = /^Expo(nent)?PushToken\[[^\]]+\]$/;
+
+// One message per well-formed token; owner[i] is the outbox row id of messages[i]. Malformed
+// tokens are skipped, so a row with only malformed tokens counts as a row without tokens.
 export function buildExpoMessages(rows: OutboxRow[]): { messages: ExpoMessage[]; owner: number[] } {
   const messages: ExpoMessage[] = [];
   const owner: number[] = [];
   for (const row of rows) {
     for (const token of row.tokens) {
+      if (!EXPO_TOKEN.test(token)) continue;
       messages.push({
         to: token,
         title: row.title,
@@ -148,4 +153,16 @@ export function classifyResponse(
     deadTokens: [],
     error: status > 0 ? `Expo push responded ${status}` : 'Expo push request failed',
   };
+}
+
+// True when the request's secret header equals the configured secret, comparing every byte
+// whatever the first difference (only the length can leak). No configured secret, no match.
+export function sameSecret(given: string | null, expected: string | undefined): boolean {
+  if (!expected || given === null) return false;
+  const a = new TextEncoder().encode(given);
+  const b = new TextEncoder().encode(expected);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  return diff === 0;
 }
