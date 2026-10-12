@@ -10,7 +10,7 @@ import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 
-type Props = {
+type EntryOptions = {
   items: readonly ShoppingItem[];
   history: readonly HistoryEntry[];
   onAdd: (name: string) => void;
@@ -18,18 +18,24 @@ type Props = {
   onListed: (id: string) => void;
 };
 
-/** The field on the door: type a name and send it, or tap one of the suggestions. */
-export function AddItemField({ items, history, onAdd, onListed }: Props) {
-  const { colors, radii, space } = useTheme();
+/**
+ * What is being typed, its error and the history's suggestions for it. Held by the screen, so the
+ * field and the suggestions can sit apart (two panes) and a turn of the tablet keeps the text.
+ */
+export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
-  const [focused, setFocused] = useState(false);
 
   const pendingSet = useMemo(() => pendingNames(items), [items]);
   const suggestions = useMemo(
     () => suggest(history, text, pendingSet),
     [history, text, pendingSet],
   );
+
+  const change = (next: string) => {
+    setText(next);
+    setError(undefined);
+  };
 
   const submit = (name: string) => {
     const parsed = shoppingNameSchema.safeParse(name);
@@ -50,16 +56,33 @@ export function AddItemField({ items, history, onAdd, onListed }: Props) {
     onAdd(plan.name);
   };
 
+  return { text, error, suggestions, change, submit };
+}
+
+export type ItemEntry = ReturnType<typeof useItemEntry>;
+
+/**
+ * The field: type a name and send it. With `withSuggestions` (one column, on the door) the
+ * history's suggestions follow under it; on two panes they have the right pane to themselves.
+ */
+export function AddItemField({
+  entry,
+  withSuggestions = true,
+}: {
+  entry: ItemEntry;
+  withSuggestions?: boolean;
+}) {
+  const { colors, radii, space } = useTheme();
+  const [focused, setFocused] = useState(false);
+  const { text, error, change, submit } = entry;
+
   return (
     <View style={{ gap: space(3) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
         <TextInput
           testID="shopping.input"
           value={text}
-          onChangeText={(next) => {
-            setText(next);
-            setError(undefined);
-          }}
+          onChangeText={change}
           onSubmitEditing={() => submit(text)}
           returnKeyType="done"
           // Keeps the keyboard up so several items go in one after another.
@@ -95,33 +118,40 @@ export function AddItemField({ items, history, onAdd, onListed }: Props) {
         />
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
-      {suggestions.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-          {suggestions.map((entry) => (
-            <Pressable
-              key={entry.normalizedName}
-              testID={`shopping.suggestion.${entry.normalizedName}`}
-              onPress={() => submit(entry.name)}
-              accessibilityRole="button"
-              accessibilityLabel={entry.name}
-              style={({ pressed }) => ({
-                minHeight: MIN_TOUCH,
-                justifyContent: 'center',
-                paddingHorizontal: space(4),
-                borderRadius: radii.pill,
-                borderWidth: 1.5,
-                borderColor: colors.cobalt,
-                backgroundColor: colors.note,
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Text maxFontSizeMultiplier={1.3} style={{ color: colors.cobalt, fontSize: 15 }}>
-                {entry.name}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      {withSuggestions ? <ItemSuggestions entry={entry} /> : null}
+    </View>
+  );
+}
+
+/** The history's names that match what is typed, as pills; a tap adds that name. */
+export function ItemSuggestions({ entry }: { entry: ItemEntry }) {
+  const { colors, radii, space } = useTheme();
+  if (entry.suggestions.length === 0) return null;
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+      {entry.suggestions.map((suggestion) => (
+        <Pressable
+          key={suggestion.normalizedName}
+          testID={`shopping.suggestion.${suggestion.normalizedName}`}
+          onPress={() => entry.submit(suggestion.name)}
+          accessibilityRole="button"
+          accessibilityLabel={suggestion.name}
+          style={({ pressed }) => ({
+            minHeight: MIN_TOUCH,
+            justifyContent: 'center',
+            paddingHorizontal: space(4),
+            borderRadius: radii.pill,
+            borderWidth: 1.5,
+            borderColor: colors.cobalt,
+            backgroundColor: colors.note,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text maxFontSizeMultiplier={1.3} style={{ color: colors.cobalt, fontSize: 15 }}>
+            {suggestion.name}
+          </Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
