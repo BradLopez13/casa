@@ -45,6 +45,6 @@ describe('dayName', () => {
     expect(dayName('2026-10-09', today)).toBe('Hoy');
     expect(dayName('2026-10-10', today)).toBe('Mañana');
   });
-  it('uses the weekday alone otherwise', () =>
-    expect(dayName('2026-10-11', today)).toBe('domingo'));
+  it('uses the weekday alone otherwise, capitalised like Hoy and Mañana', () =>
+    expect(dayName('2026-10-11', today)).toBe('Domingo'));
 });
