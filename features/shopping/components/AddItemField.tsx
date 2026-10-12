@@ -8,7 +8,7 @@ import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useFocusReveal } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { CONTROL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 
 type EntryOptions = {
@@ -101,7 +101,7 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
-            minHeight: 48,
+            minHeight: CONTROL_HEIGHT,
             paddingHorizontal: space(4),
             paddingVertical: space(3),
             borderRadius: radii.note,
@@ -150,9 +150,7 @@ function ItemSuggestions({ entry }: { entry: ItemEntry }) {
             opacity: pressed ? 0.8 : 1,
           })}
         >
-          <Text maxFontSizeMultiplier={1.3} style={{ color: colors.cobalt, fontSize: 15 }}>
-            {suggestion.name}
-          </Text>
+          <Text style={{ color: colors.cobalt, fontSize: 15 }}>{suggestion.name}</Text>
         </Pressable>
       ))}
     </View>

@@ -84,7 +84,6 @@ export function ShoppingRow({
   const name = (
     <>
       <Text
-        maxFontSizeMultiplier={1.3}
         style={{
           flex: 1,
           color: bought ? colors.muted : colors.ink,
@@ -96,8 +95,14 @@ export function ShoppingRow({
       </Text>
       {item.quantity ? (
         <Text
-          maxFontSizeMultiplier={1.3}
-          style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
+          // Shares the row with the name, so at a large text size it wraps rather than crowd it out.
+          style={{
+            flexShrink: 1,
+            maxWidth: '50%',
+            color: colors.muted,
+            fontSize: 15,
+            fontVariant: ['tabular-nums'],
+          }}
         >
           {item.quantity}
         </Text>

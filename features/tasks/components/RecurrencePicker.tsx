@@ -50,7 +50,6 @@ function Pill({
       })}
     >
       <Text
-        maxFontSizeMultiplier={1.3}
         style={{
           color: selected ? colors.onCobalt : colors.ink,
           fontSize: 15,
@@ -171,8 +170,7 @@ function EveryStepper({ every, onChange }: { every: number; onChange: (every: nu
       />
       <Text
         accessibilityLiveRegion="polite"
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.ink, fontSize: 15, fontVariant: ['tabular-nums'] }}
+        style={{ flexShrink: 1, color: colors.ink, fontSize: 15, fontVariant: ['tabular-nums'] }}
       >
         {t('recurrence.everyN', { n: every })}
       </Text>
@@ -221,9 +219,7 @@ export function RecurrencePicker({ value, dueOn, onChange }: Props) {
         />
       ) : null}
       {value?.kind === 'monthly' ? (
-        <Text maxFontSizeMultiplier={1.3} style={{ color: colors.ink, fontSize: 15 }}>
-          {recurrenceLabel(value)}
-        </Text>
+        <Text style={{ color: colors.ink, fontSize: 15 }}>{recurrenceLabel(value)}</Text>
       ) : null}
     </View>
   );

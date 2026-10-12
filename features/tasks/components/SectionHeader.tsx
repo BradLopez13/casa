@@ -28,15 +28,11 @@ export function SectionHeader({
     >
       <Text
         accessibilityRole="header"
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+        style={{ flexShrink: 1, color: colors.ink, fontSize: 15, fontWeight: '600' }}
       >
         {title}
       </Text>
-      <Text
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
-      >
+      <Text style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}>
         {count}
       </Text>
     </View>

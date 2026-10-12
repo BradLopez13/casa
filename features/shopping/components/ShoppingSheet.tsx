@@ -33,7 +33,6 @@ export function BoughtTitle({ count }: { count: number }) {
   return (
     <Text
       accessibilityRole="header"
-      maxFontSizeMultiplier={1.3}
       style={{
         color: colors.muted,
         fontSize: 15,

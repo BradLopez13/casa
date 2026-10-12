@@ -15,7 +15,7 @@ import { buttonLook } from '@/ui/buttonLook';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, displayFont } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
@@ -86,7 +86,7 @@ export function HeaderAction({
         style={
           strong
             ? {
-                minHeight: 36,
+                minHeight: INLINE_PILL_HEIGHT,
                 justifyContent: 'center',
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
@@ -288,7 +288,6 @@ export function TaskForm({
                 {nextDate !== null ? (
                   <Text
                     testID="task-form.repeat.next"
-                    maxFontSizeMultiplier={1.3}
                     style={{ color: colors.muted, fontSize: 13 }}
                   >
                     {t('taskForm.repeatNext', { date: nextDate })}

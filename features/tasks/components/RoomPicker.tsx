@@ -38,7 +38,6 @@ export function RoomPicker({ value, onChange }: Props) {
             })}
           >
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 color: selected ? colors.onCobalt : colors.ink,
                 fontSize: 15,

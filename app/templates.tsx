@@ -74,9 +74,7 @@ function TemplateRow({
           <Ionicons name="checkmark" size={18} color={colors.onCobalt} accessible={false} />
         ) : null}
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={{ flex: 1, color: colors.ink, fontSize: 16 }}>
-        {label}
-      </Text>
+      <Text style={{ flex: 1, color: colors.ink, fontSize: 16 }}>{label}</Text>
     </Pressable>
   );
 }
