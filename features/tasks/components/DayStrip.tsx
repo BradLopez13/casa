@@ -4,6 +4,7 @@ import { toLocalDate } from '@/domain/tasks/dates';
 import { dayHeading } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { locale, t } from '@/i18n';
+import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 
@@ -77,9 +78,14 @@ export function DayDots({ day, marks, ring }: DotsProps) {
   );
 }
 
-/** The next seven days as flat cells, with a dot for each person who has something that day. */
+/**
+ * The next seven days as flat cells, with a dot for each person who has something that day. In a
+ * compact door (a phone on its side) each cell is one line, weekday and number side by side, so
+ * the strip takes a single row of touch height.
+ */
 export function DayStrip({ days, today, marks, onSelect }: Props) {
   const { colors, radii, space } = useTheme();
+  const compact = useDoorCompact();
   return (
     <View style={{ flexDirection: 'row', gap: space(1) }}>
       {days.map((day) => {
@@ -96,7 +102,8 @@ export function DayStrip({ days, today, marks, onSelect }: Props) {
               flex: 1,
               minHeight: MIN_TOUCH,
               alignItems: 'center',
-              paddingVertical: space(2),
+              justifyContent: 'center',
+              paddingVertical: compact ? space(1) : space(2),
               gap: space(1),
               borderRadius: radii.day,
               // Only today is cut out of the door, in the page colour, and its weekday is set in
@@ -106,28 +113,36 @@ export function DayStrip({ days, today, marks, onSelect }: Props) {
               opacity: pressed ? 0.7 : 1,
             })}
           >
-            <Text
-              maxFontSizeMultiplier={1.3}
-              numberOfLines={1}
-              style={{
-                color: isToday ? colors.ink : colors.muted,
-                fontSize: 12,
-                fontWeight: isToday ? '700' : '400',
-              }}
+            <View
+              style={
+                compact
+                  ? { flexDirection: 'row', alignItems: 'baseline', columnGap: space(1) }
+                  : { alignItems: 'center', gap: space(1) }
+              }
             >
-              {date.toLocaleDateString(locale, { weekday: 'short' })}
-            </Text>
-            <Text
-              maxFontSizeMultiplier={1.3}
-              style={{
-                color: colors.ink,
-                fontFamily: displayFont,
-                fontSize: 18,
-                fontVariant: ['tabular-nums'],
-              }}
-            >
-              {date.getDate()}
-            </Text>
+              <Text
+                maxFontSizeMultiplier={1.3}
+                numberOfLines={1}
+                style={{
+                  color: isToday ? colors.ink : colors.muted,
+                  fontSize: 12,
+                  fontWeight: isToday ? '700' : '400',
+                }}
+              >
+                {date.toLocaleDateString(locale, { weekday: 'short' })}
+              </Text>
+              <Text
+                maxFontSizeMultiplier={1.3}
+                style={{
+                  color: colors.ink,
+                  fontFamily: displayFont,
+                  fontSize: compact ? 16 : 18,
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {date.getDate()}
+              </Text>
+            </View>
             <DayDots day={day} marks={marks} />
           </Pressable>
         );

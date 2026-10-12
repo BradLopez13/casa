@@ -47,6 +47,12 @@ type Props = {
   titleSize?: DoorTitleSize;
   titleTestID?: string;
   children?: ReactNode;
+  /**
+   * A full-width row under the title and the controls (Tareas' day strip). In a full door it
+   * follows the controls; in a compact one it runs under the whole row, so the title stays level
+   * with the controls beside it.
+   */
+  below?: ReactNode;
 };
 
 /** Below this the children wrap under the title instead of squeezing beside it. */
@@ -58,10 +64,17 @@ const COMPACT_CHILDREN_MIN = 240;
  * The door's colour runs edge to edge; its content stays within `contentMax`, centred, so on a
  * wide screen it lines up with the panes below. On a short window (a phone on its side), or above
  * two panes when the full door would crowd them (`doorFor`), the door turns compact: a smaller
- * title with the controls beside it, no handle, and never more than 40 % of the window. If enlarged text still needs more, the door's content scrolls inside it rather
- * than being cut.
+ * title with the controls beside it, no handle, and never more than 40 % of the window. If
+ * enlarged text still needs more, the door's content scrolls inside it rather than being cut.
  */
-export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, children }: Props) {
+export function DoorHeader({
+  title,
+  subtitle,
+  titleSize = 'large',
+  titleTestID,
+  children,
+  below,
+}: Props) {
   const { colors, radii, space } = useTheme();
   const insets = useSafeAreaInsets();
   const layout = useLayout();
@@ -172,6 +185,8 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
                 </View>
               ) : null}
             </View>
+            {/* The filter row already ends in its own padding, so the strip follows close. */}
+            {below ? <View style={{ ...column, marginTop: space(1) }}>{below}</View> : null}
           </DoorCompactContext.Provider>
         </ScrollView>
       </View>
@@ -199,6 +214,7 @@ export function DoorHeader({ title, subtitle, titleSize = 'large', titleTestID, 
         {heading}
         {sub}
         {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
+        {below ? <View style={{ marginTop: space(4) }}>{below}</View> : null}
       </View>
     </View>
   );

@@ -21,7 +21,7 @@ import {
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
-import { DoorControls, DoorHeader, useDoorCompact } from '@/ui/components/DoorHeader';
+import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -145,26 +145,27 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
   };
 
   const door = (
-    <DoorHeader title={t('tasks.title')} titleSize="medium">
-      <StackDoorBody
-        controls={
-          <DoorControls>
-            <MemberFilter
-              members={members}
-              marks={marks}
-              userId={userId}
-              selected={assigneeId}
-              onToggle={screen.toggleFilter}
-            />
-            <ModeSwitch value={mode} onChange={setMode} />
-          </DoorControls>
-        }
-        strip={
-          mode === 'week' ? (
-            <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
-          ) : null
-        }
-      />
+    // The strip is its own row under the title and the controls; in a compact door it runs the
+    // full width as one line of days, so the door stays within its 40 % of the window.
+    <DoorHeader
+      title={t('tasks.title')}
+      titleSize="medium"
+      below={
+        mode === 'week' ? (
+          <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
+        ) : null
+      }
+    >
+      <DoorControls>
+        <MemberFilter
+          members={members}
+          marks={marks}
+          userId={userId}
+          selected={assigneeId}
+          onToggle={screen.toggleFilter}
+        />
+        <ModeSwitch value={mode} onChange={setMode} />
+      </DoorControls>
     </DoorHeader>
   );
 
@@ -222,22 +223,6 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
         contentContainerStyle={listStyle}
       />
     </FridgeRefresh>
-  );
-}
-
-/**
- * The one-column door's body: the filter and the mode (`DoorControls`, so a compact door puts
- * them side by side beside the title), then the day strip as its own row beneath. A compact door
- * tightens the gap so the whole stays within its 40 % of the window.
- */
-function StackDoorBody({ controls, strip }: { controls: ReactNode; strip: ReactNode }) {
-  const { space } = useTheme();
-  const compact = useDoorCompact();
-  return (
-    <View style={{ gap: compact ? space(2) : space(4) }}>
-      {controls}
-      {strip}
-    </View>
   );
 }
 
