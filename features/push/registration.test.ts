@@ -115,4 +115,44 @@ describe('forgetPushRegistration', () => {
     await forgetting;
     expect(done).toBe(true);
   });
+
+  it('gives up on a stuck unregister after about 3 seconds and still forgets locally', async () => {
+    const { api, registration } = await load();
+    store.set('casa-push-registration', JSON.stringify(reg));
+    vi.useFakeTimers();
+    vi.mocked(api.unregisterPushToken).mockReturnValue(new Promise<void>(() => undefined));
+    let done = false;
+    const forgetting = registration.forgetPushRegistration().then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(2900);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    await forgetting;
+    expect(done).toBe(true);
+    expect(api.unregisterPushToken).toHaveBeenCalledWith(reg.token);
+    expect(store.size).toBe(0);
+  });
+
+  it('waits for a run begun before its token was known', async () => {
+    const { api, registration } = await load();
+    const order: string[] = [];
+    vi.mocked(api.registerPushToken).mockImplementation(() => {
+      order.push('register');
+      return Promise.resolve();
+    });
+    vi.mocked(api.unregisterPushToken).mockImplementation((token: string) => {
+      order.push(`unregister:${token}`);
+      return Promise.resolve();
+    });
+    // The run starts (permission, channel, token...) and sign-out arrives before it registers.
+    const end = registration.beginRegistration();
+    const forgetting = registration.forgetPushRegistration();
+    await Promise.resolve();
+    await registration.registerAndSave(reg, 'android');
+    end();
+    await forgetting;
+    expect(order).toEqual(['register', `unregister:${reg.token}`]);
+    expect(store.size).toBe(0);
+  });
 });
