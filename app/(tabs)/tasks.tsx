@@ -60,10 +60,6 @@ export default function TasksScreen() {
       ),
     [filtered, today, members],
   );
-  const counts = useMemo(
-    () => new Map(week.days.map((day) => [day.date, day.tasks.length])),
-    [week],
-  );
 
   const sections = useMemo(
     () => (mode === 'week' ? weekSections(week, today) : allSections(filtered, today)),
@@ -102,13 +98,7 @@ export default function TasksScreen() {
         />
         <ModeSwitch value={mode} onChange={setMode} />
         {mode === 'week' ? (
-          <DayStrip
-            days={strip}
-            today={today}
-            marks={marks}
-            counts={counts}
-            onSelect={scrollToDay}
-          />
+          <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
         ) : null}
       </View>
     </DoorHeader>

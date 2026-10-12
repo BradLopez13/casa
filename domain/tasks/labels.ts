@@ -36,3 +36,10 @@ export function dayHeading(date: string, today: string): string {
   if (date === addDays(today, 1)) return t('tasks.due.tomorrow');
   return toLocalDate(date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric' });
 }
+
+/** "Hoy", "Mañana", else the weekday alone ("domingo"): for a row that shows the day number apart. */
+export function dayName(date: string, today: string): string {
+  if (date === today) return t('tasks.due.today');
+  if (date === addDays(today, 1)) return t('tasks.due.tomorrow');
+  return toLocalDate(date).toLocaleDateString(locale, { weekday: 'long' });
+}

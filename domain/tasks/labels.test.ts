@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayHeading, dueLabel, longDateLabel, overdueLabel } from './labels';
+import { dayHeading, dayName, dueLabel, longDateLabel, overdueLabel } from './labels';
 
 describe('dueLabel', () => {
   const today = '2026-10-04';
@@ -37,4 +37,14 @@ describe('dayHeading', () => {
   });
   it('uses weekday and day otherwise', () =>
     expect(dayHeading('2026-10-11', today)).toBe('domingo 11'));
+});
+
+describe('dayName', () => {
+  const today = '2026-10-09';
+  it('labels today and tomorrow', () => {
+    expect(dayName('2026-10-09', today)).toBe('Hoy');
+    expect(dayName('2026-10-10', today)).toBe('Mañana');
+  });
+  it('uses the weekday alone otherwise', () =>
+    expect(dayName('2026-10-11', today)).toBe('domingo'));
 });

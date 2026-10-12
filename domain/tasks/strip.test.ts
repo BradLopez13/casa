@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { weekStrip } from './strip';
-import type { TaskItem } from './views';
+import { selectWeek, type TaskItem } from './views';
 
 const today = '2026-10-09';
 
@@ -55,16 +55,36 @@ describe('weekStrip', () => {
       date: today,
       people: [],
       unassigned: false,
+      // Still listed in the week, so still counted, just without a dot.
+      count: 1,
     });
   });
 
   it('flags unassigned open tasks and ignores done ones', () => {
     const [day] = weekStrip([task(null, today), done('a', today)], today, ['a']);
-    expect(day).toEqual({ date: today, people: [], unassigned: true });
+    expect(day).toEqual({ date: today, people: [], unassigned: true, count: 1 });
   });
 
   it('ignores skipped tasks', () =>
-    expect(weekStrip([base({ dueOn: today, skippedAt: today })], today, [])[0]?.unassigned).toBe(
-      false,
-    ));
+    expect(weekStrip([base({ dueOn: today, skippedAt: today })], today, [])[0]).toMatchObject({
+      unassigned: false,
+      count: 0,
+    }));
+
+  it('counts the open tasks due each day, like the week list', () => {
+    const tomorrow = '2026-10-10';
+    const days = weekStrip(
+      [task('a', today), task(null, today), done('a', today), task('a', tomorrow)],
+      today,
+      ['a'],
+    );
+    expect(days.map((d) => d.count)).toEqual([2, 1, 0, 0, 0, 0, 0]);
+  });
+
+  it('agrees with selectWeek on every day', () => {
+    const tasks = [task('a', today), task('b', '2026-10-12'), done('a', '2026-10-12')];
+    const strip = weekStrip(tasks, today, ['a', 'b']);
+    const week = selectWeek(tasks, today);
+    expect(strip.map((d) => d.count)).toEqual(week.days.map((d) => d.tasks.length));
+  });
 });
