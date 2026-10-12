@@ -9,7 +9,7 @@ const members: Member[] = [
 
 describe('scopeLabel', () => {
   it('says the whole house when nobody is selected', () => {
-    expect(scopeLabel(null, 'me', members)).toBe('En toda la casa');
+    expect(scopeLabel(null, 'me', members)).toBe('En todo el hogar');
   });
 
   it('says only your tasks when you are selected', () => {
@@ -21,6 +21,6 @@ describe('scopeLabel', () => {
   });
 
   it('falls back to the whole house for someone who already left', () => {
-    expect(scopeLabel('gone', 'me', members)).toBe('En toda la casa');
+    expect(scopeLabel('gone', 'me', members)).toBe('En todo el hogar');
   });
 });

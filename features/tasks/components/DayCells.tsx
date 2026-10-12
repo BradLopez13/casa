@@ -75,7 +75,7 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
   );
 }
 
-/** The due-date field: four quick days, "Otro…" (native picker) and "Sin fecha". */
+/** The due-date field: four quick days, "Otro día" (native picker) and "Sin fecha". */
 export function DayCells({ value, today, onChange, noneDisabled }: Props) {
   const { space } = useTheme();
   const otherValue = value !== null && !isQuickDay(value, today) ? value : null;
@@ -98,7 +98,7 @@ export function DayCells({ value, today, onChange, noneDisabled }: Props) {
         },
       });
     } else if (Platform.OS === 'ios' && !other) {
-      // iOS shows the inline picker below once "Otro…" is active.
+      // iOS shows the inline picker below once "Otro día" is active.
       onChange(addDays(today, 4));
     }
     // Web has no native picker: leave the value unchanged.

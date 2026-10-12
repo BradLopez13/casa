@@ -27,7 +27,7 @@ export function ConfirmDialog({
   loading = false,
 }: Props) {
   const { colors, radii, space } = useTheme();
-  // Keep the last content while the Modal fades out, so it doesn't blank or flash "¿Expulsar a ?".
+  // Keep the last content while the Modal fades out, so it doesn't blank or flash "¿Quitar a  del hogar?".
   const live = { title, message, confirmLabel, destructive };
   const [content, setContent] = useState(live);
   if (
