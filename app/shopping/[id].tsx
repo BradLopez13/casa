@@ -162,7 +162,7 @@ function EditForm({
   onDelete: () => void;
 }) {
   const { colors, space } = useTheme();
-  const { fill, avoidKeyboard } = useModalFill();
+  const { fill, avoidKeyboard, edges } = useModalFill();
   const { scroll, reveal } = useRevealFocusedField();
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
@@ -178,7 +178,7 @@ function EditForm({
   };
 
   return (
-    <SafeAreaView style={[fill, { backgroundColor: colors.page }]}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',

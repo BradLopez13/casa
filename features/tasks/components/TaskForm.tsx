@@ -130,7 +130,7 @@ export function TaskForm({
   repeatEditable = true,
 }: Props) {
   const { colors, space } = useTheme();
-  const { fill, avoidKeyboard } = useModalFill();
+  const { fill, avoidKeyboard, edges } = useModalFill();
   const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
@@ -183,7 +183,7 @@ export function TaskForm({
       : null;
 
   return (
-    <SafeAreaView style={[fill, { backgroundColor: colors.page }]}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',

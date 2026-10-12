@@ -92,7 +92,7 @@ export default function TemplatesRoute() {
 
 function TemplatesScreen() {
   const { colors, space } = useTheme();
-  const { fill } = useModalFill();
+  const { fill, edges } = useModalFill();
   const close = useCloseModal('/today');
   const today = useToday();
   const queryClient = useQueryClient();
@@ -141,7 +141,7 @@ function TemplatesScreen() {
   };
 
   return (
-    <SafeAreaView style={[fill, { backgroundColor: colors.page }]}>
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <View
         style={{
           flexDirection: 'row',

@@ -1,6 +1,10 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaInsetsContext,
+  useSafeAreaInsets,
+  type Edge,
+} from 'react-native-safe-area-context';
 import { SHEET_WIDTH } from '../layout';
 import { modalFrameFor, sheetMargins } from '../sheet';
 import { useTheme } from '../theme';
@@ -8,16 +12,29 @@ import { useLayout } from '../useLayout';
 
 const InSheet = createContext(false);
 
+const ALL_EDGES: Edge[] = ['top', 'right', 'bottom', 'left'];
+const NO_EDGES: Edge[] = [];
+const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
+
+type ModalFill = {
+  fill: { flex: 1 } | { flexShrink: 1 };
+  avoidKeyboard: boolean;
+  /** The safe-area edges the modal's own SafeAreaView keeps clear. */
+  edges: Edge[];
+};
+
 /**
  * How the column of a modal fills its frame: the whole screen on a phone in portrait (as before),
  * or only as tall as its content inside the sheet, shrinking to scroll when it is longer. Inside
- * the sheet the keyboard is avoided by the sheet itself, so the form's own avoidance is off.
+ * the sheet the keyboard is avoided by the sheet itself, so the form's own avoidance is off, and
+ * the system bars and notches are kept clear by the sheet's margins, so the content adds no safe
+ * area of its own (no band above the header, no header pushed in by a side notch).
  */
-export function useModalFill(): { fill: { flex: 1 } | { flexShrink: 1 }; avoidKeyboard: boolean } {
+export function useModalFill(): ModalFill {
   const inSheet = useContext(InSheet);
   return inSheet
-    ? { fill: { flexShrink: 1 }, avoidKeyboard: false }
-    : { fill: { flex: 1 }, avoidKeyboard: true };
+    ? { fill: { flexShrink: 1 }, avoidKeyboard: false, edges: NO_EDGES }
+    : { fill: { flex: 1 }, avoidKeyboard: true, edges: ALL_EDGES };
 }
 
 /**
@@ -79,7 +96,13 @@ export function ModalSheet({ children }: { children: ReactNode }) {
                 : { flex: 1 }
             }
           >
-            <InSheet.Provider value={sheet}>{children}</InSheet.Provider>
+            <InSheet.Provider value={sheet}>
+              {/* Inside the sheet, anything that reads the insets itself sees none. Always
+                  provided, so a rotation does not change the tree (and remount the form). */}
+              <SafeAreaInsetsContext.Provider value={sheet ? NO_INSETS : insets}>
+                {children}
+              </SafeAreaInsetsContext.Provider>
+            </InSheet.Provider>
           </View>
         </View>
       </KeyboardAvoidingView>

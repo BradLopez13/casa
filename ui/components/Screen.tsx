@@ -7,18 +7,16 @@ import { useModalFill } from './ModalSheet';
 
 /**
  * A plain scrolling screen. The content keeps the class gutter at the sides and never grows past
- * `contentMax`, centred; all four safe-area edges are kept clear (a side notch in landscape).
+ * `contentMax`, centred; all four safe-area edges are kept clear (a side notch in landscape),
+ * except inside a modal sheet, which is clear of them already.
  */
 export function Screen({ children }: { children: ReactNode }) {
   const { colors, space } = useTheme();
   const { contentMax, gutter } = useLayout();
-  // Inside a modal sheet it is only as tall as its content (see ModalSheet).
-  const { fill, avoidKeyboard } = useModalFill();
+  // Inside a modal sheet it is only as tall as its content and adds no safe area (see ModalSheet).
+  const { fill, avoidKeyboard, edges } = useModalFill();
   return (
-    <SafeAreaView
-      edges={['top', 'right', 'bottom', 'left']}
-      style={[fill, { backgroundColor: colors.page }]}
-    >
+    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <KeyboardAvoidingView
         enabled={avoidKeyboard}
         style={fill}
