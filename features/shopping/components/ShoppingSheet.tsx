@@ -47,7 +47,7 @@ export function ShoppingSheet({
   onClear,
   flush = false,
 }: Props) {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const layout = reduceMotion ? undefined : LinearTransition;
 
@@ -75,6 +75,7 @@ export function ShoppingSheet({
         borderRadius: radii.note,
         backgroundColor: colors.note,
         ...shadows.note,
+        ...noteEdge,
       }}
     >
       {/* Clips the rows' flash to the rounded corners; the outer view keeps the shadow. */}

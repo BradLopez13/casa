@@ -17,7 +17,7 @@ const CARD_WIDTH = 480;
  * the focused field is kept in view (every TextField inside asks for it on focus).
  */
 export function CenteredCard({ children }: { children: ReactNode }) {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
   const { size, gutter, shortHeight } = useLayout();
   const { scroll, reveal } = useRevealFocusedField();
   const card = size !== 'compact';
@@ -56,6 +56,7 @@ export function CenteredCard({ children }: { children: ReactNode }) {
                     paddingHorizontal: space(8),
                     paddingVertical: shortHeight ? space(6) : space(8),
                     ...shadows.note,
+                    ...noteEdge,
                   }
                 : null,
             ]}

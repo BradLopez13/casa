@@ -87,7 +87,7 @@ function formatExpiry(expiresAt: string): string {
 }
 
 export default function MembersScreen() {
-  const { colors, radii, shadows, space } = useTheme();
+  const { colors, radii, shadows, noteEdge, space } = useTheme();
   const split = paneMode(useLayout()) === 'split';
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -319,6 +319,7 @@ export default function MembersScreen() {
                 borderRadius: radii.note,
                 backgroundColor: colors.note,
                 ...shadows.note,
+                ...noteEdge,
               }}
             >
               <Text style={{ color: colors.ink, fontSize: 16 }}>

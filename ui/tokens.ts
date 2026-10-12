@@ -97,6 +97,18 @@ export const palettes: Record<Scheme, Palette> = {
   },
 };
 
+export type NoteEdge = { borderWidth: number; borderColor: string };
+
+/**
+ * The edge of a note (and of anything drawn as one). In dark mode the note is barely lighter than
+ * the page and the shadow is lost on navy, so a 1 dp hairline gives the paper its edge back; in
+ * light mode the shadow is enough.
+ */
+export const noteEdges: Record<Scheme, NoteEdge> = {
+  light: { borderWidth: 0, borderColor: 'transparent' },
+  dark: { borderWidth: 1, borderColor: palettes.dark.hairline },
+};
+
 export const radii = { day: 12, note: 14, door: 30, pill: 999 } as const;
 
 export const magnetSizes = { lg: 50, md: 38, sm: 26 } as const;
