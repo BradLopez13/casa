@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { layoutFor } from './layout';
-import { oneColumn, paneColumn, paneFlex, paneMode } from './panes';
+import { oneColumn, paneColumn, paneFlex, paneMode, paneWidths } from './panes';
 
 describe('paneMode', () => {
   it('stacks on a compact phone in portrait', () => {
@@ -107,5 +107,25 @@ describe('paneFlex', () => {
 
   it('gives the right pane 60% for a list beside its detail (Semana)', () => {
     expect(paneFlex('right')).toEqual({ left: 2, right: 3 });
+  });
+});
+
+describe('paneWidths', () => {
+  it('splits what is left after the gap 60/40, the left pane wide by default', () => {
+    // 1055 inside the column, 32 between: 1023 to share.
+    expect(paneWidths(1055, 32)).toEqual({ left: 614, right: 409 });
+  });
+
+  it('turns the split round for Semana', () => {
+    expect(paneWidths(1055, 32, 'right')).toEqual({ left: 409, right: 614 });
+  });
+
+  it('always adds up to the room there is', () => {
+    const { left, right } = paneWidths(1000, 48);
+    expect(left + right).toBe(952);
+  });
+
+  it('never goes below zero in a column too narrow for the gap', () => {
+    expect(paneWidths(20, 32)).toEqual({ left: 0, right: 0 });
   });
 });

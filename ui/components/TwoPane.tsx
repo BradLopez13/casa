@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import {
   Platform,
   ScrollView,
@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FocusRevealContext } from '../focusReveal';
 import { paneGap } from '../layout';
-import { paneColumn, paneFlex, paneMode, type WidePane } from '../panes';
+import { paneColumn, paneFlex, paneMode, paneWidths, type WidePane } from '../panes';
 import { useLayout } from '../useLayout';
 import { useRevealFocusedField } from '../useRevealFocusedField';
 
@@ -77,6 +77,8 @@ export function TwoPane({
   const layout = useLayout();
   const flex = paneFlex(wide);
   const { scroll: revealScroll, reveal } = useRevealFocusedField();
+  // The row's width inside its padding, once laid out: the panes then get explicit widths.
+  const [inner, setInner] = useState<number | null>(null);
   const insets = useSafeAreaInsets();
   const column = {
     ...paneColumn(layout, insets, besideRail ?? layout.rail),
@@ -101,13 +103,20 @@ export function TwoPane({
     );
   }
 
+  const gap = paneGap(layout.size);
+  const widths = inner === null ? null : paneWidths(inner, gap, wide);
   return (
     <View style={{ flex: 1 }}>
       {header}
-      <View style={{ ...column, flex: 1, flexDirection: 'row', gap: paneGap(layout.size) }}>
+      <View
+        style={{ ...column, flex: 1, flexDirection: 'row', gap }}
+        onLayout={(e) =>
+          setInner(e.nativeEvent.layout.width - column.paddingLeft - column.paddingRight)
+        }
+      >
         <ScrollView
           testID={leftTestID}
-          style={{ flex: flex.left }}
+          style={paneStyle(widths?.left, flex.left)}
           refreshControl={refreshControl}
           {...scrollProps}
           {...(revealFocusedField
@@ -125,10 +134,25 @@ export function TwoPane({
             left
           )}
         </ScrollView>
-        <ScrollView testID={rightTestID} style={{ flex: flex.right }} {...scrollProps}>
+        <ScrollView
+          testID={rightTestID}
+          style={paneStyle(widths?.right, flex.right)}
+          {...scrollProps}
+        >
           {right}
         </ScrollView>
       </View>
     </View>
   );
+}
+
+/**
+ * A pane's width: the measured share once the row is laid out, and until then the flex weight
+ * spelt out in full (grow from a zero basis), never the `flex` shorthand, which Android was seen
+ * to size by content, leaving both panes equal.
+ */
+function paneStyle(width: number | undefined, weight: number): ViewStyle {
+  return width === undefined
+    ? { flexGrow: weight, flexShrink: 1, flexBasis: 0 }
+    : { width, flexGrow: 0, flexShrink: 0 };
 }

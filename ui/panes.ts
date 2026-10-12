@@ -19,6 +19,22 @@ export function paneFlex(wide: WidePane = 'left'): { left: number; right: number
   return wide === 'left' ? { left: 3, right: 2 } : { left: 2, right: 3 };
 }
 
+/**
+ * The two panes' widths in dp, from the room inside the column (its padding taken off) and the
+ * gap between them. Set as widths rather than left to flex weights, which Android was seen to
+ * ignore (both panes came out equal).
+ */
+export function paneWidths(
+  inner: number,
+  gap: number,
+  wide: WidePane = 'left',
+): { left: number; right: number } {
+  const room = Math.max(0, inner - gap);
+  const flex = paneFlex(wide);
+  const left = Math.round((room * flex.left) / (flex.left + flex.right));
+  return { left, right: room - left };
+}
+
 export type PaneColumn = { paddingLeft: number; paddingRight: number; maxWidth: number };
 
 /**
