@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AppState, Linking, Switch, Text, View } from 'react-native';
+import { AppState, Linking, Text, View } from 'react-native';
 import { toAppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
 import { getPermission, requestPermission } from '@/features/reminders/notifications';
@@ -7,6 +7,7 @@ import type { NotificationPermission } from '@/features/reminders/plan';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { permissionView } from './permissionView';
@@ -83,28 +84,24 @@ export function HouseholdNoticesSection() {
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushTaskAssigned')}
         </Text>
-        <Switch
+        <Toggle
           testID="settings.push.task-assigned"
           accessibilityLabel={t('settings.pushTaskAssigned')}
           value={taskAssigned}
           disabled={busy}
           onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
-          trackColor={{ true: colors.cobalt, false: colors.outline }}
-          ios_backgroundColor={colors.outline}
         />
       </View>
       <View style={row}>
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushMemberJoined')}
         </Text>
-        <Switch
+        <Toggle
           testID="settings.push.member-joined"
           accessibilityLabel={t('settings.pushMemberJoined')}
           value={memberJoined}
           disabled={busy}
           onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
-          trackColor={{ true: colors.cobalt, false: colors.outline }}
-          ios_backgroundColor={colors.outline}
         />
       </View>
       {error ? (
