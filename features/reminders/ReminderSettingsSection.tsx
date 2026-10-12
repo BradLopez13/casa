@@ -54,7 +54,7 @@ function TimeRow({
   value: string;
   onChange: (time: string) => void;
 }) {
-  const { colors, space } = useTheme();
+  const { colors, radii, space } = useTheme();
   const row = {
     minHeight: MIN_TOUCH,
     flexDirection: 'row' as const,
@@ -66,7 +66,7 @@ function TimeRow({
   if (Platform.OS === 'ios') {
     return (
       <View style={row}>
-        <Text style={{ color: colors.ink, fontSize: 16 }}>{label}</Text>
+        <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>{label}</Text>
         <DateTimePicker
           testID={testID}
           accessibilityLabel={label}
@@ -102,10 +102,30 @@ function TimeRow({
       onPress={open}
       style={row}
     >
-      <Text style={{ color: colors.ink, fontSize: 16 }}>{label}</Text>
-      <Text style={{ color: colors.cobalt, fontSize: 18, fontVariant: ['tabular-nums'] }}>
-        {value}
-      </Text>
+      <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>{label}</Text>
+      {/* The time sits in an outlined pill, so it reads as something to tap and not as plain
+          text (in light mode cobalt is the colour of the text). */}
+      <View
+        style={{
+          minHeight: 36,
+          justifyContent: 'center',
+          paddingHorizontal: space(4),
+          borderRadius: radii.pill,
+          borderWidth: 1.5,
+          borderColor: colors.cobalt,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.cobalt,
+            fontSize: 17,
+            fontWeight: '600',
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {value}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -157,7 +177,12 @@ export function ReminderSettingsSection() {
 
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.reminders')}</Text>
+      <Text
+        accessibilityRole="header"
+        style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+      >
+        {t('settings.reminders')}
+      </Text>
       <View
         style={{
           minHeight: MIN_TOUCH,
@@ -177,6 +202,7 @@ export function ReminderSettingsSection() {
           disabled={asking}
           onValueChange={toggle}
           trackColor={{ true: colors.cobalt, false: colors.outline }}
+          ios_backgroundColor={colors.outline}
         />
       </View>
       {denied ? (

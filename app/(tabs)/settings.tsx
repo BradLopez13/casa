@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { isOwnerAlone } from '@/domain/account/delete';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -14,7 +14,7 @@ import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { useTheme } from '@/ui/theme';
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const router = useRouter();
   const { userId } = useSession();
   const membership = useMembership().data;
@@ -25,29 +25,41 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScreenTitle>{t('settings.title')}</ScreenTitle>
-      <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.displayName')}</Text>
-      <Text testID="settings.display-name" style={{ color: colors.ink, fontSize: 18 }}>
-        {displayName}
-      </Text>
+      <View style={{ gap: space(1) }}>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.displayName')}</Text>
+        <Text
+          testID="settings.display-name"
+          style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}
+        >
+          {displayName}
+        </Text>
+      </View>
       <Button
         testID="settings.members"
         title={t('settings.members')}
         variant="secondary"
         onPress={() => router.push('/household/members')}
       />
-      <ReminderSettingsSection />
-      <HouseholdNoticesSection />
-      <Button
-        testID="settings.sign-out"
-        title={t('auth.signOut')}
-        variant="secondary"
-        onPress={() => void signOut().catch(() => undefined)}
-      />
-      <DeleteAccountButton
-        testID="settings.delete-account"
-        alone={alone}
-        disabled={!members.data}
-      />
+      {/* Each group sits apart from the next: more space above a section than inside it. */}
+      <View style={{ marginTop: space(4) }}>
+        <ReminderSettingsSection />
+      </View>
+      <View style={{ marginTop: space(4) }}>
+        <HouseholdNoticesSection />
+      </View>
+      <View style={{ marginTop: space(4), gap: space(3) }}>
+        <Button
+          testID="settings.sign-out"
+          title={t('auth.signOut')}
+          variant="secondary"
+          onPress={() => void signOut().catch(() => undefined)}
+        />
+        <DeleteAccountButton
+          testID="settings.delete-account"
+          alone={alone}
+          disabled={!members.data}
+        />
+      </View>
     </Screen>
   );
 }
