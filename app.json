@@ -40,11 +40,23 @@
       ],
       "expo-secure-store",
       "expo-font",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#263663"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2badcebc-e47c-4dac-8813-9f4e5bb6af45"
+      }
     }
   }
 }
