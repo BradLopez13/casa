@@ -27,6 +27,25 @@ type Props = {
   flush?: boolean;
 };
 
+/** «Compradas (n)»: the heading of the bought rows, also over the empty right pane on two. */
+export function BoughtTitle({ count }: { count: number }) {
+  const { colors } = useTheme();
+  return (
+    <Text
+      accessibilityRole="header"
+      maxFontSizeMultiplier={1.3}
+      style={{
+        color: colors.muted,
+        fontSize: 15,
+        fontWeight: '600',
+        fontVariant: ['tabular-nums'],
+      }}
+    >
+      {t('shopping.boughtTitle', { n: count })}
+    </Text>
+  );
+}
+
 /**
  * The list as one white sheet on the page: what is left to buy, then "Compradas". Every row is a
  * child of the same view, so a row that is marked keeps its identity and slides down. On two
@@ -102,18 +121,7 @@ export function ShoppingSheet({
                 borderTopColor: colors.hairline,
               }}
             >
-              <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={1.3}
-                style={{
-                  color: colors.muted,
-                  fontSize: 15,
-                  fontWeight: '600',
-                  fontVariant: ['tabular-nums'],
-                }}
-              >
-                {t('shopping.boughtTitle', { n: bought.length })}
-              </Text>
+              <BoughtTitle count={bought.length} />
               <Button
                 testID="shopping.clear"
                 title={t('shopping.clear')}

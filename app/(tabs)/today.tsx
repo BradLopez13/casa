@@ -207,8 +207,11 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
               {cards.invite ? invite : null}
             </View>
           ) : null}
+          {/* Nothing done yet: the pane still opens with its heading, level with the left one,
+              and the quiet line under it, so it never floats as a message for the whole screen. */}
           {noneDone ? (
-            <View style={{ paddingTop: space(6) }}>
+            <View>
+              <SectionHeader title={t('tasks.section.doneToday')} count={0} flush />
               <Text testID="today.pane.done-empty" style={{ color: colors.muted, fontSize: 16 }}>
                 {t('today.done.empty')}
               </Text>

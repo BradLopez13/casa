@@ -13,7 +13,11 @@ import {
   type ItemEntry,
 } from '@/features/shopping/components/AddItemField';
 import { OfflineBand } from '@/features/shopping/components/OfflineBand';
-import { ShoppingSheet, type Flash } from '@/features/shopping/components/ShoppingSheet';
+import {
+  BoughtTitle,
+  ShoppingSheet,
+  type Flash,
+} from '@/features/shopping/components/ShoppingSheet';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
 import {
   useAddItem,
@@ -283,10 +287,18 @@ function ShoppingSplit({
           {panes.boughtSheet ? (
             <ShoppingSheet flush pending={NO_ITEMS} bought={bought} {...sheet} />
           ) : null}
+          {/* Nothing bought yet: the pane still opens with the bought heading and a quiet line,
+              so it never reads as a message for the whole screen. */}
           {panes.boughtEmpty ? (
-            <Text testID="shopping.pane.bought-empty" style={{ color: colors.muted, fontSize: 16 }}>
-              {t('shopping.bought.empty')}
-            </Text>
+            <View style={{ gap: space(3) }}>
+              <BoughtTitle count={0} />
+              <Text
+                testID="shopping.pane.bought-empty"
+                style={{ color: colors.muted, fontSize: 16 }}
+              >
+                {t('shopping.bought.empty')}
+              </Text>
+            </View>
           ) : null}
         </View>
       }
