@@ -14,7 +14,7 @@ const NoticeContext = createContext<(message: string) => void>(() => undefined);
 export const useNotice = () => useContext(NoticeContext);
 
 export function NoticeProvider({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
   const [message, setMessage] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -36,8 +36,9 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
           pointerEvents="none"
           style={{
             position: 'absolute',
-            left: 16,
-            right: 16,
+            // Clear of a side notch on a phone on its side.
+            left: space(4) + insets.left,
+            right: space(4) + insets.right,
             bottom: insets.bottom + TAB_BAR_CLEARANCE,
             alignItems: 'center',
           }}
@@ -47,8 +48,8 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
             style={{
               backgroundColor: colors.ink,
               borderRadius: radii.pill,
-              paddingHorizontal: 20,
-              paddingVertical: 12,
+              paddingHorizontal: space(5),
+              paddingVertical: space(3),
             }}
           >
             <Text style={{ color: colors.page, fontSize: 15, fontWeight: '600' }}>{message}</Text>

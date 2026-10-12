@@ -34,7 +34,7 @@ type DotsProps = {
 
 /** One dot per person with something that day, plus a dashed one for unassigned tasks. */
 export function DayDots({ day, marks, ring }: DotsProps) {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const edge = ring ? { borderWidth: 1, borderColor: ring } : null;
   return (
     <View
@@ -42,7 +42,7 @@ export function DayDots({ day, marks, ring }: DotsProps) {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        gap: 2,
+        gap: space(0.5),
         minHeight: DOT,
       }}
     >

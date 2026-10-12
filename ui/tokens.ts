@@ -122,6 +122,18 @@ export const displayFont = 'MPLUSRounded1c_800ExtraBold';
 
 export const MIN_TOUCH = 44;
 
+/**
+ * Least height of a text field, a Button and the New task pill: a touch target and a little air.
+ * A minimum, never a fixed height, so the control grows with the system text size.
+ */
+export const CONTROL_HEIGHT = 48;
+
+/**
+ * Least height of a small outlined pill drawn inside a full touch target (a form's Guardar, a
+ * reminder's time): the Pressable around it keeps MIN_TOUCH. Grows with the text too.
+ */
+export const INLINE_PILL_HEIGHT = 36;
+
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;
 

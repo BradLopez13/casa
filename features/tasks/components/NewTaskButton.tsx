@@ -10,10 +10,8 @@ import {
 } from '@/features/tasks/newTaskPlacement';
 import { t } from '@/i18n';
 import { space, useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
-
-const PILL_HEIGHT = MIN_TOUCH + space(1);
 
 /** The pill's offsets from the screen's right and bottom edges, clear of the safe areas. */
 function usePlacement() {
@@ -25,7 +23,7 @@ function usePlacement() {
 /** The labelled pill, or a round "+" on a short window (a phone on its side). */
 function useShape() {
   const { shortHeight } = useLayout();
-  return newTaskShape({ shortHeight, pillHeight: PILL_HEIGHT });
+  return newTaskShape({ shortHeight, pillHeight: CONTROL_HEIGHT });
 }
 
 /** Room under the last note of a list that shows the button, so the button never covers it. */

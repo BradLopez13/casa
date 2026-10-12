@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { buttonLook, pressedOpacity } from '../buttonLook';
 import { useTheme } from '../theme';
+import { CONTROL_HEIGHT } from '../tokens';
 
 type Props = {
   title: string;
@@ -46,7 +47,7 @@ export function Button({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({
-          minHeight: 48,
+          minHeight: CONTROL_HEIGHT,
           alignItems: 'center',
           justifyContent: 'center',
           paddingHorizontal: space(5),

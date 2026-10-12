@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
 import { useFocusReveal } from '../focusReveal';
 import { useTheme } from '../theme';
+import { CONTROL_HEIGHT } from '../tokens';
 import { ErrorText } from './ErrorText';
 
 type Props = Omit<TextInputProps, 'style'> & {
@@ -35,7 +36,7 @@ export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps
         }}
         {...inputProps}
         style={{
-          minHeight: 48,
+          minHeight: CONTROL_HEIGHT,
           // An error thickens the border by one point; the padding gives that point back, so
           // the text never shifts. Focus keeps the normal width, so the two never look alike
           // even where cobalt and ink are the same colour.
