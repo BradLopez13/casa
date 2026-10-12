@@ -22,6 +22,8 @@ export type ShoppingPanes = {
   pendingSheet: boolean;
   /** The sheet of "Compradas" with "Limpiar compradas", on the right. */
   boughtSheet: boolean;
+  /** A line saying nothing is bought yet, on the right, when the list has no bought rows. */
+  boughtEmpty: boolean;
 };
 
 /**
@@ -39,6 +41,7 @@ export function shoppingPanes(
     leftState: list ? null : state,
     pendingSheet: list && pendingCount > 0,
     boughtSheet: list && boughtCount > 0,
+    boughtEmpty: (list || state === 'empty') && boughtCount === 0,
   };
 }
 

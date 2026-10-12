@@ -250,7 +250,7 @@ function ShoppingSplit({
   pulling,
   refresh,
 }: ShoppingParts) {
-  const { space } = useTheme();
+  const { colors, space } = useTheme();
   const refreshControl = usePaneRefreshControl(pulling, refresh);
   const panes = shoppingPanes(state, pending.length, bought.length);
   const pane = { paddingTop: space(listTopStep(online)), gap: space(5) };
@@ -281,6 +281,11 @@ function ShoppingSplit({
         <View style={pane}>
           {panes.boughtSheet ? (
             <ShoppingSheet flush pending={NO_ITEMS} bought={bought} {...sheet} />
+          ) : null}
+          {panes.boughtEmpty ? (
+            <Text testID="shopping.pane.bought-empty" style={{ color: colors.muted, fontSize: 16 }}>
+              {t('shopping.bought.empty')}
+            </Text>
           ) : null}
         </View>
       }

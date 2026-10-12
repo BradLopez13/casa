@@ -38,3 +38,16 @@ export function todayCards({
     invite: loaded && listEmpty && memberCount === 1,
   };
 }
+
+/** The right pane has nothing to show: no done rows and no card, once the tasks have loaded. */
+export function doneEmpty({
+  loaded,
+  rightCount,
+  cards,
+}: {
+  loaded: boolean;
+  rightCount: number;
+  cards: TodayCards;
+}): boolean {
+  return loaded && rightCount === 0 && !cards.templates && !cards.invite;
+}

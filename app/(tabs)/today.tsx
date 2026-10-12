@@ -13,7 +13,7 @@ import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { scopeLabel } from '@/features/tasks/scope';
 import { todaySections, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
-import { todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
+import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
@@ -163,7 +163,7 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
  * left pane takes the pull-to-refresh.
  */
 function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayParts) {
-  const { space } = useTheme();
+  const { colors, space } = useTheme();
   const listStyle = useNewTaskListStyle();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const { left, right } = todayPanes(sections);
@@ -176,6 +176,11 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
     toggle: screen.toggle,
   };
   const hasCards = cards.templates || cards.invite;
+  const noneDone = doneEmpty({
+    loaded: screen.tasksQuery.isSuccess,
+    rightCount: right.length,
+    cards,
+  });
 
   return (
     <TwoPane
@@ -200,6 +205,13 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
             <View style={{ paddingTop: space(6), gap: space(6) }}>
               {cards.templates ? <TemplatesCard /> : null}
               {cards.invite ? invite : null}
+            </View>
+          ) : null}
+          {noneDone ? (
+            <View style={{ paddingTop: space(6) }}>
+              <Text testID="today.pane.done-empty" style={{ color: colors.muted, fontSize: 16 }}>
+                {t('today.done.empty')}
+              </Text>
             </View>
           ) : null}
         </>

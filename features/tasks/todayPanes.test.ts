@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TaskListSection } from './sections';
-import { todayCards, todayPanes } from './todayPanes';
+import { doneEmpty, todayCards, todayPanes } from './todayPanes';
 
 const section = (key: string): TaskListSection => ({ key, title: key, count: 1, data: [] });
 
@@ -47,5 +47,24 @@ describe('todayCards', () => {
       templates: false,
       invite: false,
     });
+  });
+});
+
+describe('doneEmpty', () => {
+  const none = { templates: false, invite: false };
+
+  it('is true once loaded with an empty right pane and no card', () => {
+    expect(doneEmpty({ loaded: true, rightCount: 0, cards: none })).toBe(true);
+  });
+
+  it('is false while loading, with rows, or when a card fills the pane', () => {
+    expect(doneEmpty({ loaded: false, rightCount: 0, cards: none })).toBe(false);
+    expect(doneEmpty({ loaded: true, rightCount: 1, cards: none })).toBe(false);
+    expect(
+      doneEmpty({ loaded: true, rightCount: 0, cards: { templates: true, invite: false } }),
+    ).toBe(false);
+    expect(
+      doneEmpty({ loaded: true, rightCount: 0, cards: { templates: false, invite: true } }),
+    ).toBe(false);
   });
 });
