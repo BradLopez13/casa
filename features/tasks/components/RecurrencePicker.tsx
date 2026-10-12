@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, Text, View } from 'react-native';
 import { choiceOf, ruleForChoice, type RepeatChoice } from '@/domain/recurrence/form';
 import { recurrenceLabel } from '@/domain/recurrence/label';
@@ -41,18 +42,19 @@ function Pill({
         paddingHorizontal: space(4),
         justifyContent: 'center',
         borderRadius: radii.pill,
-        borderWidth: 2,
+        // Filled when chosen, as every selected pill: shape, not only colour.
+        borderWidth: 1.5,
         borderColor: selected ? colors.cobalt : colors.outline,
-        backgroundColor: selected ? colors.door : colors.note,
+        backgroundColor: selected ? colors.cobalt : colors.note,
         opacity: pressed ? 0.8 : 1,
       })}
     >
       <Text
         maxFontSizeMultiplier={1.3}
         style={{
-          color: selected ? colors.cobalt : colors.ink,
+          color: selected ? colors.onCobalt : colors.ink,
           fontSize: 15,
-          fontWeight: selected ? '700' : '500',
+          fontWeight: '600',
         }}
       >
         {label}
@@ -94,18 +96,18 @@ function WeekdayToggles({
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: radii.pill,
-              borderWidth: 2,
+              borderWidth: 1.5,
               borderColor: checked ? colors.cobalt : colors.outline,
-              backgroundColor: checked ? colors.door : colors.note,
+              backgroundColor: checked ? colors.cobalt : colors.note,
               opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               style={{
-                color: checked ? colors.cobalt : colors.ink,
+                color: checked ? colors.onCobalt : colors.ink,
                 fontSize: 15,
-                fontWeight: checked ? '700' : '500',
+                fontWeight: '600',
               }}
             >
               {t(`weekdays.short.${day}`)}
@@ -120,13 +122,13 @@ function WeekdayToggles({
 function StepButton({
   testID,
   label,
-  symbol,
+  icon,
   disabled,
   onPress,
 }: {
   testID: string;
   label: string;
-  symbol: string;
+  icon: 'add' | 'remove';
   disabled: boolean;
   onPress: () => void;
 }) {
@@ -145,15 +147,13 @@ function StepButton({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radii.pill,
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: colors.outline,
         backgroundColor: colors.note,
         opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
       })}
     >
-      <Text maxFontSizeMultiplier={1.3} style={{ color: colors.cobalt, fontSize: 20 }}>
-        {symbol}
-      </Text>
+      <Ionicons name={icon} size={22} color={colors.cobalt} accessible={false} />
     </Pressable>
   );
 }
@@ -165,7 +165,7 @@ function EveryStepper({ every, onChange }: { every: number; onChange: (every: nu
       <StepButton
         testID="task-form.repeat.every.minus"
         label={t('taskForm.everyMinus')}
-        symbol="−"
+        icon="remove"
         disabled={every <= EVERY_MIN}
         onPress={() => onChange(Math.max(EVERY_MIN, every - 1))}
       />
@@ -179,7 +179,7 @@ function EveryStepper({ every, onChange }: { every: number; onChange: (every: nu
       <StepButton
         testID="task-form.repeat.every.plus"
         label={t('taskForm.everyPlus')}
-        symbol="+"
+        icon="add"
         disabled={every >= EVERY_MAX}
         onPress={() => onChange(Math.min(EVERY_MAX, every + 1))}
       />

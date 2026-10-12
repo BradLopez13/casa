@@ -30,18 +30,20 @@ export function RoomPicker({ value, onChange }: Props) {
               paddingHorizontal: space(4),
               justifyContent: 'center',
               borderRadius: radii.pill,
-              borderWidth: 2,
+              // The chosen room is filled, like every selected pill in the app: shape, not only colour.
+              borderWidth: 1.5,
               borderColor: selected ? colors.cobalt : colors.outline,
-              backgroundColor: selected ? colors.door : colors.note,
+              backgroundColor: selected ? colors.cobalt : colors.note,
               opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               style={{
-                color: selected ? colors.cobalt : colors.ink,
+                color: selected ? colors.onCobalt : colors.ink,
                 fontSize: 15,
-                fontWeight: selected ? '700' : '500',
+                // One weight in both states, so choosing never changes the pill's width.
+                fontWeight: '600',
               }}
             >
               {t(`rooms.${room}`)}
