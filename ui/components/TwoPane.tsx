@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { paneGap } from '../layout';
-import { paneMode } from '../panes';
+import { paneColumn, paneMode } from '../panes';
 import { useLayout } from '../useLayout';
 
 type Props = {
@@ -32,6 +32,12 @@ type Props = {
   keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];
   contentContainerStyle?: StyleProp<ViewStyle>;
   contentInsetAdjustmentBehavior?: ScrollViewProps['contentInsetAdjustmentBehavior'];
+  /**
+   * Whether the rail sits to the left, and so already takes the left safe area. Defaults to the
+   * layout's `rail` (the tab screens); a screen outside the tabs passes false, as no rail is
+   * drawn there, to keep clear of a side notch itself.
+   */
+  besideRail?: boolean;
 };
 
 /**
@@ -39,8 +45,8 @@ type Props = {
  * `contentMax` and centred. Below `expanded`, one column: `left` then `right` in a single scroll.
  *
  * TwoPane owns the side gutter in both modes, plus the side safe areas (a phone on its side);
- * beside the rail, the rail already takes the left one. Pane content brings no horizontal padding
- * of its own (on a compact phone the gutter is the 20 dp the screens use today).
+ * beside the rail, the rail already takes the left one (`paneColumn`). Pane content brings no
+ * horizontal padding of its own (on a compact phone the gutter is the 20 dp the screens use today).
  */
 export function TwoPane({
   left,
@@ -52,18 +58,14 @@ export function TwoPane({
   keyboardShouldPersistTaps,
   contentContainerStyle,
   contentInsetAdjustmentBehavior,
+  besideRail,
 }: Props) {
   const layout = useLayout();
   const insets = useSafeAreaInsets();
-  const { contentMax, gutter, size, rail } = layout;
-  const paddingLeft = gutter + (rail ? 0 : insets.left);
-  const paddingRight = gutter + insets.right;
   const column = {
+    ...paneColumn(layout, insets, besideRail ?? layout.rail),
     width: '100%',
-    maxWidth: contentMax + paddingLeft + paddingRight,
     alignSelf: 'center',
-    paddingLeft,
-    paddingRight,
   } as const;
   const scrollProps = {
     keyboardShouldPersistTaps,
@@ -86,7 +88,7 @@ export function TwoPane({
   return (
     <View style={{ flex: 1 }}>
       {header}
-      <View style={{ ...column, flex: 1, flexDirection: 'row', gap: paneGap(size) }}>
+      <View style={{ ...column, flex: 1, flexDirection: 'row', gap: paneGap(layout.size) }}>
         <ScrollView
           testID={leftTestID}
           style={{ flex: 3 }}
