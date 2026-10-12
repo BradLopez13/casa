@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  newTaskLane,
   newTaskListPadding,
   newTaskPlacement,
   newTaskShape,
@@ -38,6 +39,14 @@ export function useNewTaskListStyle() {
       clearance: space(7),
     }),
   };
+}
+
+/**
+ * How far from the right edge a list under the button keeps its content (`newTaskLane`): the
+ * round "+" of a short window gets a lane of its own; the labelled pill, none.
+ */
+export function useNewTaskLane() {
+  return newTaskLane({ placement: usePlacement(), shape: useShape(), gap: space(3) });
 }
 
 /** Floating button that opens the new-task form, pre-filling the assignee when one is chosen. */

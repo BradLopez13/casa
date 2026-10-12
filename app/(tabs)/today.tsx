@@ -4,7 +4,11 @@ import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { tallyToday } from '@/domain/tasks/tally';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
-import { NewTaskButton, useNewTaskListStyle } from '@/features/tasks/components/NewTaskButton';
+import {
+  NewTaskButton,
+  useNewTaskLane,
+  useNewTaskListStyle,
+} from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
@@ -115,7 +119,8 @@ export default function TodayScreen() {
 function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
-  const column = useOneColumn();
+  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
+  const column = useOneColumn(useNewTaskLane());
   const { today, userId, members, tasksQuery } = screen;
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
@@ -165,6 +170,7 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
 function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayParts) {
   const { colors, space } = useTheme();
   const listStyle = useNewTaskListStyle();
+  const lane = useNewTaskLane();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const { left, right } = todayPanes(sections);
   const rows = {
@@ -189,6 +195,7 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
       rightTestID="today.pane.done"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
+      rightLane={lane}
       left={
         left.length > 0 ? (
           <TaskSections sections={left} {...rows} />

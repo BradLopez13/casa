@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { layoutFor } from './layout';
-import { oneColumn, paneColumn, paneFlex, paneMode, paneWidths } from './panes';
+import {
+  clearRightLane,
+  columnRoom,
+  oneColumn,
+  paneColumn,
+  paneFlex,
+  paneMode,
+  paneWidths,
+} from './panes';
 
 describe('paneMode', () => {
   it('stacks on a compact phone in portrait', () => {
@@ -127,5 +135,50 @@ describe('paneWidths', () => {
 
   it('never goes below zero in a column too narrow for the gap', () => {
     expect(paneWidths(20, 32)).toEqual({ left: 0, right: 0 });
+  });
+});
+
+describe('columnRoom', () => {
+  it('is the whole window without the rail', () => {
+    expect(columnRoom(817, false, 48)).toBe(817);
+  });
+
+  it('takes off the rail and the left safe area it covers', () => {
+    expect(columnRoom(915, true, 0)).toBe(915 - 88);
+    expect(columnRoom(915, true, 30)).toBe(915 - 88 - 30);
+  });
+});
+
+describe('clearRightLane', () => {
+  const lane = 16 + 56 + 12;
+
+  it('leaves the column alone when no lane is asked for', () => {
+    const column = oneColumn(layoutFor(390, 844), { left: 0, right: 0 }, false);
+    expect(clearRightLane(column, 390, 0)).toEqual(column);
+  });
+
+  it('pushes the content of a phone on its side clear of the round button', () => {
+    // 817 x 375 dp, a camera cut-out on the left: the centred column reached under the button.
+    const layout = layoutFor(817, 375);
+    const column = oneColumn(layout, { left: 48, right: 0 }, layout.rail);
+    const cleared = clearRightLane(column, 817, lane);
+    const frame = Math.min(817, cleared.maxWidth);
+    expect((817 - frame) / 2 + cleared.paddingRight).toBeGreaterThanOrEqual(lane);
+    expect(cleared.paddingLeft).toBe(column.paddingLeft);
+    expect(cleared.maxWidth).toBe(column.maxWidth);
+  });
+
+  it('adds nothing when the centring margin already clears the lane', () => {
+    const column = oneColumn(layoutFor(1600, 400), { left: 0, right: 0 }, true);
+    expect(clearRightLane(column, 1600 - 88, lane)).toEqual(column);
+  });
+
+  it('clears the right pane of two panes on a wide phone on its side', () => {
+    const layout = layoutFor(915, 412);
+    const column = paneColumn(layout, { left: 0, right: 0 }, true);
+    const room = columnRoom(915, true, 0);
+    const cleared = clearRightLane(column, room, lane);
+    const frame = Math.min(room, cleared.maxWidth);
+    expect((room - frame) / 2 + cleared.paddingRight).toBe(lane);
   });
 });

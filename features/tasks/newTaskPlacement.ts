@@ -57,3 +57,20 @@ export function newTaskShape({
     ? { iconOnly: true, height: ROUND_NEW_TASK }
     : { iconOnly: false, height: pillHeight };
 }
+
+/**
+ * How far from the screen's right edge content must stop so the round "+" never covers it: its
+ * offset, its width and a gap. The labelled pill reserves nothing, as it keeps to the bottom
+ * room under the list (`newTaskListPadding`), as it always has.
+ */
+export function newTaskLane({
+  placement,
+  shape,
+  gap,
+}: {
+  placement: NewTaskPlacement;
+  shape: NewTaskShape;
+  gap: number;
+}): number {
+  return shape.iconOnly ? placement.right + shape.height + gap : 0;
+}

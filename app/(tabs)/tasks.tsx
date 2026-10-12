@@ -6,7 +6,11 @@ import { DayList } from '@/features/tasks/components/DayList';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
-import { NewTaskButton, useNewTaskListStyle } from '@/features/tasks/components/NewTaskButton';
+import {
+  NewTaskButton,
+  useNewTaskLane,
+  useNewTaskListStyle,
+} from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
@@ -102,7 +106,8 @@ export default function TasksScreen() {
 function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }: TasksParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
-  const column = useOneColumn();
+  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
+  const column = useOneColumn(useNewTaskLane());
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
@@ -270,6 +275,7 @@ const rowProps = (screen: Screen) => ({
 function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: SplitProps) {
   const { colors, space } = useTheme();
   const listStyle = useNewTaskListStyle();
+  const lane = useNewTaskLane();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const pane = weekDayPane(sections, day, screen.today);
 
@@ -282,6 +288,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
       wide="right"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
+      rightLane={lane}
       left={
         // Level with the first heading on the right.
         <View style={{ paddingTop: space(6) }}>
@@ -321,7 +328,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
  */
 function AllColumn({ screen, sections, empty, door }: SplitProps) {
   const { space } = useTheme();
-  const column = useOneColumn();
+  const column = useOneColumn(useNewTaskLane());
   const listStyle = useNewTaskListStyle();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
 

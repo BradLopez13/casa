@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { newTaskListPadding, newTaskPlacement, newTaskShape } from './newTaskPlacement';
+import {
+  newTaskLane,
+  newTaskListPadding,
+  newTaskPlacement,
+  newTaskShape,
+} from './newTaskPlacement';
 
 const phone = { right: 0, bottom: 34 };
 
@@ -59,5 +64,25 @@ describe('newTaskShape', () => {
     const { height } = newTaskShape({ shortHeight: true, pillHeight: 48 });
     const padding = newTaskListPadding({ placement, buttonHeight: height, clearance: 28 });
     expect(padding).toBeGreaterThan(placement.bottom + height);
+  });
+});
+
+describe('newTaskLane', () => {
+  it('reserves nothing beside the labelled pill', () => {
+    const placement = newTaskPlacement({ insets: phone, rail: false, edge: 16 });
+    const shape = newTaskShape({ shortHeight: false, pillHeight: 48 });
+    expect(newTaskLane({ placement, shape, gap: 12 })).toBe(0);
+  });
+
+  it('reserves the round button, its offset and a gap on a short window', () => {
+    const placement = newTaskPlacement({ insets: { right: 0, bottom: 0 }, rail: false, edge: 16 });
+    const shape = newTaskShape({ shortHeight: true, pillHeight: 48 });
+    expect(newTaskLane({ placement, shape, gap: 12 })).toBe(16 + 56 + 12);
+  });
+
+  it('widens with a side notch on the right', () => {
+    const placement = newTaskPlacement({ insets: { right: 47, bottom: 0 }, rail: false, edge: 16 });
+    const shape = newTaskShape({ shortHeight: true, pillHeight: 48 });
+    expect(newTaskLane({ placement, shape, gap: 12 })).toBe(47 + 16 + 56 + 12);
   });
 });

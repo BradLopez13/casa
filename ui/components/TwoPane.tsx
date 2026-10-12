@@ -3,6 +3,7 @@ import {
   Platform,
   ScrollView,
   View,
+  useWindowDimensions,
   type RefreshControlProps,
   type ScrollViewProps,
   type StyleProp,
@@ -11,7 +12,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FocusRevealContext } from '../focusReveal';
 import { paneGap } from '../layout';
-import { paneColumn, paneFlex, paneMode, paneWidths, type WidePane } from '../panes';
+import {
+  clearRightLane,
+  columnRoom,
+  paneColumn,
+  paneFlex,
+  paneMode,
+  paneWidths,
+  type WidePane,
+} from '../panes';
 import { useLayout } from '../useLayout';
 import { useRevealFocusedField } from '../useRevealFocusedField';
 
@@ -49,6 +58,11 @@ type Props = {
    * handles its own field.
    */
   revealFocusedField?: boolean;
+  /**
+   * Dp from the screen's right edge the panes' content keeps clear of (`clearRightLane`): the
+   * round "+" of a short window floats there. 0, the default, leaves the frame as it is.
+   */
+  rightLane?: number;
 };
 
 /**
@@ -73,6 +87,7 @@ export function TwoPane({
   besideRail,
   wide,
   revealFocusedField = false,
+  rightLane = 0,
 }: Props) {
   const layout = useLayout();
   const flex = paneFlex(wide);
@@ -80,8 +95,14 @@ export function TwoPane({
   // The row's width inside its padding, once laid out: the panes then get explicit widths.
   const [inner, setInner] = useState<number | null>(null);
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const nextToRail = besideRail ?? layout.rail;
   const column = {
-    ...paneColumn(layout, insets, besideRail ?? layout.rail),
+    ...clearRightLane(
+      paneColumn(layout, insets, nextToRail),
+      columnRoom(windowWidth, nextToRail, insets.left),
+      rightLane,
+    ),
     width: '100%',
     alignSelf: 'center',
   } as const;

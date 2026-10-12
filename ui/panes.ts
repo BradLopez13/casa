@@ -1,4 +1,4 @@
-import { ONE_COLUMN_MAX, type Layout } from './layout';
+import { ONE_COLUMN_MAX, RAIL_WIDTH, type Layout } from './layout';
 
 export type PaneMode = 'split' | 'stack';
 
@@ -64,4 +64,25 @@ export function oneColumn(
   besideRail: boolean,
 ): PaneColumn {
   return paneColumn({ gutter: layout.gutter, contentMax: ONE_COLUMN_MAX }, insets, besideRail);
+}
+
+/**
+ * The width a column is centred in: the window, less the rail and the left safe area it covers
+ * when the rail is drawn beside it.
+ */
+export function columnRoom(windowWidth: number, besideRail: boolean, insetLeft: number): number {
+  return windowWidth - (besideRail ? RAIL_WIDTH + insetLeft : 0);
+}
+
+/**
+ * The same frame with its content kept `lane` dp clear of the right edge of `room` (the width it
+ * is centred in): for a button floating over the bottom right corner (the round "+" on a phone
+ * on its side), so no row, heading or count ever sits under it. Only the right padding grows, and
+ * only by what the centring margin and the gutter do not already give; a lane of 0 changes nothing.
+ */
+export function clearRightLane(column: PaneColumn, room: number, lane: number): PaneColumn {
+  const frame = Math.min(room, column.maxWidth);
+  const margin = Math.max(0, (room - frame) / 2);
+  const extra = Math.max(0, lane - margin - column.paddingRight);
+  return extra === 0 ? column : { ...column, paddingRight: column.paddingRight + extra };
 }
