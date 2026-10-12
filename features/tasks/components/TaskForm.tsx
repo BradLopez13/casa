@@ -11,6 +11,7 @@ import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
+import { buttonLook } from '@/ui/buttonLook';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
@@ -57,6 +58,9 @@ export function HeaderAction({
   strong?: boolean;
 }) {
   const { colors, radii, space } = useTheme();
+  // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
+  // turns muted. Neither is faded, so the label stays readable.
+  const look = buttonLook('primary', disabled ? 'disabled' : 'enabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -71,7 +75,7 @@ export function HeaderAction({
         minHeight: MIN_TOUCH,
         alignItems: strong ? 'flex-end' : 'flex-start',
         justifyContent: 'center',
-        opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
       {/* The main action is a small cobalt pill, so it stands apart from "Cancelar" by shape and
@@ -84,7 +88,9 @@ export function HeaderAction({
                 justifyContent: 'center',
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
-                backgroundColor: colors.cobalt,
+                borderWidth: 1.5,
+                borderColor: look.border,
+                backgroundColor: look.fill,
               }
             : null
         }
@@ -92,7 +98,7 @@ export function HeaderAction({
         <Text
           maxFontSizeMultiplier={1.3}
           style={{
-            color: strong ? colors.onCobalt : colors.cobalt,
+            color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: 17,
             fontWeight: strong ? '600' : '400',
           }}
