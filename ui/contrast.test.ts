@@ -48,11 +48,21 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
     expect(contrastRatio(p.onCobalt, p.cobalt)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it.each([
-    ['page', p.page],
-    ['note', p.note],
-  ])('overdue and danger red on %s', (_, ground) => {
+  it.each(Object.entries(grounds))('overdue and danger red on %s', (_, ground) => {
     expect(contrastRatio(p.red, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('text, actions and outlines on the door panel', () => {
+    expect(contrastRatio(p.ink, p.door)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.muted, p.door)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.mutedStrong, p.door)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.red, p.door)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.cobalt, p.door)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.outline, p.door)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it.each(Object.entries(grounds))('high-contrast muted text beats muted on %s', (_, ground) => {
+    expect(contrastRatio(p.mutedStrong, ground)).toBeGreaterThan(contrastRatio(p.muted, ground));
   });
 
   it.each(MAGNET_COLORS)('magnet initial on %s', (color) => {

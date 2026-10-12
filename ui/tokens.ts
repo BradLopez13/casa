@@ -35,20 +35,26 @@ export type Palette = {
   scrim: string;
 };
 
+// Nido brand: ink #263663, apricot #F0AD83, cream #FFF6E8, white. page, door, note, ink, cobalt,
+// onCobalt and red are fixed by the spec; the rest are mixes of those colours, warm and quiet.
 export const palettes: Record<Scheme, Palette> = {
   light: {
-    page: '#F3F5F7',
-    door: '#D5E2EC',
+    page: '#FFF6E8',
+    door: '#FBE0CD',
     note: '#FFFFFF',
-    ink: '#1A222B',
-    muted: '#56626E',
-    mutedStrong: '#3A444E',
-    cobalt: '#2D4FA8',
-    onCobalt: '#FFFFFF',
+    ink: '#263663',
+    // Ink softened with 30% apricot: a warm dusk grey, 5.2:1 on the door.
+    muted: '#635A6D',
+    mutedStrong: '#444868',
+    // Same as ink here, so actions must also differ by shape (pill, border, underline, icon).
+    cobalt: '#263663',
+    onCobalt: '#FFF6E8',
     red: '#B4382E',
-    hairline: '#E1E6EA',
-    outline: '#6E7A86',
-    handle: '#B7C3CD',
+    hairline: '#EEE2D6',
+    // Ink and apricot half and half: a warm taupe, 3.5:1 on the door.
+    outline: '#8B7173',
+    // Apricot is safe here: in light mode it never means "tappable".
+    handle: '#F0AD83',
     magnetInk: '#1A222B',
     magnet: {
       mustard: '#D9A740',
@@ -58,22 +64,25 @@ export const palettes: Record<Scheme, Palette> = {
       petrol: '#4F93A1',
       pink: '#D58BA8',
     },
-    light: { top: '#FFF3CF', text: '#6B5E3A', shelf: 'rgba(150,130,80,0.25)' },
-    scrim: 'rgba(26,34,43,0.5)',
+    light: { top: '#FDEBD9', text: '#6D606E', shelf: 'rgba(240,173,131,0.55)' },
+    scrim: 'rgba(38,54,99,0.45)',
   },
   dark: {
-    page: '#11171D',
-    door: '#1D2B37',
-    note: '#1A232C',
-    ink: '#E6EBEF',
-    muted: '#98A4AF',
-    mutedStrong: '#BCC6CF',
-    cobalt: '#8EA8F0',
-    onCobalt: '#11171D',
+    page: '#151C33',
+    door: '#263663',
+    note: '#1E2744',
+    ink: '#FFF6E8',
+    // The light door colour dimmed toward ink: warm, clearly quieter than ink, 5.4:1 on the door.
+    muted: '#BBADAD',
+    mutedStrong: '#DBC7BD',
+    cobalt: '#F0AD83',
+    onCobalt: '#263663',
     red: '#F08A80',
-    hairline: '#26313C',
-    outline: '#6B7782',
-    handle: '#3D4A54',
+    hairline: '#353C54',
+    // Kept cool and grey so an unselected border never looks like the apricot selection.
+    outline: '#918B98',
+    // Not apricot: in dark mode apricot is the colour of what can be tapped.
+    handle: '#475377',
     magnetInk: '#1A222B',
     magnet: {
       mustard: '#E3B65A',
@@ -82,8 +91,8 @@ export const palettes: Record<Scheme, Palette> = {
       petrol: '#69A7B4',
       pink: '#E2A2BB',
     },
-    light: { top: '#5C5440', text: '#E9DDB8', shelf: 'rgba(233,221,184,0.22)' },
-    scrim: 'rgba(0,0,0,0.6)',
+    light: { top: '#4C4047', text: '#FBE0CD', shelf: 'rgba(240,173,131,0.25)' },
+    scrim: 'rgba(10,13,26,0.65)',
   },
 };
 
