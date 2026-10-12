@@ -57,7 +57,11 @@ export function ConfirmDialog({
         <View
           accessibilityViewIsModal
           style={{
-            gap: space(3),
+            // A readable card on a tablet too, instead of a dialog stretched edge to edge.
+            width: '100%',
+            maxWidth: 440,
+            alignSelf: 'center',
+            gap: space(2),
             padding: space(6),
             borderRadius: radii.door,
             backgroundColor: colors.note,
@@ -69,21 +73,24 @@ export function ConfirmDialog({
           >
             {content.title}
           </Text>
-          <Text style={{ color: colors.ink, fontSize: 17 }}>{content.message}</Text>
-          <Button
-            testID="members.confirm"
-            title={content.confirmLabel}
-            variant={content.destructive ? 'danger' : 'primary'}
-            loading={loading}
-            onPress={onConfirm}
-          />
-          <Button
-            testID="members.cancel"
-            title={t('members.cancel')}
-            variant="secondary"
-            disabled={loading}
-            onPress={onCancel}
-          />
+          <Text style={{ color: colors.ink, fontSize: 17, lineHeight: 24 }}>{content.message}</Text>
+          {/* The answer sits apart from the question. */}
+          <View style={{ gap: space(3), marginTop: space(4) }}>
+            <Button
+              testID="members.confirm"
+              title={content.confirmLabel}
+              variant={content.destructive ? 'danger' : 'primary'}
+              loading={loading}
+              onPress={onConfirm}
+            />
+            <Button
+              testID="members.cancel"
+              title={t('members.cancel')}
+              variant="secondary"
+              disabled={loading}
+              onPress={onCancel}
+            />
+          </View>
         </View>
       </View>
     </Modal>
