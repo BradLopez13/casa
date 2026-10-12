@@ -29,9 +29,11 @@ import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
+import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 
 /** Mounted once inside its frame, so rotating never remounts the form. */
@@ -163,6 +165,7 @@ function EditForm({
 }) {
   const { colors, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
+  const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
@@ -185,7 +188,7 @@ function EditForm({
           alignItems: 'center',
           gap: space(2),
           paddingHorizontal: space(4),
-          paddingVertical: space(2),
+          paddingVertical: space(density.headerStep),
           borderBottomWidth: 1,
           borderBottomColor: colors.hairline,
         }}
@@ -230,9 +233,9 @@ function EditForm({
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
-            paddingTop: space(5),
-            paddingBottom: space(8),
-            gap: space(6),
+            paddingTop: space(density.topStep),
+            paddingBottom: space(density.bottomStep),
+            gap: space(density.gapStep),
           }}
         >
           {/* Every field asks for it on focus, as in CenteredCard. */}

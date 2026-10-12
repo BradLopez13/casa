@@ -28,3 +28,27 @@ export function sheetMargins(windowHeight: number, gutter: number, insets: Inset
     left: Math.max(gutter, insets.left),
   };
 }
+
+/** Spacing of a modal form, in `space()` steps, and whether a new task's title takes focus. */
+export type FormDensity = {
+  /** Above and below the Cancel | title | Save bar. */
+  headerStep: number;
+  /** Above the first field. */
+  topStep: number;
+  /** Between fields. */
+  gapStep: number;
+  /** Under the last field. */
+  bottomStep: number;
+  autoFocusTitle: boolean;
+};
+
+/**
+ * On a short window (a phone on its side) the sheet would show only the title and one section,
+ * and the keyboard would cover the rest: there the form closes up and the title waits for a tap
+ * before the keyboard comes up. Everywhere else the form keeps its spacing and its autofocus.
+ */
+export function formDensity(layout: Pick<Layout, 'shortHeight'>): FormDensity {
+  return layout.shortHeight
+    ? { headerStep: 1, topStep: 3, gapStep: 4, bottomStep: 5, autoFocusTitle: false }
+    : { headerStep: 2, topStep: 5, gapStep: 6, bottomStep: 8, autoFocusTitle: true };
+}

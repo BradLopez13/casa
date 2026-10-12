@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { layoutFor } from './layout';
-import { modalFrameFor, SHEET_MAX_HEIGHT, sheetMargins } from './sheet';
+import { formDensity, modalFrameFor, SHEET_MAX_HEIGHT, sheetMargins } from './sheet';
 
 const none = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -35,5 +35,28 @@ describe('sheetMargins', () => {
     // A phone on its side: 18 dp would be 5 %, the status bar and the side notch are deeper.
     const m = sheetMargins(360, 24, { top: 28, right: 0, bottom: 16, left: 48 });
     expect(m).toEqual({ top: 28, right: 24, bottom: 18, left: 48 });
+  });
+});
+
+describe('formDensity', () => {
+  it('keeps the current spacing and the title autofocus on a tall window', () => {
+    expect(formDensity(layoutFor(390, 844))).toEqual({
+      headerStep: 2,
+      topStep: 5,
+      gapStep: 6,
+      bottomStep: 8,
+      autoFocusTitle: true,
+    });
+    expect(formDensity(layoutFor(1024, 1366)).autoFocusTitle).toBe(true);
+  });
+
+  it('closes up and leaves the keyboard down on a short window', () => {
+    const tall = formDensity(layoutFor(390, 844));
+    const short = formDensity(layoutFor(844, 390));
+    expect(short.autoFocusTitle).toBe(false);
+    expect(short.headerStep).toBeLessThan(tall.headerStep);
+    expect(short.topStep).toBeLessThan(tall.topStep);
+    expect(short.gapStep).toBeLessThan(tall.gapStep);
+    expect(short.bottomStep).toBeLessThan(tall.bottomStep);
   });
 });

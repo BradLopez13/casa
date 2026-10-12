@@ -13,8 +13,10 @@ import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
 import { buttonLook } from '@/ui/buttonLook';
 import { FocusRevealContext } from '@/ui/focusReveal';
+import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
 import { taskFormSchema } from '../schemas';
@@ -137,6 +139,7 @@ export function TaskForm({
 }: Props) {
   const { colors, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
+  const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
   const [triedSave, setTriedSave] = useState(false);
@@ -196,7 +199,7 @@ export function TaskForm({
           alignItems: 'center',
           gap: space(2),
           paddingHorizontal: space(4),
-          paddingVertical: space(2),
+          paddingVertical: space(density.headerStep),
           borderBottomWidth: 1,
           borderBottomColor: colors.hairline,
         }}
@@ -236,9 +239,9 @@ export function TaskForm({
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingHorizontal: space(5),
-            paddingTop: space(5),
-            paddingBottom: space(8),
-            gap: space(6),
+            paddingTop: space(density.topStep),
+            paddingBottom: space(density.bottomStep),
+            gap: space(density.gapStep),
           }}
         >
           {/* Every field asks for it on focus, as in CenteredCard. */}
@@ -248,8 +251,9 @@ export function TaskForm({
               label={t('taskForm.titleLabel')}
               value={values.title}
               onChangeText={(text) => set({ title: text })}
-              // Only a new task starts with an empty title.
-              autoFocus={initial.title === ''}
+              // Only a new task starts with an empty title; on a short window the keyboard would
+              // hide the rest of the form, so there the field waits for a tap.
+              autoFocus={initial.title === '' && density.autoFocusTitle}
               maxLength={200}
               returnKeyType="done"
               error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
