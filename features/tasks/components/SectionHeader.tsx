@@ -1,8 +1,19 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme';
 
-/** A task list section heading with its count on the right. */
-export function SectionHeader({ title, count }: { title: string; count: number }) {
+/**
+ * A task list section heading with its count on the right. `flush` drops its side padding, for a
+ * pane whose container already brings the gutter.
+ */
+export function SectionHeader({
+  title,
+  count,
+  flush = false,
+}: {
+  title: string;
+  count: number;
+  flush?: boolean;
+}) {
   const { colors, space } = useTheme();
   return (
     <View
@@ -10,7 +21,7 @@ export function SectionHeader({ title, count }: { title: string; count: number }
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'baseline',
-        paddingHorizontal: space(5),
+        paddingHorizontal: flush ? 0 : space(5),
         paddingTop: space(6),
         paddingBottom: space(3),
       }}

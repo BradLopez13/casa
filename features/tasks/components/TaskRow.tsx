@@ -15,14 +15,25 @@ type Props = {
   userId: string | null;
   isBusy: (id: string) => boolean;
   toggle: (vars: ToggleVars) => void;
+  /** No side padding, for a pane whose container already brings the gutter. */
+  flush?: boolean;
 };
 
 /** One list row: an open task as a note (opens its form), or the tray of finished ones. */
-export function TaskRow({ row, today, marks, names, userId, isBusy, toggle }: Props) {
+export function TaskRow({
+  row,
+  today,
+  marks,
+  names,
+  userId,
+  isBusy,
+  toggle,
+  flush = false,
+}: Props) {
   const router = useRouter();
   const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   return (
-    <View style={{ paddingHorizontal: space(5) }}>
+    <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
       {row.kind === 'note' ? (
         <TaskNote
           task={row.task}

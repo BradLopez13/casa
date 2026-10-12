@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, type ReactElement, type ReactNode } from 'react';
 import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { tallyToday } from '@/domain/tasks/tally';
@@ -9,21 +9,38 @@ import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
+import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { scopeLabel } from '@/features/tasks/scope';
-import { todaySections } from '@/features/tasks/sections';
+import { todaySections, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
+import { todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
-import { DoorHeader } from '@/ui/components/DoorHeader';
-import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
+import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
+import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
+import { TwoPane } from '@/ui/components/TwoPane';
+import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
+import { useLayout } from '@/ui/useLayout';
+
+type Screen = ReturnType<typeof useTaskScreen>;
+
+/** What both layouts share: the door, the sections, the cards and the empty-state pieces. */
+type TodayParts = {
+  screen: Screen;
+  door: ReactElement;
+  sections: TaskListSection[];
+  cards: TodayCards;
+  invite: ReactNode;
+  nothing: ReactNode;
+};
 
 export default function TodayScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
+  const layout = useLayout();
   const screen = useTaskScreen();
-  const listStyle = useNewTaskListStyle();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const subtitleStyle: TextStyle = {
     color: colors.muted,
@@ -33,23 +50,27 @@ export default function TodayScreen() {
 
   const tally = useMemo(() => tallyToday(filtered, today), [filtered, today]);
   const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
+  const cards = todayCards({
+    loaded: tasksQuery.isSuccess,
+    taskCount: tasksQuery.data?.length ?? 0,
+    memberCount: members.length,
+    listEmpty: sections.length === 0,
+  });
 
-  const empty =
-    members.length === 1 ? (
-      <View style={{ gap: space(4) }}>
-        <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
-          {t('today.empty.title')}
-        </Text>
-        <Text style={{ color: colors.ink, fontSize: 16 }}>{t('today.empty.body')}</Text>
-        <Button
-          testID="today.invite"
-          title={t('today.empty.cta')}
-          onPress={() => router.push('/household/members')}
-        />
-      </View>
-    ) : (
-      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
-    );
+  const invite = (
+    <View style={{ gap: space(4) }}>
+      <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
+        {t('today.empty.title')}
+      </Text>
+      <Text style={{ color: colors.ink, fontSize: 16 }}>{t('today.empty.body')}</Text>
+      <Button
+        testID="today.invite"
+        title={t('today.empty.cta')}
+        onPress={() => router.push('/household/members')}
+      />
+    </View>
+  );
+  const nothing = <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>;
 
   const door = (
     <DoorHeader
@@ -63,7 +84,7 @@ export default function TodayScreen() {
         </View>
       }
     >
-      <View style={{ gap: space(4) }}>
+      <DoorControls>
         <MemberFilter
           members={members}
           marks={screen.marks}
@@ -72,44 +93,106 @@ export default function TodayScreen() {
           onToggle={screen.toggleFilter}
         />
         <TallyView tally={tally} scope={scopeLabel(assigneeId, userId, members)} />
-      </View>
+      </DoorControls>
     </DoorHeader>
   );
 
+  const parts: TodayParts = { screen, door, sections, cards, invite, nothing };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
-      <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
-        <SectionList
-          sections={sections}
-          keyExtractor={taskRowKey}
-          stickySectionHeadersEnabled={false}
-          ListHeaderComponent={door}
-          ListEmptyComponent={
-            <View style={{ paddingHorizontal: space(5), paddingTop: space(6), gap: space(6) }}>
-              {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
-              {tasksQuery.isSuccess && tasksQuery.data.length === 0 ? <TemplatesCard /> : null}
-              <TaskListStates query={tasksQuery} empty={empty} />
-            </View>
-          }
-          renderSectionHeader={({ section }) => (
-            <SectionHeader title={section.title} count={section.count} />
-          )}
-          renderItem={({ item }) => (
-            <TaskRow
-              row={item}
-              today={today}
-              marks={screen.marks}
-              names={screen.names}
-              userId={userId}
-              isBusy={screen.isBusy}
-              toggle={screen.toggle}
-            />
-          )}
-          ItemSeparatorComponent={TaskRowSeparator}
-          contentContainerStyle={listStyle}
-        />
-      </FridgeRefresh>
+      {paneMode(layout) === 'split' ? <TodaySplit {...parts} /> : <TodayStack {...parts} />}
       <NewTaskButton testID="today.new-task" assigneeId={assigneeId} />
     </View>
+  );
+}
+
+/** One column (phones, small tablets): the list as it has always been, pulled by the door. */
+function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+  const { space } = useTheme();
+  const listStyle = useNewTaskListStyle();
+  const { today, userId, members, tasksQuery } = screen;
+  return (
+    <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
+      <SectionList
+        sections={sections}
+        keyExtractor={taskRowKey}
+        stickySectionHeadersEnabled={false}
+        ListHeaderComponent={door}
+        ListEmptyComponent={
+          <View style={{ paddingHorizontal: space(5), paddingTop: space(6), gap: space(6) }}>
+            {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
+            {cards.templates ? <TemplatesCard /> : null}
+            <TaskListStates query={tasksQuery} empty={members.length === 1 ? invite : nothing} />
+          </View>
+        }
+        renderSectionHeader={({ section }) => (
+          <SectionHeader title={section.title} count={section.count} />
+        )}
+        renderItem={({ item }) => (
+          <TaskRow
+            row={item}
+            today={today}
+            marks={screen.marks}
+            names={screen.names}
+            userId={userId}
+            isBusy={screen.isBusy}
+            toggle={screen.toggle}
+          />
+        )}
+        ItemSeparatorComponent={TaskRowSeparator}
+        contentContainerStyle={listStyle}
+      />
+    </FridgeRefresh>
+  );
+}
+
+/**
+ * Two panes (wide screens): what is still to do on the left, what was done today and the
+ * household's cards on the right, under a fixed door. The door is outside any scroll, so the
+ * left pane takes the pull-to-refresh.
+ */
+function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+  const { space } = useTheme();
+  const listStyle = useNewTaskListStyle();
+  const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
+  const { left, right } = todayPanes(sections);
+  const rows = {
+    today: screen.today,
+    marks: screen.marks,
+    names: screen.names,
+    userId: screen.userId,
+    isBusy: screen.isBusy,
+    toggle: screen.toggle,
+  };
+  const hasCards = cards.templates || cards.invite;
+
+  return (
+    <TwoPane
+      header={door}
+      leftTestID="today.pane.pending"
+      rightTestID="today.pane.done"
+      refreshControl={refreshControl}
+      contentContainerStyle={listStyle}
+      left={
+        left.length > 0 ? (
+          <TaskSections sections={left} {...rows} />
+        ) : (
+          <View style={{ paddingTop: space(6) }}>
+            <TaskListStates query={screen.tasksQuery} empty={nothing} />
+          </View>
+        )
+      }
+      right={
+        <>
+          <TaskSections sections={right} {...rows} />
+          {hasCards ? (
+            <View style={{ paddingTop: space(6), gap: space(6) }}>
+              {cards.templates ? <TemplatesCard /> : null}
+              {cards.invite ? invite : null}
+            </View>
+          ) : null}
+        </>
+      }
+    />
   );
 }

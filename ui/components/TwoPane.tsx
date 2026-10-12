@@ -7,6 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { paneGap } from '../layout';
 import { paneMode } from '../panes';
 import { useLayout } from '../useLayout';
@@ -21,9 +22,13 @@ type Props = {
    * of the single scroll, so it scrolls away exactly as it does today.
    */
   header?: ReactNode;
-  // Passed to every scroll (one in stack, one per pane in split), so FridgeRefresh can wrap a
-  // TwoPane the same way it wraps a ScrollView, and forms keep their taps with the keyboard up.
+  /**
+   * Stack: on the single scroll, so FridgeRefresh can wrap a TwoPane the way it wraps a
+   * ScrollView. Split: on the left pane only, so a refresh shows one spinner, not two.
+   */
   refreshControl?: ReactElement<RefreshControlProps>;
+  // Passed to every scroll (one in stack, one per pane in split): forms keep their taps with the
+  // keyboard up, and every pane keeps the bottom room the screen asks for.
   keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];
   contentContainerStyle?: StyleProp<ViewStyle>;
   contentInsetAdjustmentBehavior?: ScrollViewProps['contentInsetAdjustmentBehavior'];
@@ -33,8 +38,9 @@ type Props = {
  * Two panes in a 60/40 split from `expanded`, each with its own scroll, the pair kept within
  * `contentMax` and centred. Below `expanded`, one column: `left` then `right` in a single scroll.
  *
- * TwoPane owns the side gutter in both modes; pane content brings no horizontal padding of its
- * own (on a compact phone the gutter is the 20 dp the screens use today).
+ * TwoPane owns the side gutter in both modes, plus the side safe areas (a phone on its side);
+ * beside the rail, the rail already takes the left one. Pane content brings no horizontal padding
+ * of its own (on a compact phone the gutter is the 20 dp the screens use today).
  */
 export function TwoPane({
   left,
@@ -48,9 +54,18 @@ export function TwoPane({
   contentInsetAdjustmentBehavior,
 }: Props) {
   const layout = useLayout();
-  const { contentMax, gutter, size } = layout;
+  const insets = useSafeAreaInsets();
+  const { contentMax, gutter, size, rail } = layout;
+  const paddingLeft = gutter + (rail ? 0 : insets.left);
+  const paddingRight = gutter + insets.right;
+  const column = {
+    width: '100%',
+    maxWidth: contentMax + paddingLeft + paddingRight,
+    alignSelf: 'center',
+    paddingLeft,
+    paddingRight,
+  } as const;
   const scrollProps = {
-    refreshControl,
     keyboardShouldPersistTaps,
     contentContainerStyle,
     contentInsetAdjustmentBehavior,
@@ -58,16 +73,9 @@ export function TwoPane({
 
   if (paneMode(layout) === 'stack') {
     return (
-      <ScrollView {...scrollProps}>
+      <ScrollView refreshControl={refreshControl} {...scrollProps}>
         {header}
-        <View
-          style={{
-            width: '100%',
-            maxWidth: contentMax + gutter * 2,
-            alignSelf: 'center',
-            paddingHorizontal: gutter,
-          }}
-        >
+        <View style={column}>
           <View testID={leftTestID}>{left}</View>
           <View testID={rightTestID}>{right}</View>
         </View>
@@ -78,18 +86,13 @@ export function TwoPane({
   return (
     <View style={{ flex: 1 }}>
       {header}
-      <View
-        style={{
-          flex: 1,
-          flexDirection: 'row',
-          width: '100%',
-          maxWidth: contentMax + gutter * 2,
-          alignSelf: 'center',
-          paddingHorizontal: gutter,
-          gap: paneGap(size),
-        }}
-      >
-        <ScrollView testID={leftTestID} style={{ flex: 3 }} {...scrollProps}>
+      <View style={{ ...column, flex: 1, flexDirection: 'row', gap: paneGap(size) }}>
+        <ScrollView
+          testID={leftTestID}
+          style={{ flex: 3 }}
+          refreshControl={refreshControl}
+          {...scrollProps}
+        >
           {left}
         </ScrollView>
         <ScrollView testID={rightTestID} style={{ flex: 2 }} {...scrollProps}>

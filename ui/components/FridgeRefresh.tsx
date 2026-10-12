@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type RefreshControlProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -36,6 +37,34 @@ type Props = {
 };
 
 const SLIDE = { duration: 280, easing: Easing.out(Easing.exp) };
+
+function useRefreshAnnouncement(refreshing: boolean) {
+  useEffect(() => {
+    if (refreshing) AccessibilityInfo.announceForAccessibility(t('refresh.label'));
+  }, [refreshing]);
+}
+
+/**
+ * Pull-to-refresh for a pane that scrolls below a fixed door (two panes), where the door is
+ * outside the scroll and cannot open: the native spinner in the fridge's colours, with the same
+ * announcement. Give it to one pane only, so a refresh shows one spinner.
+ */
+export function usePaneRefreshControl(
+  refreshing: boolean,
+  onRefresh: () => void,
+): ReactElement<RefreshControlProps> {
+  const { colors } = useTheme();
+  useRefreshAnnouncement(refreshing);
+  return (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor={colors.cobalt}
+      colors={[colors.cobalt]}
+      progressBackgroundColor={colors.note}
+    />
+  );
+}
 const FADE = { duration: 200 };
 
 /**
@@ -56,9 +85,7 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
   // Only the Reduce Motion band fades; the band behind the door is always lit.
   const glow = useSharedValue(0);
 
-  useEffect(() => {
-    if (refreshing) AccessibilityInfo.announceForAccessibility(t('refresh.label'));
-  }, [refreshing]);
+  useRefreshAnnouncement(refreshing);
 
   useEffect(() => {
     if (reduceMotion) {

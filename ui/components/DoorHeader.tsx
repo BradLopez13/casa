@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { Children, createContext, useContext, useState, type ReactNode } from 'react';
 import { Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { doorFor, type DoorTitleSize } from '../door';
@@ -17,6 +17,26 @@ const DoorCompactContext = createContext(false);
  */
 export function useDoorCompact(): boolean {
   return useContext(DoorCompactContext);
+}
+
+/**
+ * The controls under a door's title (magnets, filter, counter): stacked in a full door, side by
+ * side in one row in a compact one, each free to shrink so a horizontal filter scrolls instead of
+ * pushing the next control out.
+ */
+export function DoorControls({ children }: { children: ReactNode }) {
+  const { space } = useTheme();
+  const compact = useDoorCompact();
+  if (!compact) return <View style={{ gap: space(4) }}>{children}</View>;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: space(5) }}>
+      {Children.toArray(children).map((child, i) => (
+        <View key={i} style={{ flexShrink: 1 }}>
+          {child}
+        </View>
+      ))}
+    </View>
+  );
 }
 
 type Props = {
