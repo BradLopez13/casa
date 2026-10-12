@@ -120,8 +120,14 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         </Text>
         <Text maxFontSizeMultiplier={1.3} style={{ color: colors.muted, fontSize: 14 }}>
           {room ? `${room} · ` : ''}
+          {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no
+              pill or outline around it (in dark mode red and the apricot actions are close). */}
           <Text
-            style={{ color: overdue ? colors.red : colors.muted, fontVariant: ['tabular-nums'] }}
+            style={{
+              color: overdue ? colors.red : colors.muted,
+              fontWeight: overdue ? '600' : '400',
+              fontVariant: ['tabular-nums'],
+            }}
           >
             {due}
           </Text>

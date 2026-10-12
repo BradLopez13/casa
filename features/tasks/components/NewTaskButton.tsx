@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 import { t } from '@/i18n';
@@ -29,19 +30,24 @@ export function NewTaskButton({
         position: 'absolute',
         right: space(4),
         bottom: space(4),
-        minHeight: MIN_TOUCH,
-        paddingHorizontal: space(5),
+        minHeight: MIN_TOUCH + space(1),
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space(1),
+        paddingLeft: space(4),
+        paddingRight: space(5),
         justifyContent: 'center',
         borderRadius: radii.pill,
         backgroundColor: colors.cobalt,
         opacity: pressed ? 0.85 : 1,
       })}
     >
+      <Ionicons name="add" size={22} color={colors.onCobalt} accessible={false} />
       <Text
         maxFontSizeMultiplier={1.3}
         style={{ color: colors.onCobalt, fontSize: 16, fontWeight: '600' }}
       >
-        {`+ ${t('tasks.new')}`}
+        {t('tasks.new')}
       </Text>
     </Pressable>
   );

@@ -41,7 +41,8 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radii.day,
-        backgroundColor: colors.door,
+        // The chosen day is filled, so it reads by shape and not by the label's colour alone.
+        backgroundColor: selected ? colors.cobalt : colors.door,
         borderWidth: 2,
         borderColor: selected ? colors.cobalt : 'transparent',
         opacity: disabled ? 0.4 : 1,
@@ -49,10 +50,11 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
     >
       {top ? (
         <Text
+          maxFontSizeMultiplier={1.3}
           style={{
             fontFamily: topIsDisplay ? displayFont : undefined,
             fontSize: 20,
-            color: colors.ink,
+            color: selected ? colors.onCobalt : colors.ink,
             fontVariant: ['tabular-nums'],
           }}
         >
@@ -60,9 +62,10 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
         </Text>
       ) : null}
       <Text
+        maxFontSizeMultiplier={1.3}
         style={{
           fontSize: 13,
-          color: selected ? colors.cobalt : colors.muted,
+          color: selected ? colors.onCobalt : colors.muted,
           fontVariant: ['tabular-nums'],
         }}
       >

@@ -53,7 +53,7 @@ export function HeaderAction({
   busy?: boolean;
   strong?: boolean;
 }) {
-  const { colors, space } = useTheme();
+  const { colors, radii, space } = useTheme();
   return (
     <Pressable
       testID={testID}
@@ -66,16 +66,37 @@ export function HeaderAction({
       style={({ pressed }) => ({
         minWidth: MIN_TOUCH,
         minHeight: MIN_TOUCH,
+        alignItems: strong ? 'flex-end' : 'flex-start',
         justifyContent: 'center',
         opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       })}
     >
-      <Text
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.cobalt, fontSize: 17, fontWeight: strong ? '700' : '400' }}
+      {/* The main action is a small cobalt pill, so it stands apart from "Cancelar" by shape and
+          not only by weight (in light mode cobalt is the same colour as the text). */}
+      <View
+        style={
+          strong
+            ? {
+                minHeight: 36,
+                justifyContent: 'center',
+                paddingHorizontal: space(4),
+                borderRadius: radii.pill,
+                backgroundColor: colors.cobalt,
+              }
+            : null
+        }
       >
-        {label}
-      </Text>
+        <Text
+          maxFontSizeMultiplier={1.3}
+          style={{
+            color: strong ? colors.onCobalt : colors.cobalt,
+            fontSize: 17,
+            fontWeight: strong ? '600' : '400',
+          }}
+        >
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }

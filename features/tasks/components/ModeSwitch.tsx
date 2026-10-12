@@ -32,7 +32,7 @@ export function ModeSwitch({ value, onChange }: Props) {
               justifyContent: 'center',
               borderRadius: radii.pill,
               backgroundColor: selected ? colors.cobalt : 'transparent',
-              borderWidth: 1,
+              borderWidth: 1.5,
               borderColor: selected ? colors.cobalt : colors.outline,
             }}
           >

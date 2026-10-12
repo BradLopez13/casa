@@ -46,16 +46,21 @@ export function DayStrip({ days, today, marks, counts, onSelect }: Props) {
               paddingVertical: space(2),
               gap: space(1),
               borderRadius: radii.day,
-              backgroundColor: isToday ? colors.page : colors.door,
-              borderWidth: 1,
-              borderColor: isToday ? colors.page : colors.hairline,
+              // Only today is cut out of the door, in the page colour, and its weekday is set in
+              // bold ink: the cell stands out by weight as well as tone. The other days need no
+              // box; their aligned columns already read as a week.
+              backgroundColor: isToday ? colors.page : 'transparent',
               opacity: pressed ? 0.7 : 1,
             })}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               numberOfLines={1}
-              style={{ color: colors.muted, fontSize: 12 }}
+              style={{
+                color: isToday ? colors.ink : colors.muted,
+                fontSize: 12,
+                fontWeight: isToday ? '700' : '400',
+              }}
             >
               {date.toLocaleDateString(locale, { weekday: 'short' })}
             </Text>
