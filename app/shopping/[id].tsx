@@ -28,6 +28,7 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
+import { FocusRevealContext } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
@@ -234,32 +235,33 @@ function EditForm({
             gap: space(6),
           }}
         >
-          <TextField
-            testID="shopping.edit.name"
-            label={t('shopping.edit.name')}
-            value={name}
-            onChangeText={setName}
-            onFocus={reveal}
-            returnKeyType="done"
-            error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
-          />
-          <TextField
-            testID="shopping.edit.quantity"
-            label={t('shopping.edit.quantity')}
-            value={quantity}
-            onChangeText={setQuantity}
-            onFocus={reveal}
-            returnKeyType="done"
-            error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
-          />
-          {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
-          <Button
-            testID="shopping.edit.delete"
-            title={t('shopping.edit.delete')}
-            variant="danger"
-            disabled={!online || busy}
-            onPress={onDelete}
-          />
+          {/* Every field asks for it on focus, as in CenteredCard. */}
+          <FocusRevealContext.Provider value={reveal}>
+            <TextField
+              testID="shopping.edit.name"
+              label={t('shopping.edit.name')}
+              value={name}
+              onChangeText={setName}
+              returnKeyType="done"
+              error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
+            />
+            <TextField
+              testID="shopping.edit.quantity"
+              label={t('shopping.edit.quantity')}
+              value={quantity}
+              onChangeText={setQuantity}
+              returnKeyType="done"
+              error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
+            />
+            {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
+            <Button
+              testID="shopping.edit.delete"
+              title={t('shopping.edit.delete')}
+              variant="danger"
+              disabled={!online || busy}
+              onPress={onDelete}
+            />
+          </FocusRevealContext.Provider>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

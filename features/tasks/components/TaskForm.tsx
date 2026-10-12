@@ -11,6 +11,7 @@ import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
+import { FocusRevealContext } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
@@ -234,58 +235,60 @@ export function TaskForm({
             gap: space(6),
           }}
         >
-          <TextField
-            testID="task-form.title"
-            label={t('taskForm.titleLabel')}
-            value={values.title}
-            onChangeText={(text) => set({ title: text })}
-            onFocus={reveal}
-            // Only a new task starts with an empty title.
-            autoFocus={initial.title === ''}
-            maxLength={200}
-            returnKeyType="done"
-            error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
-          />
-          <Field label={t('taskForm.roomLabel')}>
-            <RoomPicker value={values.room} onChange={(room) => set({ room })} />
-          </Field>
-          <Field label={t('taskForm.assigneeLabel')}>
-            <AssigneePicker
-              value={values.assigneeId}
-              members={members}
-              marks={marks}
-              userId={userId}
-              onChange={(assigneeId) => set({ assigneeId })}
+          {/* Every field asks for it on focus, as in CenteredCard. */}
+          <FocusRevealContext.Provider value={reveal}>
+            <TextField
+              testID="task-form.title"
+              label={t('taskForm.titleLabel')}
+              value={values.title}
+              onChangeText={(text) => set({ title: text })}
+              // Only a new task starts with an empty title.
+              autoFocus={initial.title === ''}
+              maxLength={200}
+              returnKeyType="done"
+              error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
             />
-          </Field>
-          <Field label={t('taskForm.dueLabel')}>
-            <DayCells
-              value={values.dueOn}
-              today={today}
-              onChange={setDueOn}
-              noneDisabled={repeating}
-            />
-          </Field>
-          {repeatEditable ? (
-            <Field label={t('taskForm.repeatLabel')}>
-              <RecurrencePicker
-                value={values.recurrence}
-                dueOn={values.dueOn ?? today}
-                onChange={setRecurrence}
-              />
-              {nextDate !== null ? (
-                <Text
-                  testID="task-form.repeat.next"
-                  maxFontSizeMultiplier={1.3}
-                  style={{ color: colors.muted, fontSize: 13 }}
-                >
-                  {t('taskForm.repeatNext', { date: nextDate })}
-                </Text>
-              ) : null}
+            <Field label={t('taskForm.roomLabel')}>
+              <RoomPicker value={values.room} onChange={(room) => set({ room })} />
             </Field>
-          ) : null}
-          {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
-          {footer}
+            <Field label={t('taskForm.assigneeLabel')}>
+              <AssigneePicker
+                value={values.assigneeId}
+                members={members}
+                marks={marks}
+                userId={userId}
+                onChange={(assigneeId) => set({ assigneeId })}
+              />
+            </Field>
+            <Field label={t('taskForm.dueLabel')}>
+              <DayCells
+                value={values.dueOn}
+                today={today}
+                onChange={setDueOn}
+                noneDisabled={repeating}
+              />
+            </Field>
+            {repeatEditable ? (
+              <Field label={t('taskForm.repeatLabel')}>
+                <RecurrencePicker
+                  value={values.recurrence}
+                  dueOn={values.dueOn ?? today}
+                  onChange={setRecurrence}
+                />
+                {nextDate !== null ? (
+                  <Text
+                    testID="task-form.repeat.next"
+                    maxFontSizeMultiplier={1.3}
+                    style={{ color: colors.muted, fontSize: 13 }}
+                  >
+                    {t('taskForm.repeatNext', { date: nextDate })}
+                  </Text>
+                ) : null}
+              </Field>
+            ) : null}
+            {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
+            {footer}
+          </FocusRevealContext.Provider>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

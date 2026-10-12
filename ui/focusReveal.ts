@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 
 /**
- * Set by a form's scroll view (CenteredCard) to bring the focused field into view above the
+ * Set by a form's scroll view (CenteredCard, the modal forms) to bring the focused field into view above the
  * keyboard. Every TextField calls it when it takes focus; outside such a form it does nothing.
  */
 export const FocusRevealContext = createContext<() => void>(() => undefined);

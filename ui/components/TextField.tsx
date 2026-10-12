@@ -13,7 +13,7 @@ type Props = Omit<TextInputProps, 'style'> & {
 export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps }: Props) {
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
-  // Inside a form that keeps the focused field above the keyboard (CenteredCard).
+  // Inside a form that keeps the focused field above the keyboard (CenteredCard, modal forms).
   const reveal = useFocusReveal();
   return (
     <View style={{ gap: space(2) }}>
