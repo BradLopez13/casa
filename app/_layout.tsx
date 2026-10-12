@@ -12,6 +12,7 @@ import Constants from 'expo-constants';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { appQueryDefaults } from '@/data/query/defaults';
@@ -257,6 +258,16 @@ function Guard() {
   );
 }
 
+/**
+ * The status bar follows the theme: dark clock and icons on the cream light theme, light ones on
+ * the dark theme. Kept the same under a modal sheet: the light scrim is still pale enough for
+ * dark icons, and the dark scrim for light ones.
+ */
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   // Nothing navigates or renders until the display font is registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
@@ -264,6 +275,7 @@ export default function RootLayout() {
   const fontsReady = fontsLoaded || fontError !== null;
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemedStatusBar />
       <NoticeProvider>
         <SessionProvider>
           <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
