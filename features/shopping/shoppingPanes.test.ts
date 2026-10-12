@@ -27,11 +27,15 @@ describe('shoppingPanes', () => {
     });
   });
 
-  it('says nothing is bought on the right when the list has no bought rows', () => {
+  it('says nothing is bought on the right only when something is left to buy', () => {
     expect(shoppingPanes('list', 2, 0).boughtEmpty).toBe(true);
     expect(shoppingPanes('list', 0, 1).boughtEmpty).toBe(false);
     expect(shoppingPanes('loading', 0, 0).boughtEmpty).toBe(false);
     expect(shoppingPanes('error', 0, 0).boughtEmpty).toBe(false);
+  });
+
+  it('keeps the right pane quiet when the whole list is empty: the left already says so', () => {
+    expect(shoppingPanes('empty', 0, 0).boughtEmpty).toBe(false);
   });
 
   it('draws no sheet for a side with no rows', () => {
@@ -45,7 +49,7 @@ describe('shoppingPanes', () => {
         leftState: state,
         pendingSheet: false,
         boughtSheet: false,
-        boughtEmpty: state === 'empty',
+        boughtEmpty: false,
       });
     }
   });

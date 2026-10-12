@@ -22,7 +22,7 @@ export type ShoppingPanes = {
   pendingSheet: boolean;
   /** The sheet of "Compradas" with "Limpiar compradas", on the right. */
   boughtSheet: boolean;
-  /** A line saying nothing is bought yet, on the right, when the list has no bought rows. */
+  /** A line saying nothing is bought yet, on the right, when only unbought rows are listed. */
   boughtEmpty: boolean;
 };
 
@@ -41,7 +41,8 @@ export function shoppingPanes(
     leftState: list ? null : state,
     pendingSheet: list && pendingCount > 0,
     boughtSheet: list && boughtCount > 0,
-    boughtEmpty: (list || state === 'empty') && boughtCount === 0,
+    // Only beside rows still to buy: with the whole list empty the left pane already says so.
+    boughtEmpty: list && pendingCount > 0 && boughtCount === 0,
   };
 }
 
