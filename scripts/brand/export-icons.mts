@@ -1,5 +1,6 @@
-// Exports the app icon, Android adaptive/monochrome icons, splash (light/dark) and favicon
-// from the Nido symbol master. Run with `pnpm brand:icons`; output is deterministic.
+// Exports the app icon, Android adaptive/monochrome icons, splash (light/dark), favicon and
+// Android notification icon from the Nido symbol master. Run with `pnpm brand:icons`; output
+// is deterministic.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
@@ -81,6 +82,8 @@ const files: Record<string, Buffer> = {
   'splash.png': await compose(colour, SIZE, SIZE),
   'splash-dark.png': await compose(inverted, SIZE, SIZE),
   'favicon.png': await compose(colour, 40, 48, CREAM),
+  // Android status-bar icon: white on transparent (Android only reads the alpha), ~10% padding.
+  'notification-icon.png': await compose(white, 77, 96),
 };
 
 for (const [name, data] of Object.entries(files)) {
