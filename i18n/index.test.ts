@@ -3,7 +3,7 @@ import { t } from './index';
 
 describe('t', () => {
   it('returns the Spanish text for a key', () => {
-    expect(t('app.name')).toBe('Casa');
+    expect(t('app.name')).toBe('Nido');
   });
   it('interpolates variables', () => {
     expect(t('members.count', { count: 3 })).toBe('3 miembros');
