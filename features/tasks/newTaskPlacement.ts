@@ -35,3 +35,25 @@ export function newTaskListPadding({
 }): number {
   return placement.bottom + buttonHeight + clearance;
 }
+
+/** Size of the round, icon-only button on a short window: Material's FAB, above the 44 minimum. */
+export const ROUND_NEW_TASK = 56;
+
+export type NewTaskShape = { iconOnly: boolean; height: number };
+
+/**
+ * On a short window (a phone on its side) the list shows about one note, and the extended pill
+ * with its label would cover it: there the button is a round "+" of 56 dp, still named "Nueva
+ * tarea" for screen readers. Anywhere else it keeps the labelled pill.
+ */
+export function newTaskShape({
+  shortHeight,
+  pillHeight,
+}: {
+  shortHeight: boolean;
+  pillHeight: number;
+}): NewTaskShape {
+  return shortHeight
+    ? { iconOnly: true, height: ROUND_NEW_TASK }
+    : { iconOnly: false, height: pillHeight };
+}

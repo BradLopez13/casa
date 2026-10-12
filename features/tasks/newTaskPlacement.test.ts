@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newTaskListPadding, newTaskPlacement } from './newTaskPlacement';
+import { newTaskListPadding, newTaskPlacement, newTaskShape } from './newTaskPlacement';
 
 const phone = { right: 0, bottom: 34 };
 
@@ -37,5 +37,27 @@ describe('newTaskListPadding', () => {
       const padding = newTaskListPadding({ placement, buttonHeight: 48, clearance: 28 });
       expect(padding).toBeGreaterThan(placement.bottom + 48);
     }
+  });
+});
+
+describe('newTaskShape', () => {
+  it('keeps the extended pill with its label on a tall window', () => {
+    expect(newTaskShape({ shortHeight: false, pillHeight: 48 })).toEqual({
+      iconOnly: false,
+      height: 48,
+    });
+  });
+
+  it('turns into a round icon-only button of at least 56 dp on a short window', () => {
+    const shape = newTaskShape({ shortHeight: true, pillHeight: 48 });
+    expect(shape.iconOnly).toBe(true);
+    expect(shape.height).toBeGreaterThanOrEqual(56);
+  });
+
+  it('leaves the list room for the round button too', () => {
+    const placement = newTaskPlacement({ insets: phone, rail: false, edge: 16 });
+    const { height } = newTaskShape({ shortHeight: true, pillHeight: 48 });
+    const padding = newTaskListPadding({ placement, buttonHeight: height, clearance: 28 });
+    expect(padding).toBeGreaterThan(placement.bottom + height);
   });
 });
