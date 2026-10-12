@@ -41,6 +41,7 @@ import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
+import { useOneColumn } from '@/ui/useOneColumn';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
@@ -213,6 +214,7 @@ function ShoppingStack({
   refresh,
 }: ShoppingParts) {
   const { space } = useTheme();
+  const column = useOneColumn();
   return (
     <FridgeRefresh refreshing={pulling} onRefresh={refresh}>
       <ScrollView
@@ -221,12 +223,9 @@ function ShoppingStack({
       >
         {door(<AddItemField entry={entry} />)}
         {online ? null : <OfflineBand />}
-        <View style={{ paddingTop: space(listTopStep(online)) }}>
-          {stateView ? (
-            <View style={{ paddingHorizontal: space(5) }}>{stateView}</View>
-          ) : (
-            <ShoppingSheet pending={pending} bought={bought} {...sheet} />
-          )}
+        {/* The door runs edge to edge; the sheet keeps to the column. */}
+        <View style={[column, { paddingTop: space(listTopStep(online)) }]}>
+          {stateView ?? <ShoppingSheet flush pending={pending} bought={bought} {...sheet} />}
         </View>
       </ScrollView>
     </FridgeRefresh>

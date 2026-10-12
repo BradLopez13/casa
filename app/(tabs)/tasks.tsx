@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, SectionList, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { weekStrip, type StripDay } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
 import { DayList } from '@/features/tasks/components/DayList';
@@ -22,13 +21,13 @@ import {
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
-import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
+import { DoorControls, DoorHeader, useDoorCompact } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
-import { ONE_COLUMN_MAX } from '@/ui/layout';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
+import { useOneColumn } from '@/ui/useOneColumn';
 
 /** Wait for the rows near the target to render before trying the scroll again. */
 const SCROLL_RETRY_MS = 100;
@@ -103,6 +102,7 @@ export default function TasksScreen() {
 function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }: TasksParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
@@ -146,19 +146,25 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
 
   const door = (
     <DoorHeader title={t('tasks.title')} titleSize="medium">
-      <View style={{ gap: space(4) }}>
-        <MemberFilter
-          members={members}
-          marks={marks}
-          userId={userId}
-          selected={assigneeId}
-          onToggle={screen.toggleFilter}
-        />
-        <ModeSwitch value={mode} onChange={setMode} />
-        {mode === 'week' ? (
-          <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
-        ) : null}
-      </View>
+      <StackDoorBody
+        controls={
+          <DoorControls>
+            <MemberFilter
+              members={members}
+              marks={marks}
+              userId={userId}
+              selected={assigneeId}
+              onToggle={screen.toggleFilter}
+            />
+            <ModeSwitch value={mode} onChange={setMode} />
+          </DoorControls>
+        }
+        strip={
+          mode === 'week' ? (
+            <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
+          ) : null
+        }
+      />
     </DoorHeader>
   );
 
@@ -171,23 +177,30 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={door}
         ListEmptyComponent={
-          <View style={{ paddingHorizontal: space(5), paddingTop: space(6) }}>
+          <View style={[column, { paddingTop: space(6) }]}>
             <TaskListStates query={tasksQuery} empty={empty} />
           </View>
         }
+        // The door is the list's header and runs edge to edge; each heading and row keeps to the
+        // column itself.
         renderSectionHeader={({ section }) => (
-          <SectionHeader title={section.title} count={section.count} />
+          <View style={column}>
+            <SectionHeader title={section.title} count={section.count} flush />
+          </View>
         )}
         renderItem={({ item }) => (
-          <TaskRow
-            row={item}
-            today={today}
-            marks={marks}
-            names={screen.names}
-            userId={userId}
-            isBusy={screen.isBusy}
-            toggle={screen.toggle}
-          />
+          <View style={column}>
+            <TaskRow
+              row={item}
+              today={today}
+              marks={marks}
+              names={screen.names}
+              userId={userId}
+              isBusy={screen.isBusy}
+              toggle={screen.toggle}
+              flush
+            />
+          </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
         // Rows vary in height, so a far section may not be measured yet: jump close to it,
@@ -209,6 +222,22 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
         contentContainerStyle={listStyle}
       />
     </FridgeRefresh>
+  );
+}
+
+/**
+ * The one-column door's body: the filter and the mode (`DoorControls`, so a compact door puts
+ * them side by side beside the title), then the day strip as its own row beneath. A compact door
+ * tightens the gap so the whole stays within its 40 % of the window.
+ */
+function StackDoorBody({ controls, strip }: { controls: ReactNode; strip: ReactNode }) {
+  const { space } = useTheme();
+  const compact = useDoorCompact();
+  return (
+    <View style={{ gap: compact ? space(2) : space(4) }}>
+      {controls}
+      {strip}
+    </View>
   );
 }
 
@@ -305,13 +334,9 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
  */
 function AllColumn({ screen, sections, empty, door }: SplitProps) {
   const { space } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { gutter, rail } = useLayout();
+  const column = useOneColumn();
   const listStyle = useNewTaskListStyle();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
-  // Beside the rail, the rail already takes the left inset.
-  const paddingLeft = gutter + (rail ? 0 : insets.left);
-  const paddingRight = gutter + insets.right;
 
   return (
     <View style={{ flex: 1 }}>
@@ -321,15 +346,7 @@ function AllColumn({ screen, sections, empty, door }: SplitProps) {
         refreshControl={refreshControl}
         contentContainerStyle={listStyle}
       >
-        <View
-          style={{
-            width: '100%',
-            maxWidth: ONE_COLUMN_MAX + paddingLeft + paddingRight,
-            alignSelf: 'center',
-            paddingLeft,
-            paddingRight,
-          }}
-        >
+        <View style={column}>
           {sections.length > 0 ? (
             <TaskSections sections={sections} {...rowProps(screen)} />
           ) : (

@@ -22,6 +22,7 @@ import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefr
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
+import { useOneColumn } from '@/ui/useOneColumn';
 import { useLayout } from '@/ui/useLayout';
 
 type Screen = ReturnType<typeof useTaskScreen>;
@@ -106,10 +107,15 @@ export default function TodayScreen() {
   );
 }
 
-/** One column (phones, small tablets): the list as it has always been, pulled by the door. */
+/**
+ * One column (phones, small tablets): the list as it has always been, pulled by the door. The door
+ * runs edge to edge; every row, heading and empty state keeps to the column (`useOneColumn`), as
+ * the door is the list's header and the list's own padding would take it in too.
+ */
 function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery } = screen;
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
@@ -119,25 +125,30 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={door}
         ListEmptyComponent={
-          <View style={{ paddingHorizontal: space(5), paddingTop: space(6), gap: space(6) }}>
+          <View style={[column, { paddingTop: space(6), gap: space(6) }]}>
             {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
             {cards.templates ? <TemplatesCard /> : null}
             <TaskListStates query={tasksQuery} empty={members.length === 1 ? invite : nothing} />
           </View>
         }
         renderSectionHeader={({ section }) => (
-          <SectionHeader title={section.title} count={section.count} />
+          <View style={column}>
+            <SectionHeader title={section.title} count={section.count} flush />
+          </View>
         )}
         renderItem={({ item }) => (
-          <TaskRow
-            row={item}
-            today={today}
-            marks={screen.marks}
-            names={screen.names}
-            userId={userId}
-            isBusy={screen.isBusy}
-            toggle={screen.toggle}
-          />
+          <View style={column}>
+            <TaskRow
+              row={item}
+              today={today}
+              marks={screen.marks}
+              names={screen.names}
+              userId={userId}
+              isBusy={screen.isBusy}
+              toggle={screen.toggle}
+              flush
+            />
+          </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
         contentContainerStyle={listStyle}

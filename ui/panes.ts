@@ -1,4 +1,4 @@
-import type { Layout } from './layout';
+import { ONE_COLUMN_MAX, type Layout } from './layout';
 
 export type PaneMode = 'split' | 'stack';
 
@@ -23,4 +23,17 @@ export function paneColumn(
   const paddingLeft = layout.gutter + (besideRail ? 0 : insets.left);
   const paddingRight = layout.gutter + insets.right;
   return { paddingLeft, paddingRight, maxWidth: layout.contentMax + paddingLeft + paddingRight };
+}
+
+/**
+ * One column of content: a list on a phone or a small tablet, or Todas on a wide screen. The same
+ * frame as `paneColumn` (gutter plus side safe areas), kept within the one-column width whatever
+ * the class. On a phone in portrait it is the 20 dp each side the lists have always had.
+ */
+export function oneColumn(
+  layout: Pick<Layout, 'gutter'>,
+  insets: { left: number; right: number },
+  besideRail: boolean,
+): PaneColumn {
+  return paneColumn({ gutter: layout.gutter, contentMax: ONE_COLUMN_MAX }, insets, besideRail);
 }
