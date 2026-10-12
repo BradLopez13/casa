@@ -1,5 +1,5 @@
 begin;
-select plan(47);
+select plan(53);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -222,6 +222,72 @@ select is(
   (select revoked_at from public.household_invites where id = :'gus_inv'),
   :'gus_revoked_at'::timestamptz,
   'a repeated revoke keeps the original revoked_at'
+);
+
+-- one active invite per household -----------------------------------------------
+
+select tests.create_user('zoe@test.dev', 'Zoe') as zoe \gset
+insert into public.households (id, name, created_by)
+values ('00000000-0000-0000-0000-0000000000a2', 'Otra casa', :'zoe');
+insert into public.household_members (household_id, user_id, role)
+values ('00000000-0000-0000-0000-0000000000a2', :'zoe', 'owner');
+insert into public.household_invites (id, household_id, token_hash, created_by, expires_at)
+values ('00000000-0000-0000-0000-0000000000b2',
+        '00000000-0000-0000-0000-0000000000a2', 'hash-other', :'zoe', now() + interval '7 days');
+insert into public.household_invites (id, household_id, token_hash, created_by, accepted_by, accepted_at, expires_at)
+values ('00000000-0000-0000-0000-0000000000b3',
+        '00000000-0000-0000-0000-0000000000a1', 'hash-accepted', :'ana', :'gus', now(), now() + interval '7 days');
+select accepted_at as acc_at from public.household_invites
+  where id = '00000000-0000-0000-0000-0000000000b3' \gset
+
+select tests.authenticate_as(:'ana');
+select invite_id as old_inv, token as old_token from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+-- The newest invite takes over the inv_ variables used by the accept_invite tests below.
+select * from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset inv_
+select tests.clear_auth();
+
+select is(
+  (select count(*) from public.household_invites
+    where household_id = '00000000-0000-0000-0000-0000000000a1'
+      and accepted_at is null and revoked_at is null),
+  1::bigint,
+  'after two create_invite calls the household has exactly one open invite'
+);
+
+select is(
+  (select id from public.household_invites
+    where household_id = '00000000-0000-0000-0000-0000000000a1'
+      and accepted_at is null and revoked_at is null),
+  :'inv_invite_id'::uuid,
+  'the open invite is the newest one'
+);
+
+select ok(
+  (select revoked_at is not null from public.household_invites where id = :'old_inv'),
+  'the previous invite is revoked'
+);
+
+select tests.authenticate_as(:'bob');
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'old_token'),
+  'P0001',
+  'INVITE_INVALID',
+  'the token of a replaced invite can no longer be accepted'
+);
+
+select tests.clear_auth();
+
+select ok(
+  (select revoked_at is null and accepted_at is null
+     from public.household_invites where id = '00000000-0000-0000-0000-0000000000b2'),
+  'invites of other households are untouched'
+);
+
+select ok(
+  (select accepted_at = :'acc_at'::timestamptz and revoked_at is null and accepted_by = :'gus'::uuid
+     from public.household_invites where id = '00000000-0000-0000-0000-0000000000b3'),
+  'an accepted invite is not modified'
 );
 
 -- accept_invite ---------------------------------------------------------------
