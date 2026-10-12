@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { toLocalDate } from '@/domain/tasks/dates';
 import { dayName } from '@/domain/tasks/labels';
@@ -27,6 +27,9 @@ const NUMBER_COLUMN = 32;
  */
 export function DayList({ days, selected, onSelect, today, marks }: Props) {
   const { colors, radii, space } = useTheme();
+  // Name and count grow with the system text; once a name may run to two lines, the number sits
+  // level with its first line instead of floating in the middle.
+  const align = useWindowDimensions().fontScale > 1.3 ? 'flex-start' : 'center';
   return (
     <View style={{ gap: space(1) }}>
       {days.map((day) => {
@@ -45,7 +48,7 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH,
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: align,
               gap: space(3),
               paddingVertical: space(2),
               paddingHorizontal: space(3),
@@ -69,7 +72,6 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
             </Text>
             <View style={{ flex: 1, alignItems: 'flex-start', gap: space(1) }}>
               <Text
-                maxFontSizeMultiplier={1.3}
                 style={{
                   color: ink,
                   fontSize: 16,
@@ -84,7 +86,6 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
               ) : null}
             </View>
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 color: day.count > 0 ? ink : quiet,
                 fontSize: 16,
