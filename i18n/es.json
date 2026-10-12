@@ -1,5 +1,5 @@
 {
-  "app.name": "Casa",
+  "app.name": "Nido",
   "members.count": "{count} miembros",
   "members.countOne": "1 miembro",
   "auth.signIn.title": "Inicia sesión",
@@ -122,7 +122,7 @@
   "members.errors.CANNOT_REMOVE_SELF": "No puedes expulsarte a ti mismo. Usa «Salir del hogar».",
   "members.errors.NETWORK": "No hay conexión. Inténtalo de nuevo.",
   "members.errors.UNKNOWN": "Algo ha ido mal. Inténtalo de nuevo.",
-  "invite.shareMessage": "Te invito a mi hogar en Casa: {url}",
+  "invite.shareMessage": "Te invito a mi hogar en Nido: {url}",
   "members.back": "Volver",
   "members.loading": "Cargando…",
   "tasks.due.today": "Hoy",

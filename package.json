@@ -70,6 +70,7 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > data/supabase/database.types.ts",
     "e2e:env": "bash scripts/e2e-env.sh",
+    "brand:icons": "node scripts/brand/export-icons.mts",
     "gen:recurrence-tests": "node scripts/gen-recurrence-tests.mts",
     "gen:normalize-tests": "node scripts/gen-normalize-tests.mts",
     "e2e:fixtures": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/e2e/fixtures.sql",
