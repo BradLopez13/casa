@@ -73,7 +73,12 @@ export function HouseholdNoticesSection() {
 
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.push')}</Text>
+      <Text
+        accessibilityRole="header"
+        style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+      >
+        {t('settings.push')}
+      </Text>
       <View style={row}>
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushTaskAssigned')}
@@ -85,6 +90,7 @@ export function HouseholdNoticesSection() {
           disabled={busy}
           onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
           trackColor={{ true: colors.cobalt, false: colors.outline }}
+          ios_backgroundColor={colors.outline}
         />
       </View>
       <View style={row}>
@@ -98,6 +104,7 @@ export function HouseholdNoticesSection() {
           disabled={busy}
           onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
           trackColor={{ true: colors.cobalt, false: colors.outline }}
+          ios_backgroundColor={colors.outline}
         />
       </View>
       {error ? (
