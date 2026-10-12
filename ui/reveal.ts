@@ -11,21 +11,29 @@ export type RevealInput = {
   offset: number;
   /** Room to keep between the field and the edge of the visible area. */
   margin: number;
+  /**
+   * The keyboard's top edge, in window coordinates, when it is up. A scroll view that nothing
+   * shrinks for the keyboard (a pane) is hidden below it; one that is already shrunk is not.
+   */
+  keyboardTop?: number;
 };
 
 /**
  * Where to scroll so the focused field sits fully inside the visible part of its scroll view,
  * with `margin` to spare, or null when it already does. A field too tall to fit shows its top,
- * where the label and the caret start.
+ * where the label and the caret start. A keyboard over the scroll view hides what is under it.
  */
 export function revealOffset({
   fieldTop,
   fieldHeight,
   viewportTop,
-  viewportHeight,
+  viewportHeight: height,
   offset,
   margin,
+  keyboardTop,
 }: RevealInput): number | null {
+  const viewportHeight =
+    keyboardTop === undefined ? height : Math.max(0, Math.min(height, keyboardTop - viewportTop));
   const top = fieldTop - viewportTop;
   const bottom = top + fieldHeight;
   if (top >= margin && bottom <= viewportHeight - margin) return null;

@@ -29,4 +29,25 @@ describe('revealOffset', () => {
   it('shows the top of a field taller than the visible area', () => {
     expect(revealOffset({ ...base, fieldHeight: 400, fieldTop: 250 })).toBe(40 + 150 - 16);
   });
+
+  describe('with a keyboard over the scroll view (no avoidance shrinks it)', () => {
+    it('treats the part under the keyboard as hidden', () => {
+      // Viewport 100..400, keyboard from 300: the field at 260..310 must end at 284.
+      expect(revealOffset({ ...base, fieldTop: 260, keyboardTop: 300 })).toBe(40 + 26);
+    });
+
+    it('leaves a field that is already above the keyboard', () => {
+      expect(revealOffset({ ...base, fieldTop: 150, keyboardTop: 300 })).toBeNull();
+    });
+
+    it('ignores a keyboard below the scroll view', () => {
+      expect(revealOffset({ ...base, fieldTop: 334, keyboardTop: 600 })).toBeNull();
+    });
+
+    it('shows the top of a field taller than what the keyboard leaves', () => {
+      expect(revealOffset({ ...base, fieldHeight: 150, fieldTop: 200, keyboardTop: 250 })).toBe(
+        40 + 100 - 16,
+      );
+    });
+  });
 });

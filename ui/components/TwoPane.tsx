@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import {
+  Platform,
   ScrollView,
   View,
   type RefreshControlProps,
@@ -8,9 +9,11 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FocusRevealContext } from '../focusReveal';
 import { paneGap } from '../layout';
 import { paneColumn, paneFlex, paneMode, type WidePane } from '../panes';
 import { useLayout } from '../useLayout';
+import { useRevealFocusedField } from '../useRevealFocusedField';
 
 type Props = {
   left: ReactNode;
@@ -40,11 +43,18 @@ type Props = {
   besideRail?: boolean;
   /** Which pane takes 60 % in split; the left one unless the screen says otherwise. */
   wide?: WidePane;
+  /**
+   * Split: the left pane keeps a focused field (and the block it reveals) above the keyboard, as
+   * the forms do, for a screen whose field sits in that pane (Compra). In one column the screen
+   * handles its own field.
+   */
+  revealFocusedField?: boolean;
 };
 
 /**
  * Two panes in a 60/40 split from `expanded` (`wide` picks the side that gets 60), each with its
- * own scroll, the pair kept within `contentMax` and centred. Below `expanded`, one column: `left` then `right` in a single scroll.
+ * own scroll, the pair kept within `contentMax` and centred. Below `expanded`, one column: `left`
+ * then `right` in a single scroll.
  *
  * TwoPane owns the side gutter in both modes, plus the side safe areas (a phone on its side);
  * beside the rail, the rail already takes the left one (`paneColumn`). Pane content brings no
@@ -62,9 +72,11 @@ export function TwoPane({
   contentInsetAdjustmentBehavior,
   besideRail,
   wide,
+  revealFocusedField = false,
 }: Props) {
   const layout = useLayout();
   const flex = paneFlex(wide);
+  const { scroll: revealScroll, reveal } = useRevealFocusedField();
   const insets = useSafeAreaInsets();
   const column = {
     ...paneColumn(layout, insets, besideRail ?? layout.rail),
@@ -98,8 +110,20 @@ export function TwoPane({
           style={{ flex: flex.left }}
           refreshControl={refreshControl}
           {...scrollProps}
+          {...(revealFocusedField
+            ? {
+                ...revealScroll,
+                // Nothing shrinks a pane for the keyboard on iOS: the inset gives it room to
+                // scroll the field above it. Android resizes the window instead.
+                automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
+              }
+            : null)}
         >
-          {left}
+          {revealFocusedField ? (
+            <FocusRevealContext.Provider value={reveal}>{left}</FocusRevealContext.Provider>
+          ) : (
+            left
+          )}
         </ScrollView>
         <ScrollView testID={rightTestID} style={{ flex: flex.right }} {...scrollProps}>
           {right}

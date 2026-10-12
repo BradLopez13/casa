@@ -264,6 +264,7 @@ function ShoppingSplit({
         </>
       }
       leftTestID="shopping.pane.pending"
+      revealFocusedField
       rightTestID="shopping.pane.bought"
       refreshControl={refreshControl}
       keyboardShouldPersistTaps="handled"

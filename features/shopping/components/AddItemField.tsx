@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { pendingNames, planAdd } from '@/domain/shopping/screen';
@@ -6,6 +6,7 @@ import { suggest, type HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { useFocusReveal } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
@@ -69,9 +70,17 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   const { text, error, change, submit } = entry;
+  // In Compra's left pane, the field with its error and suggestions stays above the keyboard;
+  // elsewhere (on the door) this does nothing.
+  const reveal = useFocusReveal();
+  const block = useRef<View>(null);
+  const shown = entry.suggestions.length;
+  useEffect(() => {
+    if (focused) reveal(block.current);
+  }, [focused, error, shown, reveal]);
 
   return (
-    <View style={{ gap: space(3) }}>
+    <View ref={block} style={{ gap: space(3) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
         <TextInput
           testID="shopping.input"
