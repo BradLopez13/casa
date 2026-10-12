@@ -4,7 +4,6 @@ import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
 import type { ToggleVars } from '@/features/tasks/toggle';
 import { space } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
 import { DoneTray } from './DoneTray';
 import { TaskNote } from './TaskNote';
 
@@ -53,6 +52,3 @@ export const taskRowKey = (row: TaskListRow) => (row.kind === 'note' ? row.task.
 export function TaskRowSeparator() {
   return <View style={{ height: space(3) }} />;
 }
-
-/** Room under the last note so the floating "Nueva tarea" pill never covers it. */
-export const taskListContentStyle = { paddingBottom: MIN_TOUCH + space(12) };

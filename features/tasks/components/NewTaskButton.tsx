@@ -1,9 +1,33 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { newTaskListPadding, newTaskPlacement } from '@/features/tasks/newTaskPlacement';
 import { t } from '@/i18n';
-import { useTheme } from '@/ui/theme';
+import { space, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
+import { useLayout } from '@/ui/useLayout';
+
+const BUTTON_HEIGHT = MIN_TOUCH + space(1);
+
+/** The pill's offsets from the screen's right and bottom edges, clear of the safe areas. */
+function usePlacement() {
+  const insets = useSafeAreaInsets();
+  const { rail } = useLayout();
+  return newTaskPlacement({ insets, rail, edge: space(4) });
+}
+
+/** Room under the last note of a list that shows the pill, so the pill never covers it. */
+export function useNewTaskListStyle() {
+  const placement = usePlacement();
+  return {
+    paddingBottom: newTaskListPadding({
+      placement,
+      buttonHeight: BUTTON_HEIGHT,
+      clearance: space(7),
+    }),
+  };
+}
 
 /** Floating pill that opens the new-task form, pre-filling the assignee when one is chosen. */
 export function NewTaskButton({
@@ -14,7 +38,8 @@ export function NewTaskButton({
   assigneeId: string | null;
 }) {
   const router = useRouter();
-  const { colors, radii, space } = useTheme();
+  const { colors, radii } = useTheme();
+  const placement = usePlacement();
   return (
     <Pressable
       testID={testID}
@@ -28,9 +53,9 @@ export function NewTaskButton({
       }
       style={({ pressed }) => ({
         position: 'absolute',
-        right: space(4),
-        bottom: space(4),
-        minHeight: MIN_TOUCH + space(1),
+        right: placement.right,
+        bottom: placement.bottom,
+        minHeight: BUTTON_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         gap: space(1),

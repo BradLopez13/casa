@@ -5,14 +5,9 @@ import { selectWeek } from '@/domain/tasks/views';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
-import { NewTaskButton } from '@/features/tasks/components/NewTaskButton';
+import { NewTaskButton, useNewTaskListStyle } from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
-import {
-  TaskRow,
-  TaskRowSeparator,
-  taskListContentStyle,
-  taskRowKey,
-} from '@/features/tasks/components/TaskRow';
+import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { sectionIndexFor } from '@/features/tasks/sectionTarget';
 import {
@@ -33,6 +28,7 @@ const SCROLL_RETRY_MS = 100;
 export default function TasksScreen() {
   const { colors, space } = useTheme();
   const screen = useTaskScreen();
+  const listStyle = useNewTaskListStyle();
   const { today, userId, members, tasksQuery, assigneeId, filtered, marks } = screen;
   const [mode, setMode] = useState<TasksMode>('week');
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
@@ -171,7 +167,7 @@ export default function TasksScreen() {
               retryScroll(target);
             }, SCROLL_RETRY_MS);
           }}
-          contentContainerStyle={taskListContentStyle}
+          contentContainerStyle={listStyle}
         />
       </FridgeRefresh>
       <NewTaskButton testID="tasks.new-task" assigneeId={assigneeId} />

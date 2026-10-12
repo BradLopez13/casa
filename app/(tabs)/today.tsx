@@ -4,16 +4,11 @@ import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { tallyToday } from '@/domain/tasks/tally';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
-import { NewTaskButton } from '@/features/tasks/components/NewTaskButton';
+import { NewTaskButton, useNewTaskListStyle } from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
-import {
-  TaskRow,
-  TaskRowSeparator,
-  taskListContentStyle,
-  taskRowKey,
-} from '@/features/tasks/components/TaskRow';
+import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { scopeLabel } from '@/features/tasks/scope';
 import { todaySections } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
@@ -28,6 +23,7 @@ export default function TodayScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
   const screen = useTaskScreen();
+  const listStyle = useNewTaskListStyle();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const subtitleStyle: TextStyle = {
     color: colors.muted,
@@ -110,7 +106,7 @@ export default function TodayScreen() {
             />
           )}
           ItemSeparatorComponent={TaskRowSeparator}
-          contentContainerStyle={taskListContentStyle}
+          contentContainerStyle={listStyle}
         />
       </FridgeRefresh>
       <NewTaskButton testID="today.new-task" assigneeId={assigneeId} />
