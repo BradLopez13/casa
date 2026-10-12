@@ -26,7 +26,7 @@ export type Palette = {
   outline: string;
   /** The door handle. */
   handle: string;
-  /** Initials on a magnet. */
+  /** Initials on a magnet: the deepest navy of the brand ink, readable on every magnet colour. */
   magnetInk: string;
   magnet: Record<MagnetColor, string>;
   /** The fridge light revealed by pull-to-refresh. */
@@ -55,7 +55,7 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#8B7173',
     // Apricot is safe here: in light mode it never means "tappable".
     handle: '#F0AD83',
-    magnetInk: '#1A222B',
+    magnetInk: '#151C33',
     magnet: {
       mustard: '#D9A740',
       sage: '#6FA383',
@@ -83,7 +83,7 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#918B98',
     // Not apricot: in dark mode apricot is the colour of what can be tapped.
     handle: '#475377',
-    magnetInk: '#1A222B',
+    magnetInk: '#151C33',
     magnet: {
       mustard: '#E3B65A',
       sage: '#86B898',
@@ -121,18 +121,18 @@ export type Shadow = {
   elevation: number;
 };
 
-/** Depth exists only on magnets and notes. */
+/** Depth exists only on magnets and notes. Shadows are tinted with the brand ink, never grey. */
 export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow }> = {
   light: {
     magnet: {
-      shadowColor: '#1A222B',
+      shadowColor: '#263663',
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.32,
       shadowRadius: 5,
       elevation: 4,
     },
     note: {
-      shadowColor: '#1A222B',
+      shadowColor: '#263663',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.12,
       shadowRadius: 10,
@@ -141,14 +141,14 @@ export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow }> = {
   },
   dark: {
     magnet: {
-      shadowColor: '#000000',
+      shadowColor: '#0A0D1A',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.55,
       shadowRadius: 6,
       elevation: 5,
     },
     note: {
-      shadowColor: '#000000',
+      shadowColor: '#0A0D1A',
       shadowOffset: { width: 0, height: 5 },
       shadowOpacity: 0.45,
       shadowRadius: 10,
