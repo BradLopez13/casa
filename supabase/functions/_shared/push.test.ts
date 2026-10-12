@@ -20,7 +20,7 @@ const withTokens: OutboxRow = {
 
 const withoutTokens: OutboxRow = {
   id: 8,
-  title: 'Alguien nuevo en casa',
+  title: 'Alguien nuevo en el hogar',
   body: 'Berta se ha unido a Piso',
   data: { route: '/household/members' },
   tokens: [],
