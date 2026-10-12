@@ -77,7 +77,8 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#DBC7BD',
     cobalt: '#F0AD83',
     onCobalt: '#263663',
-    red: '#F08A80',
+    // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
+    red: '#F2808F',
     hairline: '#353C54',
     // Kept cool and grey so an unselected border never looks like the apricot selection.
     outline: '#918B98',

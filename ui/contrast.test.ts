@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAGNET_COLORS } from '@/domain/members/marks';
-import { contrastRatio } from './contrast';
+import { contrastRatio, hueDistance } from './contrast';
 import { palettes, type Scheme } from './tokens';
 
 const AA_TEXT = 4.5;
@@ -27,6 +27,21 @@ describe('contrastRatio', () => {
 
   it('rejects a colour it cannot read', () => {
     expect(() => contrastRatio('red', '#FFFFFF')).toThrow();
+  });
+});
+
+describe('hueDistance', () => {
+  it('measures the shorter way round the colour wheel', () => {
+    expect(hueDistance('#FF0000', '#00FF00')).toBeCloseTo(120, 5);
+    expect(hueDistance('#FF0000', '#FF0040')).toBeCloseTo(15, 0);
+    expect(hueDistance('#FF0040', '#FF0000')).toBeCloseTo(15, 0);
+  });
+});
+
+describe('dark palette keeps red apart from apricot', () => {
+  it('red sits at least 30° of hue away from the action colour', () => {
+    // Both are light salmon tones on navy: by hue alone "Vencida" must not read as tappable.
+    expect(hueDistance(palettes.dark.red, palettes.dark.cobalt)).toBeGreaterThanOrEqual(30);
   });
 });
 
