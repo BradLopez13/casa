@@ -235,6 +235,7 @@
   "tasks.section.done": "Hechas",
   "tasks.empty": "No hay tareas",
   "tasks.weekEmpty": "Nada en los próximos 7 días",
+  "tasks.dayEmpty": "Nada para este día",
   "tasks.stripDay": "{day}, {count} tareas",
   "tasks.stripDayOne": "{day}, 1 tarea",
   "recurrence.daily": "Cada día",

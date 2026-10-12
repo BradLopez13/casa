@@ -12,6 +12,10 @@ export type Layout = {
 
 export const RAIL_WIDTH = 88;
 export const SHEET_WIDTH = 560;
+/** Widest a single column of content gets, on any screen. */
+export const ONE_COLUMN_MAX = 640;
+/** Widest a pair of panes gets, side by side. */
+const TWO_PANE_MAX = 1200;
 
 const GUTTER: Record<SizeClass, number> = { compact: 20, medium: 24, expanded: 32, large: 48 };
 
@@ -35,7 +39,7 @@ export function layoutFor(width: number, height: number): Layout {
     shortHeight: height < 500,
     twoPane: wide,
     rail: wide,
-    contentMax: wide ? 1200 : 640,
+    contentMax: wide ? TWO_PANE_MAX : ONE_COLUMN_MAX,
     gutter: GUTTER[size],
   };
 }
