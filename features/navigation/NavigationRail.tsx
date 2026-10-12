@@ -65,15 +65,27 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
             })}
           >
             <View
+              collapsable={false}
               style={{
                 width: space(14),
                 height: space(8),
-                borderRadius: radii.pill,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: focused ? colors.cobalt : 'transparent',
               }}
             >
+              {/*
+               * The pill is its own view, mounted with its radius and colour together when the tab
+               * is selected. Toggling the colour of one view from transparent left later
+               * selections square on Android.
+               */}
+              {focused ? (
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { borderRadius: radii.pill, backgroundColor: colors.cobalt },
+                  ]}
+                />
+              ) : null}
               {options.tabBarIcon?.({ focused, color: tint, size: ICON_SIZE })}
             </View>
             <Text
