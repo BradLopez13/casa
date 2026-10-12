@@ -12,7 +12,7 @@ import Constants from 'expo-constants';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
@@ -228,10 +228,15 @@ function Guard() {
   // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
   // change while a screen is shown, so a fixed one lets a rotation swap the frame without
   // remounting the form. The sheet fades in and out; the full screen keeps the platform's slide.
-  const modal = {
-    presentation: 'transparentModal',
-    animation: modalFrame === 'sheet' ? 'fade' : undefined,
-  } as const;
+  // Kept by frame, so a resize within the same frame hands the stack the same options.
+  const modal = useMemo(
+    () =>
+      ({
+        presentation: 'transparentModal',
+        animation: modalFrame === 'sheet' ? 'fade' : undefined,
+      }) as const,
+    [modalFrame],
+  );
 
   return (
     <>
