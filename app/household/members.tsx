@@ -83,7 +83,7 @@ function formatExpiry(expiresAt: string): string {
 }
 
 export default function MembersScreen() {
-  const { colors } = useTheme();
+  const { colors, radii, shadows, space } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useSession();
@@ -221,8 +221,12 @@ export default function MembersScreen() {
   const markOf = (m: { userId: string; displayName: string }): MemberMark =>
     marks.get(m.userId) ?? { color: 'mustard', initial: firstInitial(m.displayName) };
 
+  // A section title sits further from what comes before it than from its own content.
   const heading = (key: MessageKey) => (
-    <Text accessibilityRole="header" style={{ color: colors.ink, fontSize: 20, fontWeight: '700' }}>
+    <Text
+      accessibilityRole="header"
+      style={{ marginTop: space(4), color: colors.ink, fontSize: 20, fontWeight: '700' }}
+    >
       {t(key)}
     </Text>
   );
@@ -248,7 +252,7 @@ export default function MembersScreen() {
           />
         </>
       ) : members.data ? (
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: space(3) }}>
           {members.data.map((m) => (
             <MemberRow
               key={m.userId}
@@ -262,7 +266,7 @@ export default function MembersScreen() {
           ))}
         </View>
       ) : (
-        <Text style={{ color: colors.muted }}>{t('members.loading')}</Text>
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
       )}
 
       <Button
@@ -298,10 +302,21 @@ export default function MembersScreen() {
         </>
       ) : invites.data ? (
         invites.data.length === 0 ? (
-          <Text style={{ color: colors.muted }}>{t('members.pendingEmpty')}</Text>
+          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.pendingEmpty')}</Text>
         ) : (
           invites.data.map((inv) => (
-            <View key={inv.id} testID={`members.invite-row.${inv.id}`} style={{ gap: 8 }}>
+            <View
+              key={inv.id}
+              testID={`members.invite-row.${inv.id}`}
+              // A pending invite is a note on the page, like the member rows above.
+              style={{
+                gap: space(3),
+                padding: space(4),
+                borderRadius: radii.note,
+                backgroundColor: colors.note,
+                ...shadows.note,
+              }}
+            >
               <Text style={{ color: colors.ink, fontSize: 16 }}>
                 {t('members.expires', { date: formatExpiry(inv.expiresAt) })}
               </Text>
@@ -318,14 +333,16 @@ export default function MembersScreen() {
           ))
         )
       ) : (
-        <Text style={{ color: colors.muted }}>{t('members.loading')}</Text>
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
       )}
-      <Button
-        testID="members.leave"
-        title={t('members.leave')}
-        variant="secondary"
-        onPress={onLeave}
-      />
+      <View style={{ marginTop: space(4) }}>
+        <Button
+          testID="members.leave"
+          title={t('members.leave')}
+          variant="secondary"
+          onPress={onLeave}
+        />
+      </View>
       {isOwner ? (
         <Button
           testID="members.delete-household"

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { signOut } from '@/features/auth/api';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
 import { createHousehold } from '@/features/households/api';
@@ -17,7 +17,7 @@ import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
 export default function OnboardingScreen() {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const create = useHouseholdMutation(createHousehold);
@@ -83,7 +83,11 @@ export default function OnboardingScreen() {
         loading={create.isPending}
         onPress={submitCreate}
       />
-      <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
+      {/* The second way in starts a new group, further from the first than its own parts are. */}
+      <Text
+        accessibilityRole="header"
+        style={{ marginTop: space(4), color: colors.ink, fontSize: 18, fontWeight: '600' }}
+      >
         {t('onboarding.linkTitle')}
       </Text>
       <TextField
@@ -101,13 +105,15 @@ export default function OnboardingScreen() {
         variant="secondary"
         onPress={submitJoin}
       />
-      <Button
-        testID="onboarding.sign-out"
-        title={t('auth.signOut')}
-        variant="secondary"
-        onPress={() => void signOut().catch(() => undefined)}
-      />
-      <DeleteAccountButton testID="onboarding.delete-account" />
+      <View style={{ marginTop: space(4), gap: space(3) }}>
+        <Button
+          testID="onboarding.sign-out"
+          title={t('auth.signOut')}
+          variant="secondary"
+          onPress={() => void signOut().catch(() => undefined)}
+        />
+        <DeleteAccountButton testID="onboarding.delete-account" />
+      </View>
     </Screen>
   );
 }
