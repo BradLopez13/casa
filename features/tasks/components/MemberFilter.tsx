@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
+import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { Magnet } from '@/ui/components/Magnet';
 import { useTheme } from '@/ui/theme';
 
@@ -13,16 +14,22 @@ type Props = {
   onToggle: (userId: string) => void;
 };
 
-/** A straight row of magnets, one per person; tapping one filters by them, tapping again clears. */
+/**
+ * A straight row of magnets, one per person; tapping one filters by them, tapping again clears.
+ * In a compact door (a phone on its side) the magnets are the medium size, ring included still a
+ * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
+ * keeps its initial and colour on screen and the name for screen readers.
+ */
 export function MemberFilter({ members, marks, userId, selected, onToggle }: Props) {
   const { colors, space } = useTheme();
+  const compact = useDoorCompact();
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       accessibilityRole="radiogroup"
       accessibilityLabel={t('tasks.filterLabel')}
-      contentContainerStyle={{ gap: space(3), paddingVertical: space(1) }}
+      contentContainerStyle={{ gap: space(3), paddingVertical: compact ? 0 : space(1) }}
     >
       {members.map((member) => {
         const mark = marks.get(member.userId);
@@ -33,7 +40,7 @@ export function MemberFilter({ members, marks, userId, selected, onToggle }: Pro
             <Magnet
               initial={mark.initial}
               color={mark.color}
-              size="lg"
+              size={compact ? 'md' : 'lg'}
               selected={member.userId === selected}
               accessibilityRole="radio"
               accessibilityLabel={name}
@@ -41,15 +48,17 @@ export function MemberFilter({ members, marks, userId, selected, onToggle }: Pro
               onPress={() => onToggle(member.userId)}
             />
             {/* The magnet already carries the name for screen readers. */}
-            <Text
-              numberOfLines={1}
-              maxFontSizeMultiplier={1.3}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{ color: colors.muted, fontSize: 13 }}
-            >
-              {name}
-            </Text>
+            {compact ? null : (
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.3}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{ color: colors.muted, fontSize: 13 }}
+              >
+                {name}
+              </Text>
+            )}
           </View>
         );
       })}

@@ -185,8 +185,8 @@ export function DoorHeader({
                 </View>
               ) : null}
             </View>
-            {/* The filter row already ends in its own padding, so the strip follows close. */}
-            {below ? <View style={{ ...column, marginTop: space(1) }}>{below}</View> : null}
+            {/* The ring around each magnet already leaves room, so the strip follows close. */}
+            {below ? <View style={column}>{below}</View> : null}
           </DoorCompactContext.Provider>
         </ScrollView>
       </View>
