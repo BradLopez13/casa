@@ -69,6 +69,7 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
             </Text>
             <View style={{ flex: 1, alignItems: 'flex-start', gap: space(1) }}>
               <Text
+                maxFontSizeMultiplier={1.3}
                 style={{
                   color: ink,
                   fontSize: 16,
@@ -83,6 +84,7 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
               ) : null}
             </View>
             <Text
+              maxFontSizeMultiplier={1.3}
               style={{
                 color: day.count > 0 ? ink : quiet,
                 fontSize: 16,
