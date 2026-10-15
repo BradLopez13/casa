@@ -21,17 +21,27 @@ export function useDoorCompact(): boolean {
 
 /**
  * The controls under a door's title (magnets, filter, counter): stacked in a full door, side by
- * side in one row in a compact one, each free to shrink so a horizontal filter scrolls instead of
- * pushing the next control out.
+ * side in one row in a compact one. In that row each control keeps its natural width and a
+ * control that does not fit beside the one before moves onto a line of its own, where it may
+ * shrink (a counter wraps its text, a long filter scrolls). Nothing is squeezed to make room for
+ * a neighbour, so enlarged text never runs over a magnet.
  */
 export function DoorControls({ children }: { children: ReactNode }) {
   const { space } = useTheme();
   const compact = useDoorCompact();
   if (!compact) return <View style={{ gap: space(4) }}>{children}</View>;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: space(5) }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        columnGap: space(5),
+        rowGap: space(2),
+      }}
+    >
       {Children.toArray(children).map((child, i) => (
-        <View key={i} style={{ flexShrink: 1 }}>
+        <View key={i} style={{ flexShrink: 1, minWidth: 0, maxWidth: '100%' }}>
           {child}
         </View>
       ))}
