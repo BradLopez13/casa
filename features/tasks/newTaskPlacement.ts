@@ -7,18 +7,24 @@ export type NewTaskPlacement = { right: number; bottom: number };
  * With the bottom tab bar, the bar already clears the bottom safe area, so only the side inset
  * (a notch in landscape) is added. With the rail there is no bar below the screen: the pill also
  * clears the home indicator.
+ *
+ * `anchor`, on a wide screen, is how far in from the right edge the content column ends
+ * (`columnRightOffset`): the button lines up with the column there rather than floating at the
+ * window's edge, far from the content. It never comes closer to the edge than without it.
  */
 export function newTaskPlacement({
   insets,
   rail,
   edge,
+  anchor = 0,
 }: {
   insets: { right: number; bottom: number };
   rail: boolean;
   edge: number;
+  anchor?: number;
 }): NewTaskPlacement {
   return {
-    right: edge + insets.right,
+    right: Math.max(edge + insets.right, anchor),
     bottom: edge + (rail ? insets.bottom : 0),
   };
 }

@@ -30,6 +30,31 @@ describe('newTaskPlacement', () => {
   });
 });
 
+describe('newTaskPlacement beside a content column', () => {
+  it('lines the button up with the column instead of the window edge', () => {
+    // The web at 1920 wide: the column's content ends 316 dp in from the right.
+    expect(
+      newTaskPlacement({ insets: { right: 0, bottom: 0 }, rail: true, edge: 16, anchor: 316 }),
+    ).toEqual({ right: 316, bottom: 16 });
+  });
+
+  it('never comes closer to the edge than without the anchor', () => {
+    const insets = { right: 47, bottom: 21 };
+    expect(newTaskPlacement({ insets, rail: true, edge: 16, anchor: 40 }).right).toBe(63);
+  });
+
+  it('pushes the round button lane in with it, so content still clears it', () => {
+    const placement = newTaskPlacement({
+      insets: { right: 0, bottom: 0 },
+      rail: true,
+      edge: 16,
+      anchor: 316,
+    });
+    const shape = newTaskShape({ shortHeight: true, pillHeight: 48 });
+    expect(newTaskLane({ placement, shape, gap: 12 })).toBe(316 + 56 + 12);
+  });
+});
+
 describe('newTaskListPadding', () => {
   it('keeps the current 92 dp under the list with the tab bar', () => {
     const placement = newTaskPlacement({ insets: phone, rail: false, edge: 16 });

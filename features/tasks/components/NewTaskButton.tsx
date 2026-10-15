@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   newTaskLane,
@@ -9,15 +9,24 @@ import {
   newTaskShape,
 } from '@/features/tasks/newTaskPlacement';
 import { t } from '@/i18n';
+import { columnRightOffset, columnRoom, paneColumn } from '@/ui/panes';
 import { space, useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
-/** The pill's offsets from the screen's right and bottom edges, clear of the safe areas. */
+/**
+ * The pill's offsets from the screen's right and bottom edges, clear of the safe areas. Beside
+ * the rail (a wide window) it lines up with the right edge of the door's content column, the
+ * frame the panes and Todas sit in, instead of the window's far edge.
+ */
 function usePlacement() {
   const insets = useSafeAreaInsets();
-  const { rail } = useLayout();
-  return newTaskPlacement({ insets, rail, edge: space(4) });
+  const layout = useLayout();
+  const { width } = useWindowDimensions();
+  const anchor = layout.rail
+    ? columnRightOffset(paneColumn(layout, insets, true), columnRoom(width, true, insets.left))
+    : 0;
+  return newTaskPlacement({ insets, rail: layout.rail, edge: space(4), anchor });
 }
 
 /** The labelled pill, or a round "+" on a short window (a phone on its side). */
