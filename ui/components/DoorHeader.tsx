@@ -58,6 +58,12 @@ type Props = {
   titleTestID?: string;
   children?: ReactNode;
   /**
+   * A short status line (Hoy's tally). In a full door it follows the controls; in a compact one
+   * it sits beside the title, inside the title's column, so it never competes with the magnets
+   * for the row and is never pushed below the door's 40 % height budget.
+   */
+  status?: ReactNode;
+  /**
    * A full-width row under the title and the controls (Tareas' day strip). In a full door it
    * follows the controls; in a compact one it runs under the whole row, so the title stays level
    * with the controls beside it.
@@ -83,6 +89,7 @@ export function DoorHeader({
   titleSize = 'large',
   titleTestID,
   children,
+  status,
   below,
 }: Props) {
   const { colors, radii, space } = useTheme();
@@ -179,7 +186,21 @@ export function DoorHeader({
               }}
             >
               <View style={{ flexShrink: 1, maxWidth: '50%' }}>
-                {heading}
+                {status ? (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      alignItems: 'baseline',
+                      columnGap: space(4),
+                    }}
+                  >
+                    {heading}
+                    {status}
+                  </View>
+                ) : (
+                  heading
+                )}
                 {sub}
               </View>
               {children ? (
@@ -224,6 +245,7 @@ export function DoorHeader({
         {heading}
         {sub}
         {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
+        {status ? <View style={{ marginTop: space(children ? 4 : 5) }}>{status}</View> : null}
         {below ? <View style={{ marginTop: space(4) }}>{below}</View> : null}
       </View>
     </View>

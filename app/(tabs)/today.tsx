@@ -21,7 +21,7 @@ import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/t
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
-import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
+import { DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -88,17 +88,15 @@ export default function TodayScreen() {
           </Text>
         </View>
       }
+      status={<TallyView tally={tally} scope={scopeLabel(assigneeId, userId, members)} />}
     >
-      <DoorControls>
-        <MemberFilter
-          members={members}
-          marks={screen.marks}
-          userId={userId}
-          selected={assigneeId}
-          onToggle={screen.toggleFilter}
-        />
-        <TallyView tally={tally} scope={scopeLabel(assigneeId, userId, members)} />
-      </DoorControls>
+      <MemberFilter
+        members={members}
+        marks={screen.marks}
+        userId={userId}
+        selected={assigneeId}
+        onToggle={screen.toggleFilter}
+      />
     </DoorHeader>
   );
 
