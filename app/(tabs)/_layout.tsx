@@ -35,7 +35,7 @@ function tabIcon(active: IconName, inactive: IconName) {
 const LABELS_SCALE = Platform.OS !== 'ios';
 
 /**
- * A tab's label on Android and the web: React Navigation's own look, capped at the rail's 1.6 and on a fixed line, so the
+ * A tab's label on Android and the web with enlarged text: React Navigation's own look, capped at the rail's 1.6 and on a fixed line, so the
  * bar's height (`tabBarHeight`) knows how tall it gets.
  */
 function TabLabel({
@@ -75,7 +75,9 @@ export default function TabsLayout() {
   const { rail } = useLayout();
   const { width, height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  // With enlarged text the bar grows with its labels, still clearing the gesture bar.
+  // With enlarged text the bar grows with its labels, still clearing the gesture bar. At the
+  // default size (or smaller) the bar and its labels are React Navigation's own, as before.
+  const enlarged = LABELS_SCALE && fontScale > 1;
   const barHeight = tabBarHeight({
     width,
     height,
@@ -100,9 +102,9 @@ export default function TabsLayout() {
             borderTopColor: colors.hairline,
             ...(barHeight === undefined ? null : { height: barHeight }),
           },
-          // Kept for iOS, which draws its own label.
+          // The default label's style, kept wherever the custom one is not used.
           tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-          tabBarLabel: LABELS_SCALE ? TabLabel : undefined,
+          tabBarLabel: enlarged ? TabLabel : undefined,
         }}
       >
         <Tabs.Screen
