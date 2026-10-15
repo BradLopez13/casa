@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import {
@@ -13,15 +13,15 @@ import {
 } from '@/domain/tasks/templates';
 import { useMembership } from '@/features/households/queries';
 import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
-import { HeaderAction } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH, displayFont } from '@/ui/tokens';
+import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
 
 const CHECK_SIZE = 26;
@@ -140,42 +140,18 @@ function TemplatesScreen() {
 
   return (
     <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space(2),
-          paddingHorizontal: space(4),
-          paddingVertical: space(2),
-          borderBottomWidth: 1,
-          borderBottomColor: colors.hairline,
+      <ModalHeader
+        title={t('templates.title')}
+        step={2}
+        cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: close }}
+        action={{
+          testID: 'templates.add',
+          label: failed ? t('templates.retry') : t('templates.add', { n: keys.length }),
+          onPress: add,
+          disabled: keys.length === 0 || saving,
+          busy: saving,
         }}
-      >
-        <HeaderAction testID="templates.cancel" label={t('templates.cancel')} onPress={close} />
-        <Text
-          accessibilityRole="header"
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            color: colors.ink,
-            fontFamily: displayFont,
-            fontSize: 18,
-            ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
-          }}
-        >
-          {t('templates.title')}
-        </Text>
-        <HeaderAction
-          testID="templates.add"
-          label={failed ? t('templates.retry') : t('templates.add', { n: keys.length })}
-          onPress={add}
-          disabled={keys.length === 0 || saving}
-          busy={saving}
-          strong
-        />
-      </View>
+      />
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: space(5),

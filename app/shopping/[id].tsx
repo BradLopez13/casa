@@ -1,13 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { useMembership } from '@/features/households/queries';
@@ -20,18 +13,17 @@ import {
   useShoppingItems,
 } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
-import { HeaderAction } from '@/features/tasks/components/TaskForm';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { displayFont } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
@@ -182,46 +174,22 @@ function EditForm({
 
   return (
     <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space(2),
-          paddingHorizontal: space(4),
-          paddingVertical: space(density.headerStep),
-          borderBottomWidth: 1,
-          borderBottomColor: colors.hairline,
+      <ModalHeader
+        title={t('shopping.edit.title')}
+        step={density.headerStep}
+        cancel={{
+          testID: 'shopping.edit.cancel',
+          label: t('shopping.edit.cancel'),
+          onPress: onCancel,
         }}
-      >
-        <HeaderAction
-          testID="shopping.edit.cancel"
-          label={t('shopping.edit.cancel')}
-          onPress={onCancel}
-        />
-        <Text
-          accessibilityRole="header"
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            color: colors.ink,
-            fontFamily: displayFont,
-            fontSize: 18,
-            ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
-          }}
-        >
-          {t('shopping.edit.title')}
-        </Text>
-        <HeaderAction
-          testID="shopping.edit.save"
-          label={t('shopping.edit.save')}
-          onPress={save}
-          disabled={!canSave}
-          busy={busy}
-          strong
-        />
-      </View>
+        action={{
+          testID: 'shopping.edit.save',
+          label: t('shopping.edit.save'),
+          onPress: save,
+          disabled: !canSave,
+          busy,
+        }}
+      />
       {online ? null : <OfflineBand />}
       <KeyboardAvoidingView
         enabled={avoidKeyboard}
