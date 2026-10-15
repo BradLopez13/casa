@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAGNET_COLORS } from '@/domain/members/marks';
 import { contrastRatio, hueDistance } from './contrast';
+import { toggleLook } from './toggleLook';
 import { palettes, type Scheme } from './tokens';
 
 const AA_TEXT = 4.5;
@@ -91,5 +92,23 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
 
   it.each(Object.entries(grounds))('field and dashed outlines on %s', (_, ground) => {
     expect(contrastRatio(p.outline, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground', (scheme) => {
+  const p = palettes[scheme];
+  const grounds = { page: p.page, note: p.note };
+
+  // WCAG 1.4.11: the parts that show a switch and its state need 3:1 against what is around them.
+  it.each(Object.entries(grounds))('off: track and thumb on %s', (_, ground) => {
+    const off = toggleLook(false, p);
+    expect(contrastRatio(off.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(off.thumb, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it.each(Object.entries(grounds))('on: track on %s, thumb on the track', (_, ground) => {
+    const on = toggleLook(true, p);
+    expect(contrastRatio(on.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 });
