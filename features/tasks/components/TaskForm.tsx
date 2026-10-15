@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MemberMark } from '@/domain/members/marks';
 import { syncMonthly } from '@/domain/recurrence/form';
@@ -9,13 +9,12 @@ import { dayHeading } from '@/domain/tasks/labels';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
-import { buttonLook } from '@/ui/buttonLook';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, displayFont } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
@@ -43,74 +42,6 @@ type Props = {
    */
   repeatEditable?: boolean;
 };
-
-export function HeaderAction({
-  testID,
-  label,
-  onPress,
-  disabled = false,
-  busy = false,
-  strong = false,
-}: {
-  testID: string;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  busy?: boolean;
-  strong?: boolean;
-}) {
-  const { colors, radii, space } = useTheme();
-  // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
-  // turns muted. Neither is faded, so the label stays readable.
-  const look = buttonLook('primary', disabled ? 'disabled' : 'enabled', colors);
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled, busy }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={space(1)}
-      style={({ pressed }) => ({
-        minWidth: MIN_TOUCH,
-        minHeight: MIN_TOUCH,
-        alignItems: strong ? 'flex-end' : 'flex-start',
-        justifyContent: 'center',
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      {/* The main action is a small cobalt pill, so it stands apart from "Cancelar" by shape and
-          not only by weight (in light mode cobalt is the same colour as the text). */}
-      <View
-        style={
-          strong
-            ? {
-                minHeight: INLINE_PILL_HEIGHT,
-                justifyContent: 'center',
-                paddingHorizontal: space(4),
-                borderRadius: radii.pill,
-                borderWidth: 1.5,
-                borderColor: look.border,
-                backgroundColor: look.fill,
-              }
-            : null
-        }
-      >
-        <Text
-          maxFontSizeMultiplier={1.3}
-          style={{
-            color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
-            fontSize: 17,
-            fontWeight: strong ? '600' : '400',
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   const { colors, space } = useTheme();
@@ -193,42 +124,18 @@ export function TaskForm({
 
   return (
     <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space(2),
-          paddingHorizontal: space(4),
-          paddingVertical: space(density.headerStep),
-          borderBottomWidth: 1,
-          borderBottomColor: colors.hairline,
+      <ModalHeader
+        title={title}
+        step={density.headerStep}
+        cancel={{ testID: 'task-form.cancel', label: t('taskForm.cancel'), onPress: onCancel }}
+        action={{
+          testID: 'task-form.save',
+          label: t('taskForm.save'),
+          onPress: save,
+          disabled: blank || saving,
+          busy: saving,
         }}
-      >
-        <HeaderAction testID="task-form.cancel" label={t('taskForm.cancel')} onPress={onCancel} />
-        <Text
-          accessibilityRole="header"
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            color: colors.ink,
-            fontFamily: displayFont,
-            fontSize: 18,
-            ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
-          }}
-        >
-          {title}
-        </Text>
-        <HeaderAction
-          testID="task-form.save"
-          label={t('taskForm.save')}
-          onPress={save}
-          disabled={blank || saving}
-          busy={saving}
-          strong
-        />
-      </View>
+      />
       <KeyboardAvoidingView
         enabled={avoidKeyboard}
         style={fill}

@@ -1,21 +1,26 @@
-import { Switch, type SwitchProps } from 'react-native';
+import { Platform, Switch, type SwitchProps } from 'react-native';
 import { useTheme } from '../theme';
+import { toggleLook } from '../toggleLook';
 
 /**
- * A switch in the Nido colours. Android paints the thumb with the system accent unless told
- * otherwise; here it follows the pill it sits on: onCobalt over the action colour when on, the
- * card colour over the outline when off.
+ * A switch in the Nido colours (`toggleLook`). Android paints the thumb with the system accent
+ * unless told otherwise, so both parts are always set. The web's Switch reads the thumb of the
+ * "on" state from `activeThumbColor` rather than `thumbColor`, and would otherwise paint it teal.
  */
 export function Toggle(
   props: Omit<SwitchProps, 'trackColor' | 'thumbColor' | 'ios_backgroundColor'>,
 ) {
   const { colors } = useTheme();
+  const on = toggleLook(true, colors);
+  const off = toggleLook(false, colors);
+  const web: object | null = Platform.OS === 'web' ? { activeThumbColor: on.thumb } : null;
   return (
     <Switch
       {...props}
-      trackColor={{ true: colors.cobalt, false: colors.outline }}
-      thumbColor={props.value ? colors.onCobalt : colors.note}
-      ios_backgroundColor={colors.outline}
+      {...web}
+      trackColor={{ true: on.track, false: off.track }}
+      thumbColor={props.value ? on.thumb : off.thumb}
+      ios_backgroundColor={off.track}
     />
   );
 }

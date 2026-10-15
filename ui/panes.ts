@@ -75,14 +75,22 @@ export function columnRoom(windowWidth: number, besideRail: boolean, insetLeft: 
 }
 
 /**
+ * How far in from the right edge of `room` (the width it is centred in) the content of a
+ * column ends: the centring margin plus the column's right padding. Whatever should line up with
+ * the column's right edge (the New task button on a wide screen) sits this far in.
+ */
+export function columnRightOffset(column: PaneColumn, room: number): number {
+  const frame = Math.min(room, column.maxWidth);
+  return Math.max(0, (room - frame) / 2) + column.paddingRight;
+}
+
+/**
  * The same frame with its content kept `lane` dp clear of the right edge of `room` (the width it
  * is centred in): for a button floating over the bottom right corner (the round "+" on a phone
  * on its side), so no row, heading or count ever sits under it. Only the right padding grows, and
  * only by what the centring margin and the gutter do not already give; a lane of 0 changes nothing.
  */
 export function clearRightLane(column: PaneColumn, room: number, lane: number): PaneColumn {
-  const frame = Math.min(room, column.maxWidth);
-  const margin = Math.max(0, (room - frame) / 2);
-  const extra = Math.max(0, lane - margin - column.paddingRight);
+  const extra = Math.max(0, lane - columnRightOffset(column, room));
   return extra === 0 ? column : { ...column, paddingRight: column.paddingRight + extra };
 }

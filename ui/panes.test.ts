@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { layoutFor } from './layout';
 import {
   clearRightLane,
+  columnRightOffset,
   columnRoom,
   oneColumn,
   paneColumn,
@@ -180,5 +181,20 @@ describe('clearRightLane', () => {
     const cleared = clearRightLane(column, room, lane);
     const frame = Math.min(room, cleared.maxWidth);
     expect((room - frame) / 2 + cleared.paddingRight).toBe(lane);
+  });
+});
+
+describe('columnRightOffset', () => {
+  it('measures from the right edge of the room to the content of a centred column', () => {
+    // The web at 1920 x 1080: 1832 beside the rail, a 1296 frame (1200 + 48 each side) centred.
+    const layout = layoutFor(1920, 1080);
+    const column = paneColumn(layout, { left: 0, right: 0 }, true);
+    expect(columnRightOffset(column, columnRoom(1920, true, 0))).toBe(268 + 48);
+  });
+
+  it('is only the right padding when the column fills the room', () => {
+    const layout = layoutFor(900, 700);
+    const column = paneColumn(layout, { left: 0, right: 20 }, true);
+    expect(columnRightOffset(column, columnRoom(900, true, 0))).toBe(32 + 20);
   });
 });

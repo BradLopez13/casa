@@ -21,17 +21,27 @@ export function useDoorCompact(): boolean {
 
 /**
  * The controls under a door's title (magnets, filter, counter): stacked in a full door, side by
- * side in one row in a compact one, each free to shrink so a horizontal filter scrolls instead of
- * pushing the next control out.
+ * side in one row in a compact one. In that row each control keeps its natural width and a
+ * control that does not fit beside the one before moves onto a line of its own, where it may
+ * shrink (a counter wraps its text, a long filter scrolls). Nothing is squeezed to make room for
+ * a neighbour, so enlarged text never runs over a magnet.
  */
 export function DoorControls({ children }: { children: ReactNode }) {
   const { space } = useTheme();
   const compact = useDoorCompact();
   if (!compact) return <View style={{ gap: space(4) }}>{children}</View>;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: space(5) }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        columnGap: space(5),
+        rowGap: space(2),
+      }}
+    >
       {Children.toArray(children).map((child, i) => (
-        <View key={i} style={{ flexShrink: 1 }}>
+        <View key={i} style={{ flexShrink: 1, minWidth: 0, maxWidth: '100%' }}>
           {child}
         </View>
       ))}
@@ -47,6 +57,12 @@ type Props = {
   titleSize?: DoorTitleSize;
   titleTestID?: string;
   children?: ReactNode;
+  /**
+   * A short status line (Hoy's tally). In a full door it follows the controls; in a compact one
+   * it sits beside the title, inside the title's column, so it never competes with the magnets
+   * for the row and is never pushed below the door's 40 % height budget.
+   */
+  status?: ReactNode;
   /**
    * A full-width row under the title and the controls (Tareas' day strip). In a full door it
    * follows the controls; in a compact one it runs under the whole row, so the title stays level
@@ -73,6 +89,7 @@ export function DoorHeader({
   titleSize = 'large',
   titleTestID,
   children,
+  status,
   below,
 }: Props) {
   const { colors, radii, space } = useTheme();
@@ -169,7 +186,21 @@ export function DoorHeader({
               }}
             >
               <View style={{ flexShrink: 1, maxWidth: '50%' }}>
-                {heading}
+                {status ? (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      alignItems: 'baseline',
+                      columnGap: space(4),
+                    }}
+                  >
+                    {heading}
+                    {status}
+                  </View>
+                ) : (
+                  heading
+                )}
                 {sub}
               </View>
               {children ? (
@@ -214,6 +245,7 @@ export function DoorHeader({
         {heading}
         {sub}
         {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
+        {status ? <View style={{ marginTop: space(children ? 4 : 5) }}>{status}</View> : null}
         {below ? <View style={{ marginTop: space(4) }}>{below}</View> : null}
       </View>
     </View>
