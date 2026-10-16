@@ -1,16 +1,24 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Text, View, type TextInput } from 'react-native';
 import { requestPasswordReset, resetPassword } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { fieldErrors, visibleAuthError } from '@/features/auth/form-errors';
+import {
+  nextPairState,
+  pairErrors,
+  pairMatches,
+  type PairState,
+} from '@/features/auth/password-pair';
 import { secondsLeft } from '@/features/auth/resend-cooldown';
 import { emailSchema, resetPasswordSchema } from '@/features/auth/schemas';
 import { t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { CodeField } from '@/ui/components/CodeField';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { PasswordField } from '@/ui/components/PasswordField';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
@@ -18,12 +26,21 @@ import { useTheme } from '@/ui/theme';
 const nowMs = () => Date.now();
 
 export default function ForgotPasswordScreen() {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const params = useLocalSearchParams<{ email?: string }>();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [pair, setPair] = useState<PairState>({
+    passwordTouched: false,
+    confirmTouched: false,
+    submitted: false,
+  });
+  const codeRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
   const [formError, setFormError] = useState<MessageKey | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,19 +100,30 @@ export default function ForgotPasswordScreen() {
 
   async function submit() {
     setFormError(null);
-    const parsed = resetPasswordSchema.safeParse({
-      code,
-      password,
-      passwordConfirm: password, // Temporary until Task 7/8
-    });
+    setPair((s) => nextPairState(s, 'submit'));
+    const parsed = resetPasswordSchema.safeParse({ code, password, passwordConfirm: confirm });
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error, { form: 'reset' }));
+      const found = fieldErrors(parsed.error, { form: 'reset' });
+      setErrors(found);
+      const onSubmit = pairErrors(
+        { passwordTouched: true, confirmTouched: true, submitted: true },
+        { password, confirm },
+      );
+      const first: TextInput | null =
+        (found.code ? codeRef.current : null) ??
+        (onSubmit.password ? passwordRef.current : null) ??
+        (onSubmit.confirm ? confirmRef.current : null);
+      first?.focus();
       return;
     }
     setErrors({});
     setLoading(true);
     try {
-      await resetPassword({ email: email.trim(), ...parsed.data });
+      await resetPassword({
+        email: email.trim(),
+        code: parsed.data.code,
+        password: parsed.data.password,
+      });
       // The new session makes the route guard move on.
     } catch (e) {
       showFailure(e);
@@ -108,6 +136,13 @@ export default function ForgotPasswordScreen() {
     const key = errors[name];
     return key ? t(key) : undefined;
   };
+
+  const shownPair = pairErrors(pair, { password, confirm });
+  const pairError = (name: 'password' | 'confirm') => {
+    const key = shownPair[name];
+    return key ? t(`auth.errors.${key}`) : undefined;
+  };
+  const matches = pairMatches({ password, confirm });
 
   return (
     <CenteredCard>
@@ -130,6 +165,8 @@ export default function ForgotPasswordScreen() {
           <Button
             testID="forgot-password.send"
             title={t('auth.forgot.send')}
+            icon={actionIcons.sendCode}
+            width="full"
             onPress={() => void sendCode()}
             loading={loading}
           />
@@ -140,27 +177,49 @@ export default function ForgotPasswordScreen() {
             {t('auth.forgot.sent')}
           </Text>
           <CodeField
+            ref={codeRef}
             testID="forgot-password.code"
             label={t('auth.verify.code')}
             value={code}
             onChangeText={setCode}
             error={fieldError('code')}
           />
-          <TextField
-            testID="forgot-password.password"
-            label={t('auth.forgot.newPassword')}
-            value={password}
-            onChangeText={setPassword}
-            error={fieldError('password')}
-            secureTextEntry
+          <View style={{ gap: space(2) }}>
+            <PasswordField
+              ref={passwordRef}
+              testID="forgot-password.password"
+              label={t('auth.forgot.newPassword')}
+              value={password}
+              onChangeText={setPassword}
+              onBlur={() => setPair((s) => nextPairState(s, 'blurPassword'))}
+              error={pairError('password')}
+              textContentType="newPassword"
+              autoComplete="new-password"
+            />
+            {shownPair.password ? null : (
+              <Text style={{ color: colors.muted, fontSize: 14 }}>
+                {t('auth.hints.passwordRule')}
+              </Text>
+            )}
+          </View>
+          <PasswordField
+            ref={confirmRef}
+            testID="forgot-password.password-confirm"
+            label={t('auth.fields.passwordConfirm')}
+            value={confirm}
+            onChangeText={setConfirm}
+            onBlur={() => setPair((s) => nextPairState(s, 'blurConfirm'))}
+            error={pairError('confirm')}
             textContentType="newPassword"
             autoComplete="new-password"
-            autoCapitalize="none"
+            confirmedLabel={matches ? t('auth.hints.passwordMatch') : undefined}
           />
           {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
           <Button
             testID="forgot-password.submit"
             title={t('auth.forgot.submit')}
+            icon={actionIcons.saveAndEnter}
+            width="full"
             onPress={() => void submit()}
             loading={loading}
           />
@@ -169,7 +228,9 @@ export default function ForgotPasswordScreen() {
             title={
               left > 0 ? t('auth.verify.resendIn', { seconds: left }) : t('auth.verify.resend')
             }
-            variant="secondary"
+            variant="tertiary"
+            icon={actionIcons.resend}
+            width="hug"
             disabled={left > 0}
             loading={resending}
             onPress={() => void resend()}
