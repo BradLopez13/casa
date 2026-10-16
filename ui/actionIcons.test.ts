@@ -27,6 +27,8 @@ describe('actionIcons', () => {
         'close',
         'add',
         'openPhoneSettings',
+        'people',
+        'chevron',
       ].sort(),
     );
   });

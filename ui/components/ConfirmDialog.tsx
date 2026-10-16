@@ -80,6 +80,7 @@ export function ConfirmDialog({
               testID="members.confirm"
               title={content.confirmLabel}
               variant="primary"
+              width="full"
               tone={content.destructive ? 'destructive' : 'default'}
               loading={loading}
               onPress={onConfirm}
@@ -88,6 +89,7 @@ export function ConfirmDialog({
               testID="members.cancel"
               title={t('members.cancel')}
               variant="secondary"
+              width="full"
               disabled={loading}
               onPress={onCancel}
             />

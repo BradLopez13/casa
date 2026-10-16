@@ -36,7 +36,7 @@ export function Button({
   variant = 'primary',
   tone = 'default',
   icon,
-  width = 'full',
+  width = 'hug',
 }: Props) {
   const { colors, radii } = useTheme();
   const [focused, setFocused] = useState(false);

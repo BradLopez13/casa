@@ -21,6 +21,8 @@ export const actionIcons = {
   close: 'close',
   add: 'add',
   openPhoneSettings: 'settings-outline',
+  people: 'people-outline',
+  chevron: 'chevron-forward',
 } as const;
 
 export type ActionIcon = (typeof actionIcons)[keyof typeof actionIcons];
