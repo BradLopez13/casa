@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { authErrorKey, fieldErrors } from './form-errors';
-import { signInSchema, signUpSchema } from './schemas';
+import { resetPasswordSchema, signInSchema, signUpSchema } from './schemas';
 
 describe('fieldErrors', () => {
   it('maps sign-up issues to one i18n key per field', () => {
@@ -31,6 +31,20 @@ describe('fieldErrors', () => {
     if (r.success) throw new Error('expected failure');
     expect(fieldErrors(r.error, { form: 'signIn' })).toEqual({
       password: 'auth.errors.passwordRequired',
+    });
+  });
+
+  it('maps a bad code', () => {
+    const r = resetPasswordSchema.safeParse({ code: '12', password: '12345678' });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'reset' })).toEqual({ code: 'auth.errors.codeInvalid' });
+  });
+
+  it('maps a short password on reset', () => {
+    const r = resetPasswordSchema.safeParse({ code: '123456', password: '123' });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'reset' })).toEqual({
+      password: 'auth.errors.passwordTooShort',
     });
   });
 });
