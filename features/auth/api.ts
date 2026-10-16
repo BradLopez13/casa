@@ -9,11 +9,19 @@ export type { AuthErrorCode } from './errors';
 type SignUpArgs = { displayName: string; email: string; password: string };
 type SignInArgs = { email: string; password: string };
 
-export async function signUp({ displayName, email, password }: SignUpArgs): Promise<void> {
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export async function signUp({
+  displayName,
+  email,
+  password,
+}: SignUpArgs): Promise<'verify' | 'signed-in'> {
   let result;
   try {
     result = await supabase.auth.signUp({
-      email,
+      email: normalizeEmail(email),
       password,
       options: { data: { display_name: displayName } },
     });
@@ -23,16 +31,94 @@ export async function signUp({ displayName, email, password }: SignUpArgs): Prom
   if (result.error) throw toAuthFailure(result.error);
   // With email-enumeration protection, an existing email returns a user with no identities.
   if (result.data.user?.identities?.length === 0) throw new AuthFailure('EMAIL_TAKEN');
+  return result.data.session ? 'signed-in' : 'verify';
 }
 
 export async function signIn({ email, password }: SignInArgs): Promise<void> {
+  const normalized = normalizeEmail(email);
   let result;
   try {
-    result = await supabase.auth.signInWithPassword({ email, password });
+    result = await supabase.auth.signInWithPassword({ email: normalized, password });
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (!result.error) return;
+  const failure = toAuthFailure(result.error);
+  if (failure.code === 'EMAIL_NOT_CONFIRMED') {
+    // Send a fresh code so the user can finish verifying. Best effort: never masks the error.
+    await resendSignUpCode(normalized).catch(() => undefined);
+  }
+  throw failure;
+}
+
+export async function verifySignUpCode({
+  email,
+  code,
+}: {
+  email: string;
+  code: string;
+}): Promise<void> {
+  let result;
+  try {
+    result = await supabase.auth.verifyOtp({
+      email: normalizeEmail(email),
+      token: code,
+      type: 'signup',
+    });
   } catch (e) {
     throw toAuthFailure(e);
   }
   if (result.error) throw toAuthFailure(result.error);
+}
+
+export async function resendSignUpCode(email: string): Promise<void> {
+  let result;
+  try {
+    result = await supabase.auth.resend({ type: 'signup', email: normalizeEmail(email) });
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (result.error) throw toAuthFailure(result.error);
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  let result;
+  try {
+    result = await supabase.auth.resetPasswordForEmail(normalizeEmail(email));
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (result.error) throw toAuthFailure(result.error);
+}
+
+/** Verifies the recovery code (which signs the user in), then sets the new password. */
+export async function resetPassword({
+  email,
+  code,
+  password,
+}: {
+  email: string;
+  code: string;
+  password: string;
+}): Promise<void> {
+  let verified;
+  try {
+    verified = await supabase.auth.verifyOtp({
+      email: normalizeEmail(email),
+      token: code,
+      type: 'recovery',
+    });
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (verified.error) throw toAuthFailure(verified.error);
+  let updated;
+  try {
+    updated = await supabase.auth.updateUser({ password });
+  } catch (e) {
+    throw toAuthFailure(e);
+  }
+  if (updated.error) throw toAuthFailure(updated.error);
 }
 
 export async function signOut(): Promise<void> {
