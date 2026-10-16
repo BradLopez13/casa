@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toAppError } from '@/data/supabase/errors';
 import { deleteFailureKind, type DeleteFailure } from '@/domain/account/delete';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -32,7 +33,9 @@ export function DeleteAccountButton({
       <Button
         testID={testID}
         title={t('settings.deleteAccount')}
-        variant="danger"
+        variant="tertiary"
+        tone="destructive"
+        icon={actionIcons.delete}
         disabled={disabled}
         onPress={() => {
           setFailure(null);

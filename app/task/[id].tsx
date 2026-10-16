@@ -14,6 +14,7 @@ import { taskErrorMessage } from '@/features/tasks/errors';
 import { useSkipTask, useTaskMutation, useTasks } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -152,7 +153,9 @@ function EditTaskScreen() {
                 <Button
                   testID="task-form.delete"
                   title={t('taskForm.delete')}
-                  variant="danger"
+                  variant="tertiary"
+                  tone="destructive"
+                  icon={actionIcons.delete}
                   // A saved edit or skip is already closing the modal: no confirm dialog on top.
                   disabled={
                     save.isPending ||

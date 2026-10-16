@@ -26,6 +26,7 @@ import { forgetHouseholdData } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
 import { locale, t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
@@ -352,7 +353,9 @@ export default function MembersScreen() {
         <Button
           testID="members.delete-household"
           title={t('members.deleteHousehold')}
-          variant="danger"
+          variant="tertiary"
+          tone="destructive"
+          icon={actionIcons.delete}
           onPress={() => {
             setFooterError(undefined);
             setPending({ kind: 'delete' });

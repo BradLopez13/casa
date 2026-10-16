@@ -14,6 +14,7 @@ import {
 } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -228,7 +229,9 @@ function EditForm({
             <Button
               testID="shopping.edit.delete"
               title={t('shopping.edit.delete')}
-              variant="danger"
+              variant="tertiary"
+              tone="destructive"
+              icon={actionIcons.delete}
               disabled={!online || busy}
               onPress={onDelete}
             />

@@ -79,7 +79,8 @@ export function ConfirmDialog({
             <Button
               testID="members.confirm"
               title={content.confirmLabel}
-              variant={content.destructive ? 'danger' : 'primary'}
+              variant="primary"
+              tone={content.destructive ? 'destructive' : 'default'}
               loading={loading}
               onPress={onConfirm}
             />

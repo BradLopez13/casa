@@ -53,8 +53,9 @@ export const palettes: Record<Scheme, Palette> = {
     // Same as ink here, so actions must also differ by shape (pill, border, underline, icon).
     cobalt: '#263663',
     onCobalt: '#FFF6E8',
-    // The light apricot of the door: a warm fill, not a border; cobalt text on it is 9.3:1.
-    tonal: '#FBE0CD',
+    // A deeper apricot than the door (#FBE0CD) and the page, so the pill shows on both; cobalt text
+    // on it stays above 4.5:1.
+    tonal: '#F5CDAE',
     red: '#B4382E',
     // White on the red pill: 5.9:1.
     onRed: '#FFFFFF',
