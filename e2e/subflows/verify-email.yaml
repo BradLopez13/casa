@@ -1,0 +1,18 @@
+# Types the 6-digit code that sign-up emailed to ${output.email} (read from Mailpit) and confirms.
+# Run right after tapping sign-up.submit.
+appId: com.bradlopez13.casa
+---
+- extendedWaitUntil:
+    visible:
+      id: verify-email.code
+    timeout: 15000
+- runScript:
+    file: ../scripts/read-email-code.js
+    env:
+      EMAIL: ${output.email}
+- tapOn:
+    id: verify-email.code
+- inputText: ${output.code}
+- hideKeyboard
+- tapOn:
+    id: verify-email.submit

@@ -41,6 +41,7 @@ appId: com.bradlopez13.casa
 - hideKeyboard
 - tapOn:
     id: sign-up.submit
+- runFlow: subflows/verify-email.yaml
 
 # The pending invite survives the sign-up: the invite screen shows, not the onboarding
 - extendedWaitUntil:

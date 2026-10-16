@@ -78,7 +78,7 @@ jobs:
         with:
           version: 2.119.0
       - name: Start local Supabase
-        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
       - run: pnpm e2e:fixtures
       - run: pnpm e2e:env
 

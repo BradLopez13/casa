@@ -37,7 +37,13 @@ export default function SignInScreen() {
       await signIn(parsed.data);
       // The route guard moves on once the session changes.
     } catch (e) {
-      setFormError(authErrorKey(toAuthFailure(e).code));
+      const code = toAuthFailure(e).code;
+      if (code === 'EMAIL_NOT_CONFIRMED') {
+        // The code was already re-sent: go and type it.
+        router.push({ pathname: '/verify-email', params: { email: parsed.data.email } });
+      } else {
+        setFormError(authErrorKey(code));
+      }
     } finally {
       setLoading(false);
     }
