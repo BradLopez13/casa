@@ -23,6 +23,7 @@ export function ListRow({ icon, title, onPress, testID }: Props) {
       onPress={onPress}
       style={({ pressed }) => ({
         minHeight: 56,
+        paddingVertical: space(3),
         flexDirection: 'row',
         alignItems: 'center',
         gap: space(3),
@@ -41,7 +42,9 @@ export function ListRow({ icon, title, onPress, testID }: Props) {
         />
       ) : null}
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '400' }}>{title}</Text>
+        <Text style={{ color: colors.ink, fontSize: 17, lineHeight: 24, fontWeight: '400' }}>
+          {title}
+        </Text>
       </View>
       <Ionicons
         name={actionIcons.chevron}

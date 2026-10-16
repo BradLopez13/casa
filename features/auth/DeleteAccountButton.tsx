@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 import { toAppError } from '@/data/supabase/errors';
 import { deleteFailureKind, type DeleteFailure } from '@/domain/account/delete';
 import { t } from '@/i18n';
@@ -29,9 +30,10 @@ export function DeleteAccountButton({
   const [failure, setFailure] = useState<DeleteFailure | null>(null);
 
   return (
-    <>
+    <View>
       <Button
         testID={testID}
+        width="hug"
         title={t('settings.deleteAccount')}
         variant="tertiary"
         tone="destructive"
@@ -49,6 +51,7 @@ export function DeleteAccountButton({
             testID={`${testID}.go-members`}
             title={t('settings.goToMembers')}
             variant="secondary"
+            width="hug"
             onPress={() => router.push('/household/members')}
           />
         </>
@@ -72,6 +75,6 @@ export function DeleteAccountButton({
           })
         }
       />
-    </>
+    </View>
   );
 }
