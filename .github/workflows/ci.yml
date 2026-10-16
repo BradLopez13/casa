@@ -95,6 +95,18 @@ jobs:
           curl -fsSL https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # The runner's command-line tools predate SDK XML v4, and their avdmanager crashes
+      # ("hwMap is null") creating the AVD. Install the latest ones in their place first.
+      - name: Update Android command-line tools
+        run: |
+          tools="$ANDROID_HOME/cmdline-tools"
+          yes | "$tools/latest/bin/sdkmanager" --install 'cmdline-tools;latest' > /dev/null
+          if [ -d "$tools/latest-2" ]; then
+            rm -rf "$tools/latest"
+            mv "$tools/latest-2" "$tools/latest"
+          fi
+          "$tools/latest/bin/sdkmanager" --version
+
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
