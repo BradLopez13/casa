@@ -10,7 +10,8 @@ type Input = {
 export function visibleProviders({ env, platform, inExpoGo }: Input): SocialProvider[] {
   if (inExpoGo && platform !== 'web') return [];
   const list: SocialProvider[] = [];
-  if (env.google === '1') list.push('google');
+  // No iOS client ID until delivery 2 (phase 9): GIDSignIn would crash, so Google is hidden on iOS.
+  if (env.google === '1' && platform !== 'ios') list.push('google');
   if (env.apple === '1') list.push('apple');
   return list;
 }

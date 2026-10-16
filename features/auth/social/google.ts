@@ -21,7 +21,11 @@ export async function signInWithGoogle(): Promise<void> {
     const token = r.data.idToken;
     if (!token) throw new AuthFailure('UNKNOWN');
     const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token });
-    if (error) throw error;
+    if (error) {
+      // Forget the Google account so the next tap shows the chooser instead of retrying it.
+      await GoogleSignin.signOut().catch(() => undefined);
+      throw error;
+    }
   } catch (e) {
     throw toSocialFailure(e);
   }

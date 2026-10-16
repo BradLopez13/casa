@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appleFullName, callbackCancelled, callbackCode } from './nonce';
+import { appleFullName, callbackCancelled, callbackCode, callbackOutcome } from './nonce';
 
 describe('appleFullName', () => {
   it('joins given and family name', () => {
@@ -22,6 +22,19 @@ describe('callbackCode', () => {
   it('is null without a code', () => {
     expect(callbackCode({})).toBeNull();
     expect(callbackCode({ error: 'access_denied' })).toBeNull();
+  });
+});
+
+describe('callbackOutcome', () => {
+  it('exchanges when there is a code', () => {
+    expect(callbackOutcome({ code: 'abc' })).toEqual({ kind: 'exchange', code: 'abc' });
+  });
+  it('is silent on a cancellation', () => {
+    expect(callbackOutcome({ error: 'access_denied' })).toEqual({ kind: 'cancelled' });
+  });
+  it('is an error with no code and no cancellation', () => {
+    expect(callbackOutcome({})).toEqual({ kind: 'error' });
+    expect(callbackOutcome({ error: 'server_error' })).toEqual({ kind: 'error' });
   });
 });
 

@@ -16,6 +16,15 @@ export function callbackCode(params: Record<string, string | string[] | undefine
   return code ? code : null;
 }
 
+/** What the callback screen should do: exchange a code, stay quiet (cancelled), or report a failure. */
+export function callbackOutcome(
+  params: Record<string, string | string[] | undefined>,
+): { kind: 'exchange'; code: string } | { kind: 'cancelled' } | { kind: 'error' } {
+  const code = callbackCode(params);
+  if (code) return { kind: 'exchange', code };
+  return callbackCancelled(params) ? { kind: 'cancelled' } : { kind: 'error' };
+}
+
 /** True when the callback came back because the user backed out (denied, or cancelled). */
 export function callbackCancelled(params: Record<string, string | string[] | undefined>): boolean {
   const raw = params.error;

@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { exchangeCodeOnce } from '@/features/auth/social/exchange';
-import { callbackCode } from '@/features/auth/social/nonce';
+import { callbackOutcome } from '@/features/auth/social/nonce';
 import { t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
 
@@ -16,14 +16,21 @@ export default function AuthCallback() {
   const { colors } = useTheme();
 
   useEffect(() => {
-    const code = callbackCode(params);
-    if (!code) {
-      router.replace('/sign-in');
+    const outcome = callbackOutcome(params);
+    if (outcome.kind !== 'exchange') {
+      // A cancellation is silent; anything else tells the sign-in screen to show an error.
+      router.replace(
+        outcome.kind === 'cancelled'
+          ? '/sign-in'
+          : { pathname: '/sign-in', params: { error: 'callback' } },
+      );
       return;
     }
     // Shared and memoised per code: re-renders, or the Android browser flow that exchanges
     // the same link, never use the single-use code twice.
-    exchangeCodeOnce(code).catch(() => router.replace('/sign-in'));
+    exchangeCodeOnce(outcome.code).catch(() =>
+      router.replace({ pathname: '/sign-in', params: { error: 'callback' } }),
+    );
   }, [params, router]);
 
   return (

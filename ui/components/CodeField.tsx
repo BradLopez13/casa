@@ -23,7 +23,7 @@ export function CodeField({ label, value, onChangeText, error, testID }: Props) 
       keyboardType="number-pad"
       textContentType="oneTimeCode"
       autoComplete="one-time-code"
-      maxLength={7}
+      maxLength={9}
       autoCorrect={false}
       inputStyle={{ fontFamily: MONOSPACE, fontSize: 28, letterSpacing: 4, textAlign: 'center' }}
     />

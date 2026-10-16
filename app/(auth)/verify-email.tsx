@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { resendSignUpCode, verifySignUpCode } from '@/features/auth/api';
@@ -76,6 +76,8 @@ export default function VerifyEmailScreen() {
       setResending(false);
     }
   }
+
+  if (!email) return <Redirect href="/sign-up" />;
 
   return (
     <CenteredCard>

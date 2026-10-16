@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { signIn } from '@/features/auth/api';
@@ -19,6 +19,7 @@ export default function SignInScreen() {
   const { hasPendingInvite } = usePendingInvite();
   const { colors } = useTheme();
   const router = useRouter();
+  const { error: errorParam } = useLocalSearchParams<{ error?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
@@ -49,6 +50,9 @@ export default function SignInScreen() {
       setLoading(false);
     }
   }
+
+  // Sent by /auth/callback when the browser sign-in came back without a usable code.
+  const shownError = formError ?? (errorParam === 'callback' ? authErrorKey('UNKNOWN') : null);
 
   const fieldError = (name: string) => {
     const key = errors[name];
@@ -87,7 +91,7 @@ export default function SignInScreen() {
         autoComplete="current-password"
         autoCapitalize="none"
       />
-      {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
+      {shownError ? <ErrorText>{t(shownError)}</ErrorText> : null}
       <Button
         testID="sign-in.submit"
         title={t('auth.signIn.submit')}
