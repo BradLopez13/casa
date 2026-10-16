@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { resendSignUpCode, verifySignUpCode } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
-import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
+import { fieldErrors, visibleAuthError } from '@/features/auth/form-errors';
 import { secondsLeft } from '@/features/auth/resend-cooldown';
 import { codeSchema } from '@/features/auth/schemas';
 import { t, type MessageKey } from '@/i18n';
@@ -16,8 +16,6 @@ import { useTheme } from '@/ui/theme';
 import { z } from 'zod';
 
 const nowMs = () => Date.now();
-
-const SHOWN_ERRORS = new Set(['INVALID_CODE', 'RATE_LIMITED', 'NETWORK', 'UNKNOWN']);
 
 export default function VerifyEmailScreen() {
   const { colors } = useTheme();
@@ -42,8 +40,7 @@ export default function VerifyEmailScreen() {
   }, [left]);
 
   function showFailure(e: unknown) {
-    const code = toAuthFailure(e).code;
-    setFormError(SHOWN_ERRORS.has(code) ? authErrorKey(code) : null);
+    setFormError(visibleAuthError(toAuthFailure(e).code));
   }
 
   async function submit() {

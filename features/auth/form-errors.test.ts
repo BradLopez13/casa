@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authErrorKey, fieldErrors } from './form-errors';
+import { authErrorKey, fieldErrors, visibleAuthError } from './form-errors';
 import { resetPasswordSchema, signInSchema, signUpSchema } from './schemas';
 
 describe('fieldErrors', () => {
@@ -52,5 +52,16 @@ describe('fieldErrors', () => {
 describe('authErrorKey', () => {
   it('namespaces the code', () => {
     expect(authErrorKey('EMAIL_TAKEN')).toBe('auth.errors.EMAIL_TAKEN');
+  });
+});
+
+describe('visibleAuthError', () => {
+  it('hides a cancelled social sign-in', () => {
+    expect(visibleAuthError('OAUTH_CANCELLED')).toBeNull();
+  });
+
+  it('shows every other code', () => {
+    expect(visibleAuthError('INVALID_CODE')).toBe('auth.errors.INVALID_CODE');
+    expect(visibleAuthError('UNKNOWN')).toBe('auth.errors.UNKNOWN');
   });
 });

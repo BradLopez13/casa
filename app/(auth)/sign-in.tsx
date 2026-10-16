@@ -98,6 +98,14 @@ export default function SignInScreen() {
         variant="secondary"
         onPress={() => router.replace('/sign-up')}
       />
+      <Button
+        testID="sign-in.forgot-password"
+        title={t('auth.forgot.link')}
+        variant="secondary"
+        onPress={() =>
+          router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+        }
+      />
     </CenteredCard>
   );
 }

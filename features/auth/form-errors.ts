@@ -34,3 +34,8 @@ export function fieldErrors(
 export function authErrorKey(code: AuthErrorCode): MessageKey {
   return `auth.errors.${code}`;
 }
+
+/** Error key to show for a failure, or null when it needs no message (the user cancelled). */
+export function visibleAuthError(code: AuthErrorCode): MessageKey | null {
+  return code === 'OAUTH_CANCELLED' ? null : authErrorKey(code);
+}
