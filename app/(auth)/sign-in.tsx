@@ -6,6 +6,7 @@ import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
 import { signInSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
+import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -57,6 +58,7 @@ export default function SignInScreen() {
   return (
     <CenteredCard>
       <ScreenTitle>{t('auth.signIn.title')}</ScreenTitle>
+      <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
           {t('auth.pendingInvite')}

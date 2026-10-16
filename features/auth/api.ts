@@ -125,6 +125,8 @@ export async function signOut(): Promise<void> {
   // While still signed in, stop the server sending to this phone. Best effort: a failure here
   // never blocks the sign-out.
   await forgetPushRegistration().catch(() => undefined);
+  // Lazy import: the Google module is native and must not load in Expo Go or Node.
+  await import('./social/google').then((m) => m.signOutOfGoogle()).catch(() => undefined);
   // supabase-js already drops the local session (and emits SIGNED_OUT) when the global
   // sign-out fails with a non-4xx error. Only if a session still remains do we fall back
   // to a local sign-out, so the user is never stuck signed in.

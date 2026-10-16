@@ -6,6 +6,7 @@ import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
 import { signUpSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
+import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -61,6 +62,7 @@ export default function SignUpScreen() {
   return (
     <CenteredCard>
       <ScreenTitle>{t('auth.signUp.title')}</ScreenTitle>
+      <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-up.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
           {t('auth.pendingInvite')}

@@ -1,0 +1,98 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { toAuthFailure } from '@/features/auth/errors';
+import { visibleAuthError } from '@/features/auth/form-errors';
+import { t, type MessageKey } from '@/i18n';
+import { ErrorText } from '@/ui/components/ErrorText';
+import { useTheme } from '@/ui/theme';
+import { CONTROL_HEIGHT } from '@/ui/tokens';
+import { GoogleMark } from './GoogleMark';
+import { visibleProviders, type SocialProvider } from './providers';
+
+// Google's official button colours.
+const GOOGLE_LOOK = {
+  light: { fill: '#FFFFFF', text: '#1F1F1F', border: '#747775' },
+  dark: { fill: '#131314', text: '#E3E3E3', border: '#8E918F' },
+} as const;
+
+export function SocialButtons() {
+  const { scheme, colors, radii, space } = useTheme();
+  const [busy, setBusy] = useState<SocialProvider | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
+
+  const providers = visibleProviders({
+    env: {
+      google: process.env.EXPO_PUBLIC_AUTH_GOOGLE,
+      apple: process.env.EXPO_PUBLIC_AUTH_APPLE,
+    },
+    platform: Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web',
+    inExpoGo: Constants.executionEnvironment === ExecutionEnvironment.StoreClient,
+  });
+  if (providers.length === 0) return null;
+
+  async function run(provider: SocialProvider, action: () => Promise<void>) {
+    setError(null);
+    setBusy(provider);
+    try {
+      await action();
+      // The route guard moves on once the session changes.
+    } catch (e) {
+      setError(visibleAuthError(toAuthFailure(e).code));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const look = GOOGLE_LOOK[scheme];
+
+  return (
+    <View style={{ gap: space(3) }}>
+      {providers.includes('google') ? (
+        <Pressable
+          testID="auth-google"
+          accessibilityRole="button"
+          accessibilityLabel={t('auth.social.google')}
+          accessibilityState={{ disabled: busy !== null, busy: busy === 'google' }}
+          disabled={busy !== null}
+          onPress={() =>
+            void run('google', async () => {
+              // Lazy: Expo Go and Node never load the native module.
+              const { signInWithGoogle } = await import('./google');
+              await signInWithGoogle();
+            })
+          }
+          style={({ pressed }) => ({
+            minHeight: CONTROL_HEIGHT,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: space(3),
+            paddingHorizontal: space(5),
+            borderRadius: radii.pill,
+            borderWidth: 1,
+            borderColor: look.border,
+            backgroundColor: look.fill,
+            opacity: busy !== null && busy !== 'google' ? 0.5 : pressed ? 0.85 : 1,
+          })}
+        >
+          {busy === 'google' ? (
+            <ActivityIndicator color={look.text} />
+          ) : (
+            <>
+              <GoogleMark />
+              <Text style={{ color: look.text, fontSize: 17, fontWeight: '600' }}>
+                {t('auth.social.google')}
+              </Text>
+            </>
+          )}
+        </Pressable>
+      ) : null}
+      {/* Task 7 adds the Apple button here (providers.includes('apple')). */}
+      {error ? <ErrorText>{t(error)}</ErrorText> : null}
+      <Text style={{ color: colors.ink, fontSize: 15, textAlign: 'center' }}>
+        {t('auth.social.or')}
+      </Text>
+    </View>
+  );
+}
