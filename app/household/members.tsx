@@ -401,14 +401,17 @@ export default function MembersScreen() {
                   : { gap: space(4) }
               }
             >
-              <Button
-                testID="members.back"
-                title={t('members.back')}
-                variant="tertiary"
-                icon={actionIcons.back}
-                width="hug"
-                onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
-              />
+              {/* A hug button pins itself to the start; this wrapper centres it on the row. */}
+              <View style={{ alignSelf: split ? 'center' : 'flex-start' }}>
+                <Button
+                  testID="members.back"
+                  title={t('members.back')}
+                  variant="tertiary"
+                  icon={actionIcons.back}
+                  width="hug"
+                  onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
+                />
+              </View>
               <View style={{ flexShrink: 1 }}>
                 <ScreenTitle>{t('members.title')}</ScreenTitle>
               </View>

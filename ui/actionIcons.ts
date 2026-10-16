@@ -23,6 +23,8 @@ export const actionIcons = {
   openPhoneSettings: 'settings-outline',
   people: 'people-outline',
   chevron: 'chevron-forward',
+  skip: 'play-skip-forward-outline',
+  templates: 'sparkles-outline',
 } as const;
 
 export type ActionIcon = (typeof actionIcons)[keyof typeof actionIcons];

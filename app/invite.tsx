@@ -278,6 +278,7 @@ export default function InviteScreen() {
       <Button
         testID="invite.dismiss"
         title={t('invite.dismiss')}
+        icon={actionIcons.close}
         variant="tertiary"
         width="hug"
         onPress={() => void dismiss()}

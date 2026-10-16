@@ -53,9 +53,9 @@ export const palettes: Record<Scheme, Palette> = {
     // Same as ink here, so actions must also differ by shape (pill, border, underline, icon).
     cobalt: '#263663',
     onCobalt: '#FFF6E8',
-    // A deeper apricot than the door (#FBE0CD) and the page, so the pill shows on both; cobalt text
-    // on it stays above 4.5:1.
-    tonal: '#F5CDAE',
+    // A deeper apricot than the door (#FBE0CD) and the page: 1.26:1 on the door, 1.49:1 on the page,
+    // so the pill shows on both; cobalt text on it is 7.4:1.
+    tonal: '#F2C4A0',
     red: '#B4382E',
     // White on the red pill: 5.9:1.
     onRed: '#FFFFFF',
@@ -86,8 +86,9 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#DBC7BD',
     cobalt: '#F0AD83',
     onCobalt: '#263663',
-    // Ink lifted toward violet: a quiet fill on the navy page; apricot text on it is 6.6:1.
-    tonal: '#33304A',
+    // Ink lifted toward violet, light enough to show on the door (1.30:1) and the page (1.87:1);
+    // apricot text on it is 4.7:1.
+    tonal: '#4B4468',
     // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
     red: '#F2808F',
     // The deepest navy on the light raspberry fill: 6.6:1.

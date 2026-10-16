@@ -150,6 +150,7 @@ function EditTaskScreen() {
                 <Button
                   testID="task-form.skip"
                   title={t('taskForm.skip')}
+                  icon={actionIcons.skip}
                   variant="secondary"
                   disabled={busy}
                   onPress={skipOnce}

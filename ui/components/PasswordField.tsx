@@ -95,7 +95,7 @@ export function PasswordField({
             testID={testID ? `${testID}.toggle` : undefined}
             accessibilityRole="button"
             accessibilityLabel={label}
-            accessibilityHint={t('auth.password.hint')}
+            accessibilityHint={visible ? undefined : t('auth.password.hint')}
             onPressIn={() => {
               wasFocused.current = inputRef.current?.isFocused() ?? false;
             }}

@@ -30,6 +30,9 @@ appId: com.bradlopez13.casa
     id: sign-up.password-confirm
 - inputText: e2e-password-2026
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: sign-up.submit
 - tapOn:
     id: sign-up.submit
 - runFlow: subflows/verify-email.yaml

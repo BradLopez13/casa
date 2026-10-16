@@ -93,7 +93,7 @@ export default function SignInScreen() {
         textContentType="password"
         autoComplete="current-password"
       />
-      <View style={{ alignItems: 'flex-end' }}>
+      <View style={{ alignSelf: 'flex-end' }}>
         <Button
           testID="sign-in.forgot-password"
           title={t('auth.forgot.link')}

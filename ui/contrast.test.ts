@@ -120,9 +120,9 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
     expect(contrastRatio(p.cobalt, p.tonal)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('the tonal pill differs from the door and the page', () => {
-    expect(p.tonal).not.toBe(p.door);
-    expect(p.tonal).not.toBe(p.page);
+  it('the tonal pill stands out from the door and the page', () => {
+    expect(contrastRatio(p.tonal, p.door)).toBeGreaterThanOrEqual(1.2);
+    expect(contrastRatio(p.tonal, p.page)).toBeGreaterThanOrEqual(1.2);
   });
 
   it('red text on the page and on a note', () => {
