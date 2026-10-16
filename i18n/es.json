@@ -57,6 +57,7 @@
   "auth.pendingInvite": "Tienes una invitación pendiente: inicia sesión o crea una cuenta para unirte.",
   "auth.signOut": "Cerrar sesión",
   "onboarding.title": "Crea tu hogar",
+  "onboarding.welcome": "Aquí repartís las tareas y la compra de casa.",
   "onboarding.defaultName": "Mi hogar",
   "onboarding.nameLabel": "Nombre del hogar",
   "onboarding.create": "Crear hogar",
