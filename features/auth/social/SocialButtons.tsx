@@ -5,6 +5,7 @@ import { t, type MessageKey } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
+import { AppleButton } from './AppleButton';
 import { GoogleMark } from './GoogleMark';
 import { enabledProviders } from './enabled';
 import { toSocialFailure } from './failure';
@@ -86,7 +87,20 @@ export function SocialButtons() {
           )}
         </Pressable>
       ) : null}
-      {/* Task 7 adds the Apple button here (providers.includes('apple')). */}
+      {providers.includes('apple') ? (
+        <AppleButton
+          busy={busy === 'apple'}
+          disabled={busy !== null}
+          dimmed={busy !== null && busy !== 'apple'}
+          onPress={() =>
+            void run('apple', async () => {
+              // Lazy: the native module only loads when Apple is enabled and tapped.
+              const { signInWithApple } = await import('./apple');
+              await signInWithApple();
+            })
+          }
+        />
+      ) : null}
       {error ? <ErrorText>{t(error)}</ErrorText> : null}
       <Text style={{ color: colors.ink, fontSize: 15, textAlign: 'center' }}>
         {t('auth.social.or')}

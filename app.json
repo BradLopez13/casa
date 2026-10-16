@@ -10,7 +10,8 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.bradlopez13.casa"
+      "bundleIdentifier": "com.bradlopez13.casa",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -41,6 +42,7 @@
       ],
       "expo-secure-store",
       "@react-native-google-signin/google-signin",
+      "expo-apple-authentication",
       "expo-font",
       [
         "expo-notifications",
