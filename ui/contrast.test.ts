@@ -112,3 +112,20 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
     expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 });
+
+describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
+  const p = palettes[scheme];
+
+  it('cobalt text on the tonal pill', () => {
+    expect(contrastRatio(p.cobalt, p.tonal)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('text on a red pill', () => {
+    expect(contrastRatio(p.onRed, p.red)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('muted text on the page and on a note', () => {
+    expect(contrastRatio(p.muted, p.page)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.muted, p.note)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+});

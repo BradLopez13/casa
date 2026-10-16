@@ -18,8 +18,12 @@ export type Palette = {
   cobalt: string;
   /** Text and icons on a cobalt fill. */
   onCobalt: string;
+  /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
+  tonal: string;
   /** Only for overdue tasks and irreversible actions, always next to the written word. */
   red: string;
+  /** Text and icons on a red fill (the destructive primary button). */
+  onRed: string;
   /** Quiet separators that carry no meaning on their own. */
   hairline: string;
   /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
@@ -49,7 +53,11 @@ export const palettes: Record<Scheme, Palette> = {
     // Same as ink here, so actions must also differ by shape (pill, border, underline, icon).
     cobalt: '#263663',
     onCobalt: '#FFF6E8',
+    // The light apricot of the door: a warm fill, not a border; cobalt text on it is 9.3:1.
+    tonal: '#FBE0CD',
     red: '#B4382E',
+    // White on the red pill: 5.9:1.
+    onRed: '#FFFFFF',
     hairline: '#EEE2D6',
     // Ink and apricot half and half: a warm taupe, 3.5:1 on the door.
     outline: '#8B7173',
@@ -77,8 +85,12 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#DBC7BD',
     cobalt: '#F0AD83',
     onCobalt: '#263663',
+    // Ink lifted toward violet: a quiet fill on the navy page; apricot text on it is 6.6:1.
+    tonal: '#33304A',
     // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
     red: '#F2808F',
+    // The deepest navy on the light raspberry fill: 6.6:1.
+    onRed: '#151C33',
     hairline: '#353C54',
     // Kept cool and grey so an unselected border never looks like the apricot selection.
     outline: '#918B98',
