@@ -31,7 +31,12 @@ export default function SignUpScreen() {
 
   async function submit() {
     setFormError(null);
-    const parsed = signUpSchema.safeParse({ displayName, email: email.trim(), password });
+    const parsed = signUpSchema.safeParse({
+      displayName,
+      email: email.trim(),
+      password,
+      passwordConfirm: password, // Temporary until Task 7/8
+    });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error, { form: 'signUp' }));
       return;

@@ -11,7 +11,16 @@ const FIELD_MESSAGES: Readonly<Record<string, MessageKey>> = {
   'code:invalid_type': 'auth.errors.codeInvalid',
   'password:too_small': 'auth.errors.passwordTooShort',
   'password:invalid_type': 'auth.errors.passwordRequired',
+  'passwordConfirm:required': 'auth.errors.passwordConfirmRequired',
+  'passwordConfirm:mismatch': 'auth.errors.passwordMismatch',
 };
+
+/** Zod issue code, or the `reason` param of a custom issue. */
+function issueKind(issue: z.core.$ZodIssue): string {
+  if (issue.code !== 'custom') return issue.code;
+  const reason = (issue.params as { reason?: unknown } | undefined)?.reason;
+  return typeof reason === 'string' ? reason : 'custom';
+}
 
 /** First i18n error key per field for a failed Zod parse. */
 export function fieldErrors(
@@ -25,7 +34,7 @@ export function fieldErrors(
     const key =
       field === 'password' && options.form === 'signIn' && issue.code === 'too_small'
         ? 'auth.errors.passwordRequired'
-        : FIELD_MESSAGES[`${field}:${issue.code}`];
+        : FIELD_MESSAGES[`${field}:${issueKind(issue)}`];
     if (key) out[field] = key;
   }
   return out;

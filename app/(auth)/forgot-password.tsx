@@ -83,7 +83,11 @@ export default function ForgotPasswordScreen() {
 
   async function submit() {
     setFormError(null);
-    const parsed = resetPasswordSchema.safeParse({ code, password });
+    const parsed = resetPasswordSchema.safeParse({
+      code,
+      password,
+      passwordConfirm: password, // Temporary until Task 7/8
+    });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error, { form: 'reset' }));
       return;
