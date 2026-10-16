@@ -14,7 +14,14 @@ export const NIDO_SYMBOL_PATHS = {
   },
 } as const;
 
-/** On ink blue the left figure turns cream (BRAND.md); the right one stays peach. */
-export function nidoSymbolColors(scheme: Scheme): { left: string; right: string } {
-  return { left: scheme === 'dark' ? '#FFF6E8' : '#263663', right: '#F0AD83' };
+/**
+ * The symbol always sits on slate: light mode paints a slate tile behind it, dark mode already
+ * has a slate page so `tile` is null. The left figure is chalk, the right one pósit yellow.
+ */
+export function nidoSymbolColors(scheme: Scheme): {
+  left: string;
+  right: string;
+  tile: string | null;
+} {
+  return { left: '#F3F4F0', right: '#F2D04B', tile: scheme === 'dark' ? null : '#2E3B41' };
 }

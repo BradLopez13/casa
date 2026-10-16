@@ -9,9 +9,9 @@ const root = join(import.meta.dirname, '..', '..');
 const read = (file: string) => readFileSync(join(root, 'assets/brand', file), 'utf8');
 const out = (file: string) => join(root, 'assets/images', file);
 
-const INK = '#263663';
-const APRICOT = '#F0AD83';
-const CREAM = '#FFF6E8';
+const SLATE = '#2E3B41';
+const POSIT = '#F2D04B';
+const CHALK = '#F3F4F0';
 const WHITE = '#FFFFFF';
 const SIZE = 1024;
 const VIEW = 512;
@@ -25,8 +25,8 @@ const recolour = (svg: string, left: string, right: string) =>
     .replace(/(<g id="left" fill=")[^"]+/, `$1${left}`)
     .replace(/(<g id="right" fill=")[^"]+/, `$1${right}`);
 
-const colour = recolour(master, INK, APRICOT);
-const inverted = recolour(master, CREAM, APRICOT);
+// The colour symbol always sits on slate: chalk figure plus pósit figure.
+const colour = recolour(master, CHALK, POSIT);
 const white = mono.replaceAll('currentColor', WHITE);
 
 // Symbol rasterised at `width` px wide (the viewBox is square, so also `width` px tall).
@@ -76,12 +76,12 @@ const safeWidth = async () => {
 const adaptive = await safeWidth();
 
 const files: Record<string, Buffer> = {
-  'icon.png': await compose(inverted, 620, SIZE, INK),
-  'adaptive-foreground.png': await compose(inverted, adaptive, SIZE),
+  'icon.png': await compose(colour, 620, SIZE, SLATE),
+  'adaptive-foreground.png': await compose(colour, adaptive, SIZE),
   'adaptive-monochrome.png': await compose(white, adaptive, SIZE),
-  'splash.png': await compose(colour, SIZE, SIZE),
-  'splash-dark.png': await compose(inverted, SIZE, SIZE),
-  'favicon.png': await compose(colour, 40, 48, CREAM),
+  'splash.png': await compose(colour, SIZE, SIZE, SLATE),
+  'splash-dark.png': await compose(colour, SIZE, SIZE, SLATE),
+  'favicon.png': await compose(colour, 40, 48, SLATE),
   // Android status-bar icon: white on transparent (Android only reads the alpha), ~10% padding.
   'notification-icon.png': await compose(white, 77, 96),
 };
@@ -92,9 +92,9 @@ for (const [name, data] of Object.entries(files)) {
 `);
 }
 
-// Auth email header symbol, shown at 48 px (3x). The ink background is painted in so mail
+// Auth email header symbol, shown at 48 px (3x). The slate background is painted in so mail
 // clients in dark mode never recolour it. Uploaded to the public `email-assets` bucket.
-const emailSymbol = await compose(inverted, 132, 144, INK);
+const emailSymbol = await compose(colour, 132, 144, SLATE);
 writeFileSync(join(root, 'assets/email/nido-symbol.png'), emailSymbol);
 process.stdout.write(`email nido-symbol.png ${emailSymbol.length} bytes
 `);

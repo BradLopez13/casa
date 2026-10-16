@@ -1,11 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+import { contrastRatio } from './contrast';
 import { nidoSymbolColors } from './nidoSymbol';
+import { palettes } from './tokens';
 
-describe('nidoSymbolColors', () => {
-  it('uses ink on the left figure over a light background', () => {
-    expect(nidoSymbolColors('light')).toEqual({ left: '#263663', right: '#F0AD83' });
-  });
-  it('turns the left figure cream over an ink background', () => {
-    expect(nidoSymbolColors('dark')).toEqual({ left: '#FFF6E8', right: '#F0AD83' });
-  });
+it('puts the light symbol on a slate tile', () => {
+  expect(nidoSymbolColors('light')).toEqual({ left: '#F3F4F0', right: '#F2D04B', tile: '#2E3B41' });
 });
+it('shows the dark symbol straight on the page', () => {
+  expect(nidoSymbolColors('dark').tile).toBeNull();
+});
+it.each(['light', 'dark'] as const)(
+  'both figures stand out from what is behind them in %s',
+  (s) => {
+    const { left, right, tile } = nidoSymbolColors(s);
+    const ground = tile ?? palettes[s].page;
+    expect(contrastRatio(left, ground)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(right, ground)).toBeGreaterThanOrEqual(3);
+  },
+);
