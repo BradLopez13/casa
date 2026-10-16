@@ -9,6 +9,7 @@ import {
   newTaskShape,
 } from '@/features/tasks/newTaskPlacement';
 import { t } from '@/i18n';
+import { buttonLook } from '@/ui/buttonLook';
 import { columnRightOffset, columnRoom, paneColumn } from '@/ui/panes';
 import { space, useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
@@ -68,6 +69,7 @@ export function NewTaskButton({
   const { colors, radii } = useTheme();
   const placement = usePlacement();
   const shape = useShape();
+  const look = buttonLook('primary', 'default', 'enabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -89,7 +91,9 @@ export function NewTaskButton({
         gap: space(1),
         justifyContent: 'center',
         borderRadius: radii.pill,
-        backgroundColor: colors.cobalt,
+        backgroundColor: look.fill,
+        borderWidth: 1,
+        borderColor: look.border,
         opacity: pressed ? 0.85 : 1,
         ...(shape.iconOnly
           ? { width: shape.height, height: shape.height }
@@ -99,13 +103,13 @@ export function NewTaskButton({
       <Ionicons
         name="add"
         size={shape.iconOnly ? 28 : 22}
-        color={colors.onCobalt}
+        color={look.foreground}
         accessible={false}
       />
       {shape.iconOnly ? null : (
         <Text
           maxFontSizeMultiplier={1.3}
-          style={{ color: colors.onCobalt, fontSize: 16, fontWeight: '600' }}
+          style={{ color: look.foreground, fontSize: 16, fontWeight: '600' }}
         >
           {t('tasks.new')}
         </Text>
