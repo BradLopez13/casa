@@ -28,6 +28,7 @@ onFlowComplete:
 - tapOn:
     id: sign-up.password
 - inputText: e2e-password-2026
+- hideKeyboard
 - tapOn:
     id: sign-up.password-confirm
 - inputText: e2e-password-2026
