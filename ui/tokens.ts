@@ -86,9 +86,9 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#DBC7BD',
     cobalt: '#F0AD83',
     onCobalt: '#263663',
-    // Ink lifted toward violet, light enough to show on the door (1.30:1) and the page (1.87:1);
-    // apricot text on it is 4.7:1.
-    tonal: '#4B4468',
+    // A lighter ink blue, inside the brand family (a violet tint read as off-brand on the phone):
+    // shows on the door (1.30:1) and the page (1.87:1); apricot text on it is 4.7:1.
+    tonal: '#34477A',
     // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
     red: '#F2808F',
     // The deepest navy on the light raspberry fill: 6.6:1.

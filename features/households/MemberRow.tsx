@@ -74,7 +74,9 @@ export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemo
         </View>
       </View>
       {canManage && !isSelf ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+        // Side by side when they fit; on a phone they wrap, and each already has a 44 dp target,
+        // so the lines need no extra gap to stay apart.
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space(2) }}>
           <Button
             testID={`members.make-owner.${member.userId}`}
             title={t('members.makeOwner')}
