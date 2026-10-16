@@ -17,6 +17,10 @@ onFlowComplete:
 - evalScript: ${output.email = 'olga' + Date.now() + '@e2e.dev'}
 
 # Sign up
+# On a small screen the keyboard or the brand header can leave this field below the fold.
+- scrollUntilVisible:
+    element:
+      id: sign-in.go-sign-up
 - tapOn:
     id: sign-in.go-sign-up
 - tapOn:
@@ -25,10 +29,18 @@ onFlowComplete:
 - tapOn:
     id: sign-up.email
 - inputText: ${output.email}
+# On a small screen the keyboard or the brand header can leave this field below the fold.
+- scrollUntilVisible:
+    element:
+      id: sign-up.password
 - tapOn:
     id: sign-up.password
 - inputText: e2e-password-2026
 - hideKeyboard
+# On a small screen the keyboard or the brand header can leave this field below the fold.
+- scrollUntilVisible:
+    element:
+      id: sign-up.password-confirm
 - tapOn:
     id: sign-up.password-confirm
 - inputText: e2e-password-2026
