@@ -1,4 +1,6 @@
-# Casa
+# Nido
+
+**Nido · La casa, en equipo.** El repositorio conserva el nombre técnico `casa`. La app ya usa el icono, el splash, el nombre y la paleta de Nido.
 
 App móvil para llevar una casa compartida entre varias personas, para iOS y Android con una sola base de código (Expo y Supabase). Responde a una pregunta: **¿cómo se hace que un grupo comparta datos en una app móvil sin que el cliente pueda escribir donde no debe?**
 
@@ -10,7 +12,17 @@ Tres cosas que se pueden comprobar: que la seguridad de una app con Supabase viv
 
 ## Estado
 
-Fases 1–2 hechas: cuentas con email y contraseña, hogares, invitaciones por enlace, listado de miembros, expulsar, transferir la propiedad, salir y borrar el hogar. Siguientes: tareas, compra en tiempo real, notificaciones, borrado de cuenta y publicación en TestFlight y Google Play.
+Fases 1–8 hechas:
+
+- Cuentas con email y contraseña, hogares, invitaciones por enlace, miembros, expulsar, transferir la propiedad, salir y borrar el hogar.
+- Tareas con estancia, responsable y fecha, pantallas Hoy y Tareas, y completado optimista.
+- Tareas recurrentes (cada día, cada N días, días de la semana, mensual) y plantillas para un hogar vacío.
+- Lista de la compra compartida con sugerencias, que funciona sin conexión, y tiempo real en compra y tareas.
+- Borrado de la propia cuenta, «hoy» según la zona horaria de cada persona y recordatorios locales de mañana y tarde.
+- Avisos push con la app cerrada cuando te asignan una tarea o alguien se une al hogar.
+- Interfaz responsive: gira en móvil y tablet, dos paneles desde 840 dp y raíl lateral.
+
+Siguiente: publicación en TestFlight y en las pruebas internas de Google Play.
 
 ## Stack
 

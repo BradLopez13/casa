@@ -46,3 +46,5 @@ yarn-error.*
 .env
 .env.e2e
 e2e-report.xml
+
+docs/
