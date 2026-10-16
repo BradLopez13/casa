@@ -49,8 +49,8 @@ export type Palette = {
   scrim: string;
 };
 
-// Pizarra y pósit: slate #2E3B41, pósit #F2D04B, paper #F3F4F0. page, door, note, ink, cobalt,
-// onCobalt and red are fixed by the spec; the rest are cool slate tints that keep the contrast.
+// Pizarra y pósit: slate #2E3B41, pósit #F2D04B, paper #F3F4F0. The whole palette comes from the
+// Pizarra y pósit spec (§1.1).
 export const palettes: Record<Scheme, Palette> = {
   light: {
     page: '#F3F4F0',
@@ -123,7 +123,7 @@ export type NoteEdge = { borderWidth: number; borderColor: string };
 
 /**
  * The edge of a note (and of anything drawn as one). In dark mode the note is barely lighter than
- * the page and the shadow is lost on navy, so a 1 dp hairline gives the paper its edge back; in
+ * the page and the shadow is lost on slate, so a 1 dp hairline gives the paper its edge back; in
  * light mode the shadow is enough.
  */
 export const noteEdges: Record<Scheme, NoteEdge> = {
@@ -155,6 +155,9 @@ export const CONTROL_HEIGHT = 48;
  * reminder's time): the Pressable around it keeps MIN_TOUCH. Grows with the text too.
  */
 export const INLINE_PILL_HEIGHT = 36;
+
+/** Width of the edge on every primary (pósit) button. */
+export const PRIMARY_EDGE = 1.5;
 
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;

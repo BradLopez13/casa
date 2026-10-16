@@ -12,7 +12,7 @@ import { t } from '@/i18n';
 import { buttonLook } from '@/ui/buttonLook';
 import { columnRightOffset, columnRoom, paneColumn } from '@/ui/panes';
 import { space, useTheme } from '@/ui/theme';
-import { CONTROL_HEIGHT } from '@/ui/tokens';
+import { CONTROL_HEIGHT, PRIMARY_EDGE } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
 /**
@@ -92,7 +92,7 @@ export function NewTaskButton({
         justifyContent: 'center',
         borderRadius: radii.pill,
         backgroundColor: look.fill,
-        borderWidth: 1,
+        borderWidth: PRIMARY_EDGE,
         borderColor: look.border,
         opacity: pressed ? 0.85 : 1,
         ...(shape.iconOnly

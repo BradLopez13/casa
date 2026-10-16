@@ -3,7 +3,7 @@ import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-n
 import { buttonLook } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, displayFont } from '../tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFont } from '../tokens';
 
 export function HeaderAction({
   testID,
@@ -55,7 +55,7 @@ export function HeaderAction({
                 gap: space(2),
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
-                borderWidth: 1.5,
+                borderWidth: PRIMARY_EDGE,
                 borderColor: look.border,
                 backgroundColor: look.fill,
               }

@@ -77,6 +77,10 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
     expect(contrastRatio(p.outline, p.door)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 
+  it('high-contrast muted text reaches AAA on the page', () => {
+    expect(contrastRatio(p.mutedStrong, p.page)).toBeGreaterThanOrEqual(7);
+  });
+
   it.each(Object.entries(grounds))('high-contrast muted text beats muted on %s', (_, ground) => {
     expect(contrastRatio(p.mutedStrong, ground)).toBeGreaterThan(contrastRatio(p.muted, ground));
   });
@@ -130,8 +134,10 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
     expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('the primary pill edge stands out from the page', () => {
+  it('the primary pill edge stands out from the page and from a note', () => {
+    // Primary buttons sit on the page or over notes, never on the door.
     expect(contrastRatio(p.accentEdge, p.page)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(p.accentEdge, p.note)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 
   it('the tonal pill shows its shape by fill or by edge', () => {

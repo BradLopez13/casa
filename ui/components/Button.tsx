@@ -10,6 +10,7 @@ import {
   type ButtonVariant,
 } from '../buttonLook';
 import { useTheme } from '../theme';
+import { PRIMARY_EDGE } from '../tokens';
 
 type Props = {
   title: string;
@@ -68,7 +69,7 @@ export function Button({
           paddingHorizontal: m.paddingH,
           paddingVertical: m.paddingV,
           borderRadius: radii.pill,
-          borderWidth: border === 'transparent' ? 0 : 1.5,
+          borderWidth: border === 'transparent' ? 0 : PRIMARY_EDGE,
           borderColor: border,
           backgroundColor: fill,
           opacity: pressedOpacity(pressed),

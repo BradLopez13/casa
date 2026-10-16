@@ -6,7 +6,7 @@
     <!-- left head -->
     <circle cx="130" cy="95.5" r="68"/>
     <!-- left body: top bar, outer column and base. The base runs on under the right figure's
-         tongue, which is drawn on top and covers it; only its rounded corners show ink behind -->
+         tongue, which is drawn on top and covers it; only its rounded corners show slate behind -->
     <path d="M0 254.5A80 80 0 0 1 80 174.5H178A42 42 0 0 1 220 216.5V276.5H149A13 13 0 0 0 136 289.5V369.5A13 13 0 0 0 149 382.5H220V484.5H114A114 114 0 0 1 0 370.5Z"/>
   </g>
   <g id="right" fill="#F2D04B">
