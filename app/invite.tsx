@@ -14,6 +14,7 @@ import {
 } from '@/features/households/pending-invite';
 import { membershipKey } from '@/features/households/queries';
 import { t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
@@ -173,6 +174,9 @@ export default function InviteScreen() {
         <Button
           testID="invite.back"
           title={t('invite.back')}
+          variant="tertiary"
+          icon={actionIcons.back}
+          width="hug"
           onPress={() => router.replace('/sign-in')}
         />
       </CenteredCard>
@@ -186,6 +190,9 @@ export default function InviteScreen() {
         <Button
           testID="invite.back"
           title={t('invite.back')}
+          variant="tertiary"
+          icon={actionIcons.back}
+          width="hug"
           onPress={() => router.replace('/sign-in')}
         />
       </CenteredCard>
@@ -203,12 +210,17 @@ export default function InviteScreen() {
         <Button
           testID="invite.retry"
           title={t('errors.retry')}
+          variant="secondary"
+          icon={actionIcons.retry}
+          width="hug"
           onPress={() => void refreshMembershipAndLeave()}
         />
         <Button
           testID="invite.sign-out"
           title={t('auth.signOut')}
-          variant="secondary"
+          variant="tertiary"
+          icon={actionIcons.signOut}
+          width="hug"
           onPress={() => void onSignOut()}
         />
       </CenteredCard>
@@ -225,6 +237,8 @@ export default function InviteScreen() {
         <Button
           testID="invite.continue"
           title={t('invite.continue')}
+          icon={actionIcons.confirm}
+          width="full"
           onPress={() => void onContinue()}
         />
       </CenteredCard>
@@ -236,7 +250,14 @@ export default function InviteScreen() {
       <CenteredCard>
         {title}
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
-        <Button testID="invite.back" title={t('invite.back')} onPress={() => router.replace('/')} />
+        <Button
+          testID="invite.back"
+          title={t('invite.back')}
+          variant="tertiary"
+          icon={actionIcons.back}
+          width="hug"
+          onPress={() => router.replace('/')}
+        />
       </CenteredCard>
     );
   }
@@ -249,19 +270,24 @@ export default function InviteScreen() {
       <Button
         testID="invite.accept"
         title={t('invite.accept')}
+        icon={actionIcons.confirm}
+        width="full"
         loading={accepting}
         onPress={() => void accept()}
       />
       <Button
         testID="invite.dismiss"
         title={t('invite.dismiss')}
-        variant="secondary"
+        variant="tertiary"
+        width="hug"
         onPress={() => void dismiss()}
       />
       <Button
         testID="invite.sign-out"
         title={t('auth.signOut')}
-        variant="secondary"
+        variant="tertiary"
+        icon={actionIcons.signOut}
+        width="hug"
         onPress={() => void onSignOut()}
       />
     </CenteredCard>
