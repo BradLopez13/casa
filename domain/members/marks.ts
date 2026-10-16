@@ -1,5 +1,5 @@
 /** The five magnet colours, in the order members receive them. */
-export const MAGNET_COLORS = ['mustard', 'sage', 'coral', 'petrol', 'pink'] as const;
+export const MAGNET_COLORS = ['teal', 'coral', 'sky', 'pink', 'lilac'] as const;
 
 export type MagnetColor = (typeof MAGNET_COLORS)[number];
 

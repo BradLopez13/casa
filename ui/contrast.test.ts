@@ -39,9 +39,9 @@ describe('hueDistance', () => {
   });
 });
 
-describe('dark palette keeps red apart from apricot', () => {
+describe('dark palette keeps red apart from the pósit', () => {
   it('red sits at least 30° of hue away from the action colour', () => {
-    // Both are light salmon tones on navy: by hue alone "Vencida" must not read as tappable.
+    // By hue alone "Vencida" must not read as tappable.
     expect(hueDistance(palettes.dark.red, palettes.dark.cobalt)).toBeGreaterThanOrEqual(30);
   });
 });
@@ -85,6 +85,12 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
     expect(contrastRatio(p.magnetInk, p.magnet[color])).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
+  it.each(Object.entries(grounds))('magnet ring on %s, where there is one', (_, ground) => {
+    if (p.magnetRing !== 'transparent') {
+      expect(contrastRatio(p.magnetRing, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    }
+  });
+
   it('refresh label on the fridge light', () => {
     expect(contrastRatio(p.light.text, p.light.top)).toBeGreaterThanOrEqual(AA_TEXT);
     expect(contrastRatio(p.light.text, p.page)).toBeGreaterThanOrEqual(AA_TEXT);
@@ -120,9 +126,18 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
     expect(contrastRatio(p.cobalt, p.tonal)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('the tonal pill stands out from the door and the page', () => {
-    expect(contrastRatio(p.tonal, p.door)).toBeGreaterThanOrEqual(1.2);
-    expect(contrastRatio(p.tonal, p.page)).toBeGreaterThanOrEqual(1.2);
+  it('text on the yellow primary pill', () => {
+    expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('the primary pill edge stands out from the page', () => {
+    expect(contrastRatio(p.accentEdge, p.page)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('the tonal pill shows its shape by fill or by edge', () => {
+    const byFill = Math.min(contrastRatio(p.tonal, p.door), contrastRatio(p.tonal, p.page));
+    const byEdge = Math.min(contrastRatio(p.tonalEdge, p.door), contrastRatio(p.tonalEdge, p.page));
+    expect(byFill >= 1.2 || byEdge >= AA_NON_TEXT).toBe(true);
   });
 
   it('red text on the page and on a note', () => {
@@ -137,5 +152,17 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
   it('muted text on the page and on a note', () => {
     expect(contrastRatio(p.muted, p.page)).toBeGreaterThanOrEqual(AA_TEXT);
     expect(contrastRatio(p.muted, p.note)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+});
+
+describe('Pizarra y pósit', () => {
+  const retired = ['#263663', '#F0AD83', '#FFF6E8', '#FBE0CD'];
+  it.each<Scheme>(['light', 'dark'])('%s palette uses no retired brand colour', (scheme) => {
+    const values = JSON.stringify(palettes[scheme]).toUpperCase();
+    retired.forEach((hex) => expect(values).not.toContain(hex));
+  });
+  it('fills the main action with the pósit in both themes', () => {
+    expect(palettes.light.accent).toBe('#F2D04B');
+    expect(palettes.dark.accent).toBe('#F2D04B');
   });
 });

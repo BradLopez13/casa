@@ -226,7 +226,7 @@ export default function MembersScreen() {
   const dialog = pending ? DIALOGS[pending.kind] : null;
   const marks = memberMarks(members.data ?? []);
   const markOf = (m: { userId: string; displayName: string }): MemberMark =>
-    marks.get(m.userId) ?? { color: 'mustard', initial: firstInitial(m.displayName) };
+    marks.get(m.userId) ?? { color: 'teal', initial: firstInitial(m.displayName) };
 
   // A section title sits further from what comes before it than from its own content.
   const heading = (key: MessageKey) => (

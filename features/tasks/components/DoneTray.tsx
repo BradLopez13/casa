@@ -54,7 +54,7 @@ export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
               size="sm"
               decorative
               variant={mark ? 'filled' : 'empty'}
-              color={mark?.color ?? 'mustard'}
+              color={mark?.color ?? 'teal'}
               initial={mark?.initial ?? ''}
               accessibilityLabel={name ?? ''}
             />
