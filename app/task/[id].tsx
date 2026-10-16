@@ -72,7 +72,13 @@ function EditTaskScreen() {
                 ? taskErrorMessage(tasksQuery.error)
                 : t('tasks.errors.TASK_NOT_FOUND')}
             </ErrorText>
-            <Button testID="task-form.close" title={t('taskForm.close')} onPress={close} />
+            <Button
+              testID="task-form.close"
+              title={t('taskForm.close')}
+              variant="tertiary"
+              icon={actionIcons.close}
+              onPress={close}
+            />
           </>
         )}
       </Screen>

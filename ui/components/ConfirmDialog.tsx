@@ -88,7 +88,7 @@ export function ConfirmDialog({
             <Button
               testID="members.cancel"
               title={t('members.cancel')}
-              variant="secondary"
+              variant="tertiary"
               width="full"
               disabled={loading}
               onPress={onCancel}

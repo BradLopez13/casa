@@ -79,7 +79,13 @@ function EditShoppingItemScreen() {
                 ? shoppingErrorMessage(itemsQuery.error)
                 : t('shopping.errors.ITEM_NOT_FOUND')}
             </ErrorText>
-            <Button testID="shopping.edit.close" title={t('taskForm.close')} onPress={close} />
+            <Button
+              testID="shopping.edit.close"
+              title={t('taskForm.close')}
+              variant="tertiary"
+              icon={actionIcons.close}
+              onPress={close}
+            />
           </>
         )}
       </Screen>

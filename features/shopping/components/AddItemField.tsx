@@ -10,6 +10,7 @@ import { useFocusReveal } from '@/ui/focusReveal';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
+import { actionIcons } from '@/ui/actionIcons';
 
 type EntryOptions = {
   items: readonly ShoppingItem[];
@@ -113,12 +114,16 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
             fontSize: 17,
           }}
         />
-        <Button
-          testID="shopping.add"
-          title={t('shopping.add')}
-          disabled={text.trim() === ''}
-          onPress={() => submit(text)}
-        />
+        <View style={{ flexShrink: 0 }}>
+          <Button
+            testID="shopping.add"
+            title={t('shopping.add')}
+            variant="secondary"
+            icon={actionIcons.add}
+            disabled={text.trim() === ''}
+            onPress={() => submit(text)}
+          />
+        </View>
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
       <ItemSuggestions entry={entry} />
