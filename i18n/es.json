@@ -26,6 +26,7 @@
   "auth.errors.RATE_LIMITED": "Espera un poco antes de pedir otro código.",
   "auth.errors.OAUTH_CANCELLED": "",
   "auth.errors.codeInvalid": "Escribe los 6 dígitos del código.",
+  "brand.tagline": "La casa, en equipo.",
   "auth.social.or": "o",
   "auth.social.google": "Continuar con Google",
   "auth.social.apple": "Continuar con Apple",
