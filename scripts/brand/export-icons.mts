@@ -91,5 +91,12 @@ for (const [name, data] of Object.entries(files)) {
   process.stdout.write(`${name} ${data.length} bytes
 `);
 }
+
+// Auth email header symbol, shown at 48 px (3x). The ink background is painted in so mail
+// clients in dark mode never recolour it. Uploaded to the public `email-assets` bucket.
+const emailSymbol = await compose(inverted, 132, 144, INK);
+writeFileSync(join(root, 'assets/email/nido-symbol.png'), emailSymbol);
+process.stdout.write(`email nido-symbol.png ${emailSymbol.length} bytes
+`);
 process.stdout.write(`adaptive symbol width ${adaptive}px
 `);
