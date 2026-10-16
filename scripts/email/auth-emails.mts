@@ -5,7 +5,7 @@
 // background so dark mode cannot recolour it.
 
 export const SYMBOL_URL =
-  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol.png';
+  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol-v2.png';
 
 const SLATE = '#2E3B41';
 const POSIT = '#F2D04B';
@@ -36,7 +36,7 @@ const paragraph = (text: string, size = 16) =>
 const codePill = () =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 8px auto 16px;">
               <tr>
-                <td align="center" bgcolor="${PAPER}" style="background: ${PAPER}; border: 2px solid ${POSIT}; border-radius: 999px; padding: 12px 28px; font-family: ${MONO}; font-size: 30px; font-weight: bold; letter-spacing: 6px; color: ${TEXT};">{{ .Token }}</td>
+                <td align="center" bgcolor="${PAPER}" style="background: ${PAPER}; border: 2px solid ${SLATE}; border-radius: 999px; padding: 12px 28px; font-family: ${MONO}; font-size: 30px; font-weight: bold; letter-spacing: 6px; color: ${TEXT};">{{ .Token }}</td>
               </tr>
             </table>`;
 

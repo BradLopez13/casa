@@ -36,6 +36,10 @@ describe('auth emails', () => {
     expect(count(authEmails()[name].html, '{{ .Token }}')).toBe(1);
   });
 
+  it.each(['confirmation', 'recovery'] as const)('%s code pill has a slate border', (name) => {
+    expect(authEmails()[name].html).toMatch(/border: 2px solid #2E3B41[^"]*">{{ .Token }}/);
+  });
+
   it('the password notice has no code', () => {
     expect(authEmails().password_changed.html).not.toContain('{{ .Token }}');
   });
