@@ -6,12 +6,10 @@ import { palettes, type Scheme } from './tokens';
 describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
   const p = palettes[scheme];
 
-  it('fills a primary button while it can be pressed', () => {
-    expect(buttonLook('primary', 'default', 'enabled', p)).toEqual({
-      fill: p.cobalt,
-      border: p.cobalt,
-      foreground: p.onCobalt,
-    });
+  it('draws a primary button as the pósit with its edge', () => {
+    const expected = { fill: p.accent, border: p.accentEdge, foreground: p.onAccent };
+    expect(buttonLook('primary', 'default', 'enabled', p)).toEqual(expected);
+    expect(buttonLook('primary', 'default', 'busy', p)).toEqual(expected);
   });
 
   it('fills a destructive primary button with red', () => {
@@ -22,10 +20,10 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
     });
   });
 
-  it('draws a secondary button as a tonal pill', () => {
+  it('draws a secondary button as a tonal pill with its edge', () => {
     expect(buttonLook('secondary', 'default', 'enabled', p)).toEqual({
       fill: p.tonal,
-      border: p.tonal,
+      border: p.tonalEdge,
       foreground: p.cobalt,
     });
   });

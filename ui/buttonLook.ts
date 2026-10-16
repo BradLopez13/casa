@@ -37,10 +37,10 @@ export function buttonLook(
   if (variant === 'primary') {
     return tone === 'destructive'
       ? { fill: colors.red, border: colors.red, foreground: colors.onRed }
-      : { fill: colors.cobalt, border: colors.cobalt, foreground: colors.onCobalt };
+      : { fill: colors.accent, border: colors.accentEdge, foreground: colors.onAccent };
   }
   if (variant === 'secondary') {
-    return { fill: colors.tonal, border: colors.tonal, foreground: colors.cobalt };
+    return { fill: colors.tonal, border: colors.tonalEdge, foreground: colors.cobalt };
   }
   return {
     fill: 'transparent',
