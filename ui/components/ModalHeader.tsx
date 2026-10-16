@@ -23,7 +23,7 @@ export function HeaderAction({
   const { colors, radii, space } = useTheme();
   // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
   // turns muted. Neither is faded, so the label stays readable.
-  const look = buttonLook('primary', disabled ? 'disabled' : 'enabled', colors);
+  const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
   return (
     <Pressable
       testID={testID}

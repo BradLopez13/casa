@@ -29,8 +29,12 @@ export function Button({
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
+  // Bridge until Task 3
+  const [v, tone] =
+    variant === 'danger' ? (['tertiary', 'destructive'] as const) : ([variant, 'default'] as const);
   const { fill, border, foreground } = buttonLook(
-    variant,
+    v,
+    tone,
     loading ? 'busy' : disabled ? 'disabled' : 'enabled',
     colors,
   );
