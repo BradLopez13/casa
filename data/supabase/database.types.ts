@@ -258,6 +258,9 @@ isOneToOne: false
 "set_notification_prefs":
 { Args: { "p_member_joined": boolean,"p_task_assigned": boolean }; Returns: undefined
                            },
+"set_provider_display_name":
+{ Args: { "p_name": string }; Returns: undefined
+                           },
 "set_time_zone":
 { Args: { "p_tz": string }; Returns: undefined
                            },
