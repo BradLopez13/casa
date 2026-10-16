@@ -7,7 +7,10 @@ let configured = false;
 
 function configure() {
   if (configured) return;
-  GoogleSignin.configure({ webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID });
+  const webClientId: unknown = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  GoogleSignin.configure({
+    webClientId: typeof webClientId === 'string' ? webClientId : undefined,
+  });
   configured = true;
 }
 
