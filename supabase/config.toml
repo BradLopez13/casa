@@ -258,11 +258,11 @@ content_path = "./supabase/templates/recovery.html"
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+# Security notice when a password changes (template built by `pnpm emails:build`).
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Tu contraseña de Nido ha cambiado"
+content_path = "./supabase/templates/password_changed.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

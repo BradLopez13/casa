@@ -10,3 +10,5 @@ e2e-report.xml
 .superpowers/
 .impeccable/
 google-services.json
+# Built by `pnpm emails:build`
+supabase/templates/
