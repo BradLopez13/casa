@@ -1,15 +1,26 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, Pressable, type TextInput } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, View, type TextInput } from 'react-native';
 import { t } from '@/i18n';
 import { passwordToggle } from '../passwordToggle';
 import { useTheme } from '../theme';
 import { TextField } from './TextField';
 
 type FieldProps = Parameters<typeof TextField>[0];
-type Props = Omit<FieldProps, 'secureTextEntry' | 'trailing' | 'ref'>;
+type Props = Omit<FieldProps, 'secureTextEntry' | 'trailing'> & {
+  /** When set, a checkmark with this label replaces the eye (e.g. the repeat field once it matches). */
+  confirmedLabel?: string | undefined;
+};
 
-export function PasswordField({ testID, inputStyle, onChangeText, value, ...rest }: Props) {
+export function PasswordField({
+  testID,
+  inputStyle,
+  onChangeText,
+  value,
+  ref,
+  confirmedLabel,
+  ...rest
+}: Props) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -20,9 +31,12 @@ export function PasswordField({ testID, inputStyle, onChangeText, value, ...rest
 
   const onToggle = () => {
     const next = !visible;
+    // A screen-reader double-tap never fires onPressIn, so ask the input as well.
+    const refocus = wasFocused.current || (inputRef.current?.isFocused() ?? false);
+    wasFocused.current = false;
     setVisible(next);
     AccessibilityInfo.announceForAccessibility(t(passwordToggle(next).labelKey));
-    if (wasFocused.current) {
+    if (refocus) {
       const end = value?.length ?? typedLength.current;
       // Toggling secureTextEntry can drop the focus and reset the caret on Android.
       setTimeout(() => {
@@ -34,8 +48,14 @@ export function PasswordField({ testID, inputStyle, onChangeText, value, ...rest
 
   return (
     <TextField
+      autoCapitalize="none"
+      autoCorrect={false}
       {...rest}
-      ref={inputRef}
+      ref={(node) => {
+        inputRef.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      }}
       testID={testID}
       value={value}
       onChangeText={(text) => {
@@ -49,21 +69,36 @@ export function PasswordField({ testID, inputStyle, onChangeText, value, ...rest
         ...inputStyle,
       }}
       trailing={
-        <Pressable
-          testID={testID ? `${testID}.toggle` : undefined}
-          accessibilityRole="button"
-          accessibilityLabel={label}
-          accessibilityHint={t('auth.password.hint')}
-          onPressIn={() => {
-            wasFocused.current = inputRef.current?.isFocused() ?? false;
-          }}
-          onPress={onToggle}
-          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          {({ pressed }) => (
-            <Ionicons name={toggle.icon} size={22} color={pressed ? colors.cobalt : colors.muted} />
-          )}
-        </Pressable>
+        confirmedLabel ? (
+          <View
+            testID={testID ? `${testID}.match` : undefined}
+            accessible
+            accessibilityLabel={confirmedLabel}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="checkmark" size={22} color={colors.cobalt} />
+          </View>
+        ) : (
+          <Pressable
+            testID={testID ? `${testID}.toggle` : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityHint={t('auth.password.hint')}
+            onPressIn={() => {
+              wasFocused.current = inputRef.current?.isFocused() ?? false;
+            }}
+            onPress={onToggle}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {({ pressed }) => (
+              <Ionicons
+                name={toggle.icon}
+                size={22}
+                color={pressed ? colors.cobalt : colors.muted}
+              />
+            )}
+          </Pressable>
+        )
       }
     />
   );

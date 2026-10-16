@@ -1,23 +1,32 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Text } from 'react-native';
+import { useRef, useState } from 'react';
+import { Text, View, type TextInput } from 'react-native';
 import { signUp } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
+import {
+  nextPairState,
+  pairErrors,
+  pairMatches,
+  type PairState,
+} from '@/features/auth/password-pair';
 import { signUpSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
+import { PasswordField } from '@/ui/components/PasswordField';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
 export default function SignUpScreen() {
   const { hasPendingInvite } = usePendingInvite();
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; name?: string }>();
   const [displayName, setDisplayName] = useState(
@@ -25,26 +34,54 @@ export default function SignUpScreen() {
   );
   const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [pair, setPair] = useState<PairState>({
+    passwordTouched: false,
+    confirmTouched: false,
+    submitted: false,
+  });
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
   const [formError, setFormError] = useState<MessageKey | null>(null);
   const [loading, setLoading] = useState(false);
+  const nameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
+
+  const shownPair = pairErrors(pair, { password, confirm });
 
   async function submit() {
     setFormError(null);
+    setPair((s) => nextPairState(s, 'submit'));
     const parsed = signUpSchema.safeParse({
       displayName,
       email: email.trim(),
       password,
-      passwordConfirm: password, // Temporary until Task 7/8
+      passwordConfirm: confirm,
     });
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error, { form: 'signUp' }));
+      const found = fieldErrors(parsed.error, { form: 'signUp' });
+      setErrors(found);
+      const onSubmit = pairErrors(
+        { passwordTouched: true, confirmTouched: true, submitted: true },
+        { password, confirm },
+      );
+      const first: TextInput | null =
+        (found.displayName ? nameRef.current : null) ??
+        (found.email ? emailRef.current : null) ??
+        (onSubmit.password ? passwordRef.current : null) ??
+        (onSubmit.confirm ? confirmRef.current : null);
+      first?.focus();
       return;
     }
     setErrors({});
     setLoading(true);
     try {
-      const outcome = await signUp(parsed.data);
+      const outcome = await signUp({
+        displayName: parsed.data.displayName,
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
       // Signed in: the route guard moves on once the session changes.
       if (outcome === 'verify') {
         router.push({
@@ -63,9 +100,15 @@ export default function SignUpScreen() {
     const key = errors[name];
     return key ? t(key) : undefined;
   };
+  const pairError = (name: 'password' | 'confirm') => {
+    const key = shownPair[name];
+    return key ? t(`auth.errors.${key}`) : undefined;
+  };
+  const matches = pairMatches({ password, confirm });
 
   return (
     <CenteredCard>
+      <BrandHeader />
       <ScreenTitle>{t('auth.signUp.title')}</ScreenTitle>
       <SocialButtons />
       {hasPendingInvite ? (
@@ -74,6 +117,7 @@ export default function SignUpScreen() {
         </Text>
       ) : null}
       <TextField
+        ref={nameRef}
         testID="sign-up.name"
         label={t('auth.fields.displayName')}
         value={displayName}
@@ -84,6 +128,7 @@ export default function SignUpScreen() {
         autoCapitalize="words"
       />
       <TextField
+        ref={emailRef}
         testID="sign-up.email"
         label={t('auth.fields.email')}
         value={email}
@@ -95,30 +140,61 @@ export default function SignUpScreen() {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <TextField
-        testID="sign-up.password"
-        label={t('auth.fields.password')}
-        value={password}
-        onChangeText={setPassword}
-        error={fieldError('password')}
-        secureTextEntry
+      <View style={{ gap: space(2) }}>
+        <PasswordField
+          ref={passwordRef}
+          testID="sign-up.password"
+          label={t('auth.fields.password')}
+          value={password}
+          onChangeText={setPassword}
+          onBlur={() => setPair((s) => nextPairState(s, 'blurPassword'))}
+          error={pairError('password')}
+          textContentType="newPassword"
+          autoComplete="new-password"
+        />
+        {shownPair.password ? null : (
+          <Text style={{ color: colors.muted, fontSize: 14 }}>{t('auth.hints.passwordRule')}</Text>
+        )}
+      </View>
+      <PasswordField
+        ref={confirmRef}
+        testID="sign-up.password-confirm"
+        label={t('auth.fields.passwordConfirm')}
+        value={confirm}
+        onChangeText={setConfirm}
+        onBlur={() => setPair((s) => nextPairState(s, 'blurConfirm'))}
+        error={pairError('confirm')}
         textContentType="newPassword"
         autoComplete="new-password"
-        autoCapitalize="none"
+        confirmedLabel={matches ? t('auth.hints.passwordMatch') : undefined}
       />
       {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
       <Button
         testID="sign-up.submit"
         title={t('auth.signUp.submit')}
+        icon={actionIcons.signUp}
+        width="full"
         onPress={() => void submit()}
         loading={loading}
       />
-      <Button
-        testID="sign-up.go-sign-in"
-        title={t('auth.signUp.goSignIn')}
-        variant="secondary"
-        onPress={() => router.replace('/sign-in')}
-      />
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: space(1),
+        }}
+      >
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('auth.signUp.haveAccount')}</Text>
+        <Button
+          testID="sign-up.go-sign-in"
+          title={t('auth.signUp.goSignIn')}
+          variant="tertiary"
+          width="hug"
+          onPress={() => router.replace('/sign-in')}
+        />
+      </View>
     </CenteredCard>
   );
 }
