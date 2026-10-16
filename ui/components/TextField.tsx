@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Text, TextInput, View, type TextInputProps, type TextStyle } from 'react-native';
 import { useFocusReveal } from '../focusReveal';
 import { useTheme } from '../theme';
 import { CONTROL_HEIGHT } from '../tokens';
@@ -9,9 +9,19 @@ type Props = Omit<TextInputProps, 'style'> & {
   label: string;
   error?: string | undefined;
   testID?: string;
+  /** Extra text style for the input (font, size, spacing). */
+  inputStyle?: TextStyle;
 };
 
-export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps }: Props) {
+export function TextField({
+  label,
+  error,
+  testID,
+  inputStyle,
+  onFocus,
+  onBlur,
+  ...inputProps
+}: Props) {
   const { colors, radii, space } = useTheme();
   const [focused, setFocused] = useState(false);
   // Inside a form that keeps the focused field above the keyboard (CenteredCard, modal forms).
@@ -48,6 +58,7 @@ export function TextField({ label, error, testID, onFocus, onBlur, ...inputProps
           backgroundColor: colors.note,
           color: colors.ink,
           fontSize: 17,
+          ...inputStyle,
         }}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}

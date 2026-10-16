@@ -7,6 +7,10 @@ describe('toAuthFailure', () => {
     ['user_already_exists', 'EMAIL_TAKEN'],
     ['email_exists', 'EMAIL_TAKEN'],
     ['weak_password', 'WEAK_PASSWORD'],
+    ['otp_expired', 'INVALID_CODE'],
+    ['email_not_confirmed', 'EMAIL_NOT_CONFIRMED'],
+    ['over_email_send_rate_limit', 'RATE_LIMITED'],
+    ['over_request_rate_limit', 'RATE_LIMITED'],
     ['something_else', 'UNKNOWN'],
   ])('maps auth code %s to %s', (code, expected) => {
     expect(toAuthFailure({ code, message: 'x' }).code).toBe(expected);

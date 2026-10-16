@@ -28,6 +28,7 @@ appId: com.bradlopez13.casa
 - hideKeyboard
 - tapOn:
     id: sign-up.submit
+- runFlow: subflows/verify-email.yaml
 
 # Onboarding: create the household
 - extendedWaitUntil:

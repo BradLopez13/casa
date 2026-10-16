@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { signIn } from '@/features/auth/api';
@@ -6,6 +6,7 @@ import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
 import { signInSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
+import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -18,6 +19,7 @@ export default function SignInScreen() {
   const { hasPendingInvite } = usePendingInvite();
   const { colors } = useTheme();
   const router = useRouter();
+  const { error: errorParam } = useLocalSearchParams<{ error?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
@@ -37,11 +39,20 @@ export default function SignInScreen() {
       await signIn(parsed.data);
       // The route guard moves on once the session changes.
     } catch (e) {
-      setFormError(authErrorKey(toAuthFailure(e).code));
+      const code = toAuthFailure(e).code;
+      if (code === 'EMAIL_NOT_CONFIRMED') {
+        // The code was already re-sent: go and type it.
+        router.push({ pathname: '/verify-email', params: { email: parsed.data.email } });
+      } else {
+        setFormError(authErrorKey(code));
+      }
     } finally {
       setLoading(false);
     }
   }
+
+  // Sent by /auth/callback when the browser sign-in came back without a usable code.
+  const shownError = formError ?? (errorParam === 'callback' ? authErrorKey('UNKNOWN') : null);
 
   const fieldError = (name: string) => {
     const key = errors[name];
@@ -51,6 +62,7 @@ export default function SignInScreen() {
   return (
     <CenteredCard>
       <ScreenTitle>{t('auth.signIn.title')}</ScreenTitle>
+      <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
           {t('auth.pendingInvite')}
@@ -79,7 +91,7 @@ export default function SignInScreen() {
         autoComplete="current-password"
         autoCapitalize="none"
       />
-      {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
+      {shownError ? <ErrorText>{t(shownError)}</ErrorText> : null}
       <Button
         testID="sign-in.submit"
         title={t('auth.signIn.submit')}
@@ -91,6 +103,14 @@ export default function SignInScreen() {
         title={t('auth.signIn.goSignUp')}
         variant="secondary"
         onPress={() => router.replace('/sign-up')}
+      />
+      <Button
+        testID="sign-in.forgot-password"
+        title={t('auth.forgot.link')}
+        variant="secondary"
+        onPress={() =>
+          router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+        }
       />
     </CenteredCard>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { authErrorKey, fieldErrors } from './form-errors';
-import { signInSchema, signUpSchema } from './schemas';
+import { authErrorKey, fieldErrors, visibleAuthError } from './form-errors';
+import { resetPasswordSchema, signInSchema, signUpSchema } from './schemas';
 
 describe('fieldErrors', () => {
   it('maps sign-up issues to one i18n key per field', () => {
@@ -33,10 +33,35 @@ describe('fieldErrors', () => {
       password: 'auth.errors.passwordRequired',
     });
   });
+
+  it('maps a bad code', () => {
+    const r = resetPasswordSchema.safeParse({ code: '12', password: '12345678' });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'reset' })).toEqual({ code: 'auth.errors.codeInvalid' });
+  });
+
+  it('maps a short password on reset', () => {
+    const r = resetPasswordSchema.safeParse({ code: '123456', password: '123' });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'reset' })).toEqual({
+      password: 'auth.errors.passwordTooShort',
+    });
+  });
 });
 
 describe('authErrorKey', () => {
   it('namespaces the code', () => {
     expect(authErrorKey('EMAIL_TAKEN')).toBe('auth.errors.EMAIL_TAKEN');
+  });
+});
+
+describe('visibleAuthError', () => {
+  it('hides a cancelled social sign-in', () => {
+    expect(visibleAuthError('OAUTH_CANCELLED')).toBeNull();
+  });
+
+  it('shows every other code', () => {
+    expect(visibleAuthError('INVALID_CODE')).toBe('auth.errors.INVALID_CODE');
+    expect(visibleAuthError('UNKNOWN')).toBe('auth.errors.UNKNOWN');
   });
 });

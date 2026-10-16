@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { signUp } from '@/features/auth/api';
@@ -6,6 +6,7 @@ import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
 import { signUpSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
+import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -18,8 +19,11 @@ export default function SignUpScreen() {
   const { hasPendingInvite } = usePendingInvite();
   const { colors } = useTheme();
   const router = useRouter();
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams<{ email?: string; name?: string }>();
+  const [displayName, setDisplayName] = useState(
+    typeof params.name === 'string' ? params.name : '',
+  );
+  const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
   const [formError, setFormError] = useState<MessageKey | null>(null);
@@ -35,8 +39,14 @@ export default function SignUpScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await signUp(parsed.data);
-      // The route guard moves on once the session changes.
+      const outcome = await signUp(parsed.data);
+      // Signed in: the route guard moves on once the session changes.
+      if (outcome === 'verify') {
+        router.push({
+          pathname: '/verify-email',
+          params: { email: parsed.data.email, name: parsed.data.displayName },
+        });
+      }
     } catch (e) {
       setFormError(authErrorKey(toAuthFailure(e).code));
     } finally {
@@ -52,6 +62,7 @@ export default function SignUpScreen() {
   return (
     <CenteredCard>
       <ScreenTitle>{t('auth.signUp.title')}</ScreenTitle>
+      <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-up.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
           {t('auth.pendingInvite')}

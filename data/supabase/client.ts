@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import './crypto-polyfill';
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 import { secureStore } from '../secure-store';
@@ -20,6 +21,7 @@ export const supabase = createClient<Database>(url, key, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    flowType: 'pkce',
   },
 });
 

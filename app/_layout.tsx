@@ -151,6 +151,8 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
       return 'root';
     case '(auth)':
       return 'auth';
+    case 'auth':
+      return 'auth';
     case 'onboarding':
       return 'onboarding';
     case 'invite':

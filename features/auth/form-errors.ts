@@ -7,6 +7,8 @@ const FIELD_MESSAGES: Readonly<Record<string, MessageKey>> = {
   'displayName:too_big': 'auth.errors.nameTooLong',
   'email:invalid_format': 'auth.errors.emailInvalid',
   'email:invalid_type': 'auth.errors.emailInvalid',
+  'code:invalid_format': 'auth.errors.codeInvalid',
+  'code:invalid_type': 'auth.errors.codeInvalid',
   'password:too_small': 'auth.errors.passwordTooShort',
   'password:invalid_type': 'auth.errors.passwordRequired',
 };
@@ -14,7 +16,7 @@ const FIELD_MESSAGES: Readonly<Record<string, MessageKey>> = {
 /** First i18n error key per field for a failed Zod parse. */
 export function fieldErrors(
   error: z.ZodError,
-  options: { form: 'signIn' | 'signUp' },
+  options: { form: 'signIn' | 'signUp' | 'verify' | 'reset' },
 ): Record<string, MessageKey> {
   const out: Record<string, MessageKey> = {};
   for (const issue of error.issues) {
@@ -31,4 +33,9 @@ export function fieldErrors(
 
 export function authErrorKey(code: AuthErrorCode): MessageKey {
   return `auth.errors.${code}`;
+}
+
+/** Error key to show for a failure, or null when it needs no message (the user cancelled). */
+export function visibleAuthError(code: AuthErrorCode): MessageKey | null {
+  return code === 'OAUTH_CANCELLED' ? null : authErrorKey(code);
 }

@@ -1,5 +1,13 @@
 export type AuthErrorCode =
-  'INVALID_CREDENTIALS' | 'EMAIL_TAKEN' | 'WEAK_PASSWORD' | 'NETWORK' | 'UNKNOWN';
+  | 'INVALID_CREDENTIALS'
+  | 'EMAIL_TAKEN'
+  | 'WEAK_PASSWORD'
+  | 'INVALID_CODE'
+  | 'EMAIL_NOT_CONFIRMED'
+  | 'RATE_LIMITED'
+  | 'OAUTH_CANCELLED'
+  | 'NETWORK'
+  | 'UNKNOWN';
 
 export class AuthFailure extends Error {
   readonly code: AuthErrorCode;
@@ -16,6 +24,10 @@ const AUTH_CODES: Readonly<Record<string, AuthErrorCode>> = {
   user_already_exists: 'EMAIL_TAKEN',
   email_exists: 'EMAIL_TAKEN',
   weak_password: 'WEAK_PASSWORD',
+  otp_expired: 'INVALID_CODE',
+  email_not_confirmed: 'EMAIL_NOT_CONFIRMED',
+  over_email_send_rate_limit: 'RATE_LIMITED',
+  over_request_rate_limit: 'RATE_LIMITED',
 };
 
 const NETWORK_MESSAGE = /Network request failed|Failed to fetch|fetch failed/i;
