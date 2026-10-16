@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appleFullName, callbackCode } from './nonce';
+import { appleFullName, callbackCancelled, callbackCode } from './nonce';
 
 describe('appleFullName', () => {
   it('joins given and family name', () => {
@@ -22,5 +22,17 @@ describe('callbackCode', () => {
   it('is null without a code', () => {
     expect(callbackCode({})).toBeNull();
     expect(callbackCode({ error: 'access_denied' })).toBeNull();
+  });
+});
+
+describe('callbackCancelled', () => {
+  it('flags a denied or cancelled callback', () => {
+    expect(callbackCancelled({ error: 'access_denied' })).toBe(true);
+    expect(callbackCancelled({ error: 'user_cancelled_authorize' })).toBe(true);
+  });
+  it('is false otherwise', () => {
+    expect(callbackCancelled({})).toBe(false);
+    expect(callbackCancelled({ error: 'server_error' })).toBe(false);
+    expect(callbackCancelled({ code: 'abc' })).toBe(false);
   });
 });

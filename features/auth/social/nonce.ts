@@ -15,3 +15,10 @@ export function callbackCode(params: Record<string, string | string[] | undefine
   const code = Array.isArray(raw) ? raw[0] : raw;
   return code ? code : null;
 }
+
+/** True when the callback came back because the user backed out (denied, or cancelled). */
+export function callbackCancelled(params: Record<string, string | string[] | undefined>): boolean {
+  const raw = params.error;
+  const error = Array.isArray(raw) ? raw[0] : raw;
+  return error === 'access_denied' || !!error?.startsWith('user_cancelled');
+}

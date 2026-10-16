@@ -8,7 +8,7 @@ type Props = { busy: boolean; disabled: boolean; dimmed: boolean; onPress: () =>
 
 /** Apple's own button, shown only once the device says Sign in with Apple is available. */
 export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
-  const { scheme, radii } = useTheme();
+  const { scheme, radii, colors } = useTheme();
   const [available, setAvailable] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
     >
       {busy ? (
         <View style={{ height: CONTROL_HEIGHT, justifyContent: 'center' }}>
-          <ActivityIndicator />
+          <ActivityIndicator color={colors.muted} />
         </View>
       ) : (
         <AppleAuthentication.AppleAuthenticationButton

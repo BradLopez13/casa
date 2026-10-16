@@ -1,15 +1,17 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { visibleAuthError } from '@/features/auth/form-errors';
 import { t, type MessageKey } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
-import { AppleButton } from './AppleButton';
 import { GoogleMark } from './GoogleMark';
 import { enabledProviders } from './enabled';
 import { toSocialFailure } from './failure';
 import type { SocialProvider } from './providers';
+
+// Lazy: on iOS the Apple button pulls in the native module, which should not load while Apple is off.
+const AppleButton = lazy(() => import('./AppleButton').then((m) => ({ default: m.AppleButton })));
 
 // Google's official button colours.
 const GOOGLE_LOOK = {
@@ -88,18 +90,20 @@ export function SocialButtons() {
         </Pressable>
       ) : null}
       {providers.includes('apple') ? (
-        <AppleButton
-          busy={busy === 'apple'}
-          disabled={busy !== null}
-          dimmed={busy !== null && busy !== 'apple'}
-          onPress={() =>
-            void run('apple', async () => {
-              // Lazy: the native module only loads when Apple is enabled and tapped.
-              const { signInWithApple } = await import('./apple');
-              await signInWithApple();
-            })
-          }
-        />
+        <Suspense fallback={null}>
+          <AppleButton
+            busy={busy === 'apple'}
+            disabled={busy !== null}
+            dimmed={busy !== null && busy !== 'apple'}
+            onPress={() =>
+              void run('apple', async () => {
+                // Lazy: the native module only loads when Apple is enabled and tapped.
+                const { signInWithApple } = await import('./apple');
+                await signInWithApple();
+              })
+            }
+          />
+        </Suspense>
       ) : null}
       {error ? <ErrorText>{t(error)}</ErrorText> : null}
       <Text style={{ color: colors.ink, fontSize: 15, textAlign: 'center' }}>

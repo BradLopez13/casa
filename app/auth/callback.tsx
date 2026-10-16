@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { supabase } from '@/data/supabase/client';
+import { exchangeCodeOnce } from '@/features/auth/social/exchange';
 import { callbackCode } from '@/features/auth/social/nonce';
 import { t } from '@/i18n';
 import { useTheme } from '@/ui/theme';
@@ -14,28 +14,28 @@ export default function AuthCallback() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { colors } = useTheme();
-  const done = useRef(false);
 
   useEffect(() => {
-    // One exchange only: a code can be used once, and re-renders must not retry it.
-    if (done.current) return;
-    done.current = true;
     const code = callbackCode(params);
     if (!code) {
       router.replace('/sign-in');
       return;
     }
-    supabase.auth
-      .exchangeCodeForSession(code)
-      .then(({ error }) => {
-        if (error) router.replace('/sign-in');
-      })
-      .catch(() => router.replace('/sign-in'));
+    // Shared and memoised per code: re-renders, or the Android browser flow that exchanges
+    // the same link, never use the single-use code twice.
+    exchangeCodeOnce(code).catch(() => router.replace('/sign-in'));
   }, [params, router]);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator color={colors.muted} accessibilityLabel={t('members.loading')} />
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.page,
+      }}
+    >
+      <ActivityIndicator color={colors.muted} accessibilityLabel={t('auth.callback.loading')} />
     </View>
   );
 }

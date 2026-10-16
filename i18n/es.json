@@ -29,6 +29,7 @@
   "auth.social.or": "o",
   "auth.social.google": "Continuar con Google",
   "auth.social.apple": "Continuar con Apple",
+  "auth.callback.loading": "Entrando…",
   "auth.verify.title": "Verifica tu correo",
   "auth.verify.body": "Te hemos enviado un código a {email}.",
   "auth.verify.code": "Código",
