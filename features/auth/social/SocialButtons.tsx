@@ -1,14 +1,14 @@
-import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
-import { toAuthFailure } from '@/features/auth/errors';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { visibleAuthError } from '@/features/auth/form-errors';
 import { t, type MessageKey } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { GoogleMark } from './GoogleMark';
-import { visibleProviders, type SocialProvider } from './providers';
+import { enabledProviders } from './enabled';
+import { toSocialFailure } from './failure';
+import type { SocialProvider } from './providers';
 
 // Google's official button colours.
 const GOOGLE_LOOK = {
@@ -21,25 +21,23 @@ export function SocialButtons() {
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
 
-  const providers = visibleProviders({
-    env: {
-      google: process.env.EXPO_PUBLIC_AUTH_GOOGLE,
-      apple: process.env.EXPO_PUBLIC_AUTH_APPLE,
-    },
-    platform: Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web',
-    inExpoGo: Constants.executionEnvironment === ExecutionEnvironment.StoreClient,
-  });
+  const inFlight = useRef(false);
+  const providers = enabledProviders();
   if (providers.length === 0) return null;
 
   async function run(provider: SocialProvider, action: () => Promise<void>) {
+    // State alone is too slow: two quick taps would both start a sign-in.
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError(null);
     setBusy(provider);
     try {
       await action();
       // The route guard moves on once the session changes.
     } catch (e) {
-      setError(visibleAuthError(toAuthFailure(e).code));
+      setError(visibleAuthError(toSocialFailure(e).code));
     } finally {
+      inFlight.current = false;
       setBusy(null);
     }
   }

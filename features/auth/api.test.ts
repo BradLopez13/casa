@@ -23,6 +23,7 @@ const auth = vi.hoisted(() => ({
 
 vi.mock('@/data/supabase/client', () => ({ supabase: { auth, rpc: vi.fn() } }));
 vi.mock('@/data/supabase/errors', () => ({ toAppError: (e: unknown) => e }));
+vi.mock('./social/enabled', () => ({ enabledProviders: () => [] }));
 vi.mock('@/features/push/registration', () => ({ forgetPushRegistration: vi.fn() }));
 
 const ok = { data: {}, error: null };
