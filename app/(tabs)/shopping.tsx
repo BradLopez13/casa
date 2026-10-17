@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { countLabel } from '@/domain/shopping/screen';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
@@ -207,11 +207,15 @@ export default function ShoppingScreen() {
   );
 }
 
-/** One column (phones, small tablets): the field on the door, then one sheet, pulled by the door. */
+/**
+ * One column (phones, small tablets): the virtualised sheet is the screen's scroller, pulled by the
+ * door; the door, the field, the offline band and the state line are its header.
+ */
 function ShoppingStack({
   entry,
   pending,
   bought,
+  state,
   stateView,
   sheet,
   online,
@@ -221,19 +225,25 @@ function ShoppingStack({
 }: ShoppingParts) {
   const { space } = useTheme();
   const column = useOneColumn();
+  const header = (
+    <>
+      {door(<AddItemField entry={entry} />)}
+      {online ? null : <OfflineBand />}
+      {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
+      <View style={[column, { paddingTop: space(listTopStep(online)) }]}>{stateView}</View>
+    </>
+  );
   return (
     <FridgeRefresh refreshing={pulling} onRefresh={refresh}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
+      <ShoppingSheet
+        flush
+        header={header}
+        column={column}
+        pending={state === 'list' ? pending : NO_ITEMS}
+        bought={state === 'list' ? bought : NO_ITEMS}
         contentContainerStyle={{ paddingBottom: space(10) }}
-      >
-        {door(<AddItemField entry={entry} />)}
-        {online ? null : <OfflineBand />}
-        {/* The door runs edge to edge; the sheet keeps to the column. */}
-        <View style={[column, { paddingTop: space(listTopStep(online)) }]}>
-          {stateView ?? <ShoppingSheet flush pending={pending} bought={bought} {...sheet} />}
-        </View>
-      </ScrollView>
+        {...sheet}
+      />
     </FridgeRefresh>
   );
 }

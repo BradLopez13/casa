@@ -1,5 +1,5 @@
 import { type ComponentProps } from 'react';
-import { FlatList, View } from 'react-native';
+import { SectionList } from 'react-native';
 import type { TaskListSection } from '@/features/tasks/sections';
 import { SectionHeader } from './SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from './TaskRow';
@@ -9,25 +9,23 @@ type Props = Omit<ComponentProps<typeof TaskRow>, 'row' | 'flush'> & {
 };
 
 /**
- * Task sections laid out in a pane's own scroll (two panes), with the same headings, notes and
- * spacing as the virtualised list. Flush: the pane already brings the gutter. Each section is a
- * FlatList that lays out in full (the pane scrolls), keyed by the task.
+ * Task sections for the two-pane layout: ONE SectionList, with the same headings, notes and
+ * spacing as the one-column list. Flush: the pane already brings the gutter. The pane is a
+ * scroll of its own that also holds other things (the day strip, empty lines), which this
+ * screen's panes can't hand to the list, so the list lays out in full (`scrollEnabled={false}`).
  */
 export function TaskSections({ sections, ...row }: Props) {
   return (
-    <View>
-      {sections.map((section) => (
-        <View key={section.key}>
-          <SectionHeader title={section.title} count={section.count} flush />
-          <FlatList
-            data={section.data}
-            scrollEnabled={false}
-            keyExtractor={taskRowKey}
-            ItemSeparatorComponent={TaskRowSeparator}
-            renderItem={({ item }) => <TaskRow row={item} flush {...row} />}
-          />
-        </View>
-      ))}
-    </View>
+    <SectionList
+      sections={sections}
+      scrollEnabled={false}
+      keyExtractor={taskRowKey}
+      stickySectionHeadersEnabled={false}
+      ItemSeparatorComponent={TaskRowSeparator}
+      renderSectionHeader={({ section }) => (
+        <SectionHeader title={section.title} count={section.count} flush />
+      )}
+      renderItem={({ item }) => <TaskRow row={item} flush {...row} />}
+    />
   );
 }
