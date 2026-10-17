@@ -51,6 +51,13 @@ export function DoorControls({ children }: { children: ReactNode }) {
 
 type Props = {
   title: string;
+  /**
+   * The small label above the headline (§14.4), for a door whose headline is not the screen's
+   * name (Ajustes: «Ajustes» over your name). It is then the door's header for screen readers.
+   */
+  eyebrow?: string;
+  /** Replaces the title text with a node of its own (Ajustes: your magnet and editable name). */
+  heading?: ReactNode;
   /** A string is painted in the muted subtitle style; any other node is painted as is. */
   subtitle?: ReactNode;
   /** 'large' for Hoy (44), 'medium' for Tareas (38). Both are 28 in a compact door. */
@@ -85,6 +92,8 @@ const COMPACT_CHILDREN_MIN = 240;
  */
 export function DoorHeader({
   title,
+  eyebrow,
+  heading: customHeading,
   subtitle,
   titleSize = 'large',
   titleTestID,
@@ -112,7 +121,22 @@ export function DoorHeader({
   const overflows = door.compact && viewport > 0 && content > viewport + 1;
 
   const size = door.titleSize;
-  const heading = (
+  const label = eyebrow ? (
+    <Text
+      accessibilityRole="header"
+      style={{
+        marginBottom: space(1),
+        color: colors.muted,
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+      }}
+    >
+      {eyebrow}
+    </Text>
+  ) : null;
+  const titleText = customHeading ?? (
     <Text
       testID={titleTestID}
       accessibilityRole="header"
@@ -128,6 +152,14 @@ export function DoorHeader({
     >
       {title}
     </Text>
+  );
+  const heading = label ? (
+    <View>
+      {label}
+      {titleText}
+    </View>
+  ) : (
+    titleText
   );
   const sub =
     typeof subtitle === 'string' && subtitle !== '' ? (

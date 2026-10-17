@@ -20,7 +20,7 @@ export const actionIcons = {
   back: 'arrow-back',
   close: 'close',
   add: 'add',
-  openPhoneSettings: 'settings-outline',
+  openPhoneSettings: 'open-outline',
   people: 'people-outline',
   chevron: 'chevron-forward',
   skip: 'play-skip-forward-outline',

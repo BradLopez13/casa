@@ -130,3 +130,8 @@ export async function transferOwnership(householdId: string, userId: string): Pr
 export async function deleteHousehold(householdId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('delete_household', { p_household_id: householdId }));
 }
+
+/** Replaces the signed-in person's visible name (1 to 40 characters once trimmed). */
+export async function setDisplayName(name: string): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_display_name', { p_name: name }));
+}

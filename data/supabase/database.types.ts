@@ -252,6 +252,9 @@ isOneToOne: false
 "revoke_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
                            },
+"set_display_name":
+{ Args: { "p_name": string }; Returns: undefined
+                           },
 "set_item_bought":
 { Args: { "p_bought": boolean,"p_id": string }; Returns: undefined
                            },
