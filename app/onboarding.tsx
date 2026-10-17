@@ -80,6 +80,10 @@ export default function OnboardingScreen() {
         value={name}
         onChangeText={setName}
         error={nameError}
+        returnKeyType="done"
+        onSubmitEditing={() => {
+          if (!create.isPending) submitCreate();
+        }}
       />
       {formError ? <ErrorText>{formError}</ErrorText> : null}
       <Button
@@ -108,8 +112,12 @@ export default function OnboardingScreen() {
         value={link}
         onChangeText={setLink}
         error={linkError}
+        keyboardType="url"
+        textContentType="URL"
         autoCapitalize="none"
         autoCorrect={false}
+        returnKeyType="done"
+        onSubmitEditing={submitJoin}
       />
       <Button
         testID="onboarding.join"

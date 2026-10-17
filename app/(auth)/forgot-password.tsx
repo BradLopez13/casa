@@ -161,6 +161,10 @@ export default function ForgotPasswordScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!loading) void sendCode();
+            }}
           />
           {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
           <Button
@@ -196,6 +200,8 @@ export default function ForgotPasswordScreen() {
               error={pairError('password')}
               textContentType="newPassword"
               autoComplete="new-password"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
             />
             {shownPair.password ? null : (
               <Text style={{ color: colors.muted, fontSize: 14 }}>
@@ -214,6 +220,10 @@ export default function ForgotPasswordScreen() {
             textContentType="newPassword"
             autoComplete="new-password"
             confirmedLabel={matches ? t('auth.hints.passwordMatch') : undefined}
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!loading) void submit();
+            }}
           />
           {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
           <Button
