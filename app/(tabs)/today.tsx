@@ -10,6 +10,7 @@ import {
   useNewTaskListStyle,
 } from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
+import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
@@ -35,6 +36,7 @@ type Screen = ReturnType<typeof useTaskScreen>;
 type TodayParts = {
   screen: Screen;
   door: ReactElement;
+  quickAdd: ReactElement;
   sections: TaskListSection[];
   cards: TodayCards;
   invite: ReactNode;
@@ -115,8 +117,17 @@ export default function TodayScreen() {
       />
     </DoorHeader>
   );
+  const quickAdd = (
+    <QuickAdd
+      testID="today.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={today}
+      placeholder={t('today.quickAdd')}
+    />
+  );
 
-  const parts: TodayParts = { screen, door, sections, cards, invite, nothing };
+  const parts: TodayParts = { screen, door, quickAdd, sections, cards, invite, nothing };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TodaySplit {...parts} /> : <TodayStack {...parts} />}
@@ -130,7 +141,7 @@ export default function TodayScreen() {
  * runs edge to edge; every row, heading and empty state keeps to the column (`useOneColumn`), as
  * the door is the list's header and the list's own padding would take it in too.
  */
-function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
   // The round "+" of a short window keeps a lane of its own, clear of every row and count.
@@ -142,7 +153,12 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
-        ListHeaderComponent={door}
+        ListHeaderComponent={
+          <>
+            {door}
+            <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
+          </>
+        }
         ListEmptyComponent={
           <View style={[column, { paddingTop: space(6), gap: space(6) }]}>
             {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
@@ -181,7 +197,7 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
  * household's cards on the right, under a fixed door. The door is outside any scroll, so the
  * left pane takes the pull-to-refresh.
  */
-function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { colors, space } = useTheme();
   const listStyle = useNewTaskListStyle();
   const lane = useNewTaskLane();
@@ -211,13 +227,16 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
       contentContainerStyle={listStyle}
       rightLane={lane}
       left={
-        left.length > 0 ? (
-          <TaskSections sections={left} {...rows} />
-        ) : (
-          <View style={{ paddingTop: space(6) }}>
-            <TaskListStates query={screen.tasksQuery} empty={nothing} />
-          </View>
-        )
+        <>
+          {quickAdd}
+          {left.length > 0 ? (
+            <TaskSections sections={left} {...rows} />
+          ) : (
+            <View style={{ paddingTop: space(6) }}>
+              <TaskListStates query={screen.tasksQuery} empty={nothing} />
+            </View>
+          )}
+        </>
       }
       right={
         <>

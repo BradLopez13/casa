@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, SectionList, Text, View } from 'react-native';
+import { addDays } from '@/domain/tasks/dates';
+import { dayHeading } from '@/domain/tasks/labels';
 import { weekStrip, type StripDay } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
 import { DayList } from '@/features/tasks/components/DayList';
@@ -11,6 +13,7 @@ import {
   useNewTaskLane,
   useNewTaskListStyle,
 } from '@/features/tasks/components/NewTaskButton';
+import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
@@ -32,6 +35,27 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+
+/** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
+function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
+  const { today, userId, membership } = screen;
+  const heading = dayHeading(day, today);
+  const placeholder =
+    day === today
+      ? t('today.quickAdd')
+      : day === addDays(today, 1)
+        ? t('tasks.quickAddTomorrow')
+        : t('tasks.quickAddDay', { day: heading.toLowerCase() });
+  return (
+    <QuickAdd
+      testID="tasks.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={day}
+      placeholder={placeholder}
+    />
+  );
+}
 
 /** Wait for the rows near the target to render before trying the scroll again. */
 const SCROLL_RETRY_MS = 100;
@@ -103,7 +127,7 @@ export default function TasksScreen() {
 }
 
 /** One column (phones, small tablets): the door with the day strip, and one list under it. */
-function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }: TasksParts) {
+function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, empty }: TasksParts) {
   const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
   // The round "+" of a short window keeps a lane of its own, clear of every row and count.
@@ -181,7 +205,16 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
-        ListHeaderComponent={door}
+        ListHeaderComponent={
+          <>
+            {door}
+            {mode === 'week' ? (
+              <View style={[column, { paddingTop: space(4) }]}>
+                <DayQuickAdd screen={screen} day={day} />
+              </View>
+            ) : null}
+          </>
+        }
         ListEmptyComponent={
           <View style={[column, { paddingTop: space(6) }]}>
             <TaskListStates query={tasksQuery} empty={empty} />
@@ -302,21 +335,24 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
         </View>
       }
       right={
-        sections.length > 0 ? (
-          <>
-            <TaskSections
-              sections={pane.overdue ? [pane.overdue, pane.day] : [pane.day]}
-              {...rowProps(screen)}
-            />
-            {pane.day.count === 0 ? (
-              <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.dayEmpty')}</Text>
-            ) : null}
-          </>
-        ) : (
-          <View style={{ paddingTop: space(6) }}>
-            <TaskListStates query={screen.tasksQuery} empty={empty} />
-          </View>
-        )
+        <>
+          <DayQuickAdd screen={screen} day={day} />
+          {sections.length > 0 ? (
+            <>
+              <TaskSections
+                sections={pane.overdue ? [pane.overdue, pane.day] : [pane.day]}
+                {...rowProps(screen)}
+              />
+              {pane.day.count === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.dayEmpty')}</Text>
+              ) : null}
+            </>
+          ) : (
+            <View style={{ paddingTop: space(6) }}>
+              <TaskListStates query={screen.tasksQuery} empty={empty} />
+            </View>
+          )}
+        </>
       }
     />
   );
