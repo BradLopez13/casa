@@ -4,14 +4,16 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { pendingNames, planAdd } from '@/domain/shopping/screen';
 import { suggest, type HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
-import { Button } from '@/ui/components/Button';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useFocusReveal } from '@/ui/focusReveal';
-import { buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
+import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 import { actionIcons } from '@/ui/actionIcons';
+
+const ADD_SIZE = 40;
 
 type EntryOptions = {
   items: readonly ShoppingItem[];
@@ -79,6 +81,7 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
   // In Compra's left pane, the field with its error and suggestions stays above the keyboard;
   // elsewhere (on the door) this does nothing.
   const reveal = useFocusReveal();
+  const look = buttonLook('primary', 'default', 'enabled', colors);
   const block = useRef<View>(null);
   const input = useRef<TextInput>(null);
   const shown = entry.suggestions.length;
@@ -88,7 +91,20 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
 
   return (
     <View ref={block} style={{ gap: space(3) }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          minHeight: buttonMetrics('primary').minHeight,
+          paddingLeft: space(4),
+          paddingRight: space(1),
+          borderRadius: radii.pill,
+          // Same width in every state, so focusing never shifts the text.
+          borderWidth: 2,
+          borderColor: focused ? colors.cobalt : colors.outline,
+          backgroundColor: colors.note,
+        }}
+      >
         <TextInput
           ref={input}
           testID="shopping.input"
@@ -111,31 +127,34 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
-            // The same height as the secondary «Añadir» beside it: its minimum sets the height, so
-            // the padding stays small enough not to push past it at the default text size.
-            minHeight: buttonMetrics('secondary').minHeight,
-            paddingHorizontal: space(4),
+            alignSelf: 'stretch',
             paddingVertical: space(2),
-            borderRadius: radii.pill,
-            // Same width in every state, so focusing never shifts the text.
-            borderWidth: 2,
-            borderColor: focused ? colors.cobalt : colors.outline,
-            backgroundColor: colors.note,
             color: colors.ink,
             fontSize: 17,
           }}
         />
-        <View style={{ flexShrink: 0 }}>
-          <Button
-            testID="shopping.add"
-            title={t('shopping.add')}
-            variant="secondary"
-            icon={actionIcons.add}
-            onPress={() => {
-              if (!submit(text)) input.current?.focus();
-            }}
-          />
-        </View>
+        <Pressable
+          testID="shopping.add"
+          accessibilityRole="button"
+          accessibilityLabel={t('shopping.add')}
+          // The circle is 40 dp inside the pill; the slop brings the touch area to 44 dp.
+          hitSlop={space(1)}
+          onPress={() => {
+            if (!submit(text)) input.current?.focus();
+          }}
+          style={({ pressed }) => ({
+            width: ADD_SIZE,
+            height: ADD_SIZE,
+            flexShrink: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: radii.pill,
+            backgroundColor: look.fill,
+            opacity: pressedOpacity(pressed),
+          })}
+        >
+          <Ionicons name={actionIcons.add} size={24} color={look.foreground} accessible={false} />
+        </Pressable>
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
       <ItemSuggestions entry={entry} />

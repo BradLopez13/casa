@@ -6,6 +6,7 @@ import type { IsoWeekday, RecurrenceRule } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
+import { repeatPillText } from './repeatPillText';
 import { MIN_TOUCH } from '@/ui/tokens';
 
 type Props = {
@@ -202,7 +203,7 @@ export function RecurrencePicker({ value, dueOn, onChange }: Props) {
           <Pill
             key={option}
             testID={`task-form.repeat.${option}`}
-            label={t(`taskForm.repeat.${option}`)}
+            label={repeatPillText(option, value?.kind === 'interval' ? value.every : null)}
             selected={option === choice}
             onPress={() => {
               if (option !== choice) onChange(ruleForChoice(option, dueOn));

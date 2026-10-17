@@ -183,6 +183,7 @@ export function TaskForm({
                 ref={titleRef}
                 testID="task-form.title"
                 label={t('taskForm.titleLabel')}
+                placeholder={t('taskForm.titlePlaceholder')}
                 value={values.title}
                 onChangeText={(text) => set({ title: text })}
                 // Only a new task starts with an empty title; on a short window the keyboard would
