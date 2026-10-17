@@ -1,6 +1,7 @@
 import { Children, createContext, useContext, useState, type ReactNode } from 'react';
-import { Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { t } from '@/i18n';
 import { doorFor, type DoorTitleSize } from '../door';
 import { useTheme } from '../theme';
 import { displayFont } from '../tokens';
@@ -8,6 +9,16 @@ import { useLayout } from '../useLayout';
 
 /** True when a parent (FridgeRefresh) already paints the door colour under the status bar. */
 export const DoorInsetContext = createContext(false);
+
+export type FridgeRefreshValue = { refreshing: boolean; onRefresh: () => void };
+
+/** Provided by FridgeRefresh: lets the door's handle refresh the pane it sits in. */
+export const FridgeRefreshContext = createContext<FridgeRefreshValue | null>(null);
+
+/** The refresh of the surrounding FridgeRefresh, or null when the screen has none. */
+export function useFridgeRefresh(): FridgeRefreshValue | null {
+  return useContext(FridgeRefreshContext);
+}
 
 const DoorCompactContext = createContext(false);
 
@@ -82,7 +93,7 @@ type Props = {
 const COMPACT_CHILDREN_MIN = 240;
 
 /**
- * The enamel door at the top of a main screen, with its handle on the right edge.
+ * The enamel door at the top of a main screen, with its handle on the bottom edge (it refreshes the pane).
  *
  * The door's colour runs edge to edge; its content stays within `contentMax`, centred, so on a
  * wide screen it lines up with the panes below. On a short window (a phone on its side), or above
@@ -111,8 +122,8 @@ export function DoorHeader({
   const left = rail ? 0 : insets.left;
   const insetHandled = useContext(DoorInsetContext);
   const top = insetHandled ? 0 : insets.top;
-  // Room for the handle, so nothing runs under it.
-  const right = door.handle ? Math.max(gutter, space(10)) : gutter;
+  const refresh = useFridgeRefresh();
+  const right = gutter;
 
   // Only a compact door that cannot fit its content scrolls; otherwise its scroll stays off so a
   // pull on the door still reaches the list's pull-to-refresh.
@@ -199,6 +210,7 @@ export function DoorHeader({
         <ScrollView
           style={{ flexGrow: 0, flexShrink: 1 }}
           scrollEnabled={overflows}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={overflows}
           bounces={false}
           overScrollMode="never"
@@ -258,21 +270,35 @@ export function DoorHeader({
 
   return (
     <View style={{ ...frame, paddingTop: top + space(3), paddingBottom: space(6) }}>
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          position: 'absolute',
-          right: space(4) + insets.right,
-          top: top + space(6),
-          // Anchored to both edges so a short door never lets it hang past the rounded bottom.
-          bottom: radii.door,
-          maxHeight: 96,
-          width: 8,
-          borderRadius: 4,
-          backgroundColor: colors.handle,
-        }}
-      />
+      {/* The handle only exists where it works: a door outside a refreshing pane has none. */}
+      {refresh && door.handle ? (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            // Centred on the door's bottom edge.
+            bottom: -2,
+            alignItems: 'center',
+            zIndex: 1,
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('refresh.pull')}
+            // 36 x 4 drawn, 44 x 44 to touch.
+            hitSlop={{ top: 20, bottom: 20, left: 4, right: 4 }}
+            onPress={refresh.onRefresh}
+            style={{
+              width: 36,
+              height: 4,
+              borderRadius: radii.pill,
+              backgroundColor: colors.outline,
+            }}
+          />
+        </View>
+      ) : null}
       <View style={column}>
         {heading}
         {sub}

@@ -21,7 +21,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
-import { DoorInsetContext } from './DoorHeader';
+import { DoorInsetContext, FridgeRefreshContext } from './DoorHeader';
+
+export { useFridgeRefresh } from './DoorHeader';
 
 type ScrollableProps = {
   refreshControl?: ReactElement;
@@ -170,7 +172,9 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           door,
         ]}
       >
-        <DoorInsetContext.Provider value>{scrollable}</DoorInsetContext.Provider>
+        <FridgeRefreshContext.Provider value={{ refreshing, onRefresh }}>
+          <DoorInsetContext.Provider value>{scrollable}</DoorInsetContext.Provider>
+        </FridgeRefreshContext.Provider>
       </Animated.View>
       {reduceMotion ? band(fade) : null}
       {/* The status bar keeps the door colour while the door itself moves. */}
