@@ -2,95 +2,95 @@
 -- `pnpm db:reset` with `pnpm e2e:fixtures`. Invites are single use, so reset before each run.
 -- It fails loudly (ON_ERROR_STOP) if applied twice.
 --
--- Users (password e2e-password-2026):
+-- Users (password e2e-password-2026, email already verified):
 --   ana@e2e.dev   = Ana, owner of "Casa E2E"
 --   berta@e2e.dev = Berta, member of "Casa E2E" (e2e/scripts/berta-adds-bread.js signs in as her)
+--   bob@e2e.dev   = Bob, no household (join-with-invite)
+--   iris@e2e.dev  = Iris, no household (delete-account-onboarding)
+--   ines@e2e.dev  = Ines, owner of "Piso Ines" (delete-account)
+--   leo@e2e.dev   = Leo, owner of "Piso Leo" (create-complete-task)
+--   olga@e2e.dev  = Olga, owner of "Piso Olga" (shopping-offline)
+--   rita@e2e.dev  = Rita, owner of "Piso Rita" (recurring-task)
+--   sara@e2e.dev  = Sara, owner of "Piso Sara" (shopping)
+-- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
+-- The sign-up path itself stays covered by sign-up-create-household, forgot-password and
+-- invite-link-signed-out.
 --
 -- Tokens (48 hex, the app only stores their sha256):
 --   VALID_TOKEN    = a1 x 24
 --   EXPIRED_TOKEN  = b2 x 24 (expired)
 --   DEEPLINK_TOKEN = c3 x 24
 
+-- A user GoTrue can sign in: password hash, confirmed email, email identity and the token
+-- columns GoTrue scans as non-null strings. The profile comes from the handle_new_user trigger.
+create function pg_temp.e2e_user(p_email text, p_name text)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change,
+    email_change_token_current, phone_change, phone_change_token, reauthentication_token
+  ) values (
+    v_id,
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    p_email,
+    extensions.crypt('e2e-password-2026', extensions.gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    jsonb_build_object('display_name', p_name),
+    now(),
+    now(),
+    '', '', '', '', '', '', '', ''
+  );
+
+  insert into auth.identities (
+    id, user_id, provider, provider_id, identity_data, created_at, updated_at, last_sign_in_at
+  ) values (
+    gen_random_uuid(),
+    v_id,
+    'email',
+    v_id::text,
+    jsonb_build_object('sub', v_id::text, 'email', p_email, 'email_verified', true),
+    now(),
+    now(),
+    now()
+  );
+
+  return v_id;
+end;
+$$;
+
+-- A household owned by p_owner, as create_household leaves it.
+create function pg_temp.e2e_household(p_owner uuid, p_name text)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid;
+begin
+  insert into public.households (name, created_by) values (p_name, p_owner) returning id into v_id;
+  insert into public.household_members (household_id, user_id, role)
+  values (v_id, p_owner, 'owner');
+  return v_id;
+end;
+$$;
+
 do $$
 declare
-  v_ana uuid := gen_random_uuid();
-  v_berta uuid := gen_random_uuid();
-  v_household uuid := gen_random_uuid();
+  v_ana uuid := pg_temp.e2e_user('ana@e2e.dev', 'Ana');
+  v_berta uuid := pg_temp.e2e_user('berta@e2e.dev', 'Berta');
+  v_household uuid := pg_temp.e2e_household(v_ana, 'Casa E2E');
   v_token text;
 begin
-  -- Ana can sign in through GoTrue: password hash, confirmed email, email identity and the
-  -- token columns GoTrue scans as non-null strings.
-  insert into auth.users (
-    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change,
-    email_change_token_current, phone_change, phone_change_token, reauthentication_token
-  ) values (
-    v_ana,
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated',
-    'authenticated',
-    'ana@e2e.dev',
-    extensions.crypt('e2e-password-2026', extensions.gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    '{"display_name":"Ana"}',
-    now(),
-    now(),
-    '', '', '', '', '', '', '', ''
-  );
-
-  insert into auth.identities (
-    id, user_id, provider, provider_id, identity_data, created_at, updated_at, last_sign_in_at
-  ) values (
-    gen_random_uuid(),
-    v_ana,
-    'email',
-    v_ana::text,
-    jsonb_build_object('sub', v_ana::text, 'email', 'ana@e2e.dev', 'email_verified', true),
-    now(),
-    now(),
-    now()
-  );
-
-  -- Berta, created the same way.
-  insert into auth.users (
-    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change,
-    email_change_token_current, phone_change, phone_change_token, reauthentication_token
-  ) values (
-    v_berta,
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated',
-    'authenticated',
-    'berta@e2e.dev',
-    extensions.crypt('e2e-password-2026', extensions.gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    '{"display_name":"Berta"}',
-    now(),
-    now(),
-    '', '', '', '', '', '', '', ''
-  );
-
-  insert into auth.identities (
-    id, user_id, provider, provider_id, identity_data, created_at, updated_at, last_sign_in_at
-  ) values (
-    gen_random_uuid(),
-    v_berta,
-    'email',
-    v_berta::text,
-    jsonb_build_object('sub', v_berta::text, 'email', 'berta@e2e.dev', 'email_verified', true),
-    now(),
-    now(),
-    now()
-  );
-
-  -- The profiles come from the handle_new_user trigger.
-  insert into public.households (id, name, created_by) values (v_household, 'Casa E2E', v_ana);
   insert into public.household_members (household_id, user_id, role)
-  values (v_household, v_ana, 'owner'), (v_household, v_berta, 'member');
+  values (v_household, v_berta, 'member');
 
   foreach v_token in array array[repeat('a1', 24), repeat('b2', 24), repeat('c3', 24)] loop
     insert into public.household_invites (household_id, token_hash, created_by, expires_at)
@@ -102,5 +102,13 @@ begin
            else now() + interval '30 days' end
     );
   end loop;
+
+  perform pg_temp.e2e_user('bob@e2e.dev', 'Bob');
+  perform pg_temp.e2e_user('iris@e2e.dev', 'Iris');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('ines@e2e.dev', 'Ines'), 'Piso Ines');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('leo@e2e.dev', 'Leo'), 'Piso Leo');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('olga@e2e.dev', 'Olga'), 'Piso Olga');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('rita@e2e.dev', 'Rita'), 'Piso Rita');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('sara@e2e.dev', 'Sara'), 'Piso Sara');
 end
 $$;
