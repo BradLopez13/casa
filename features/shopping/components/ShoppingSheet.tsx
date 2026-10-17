@@ -96,7 +96,10 @@ export function ShoppingSheet({
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const rows = sheetRows(pending, bought);
-  const edge = noteEdge.borderWidth;
+  // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
+  const hasEdge = noteEdge.borderWidth > 0;
+  const edge = hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth;
+  const edgeColor = hasEdge ? noteEdge.borderColor : colors.hairline;
 
   const cell = (index: number): ViewStyle => {
     const firstCell = index === 0;
@@ -104,7 +107,7 @@ export function ShoppingSheet({
     return {
       marginHorizontal: flush ? 0 : space(5),
       backgroundColor: colors.note,
-      borderColor: noteEdge.borderColor,
+      borderColor: edgeColor,
       borderLeftWidth: edge,
       borderRightWidth: edge,
       borderTopWidth: firstCell ? edge : 0,
