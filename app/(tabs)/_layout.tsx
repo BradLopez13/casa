@@ -122,9 +122,10 @@ export default function TabsLayout() {
   const { rail } = useLayout();
   const { width, height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  // With enlarged text the bar grows with its labels, still clearing the gesture bar. At the
-  // default size (or smaller) the bar and its labels are React Navigation's own, as before.
-  // Beside the icons (Android and web) the label is ours too, to keep its gap from the pill.
+  // The bar height is ours (53 dp at the default text size) and grows with enlarged text, still
+  // clearing the gesture bar. The label is ours too when text is enlarged or when it sits beside
+  // the icon (Android and web), to keep an 8 dp gap from the pill. On iOS with labels beside (iPad
+  // landscape) React Navigation's own label is used, so that gap is not guaranteed.
   const customLabel = LABELS_SCALE && (fontScale > 1 || tabLabelsBeside(width, height));
   const barHeight = tabBarHeight({
     width,

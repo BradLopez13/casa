@@ -20,7 +20,6 @@ export type Palette = {
   cobalt: string;
   /** Background of selected text in a field: the ink at 30%, so the text stays readable on top. */
   textSelection: string;
-  /** Text and icons on a cobalt fill. */
   /** Fill of the main action pill: the pósit, in both themes. */
   accent: string;
   /** Text and icons on the accent fill. */
