@@ -44,6 +44,8 @@ export function CenteredCard({ children, header }: { children: ReactNode; header
           {...scroll}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
+          // The slate band reaches the top edge: an iOS overscroll would show the cream page above it.
+          bounces={!header}
         >
           {header}
           <View

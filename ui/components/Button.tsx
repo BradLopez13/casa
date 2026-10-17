@@ -95,7 +95,7 @@ export function Button({
                 fontSize: m.fontSize,
                 fontWeight: '600',
                 textAlign: 'center',
-                textDecorationLine: m.underline ? 'underline' : 'none',
+                textDecorationLine: m.underline && !inactive ? 'underline' : 'none',
                 flexShrink: 1,
               }}
             >

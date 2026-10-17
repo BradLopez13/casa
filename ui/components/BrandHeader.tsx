@@ -1,3 +1,4 @@
+import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +15,8 @@ export function BrandHeader() {
   const { colors, space } = useTheme();
   const { gutter, shortHeight } = useLayout();
   const insets = useSafeAreaInsets();
+  // Only while this screen is in front: it must not tint the status bar of a screen pushed on top.
+  const focused = useIsFocused();
   return (
     <View
       style={{
@@ -26,7 +29,7 @@ export function BrandHeader() {
       }}
     >
       {/* The band is slate in both themes: light status icons while it is on screen. */}
-      <StatusBar style="light" />
+      {focused ? <StatusBar style="light" /> : null}
       <NidoSymbol size={shortHeight ? 48 : 64} onSlate />
     </View>
   );

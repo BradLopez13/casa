@@ -7,9 +7,9 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useFocusReveal } from '@/ui/focusReveal';
-import { pressedOpacity } from '@/ui/buttonLook';
+import { buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
-import { CONTROL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
+import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 import { actionIcons } from '@/ui/actionIcons';
 
@@ -97,13 +97,13 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           placeholder={t('shopping.input')}
           accessibilityLabel={t('shopping.input')}
           placeholderTextColor={colors.muted}
-          selectionColor={colors.cobalt}
+          selectionColor={colors.textSelection}
           cursorColor={colors.cobalt}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
-            minHeight: CONTROL_HEIGHT,
+            minHeight: buttonMetrics('secondary').minHeight,
             paddingHorizontal: space(4),
             paddingVertical: space(3),
             borderRadius: radii.pill,

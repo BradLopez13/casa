@@ -26,40 +26,46 @@ const PILL_HEIGHT = 32;
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
+function TabPillIcon({
+  name,
+  color,
+  size,
+  focused,
+}: {
+  name: IconName;
+  color: ColorValue;
+  size: number;
+  focused: boolean;
+}) {
+  const { colors, radii } = useTheme();
+  return (
+    <View
+      collapsable={false}
+      style={{
+        width: PILL_WIDTH,
+        height: PILL_HEIGHT,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Mounted with its radius and colour together; toggling one view's colour from transparent
+          leaves later pills square on Android. */}
+      {focused ? (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { borderRadius: radii.pill, backgroundColor: colors.tonal },
+          ]}
+        />
+      ) : null}
+      <Ionicons name={name} color={color} size={size} />
+    </View>
+  );
+}
+
 function tabIcon(active: IconName, inactive: IconName) {
-  function TabIcon({
-    color,
-    size,
-    focused,
-  }: {
-    color: ColorValue;
-    size: number;
-    focused: boolean;
-  }) {
-    const { colors, radii } = useTheme();
-    return (
-      <View
-        collapsable={false}
-        style={{
-          width: PILL_WIDTH,
-          height: PILL_HEIGHT,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Mounted with its radius and colour together; toggling one view's colour from transparent
-            leaves later pills square on Android. */}
-        {focused ? (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              { borderRadius: radii.pill, backgroundColor: colors.tonal },
-            ]}
-          />
-        ) : null}
-        <Ionicons name={focused ? active : inactive} color={color} size={size} />
-      </View>
-    );
+  function TabIcon(p: { color: ColorValue; size: number; focused: boolean }) {
+    return <TabPillIcon {...p} name={p.focused ? active : inactive} />;
   }
   return TabIcon;
 }

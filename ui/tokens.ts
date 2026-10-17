@@ -16,6 +16,8 @@ export type Palette = {
   mutedStrong: string;
   /** Text of what can be tapped: ghost buttons, links, the active tab, the caret. Slate in light, chalk in dark. */
   cobalt: string;
+  /** Background of selected text in a field: the ink at 30%, so the text stays readable on top. */
+  textSelection: string;
   /** Text and icons on a cobalt fill. */
   onCobalt: string;
   /** Fill of the main action pill: the pósit, in both themes. */
@@ -71,6 +73,7 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#3F4A50',
     // Slate. It is also the colour of tappable text, so actions must differ by shape too.
     cobalt: '#2E3B41',
+    textSelection: 'rgba(30,42,47,0.3)',
     onCobalt: '#F3F4F0',
     accent: '#F2D04B',
     onAccent: '#1E2A2F',
@@ -108,6 +111,7 @@ export const palettes: Record<Scheme, Palette> = {
     mutedStrong: '#CBD3D5',
     // Chalk: the pósit is kept for what is chosen and the main action.
     cobalt: '#ECEFEA',
+    textSelection: 'rgba(236,239,234,0.3)',
     onCobalt: '#151B1E',
     accent: '#F2D04B',
     onAccent: '#151B1E',

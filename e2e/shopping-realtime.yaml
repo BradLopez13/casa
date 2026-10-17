@@ -22,6 +22,9 @@ appId: com.bradlopez13.casa
     id: sign-in.password
 - inputText: e2e-password-2026
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: sign-in.submit
 - tapOn:
     id: sign-in.submit
 - extendedWaitUntil:
