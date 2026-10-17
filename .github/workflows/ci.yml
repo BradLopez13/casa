@@ -94,13 +94,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: pnpm install --frozen-lockfile
 
-      # The APK embeds the local Supabase key. The CLI derives it from config.toml, not from
-      # the running containers, so the database alone is enough to read it; every shard checks
-      # that its own stack hands out the same key.
+      # The APK embeds the local Supabase key, which `supabase status` only prints with the API
+      # up. The key comes from config.toml, so every shard's stack hands out the same one (each
+      # shard checks it).
       - uses: supabase/setup-cli@v1
         with:
           version: 2.119.0
-      - run: supabase db start
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
       - run: pnpm e2e:env
 
       - name: Build the release APK
