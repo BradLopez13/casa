@@ -1,0 +1,47 @@
+appId: com.bradlopez13.casa
+---
+# Back from the sign-up returns to the sign-in, with the link and with the system button.
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.submit
+          timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: sign-in.go-sign-up
+- tapOn:
+    id: sign-in.go-sign-up
+- extendedWaitUntil:
+    visible:
+      id: sign-up.submit
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: sign-up.go-sign-in
+- tapOn:
+    id: sign-up.go-sign-in
+- extendedWaitUntil:
+    visible:
+      id: sign-in.submit
+    timeout: 15000
+# Again, now with the system back button.
+- scrollUntilVisible:
+    element:
+      id: sign-in.go-sign-up
+- tapOn:
+    id: sign-in.go-sign-up
+- extendedWaitUntil:
+    visible:
+      id: sign-up.submit
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible:
+      id: sign-in.submit
+    timeout: 15000

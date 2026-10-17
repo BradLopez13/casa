@@ -201,7 +201,7 @@ export default function SignUpScreen() {
           title={t('auth.signUp.goSignIn')}
           variant="tertiary"
           width="hug"
-          onPress={() => router.replace('/sign-in')}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/sign-in'))}
         />
       </View>
     </CenteredCard>
