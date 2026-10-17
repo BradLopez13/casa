@@ -9,6 +9,7 @@ module.exports = defineConfig([
     'ios/',
     'android/',
     '.expo/',
+    '.claude/',
     'dist/',
     'expo-env.d.ts',
     'supabase/functions/send-push/',
