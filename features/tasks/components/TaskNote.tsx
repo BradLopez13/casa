@@ -175,27 +175,23 @@ export function TaskNote({
           <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
             {task.title}
           </Text>
-          <Text style={{ color: colors.muted, fontSize: 14 }}>
-            {room ? `${room} · ` : ''}
-            {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no
-                pill or outline around it (in dark mode red and the apricot actions are close). */}
-            <Text
-              style={{
-                color: overdue ? colors.red : colors.muted,
-                fontWeight: overdue ? '600' : '400',
-                fontVariant: ['tabular-nums'],
-              }}
-            >
-              {due}
-            </Text>
-            {repeat ? (
-              <>
-                {' · '}
-                <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
-                {` ${repeat}`}
-              </>
-            ) : null}
+          {room ? <Text style={{ color: colors.muted, fontSize: 14 }}>{room}</Text> : null}
+          {/* Overdue is a calm state, never an alarm: muted text with a clock, no red. */}
+          <Text style={{ color: colors.muted, fontSize: 14, fontVariant: ['tabular-nums'] }}>
+            <Ionicons
+              name={overdue ? 'time-outline' : 'calendar-outline'}
+              size={14}
+              color={colors.muted}
+              accessible={false}
+            />
+            {` ${due}`}
           </Text>
+          {repeat ? (
+            <Text style={{ color: colors.muted, fontSize: 14 }}>
+              <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
+              {` ${repeat}`}
+            </Text>
+          ) : null}
         </Pressable>
       </ReanimatedSwipeable>
     </Animated.View>

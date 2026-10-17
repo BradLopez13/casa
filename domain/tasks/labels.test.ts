@@ -17,11 +17,11 @@ describe('dueLabel', () => {
 
 describe('overdueLabel', () => {
   const today = '2026-10-09';
-  it('says yesterday', () => expect(overdueLabel('2026-10-08', today)).toBe('Vencida ayer'));
+  it('says yesterday', () => expect(overdueLabel('2026-10-08', today)).toBe('Pendiente desde ayer'));
   it('uses weekday and day within the last week', () =>
-    expect(overdueLabel('2026-10-05', today)).toBe('Vencida el lunes 5'));
+    expect(overdueLabel('2026-10-05', today)).toBe('Pendiente desde el lunes 5'));
   it('uses day and month from seven days on', () =>
-    expect(overdueLabel('2026-10-02', today)).toBe('Vencida el 2 de octubre'));
+    expect(overdueLabel('2026-10-02', today)).toBe('Pendiente desde el 2 de octubre'));
 });
 
 describe('longDateLabel', () => {

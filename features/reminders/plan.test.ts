@@ -61,14 +61,14 @@ describe('reminderText', () => {
   it('morning with several tasks and overdue ones', () => {
     const r = reminder({ count: 4, overdue: 2, titles: ['A', 'B', 'C'] });
     expect(reminderText(r)).toMatchObject({
-      title: 'Hoy tienes 4 tareas (2 vencidas)',
+      title: 'Hoy tienes 4 tareas (2 pendientes de otros días)',
       body: 'A · B · C',
     });
   });
 
   it('morning with exactly one overdue task', () => {
     expect(reminderText(reminder({ count: 2, overdue: 1 })).title).toBe(
-      'Hoy tienes 2 tareas (1 vencida)',
+      'Hoy tienes 2 tareas (1 pendiente de otro día)',
     );
   });
 

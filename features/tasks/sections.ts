@@ -1,5 +1,5 @@
 import { dayHeading } from '@/domain/tasks/labels';
-import { selectAll, selectToday, type selectWeek, type TaskItem } from '@/domain/tasks/views';
+import { isOverdue, selectAll, selectToday, type selectWeek, type TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 
 /** One row of a task list: a note per open task, or the tray holding every finished one. */
@@ -23,12 +23,16 @@ const tray = (key: string, title: string, tasks: TaskItem[]): TaskListSection =>
 /** Empty sections are left out, so the list never shows a heading with nothing under it. */
 const nonEmpty = (sections: TaskListSection[]) => sections.filter((section) => section.count > 0);
 
-/** Hoy: overdue, due today, and the tray of what was finished today. */
+/** Hoy: due today first, then the calm overdue block (first when nothing is due today), and the tray of what was finished today. */
 export function todaySections(tasks: TaskItem[], today: string): TaskListSection[] {
   const { overdue, dueToday, doneToday } = selectToday(tasks, today);
   return nonEmpty([
-    notes('overdue', t('tasks.section.overdue'), overdue),
-    notes('today', t('tasks.section.today'), dueToday),
+    ...(dueToday.length > 0
+      ? [
+          notes('today', t('tasks.section.today'), dueToday),
+          notes('overdue', t('tasks.section.overdue'), overdue),
+        ]
+      : [notes('overdue', t('tasks.section.overdue'), overdue)]),
     tray('doneToday', t('tasks.section.doneToday'), doneToday),
   ]);
 }
@@ -47,8 +51,11 @@ export function weekSections(
 /** Tareas › Todas: dated, undated, and the tray of everything finished. */
 export function allSections(tasks: TaskItem[], today: string): TaskListSection[] {
   const { dated, undated, done } = selectAll(tasks, today);
+  const overdue = dated.filter((task) => isOverdue(task, today));
+  const upcoming = dated.filter((task) => !isOverdue(task, today));
   return nonEmpty([
-    notes('dated', t('tasks.section.dated'), dated),
+    notes('overdue', t('tasks.section.overdue'), overdue),
+    notes('dated', t('tasks.section.dated'), upcoming),
     notes('undated', t('tasks.section.undated'), undated),
     tray('done', t('tasks.section.done'), done),
   ]);

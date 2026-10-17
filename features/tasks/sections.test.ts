@@ -28,18 +28,24 @@ function task(over: Partial<TaskItem> = {}): TaskItem {
 const doneToday = () => task({ completedAt: new Date(2026, 9, 9, 10, 0).toISOString() });
 
 describe('todaySections', () => {
-  it('lists overdue, today and the done tray, in that order', () => {
+  it('lists today, then overdue, then the done tray', () => {
     const late = task({ dueOn: '2026-10-07' });
     const due = task({ dueOn: TODAY });
     const done = doneToday();
     const sections = todaySections([done, due, late], TODAY);
     expect(sections.map((s) => [s.key, s.title, s.count])).toEqual([
-      ['overdue', 'Vencidas', 1],
       ['today', 'Para hoy', 1],
+      ['overdue', 'De otros días', 1],
       ['doneToday', 'Hechas hoy', 1],
     ]);
-    expect(sections[0]?.data).toEqual([{ kind: 'note', task: late }]);
+    expect(sections[1]?.data).toEqual([{ kind: 'note', task: late }]);
     expect(sections[2]?.data).toEqual([{ kind: 'tray', tasks: [done] }]);
+  });
+
+  it('puts overdue first when nothing is due today', () => {
+    const late = task({ dueOn: '2026-10-07' });
+    const done = doneToday();
+    expect(todaySections([done, late], TODAY).map((s) => s.key)).toEqual(['overdue', 'doneToday']);
   });
 
   it('drops empty sections, including an empty tray', () => {
@@ -57,7 +63,7 @@ describe('weekSections', () => {
     const tasks = [tomorrow, saturday, late];
     const sections = weekSections(selectWeek(tasks, TODAY), TODAY);
     expect(sections.map((s) => [s.key, s.title, s.count])).toEqual([
-      ['overdue', 'Vencidas', 1],
+      ['overdue', 'De otros días', 1],
       ['2026-10-10', 'Mañana', 1],
       ['2026-10-11', 'domingo 11', 1],
     ]);
@@ -69,6 +75,16 @@ describe('weekSections', () => {
 });
 
 describe('allSections', () => {
+  it('separates the overdue tasks before the dated ones', () => {
+    const late = task({ dueOn: '2026-10-01' });
+    const dated = task({ dueOn: '2026-11-01' });
+    const sections = allSections([dated, late], TODAY);
+    expect(sections.map((s) => [s.key, s.count])).toEqual([
+      ['overdue', 1],
+      ['dated', 1],
+    ]);
+  });
+
   it('lists dated, undated and the done tray', () => {
     const dated = task({ dueOn: '2026-11-01' });
     const undated = task();
