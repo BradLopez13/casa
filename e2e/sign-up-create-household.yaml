@@ -9,7 +9,7 @@ appId: com.bradlopez13.casa
           stopApp: true
       - extendedWaitUntil:
           visible:
-            id: sign-in.go-sign-up
+            id: sign-in.email
           timeout: 30000
 - evalScript: ${output.email = 'zoe' + Date.now() + '@e2e.dev'}
 
@@ -82,6 +82,11 @@ appId: com.bradlopez13.casa
     visible:
       id: members.copied
     timeout: 20000
+# The "copied" notice disappears after a moment and the rows move up: wait for it to go first.
+- extendedWaitUntil:
+    notVisible:
+      id: members.copied
+    timeout: 10000
 - scrollUntilVisible:
     element: Revocar
 - tapOn: Revocar

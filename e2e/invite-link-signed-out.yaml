@@ -11,7 +11,7 @@ appId: com.bradlopez13.casa
           stopApp: true
       - extendedWaitUntil:
           visible:
-            id: sign-in.go-sign-up
+            id: sign-in.email
           timeout: 30000
 - evalScript: ${output.email = 'carla' + Date.now() + '@e2e.dev'}
 
