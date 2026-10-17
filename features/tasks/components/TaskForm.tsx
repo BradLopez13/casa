@@ -6,6 +6,8 @@ import { syncMonthly } from '@/domain/recurrence/form';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
 import { dayHeading } from '@/domain/tasks/labels';
+import { isDirty } from '@/features/forms/isDirty';
+import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -74,6 +76,13 @@ export function TaskForm({
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
+  // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
+  const [opened] = useState(initial);
+  const { requestClose, dialog } = useDiscardGuard({
+    dirty: isDirty(opened, values),
+    onCancel,
+    busy: saving,
+  });
   const [triedSave, setTriedSave] = useState(false);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
@@ -124,90 +133,102 @@ export function TaskForm({
       : null;
 
   return (
-    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
-      <ModalHeader
-        title={title}
-        step={density.headerStep}
-        cancel={{ testID: 'task-form.cancel', label: t('taskForm.cancel'), onPress: onCancel }}
-        action={{
-          testID: 'task-form.save',
-          label: t('taskForm.save'),
-          onPress: save,
-          disabled: blank || saving,
-          busy: saving,
-        }}
-      />
-      <KeyboardAvoidingView
-        enabled={avoidKeyboard}
-        style={fill}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          {...scroll}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            paddingHorizontal: space(5),
-            paddingTop: space(density.topStep),
-            paddingBottom: space(density.bottomStep),
-            gap: space(density.gapStep),
+    <>
+      <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
+        <ModalHeader
+          title={title}
+          step={density.headerStep}
+          cancel={{
+            testID: 'task-form.cancel',
+            label: t('taskForm.cancel'),
+            onPress: requestClose,
           }}
+          action={{
+            testID: 'task-form.save',
+            label: t('taskForm.save'),
+            onPress: save,
+            disabled: blank || saving,
+            busy: saving,
+          }}
+        />
+        <KeyboardAvoidingView
+          enabled={avoidKeyboard}
+          style={fill}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Every field asks for it on focus, as in CenteredCard. */}
-          <FocusRevealContext.Provider value={reveal}>
-            <TextField
-              testID="task-form.title"
-              label={t('taskForm.titleLabel')}
-              value={values.title}
-              onChangeText={(text) => set({ title: text })}
-              // Only a new task starts with an empty title; on a short window the keyboard would
-              // hide the rest of the form, so there the field waits for a tap.
-              autoFocus={initial.title === '' && density.autoFocusTitle}
-              maxLength={200}
-              returnKeyType="done"
-              error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
-            />
-            <Field label={t('taskForm.roomLabel')}>
-              <RoomPicker value={values.room} onChange={(room) => set({ room })} />
-            </Field>
-            <Field label={t('taskForm.assigneeLabel')}>
-              <AssigneePicker
-                value={values.assigneeId}
-                members={members}
-                marks={marks}
-                userId={userId}
-                onChange={(assigneeId) => set({ assigneeId })}
+          <ScrollView
+            {...scroll}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              paddingHorizontal: space(5),
+              paddingTop: space(density.topStep),
+              paddingBottom: space(density.bottomStep),
+              gap: space(density.gapStep),
+            }}
+          >
+            {/* Every field asks for it on focus, as in CenteredCard. */}
+            <FocusRevealContext.Provider value={reveal}>
+              <TextField
+                testID="task-form.title"
+                label={t('taskForm.titleLabel')}
+                value={values.title}
+                onChangeText={(text) => set({ title: text })}
+                // Only a new task starts with an empty title; on a short window the keyboard would
+                // hide the rest of the form, so there the field waits for a tap.
+                autoFocus={initial.title === '' && density.autoFocusTitle}
+                maxLength={200}
+                returnKeyType="done"
+                blurOnSubmit
+                // The keyboard's check mark takes the same path as the header Save.
+                onSubmitEditing={() => {
+                  if (!blank && !saving) save();
+                }}
+                error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
               />
-            </Field>
-            <Field label={t('taskForm.dueLabel')}>
-              <DayCells
-                value={values.dueOn}
-                today={today}
-                onChange={setDueOn}
-                noneDisabled={repeating}
-              />
-            </Field>
-            {repeatEditable ? (
-              <Field label={t('taskForm.repeatLabel')}>
-                <RecurrencePicker
-                  value={values.recurrence}
-                  dueOn={values.dueOn ?? today}
-                  onChange={setRecurrence}
-                />
-                {nextDate !== null ? (
-                  <Text
-                    testID="task-form.repeat.next"
-                    style={{ color: colors.muted, fontSize: 13 }}
-                  >
-                    {t('taskForm.repeatNext', { date: nextDate })}
-                  </Text>
-                ) : null}
+              <Field label={t('taskForm.roomLabel')}>
+                <RoomPicker value={values.room} onChange={(room) => set({ room })} />
               </Field>
-            ) : null}
-            {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
-            {footer}
-          </FocusRevealContext.Provider>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <Field label={t('taskForm.assigneeLabel')}>
+                <AssigneePicker
+                  value={values.assigneeId}
+                  members={members}
+                  marks={marks}
+                  userId={userId}
+                  onChange={(assigneeId) => set({ assigneeId })}
+                />
+              </Field>
+              <Field label={t('taskForm.dueLabel')}>
+                <DayCells
+                  value={values.dueOn}
+                  today={today}
+                  onChange={setDueOn}
+                  noneDisabled={repeating}
+                />
+              </Field>
+              {repeatEditable ? (
+                <Field label={t('taskForm.repeatLabel')}>
+                  <RecurrencePicker
+                    value={values.recurrence}
+                    dueOn={values.dueOn ?? today}
+                    onChange={setRecurrence}
+                  />
+                  {nextDate !== null ? (
+                    <Text
+                      testID="task-form.repeat.next"
+                      style={{ color: colors.muted, fontSize: 13 }}
+                    >
+                      {t('taskForm.repeatNext', { date: nextDate })}
+                    </Text>
+                  ) : null}
+                </Field>
+              ) : null}
+              {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
+              {footer}
+            </FocusRevealContext.Provider>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+      {dialog}
+    </>
   );
 }
