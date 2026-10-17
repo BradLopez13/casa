@@ -37,7 +37,7 @@ export function buttonLook(
   if (variant === 'primary') {
     return tone === 'destructive'
       ? { fill: colors.red, border: colors.red, foreground: colors.onRed }
-      : { fill: colors.accent, border: colors.accentEdge, foreground: colors.onAccent };
+      : { fill: colors.accent, border: colors.accent, foreground: colors.onAccent };
   }
   if (variant === 'secondary') {
     return { fill: colors.tonal, border: colors.tonalEdge, foreground: colors.cobalt };
@@ -55,12 +55,35 @@ export type ButtonMetrics = {
   paddingV: number;
   paddingH: number;
   iconSize: number;
+  /** Only the tertiary label is underlined: it has no pill to say it is a button. */
+  underline: boolean;
 };
 
 const metrics: Record<ButtonVariant, ButtonMetrics> = {
-  primary: { minHeight: 48, fontSize: 16, paddingV: 12, paddingH: 24, iconSize: 20 },
-  secondary: { minHeight: 44, fontSize: 15, paddingV: 10, paddingH: 20, iconSize: 20 },
-  tertiary: { minHeight: 44, fontSize: 15, paddingV: 8, paddingH: 12, iconSize: 18 },
+  primary: {
+    minHeight: 48,
+    fontSize: 16,
+    paddingV: 12,
+    paddingH: 24,
+    iconSize: 20,
+    underline: false,
+  },
+  secondary: {
+    minHeight: 44,
+    fontSize: 15,
+    paddingV: 10,
+    paddingH: 20,
+    iconSize: 20,
+    underline: false,
+  },
+  tertiary: {
+    minHeight: 44,
+    fontSize: 15,
+    paddingV: 8,
+    paddingH: 12,
+    iconSize: 18,
+    underline: true,
+  },
 };
 
 /** Sizes per level. Heights are minimums, so the button grows with the system text size. */

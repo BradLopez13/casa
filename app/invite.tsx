@@ -15,6 +15,7 @@ import {
 import { membershipKey } from '@/features/households/queries';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
@@ -169,7 +170,7 @@ export default function InviteScreen() {
 
   if (signedOut && hasParam && !paramToken) {
     return (
-      <CenteredCard>
+      <CenteredCard header={<BrandHeader />}>
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button
           testID="invite.back"
@@ -185,7 +186,7 @@ export default function InviteScreen() {
 
   if (signedOut && persistFailed) {
     return (
-      <CenteredCard>
+      <CenteredCard header={<BrandHeader />}>
         <ErrorText testID="invite.error">{t('invite.errors.UNKNOWN')}</ErrorText>
         <Button
           testID="invite.back"
@@ -203,7 +204,7 @@ export default function InviteScreen() {
 
   if (phase === 'failed') {
     return (
-      <CenteredCard>
+      <CenteredCard header={<BrandHeader />}>
         <ErrorText testID="invite.error">
           {refreshNetwork ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </ErrorText>
@@ -227,11 +228,11 @@ export default function InviteScreen() {
     );
   }
 
-  const title = <ScreenTitle>{t('invite.title')}</ScreenTitle>;
+  const title = <ScreenTitle subtitle={t('brand.tagline')}>{t('invite.title')}</ScreenTitle>;
 
   if (failure?.terminal) {
     return (
-      <CenteredCard>
+      <CenteredCard header={<BrandHeader />}>
         {title}
         <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText>
         <Button
@@ -247,7 +248,7 @@ export default function InviteScreen() {
 
   if (!token) {
     return (
-      <CenteredCard>
+      <CenteredCard header={<BrandHeader />}>
         {title}
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button
@@ -263,7 +264,7 @@ export default function InviteScreen() {
   }
 
   return (
-    <CenteredCard>
+    <CenteredCard header={<BrandHeader />}>
       {title}
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('invite.body')}</Text>
       {failure ? <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText> : null}

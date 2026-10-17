@@ -1,5 +1,6 @@
 import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
+import { pressedOpacity } from '../buttonLook';
 import { useTheme } from '../theme';
 import {
   displayFont,
@@ -15,7 +16,7 @@ type Props = {
   size: MagnetSize;
   /** 'empty' is the dashed circle used for an unassigned task. */
   variant?: 'filled' | 'empty';
-  /** Pass a boolean when the magnet can be selected; true draws the cobalt ring. */
+  /** Pass a boolean when the magnet can be selected; true draws the selection ring. */
   selected?: boolean;
   accessibilityLabel: string;
   testID?: string;
@@ -24,6 +25,8 @@ type Props = {
   accessibilityRole?: 'button' | 'radio';
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
+  /** Empty magnet only: draw the dashed ring in the pósit, 2 dp, in dark mode (the checkbox of a task note). */
+  posit?: boolean;
 };
 
 const RING = 2;
@@ -40,10 +43,13 @@ export function Magnet({
   onPress,
   accessibilityRole = 'button',
   decorative = false,
+  posit = false,
 }: Props) {
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
+  const { scheme } = useTheme();
+  const positRing = empty && posit && scheme === 'dark';
   // The chip-sized magnet sits inside a pill and stays flat.
   const depth = !empty && size !== 'sm' ? shadows.magnet : null;
 
@@ -56,7 +62,11 @@ export function Magnet({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: empty ? 'transparent' : colors.magnet[color],
-        ...(empty ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline } : {}),
+        ...(empty
+          ? positRing
+            ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
+            : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline }
+          : {}),
         // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
         ...(!empty && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
@@ -90,7 +100,7 @@ export function Magnet({
         padding: GAP,
         borderWidth: RING,
         borderRadius: (diameter + 2 * (GAP + RING)) / 2,
-        borderColor: selected ? colors.cobalt : 'transparent',
+        borderColor: selected ? colors.selection : 'transparent',
         backgroundColor: selected ? colors.door : 'transparent',
       }}
     >
@@ -116,7 +126,7 @@ export function Magnet({
             ? { selected, ...(accessibilityRole === 'radio' ? { checked: selected } : null) }
             : undefined
         }
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+        style={({ pressed }) => ({ opacity: pressedOpacity(pressed) })}
       >
         {ringed}
       </Pressable>

@@ -5,6 +5,7 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { useReduceMotion, useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 import { ShoppingRow } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
@@ -36,8 +37,8 @@ export function BoughtTitle({ count }: { count: number }) {
       accessibilityRole="header"
       style={{
         color: colors.muted,
+        fontFamily: displayFontBold,
         fontSize: 15,
-        fontWeight: '600',
         fontVariant: ['tabular-nums'],
       }}
     >

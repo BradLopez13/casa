@@ -8,6 +8,7 @@ import { secondsLeft } from '@/features/auth/resend-cooldown';
 import { codeSchema } from '@/features/auth/schemas';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { CodeField } from '@/ui/components/CodeField';
@@ -81,8 +82,8 @@ export default function VerifyEmailScreen() {
   if (!email) return <Redirect href="/sign-up" />;
 
   return (
-    <CenteredCard>
-      <ScreenTitle>{t('auth.verify.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.verify.title')}</ScreenTitle>
       <Text testID="verify-email.body" style={{ color: colors.ink, fontSize: 16 }}>
         {t('auth.verify.body', { email })}
       </Text>

@@ -9,7 +9,7 @@ import {
   newTaskShape,
 } from '@/features/tasks/newTaskPlacement';
 import { t } from '@/i18n';
-import { buttonLook } from '@/ui/buttonLook';
+import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { columnRightOffset, columnRoom, paneColumn } from '@/ui/panes';
 import { space, useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT, PRIMARY_EDGE } from '@/ui/tokens';
@@ -66,7 +66,7 @@ export function NewTaskButton({
   assigneeId: string | null;
 }) {
   const router = useRouter();
-  const { colors, radii } = useTheme();
+  const { colors, radii, shadows } = useTheme();
   const placement = usePlacement();
   const shape = useShape();
   const look = buttonLook('primary', 'default', 'enabled', colors);
@@ -94,7 +94,8 @@ export function NewTaskButton({
         backgroundColor: look.fill,
         borderWidth: PRIMARY_EDGE,
         borderColor: look.border,
-        opacity: pressed ? 0.85 : 1,
+        opacity: pressedOpacity(pressed),
+        ...shadows.primary,
         ...(shape.iconOnly
           ? { width: shape.height, height: shape.height }
           : { paddingLeft: space(4), paddingRight: space(5) }),

@@ -69,6 +69,10 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - assertNotVisible:
     id: onboarding.create
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: invite.accept
 - tapOn:
     id: invite.accept
 - extendedWaitUntil:

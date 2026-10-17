@@ -39,7 +39,7 @@ export function Button({
   icon,
   width = 'hug',
 }: Props) {
-  const { colors, radii } = useTheme();
+  const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
   const { fill, border, foreground } = buttonLook(
@@ -73,6 +73,7 @@ export function Button({
           borderColor: border,
           backgroundColor: fill,
           opacity: pressedOpacity(pressed),
+          ...(variant === 'primary' && !disabled ? shadows.primary : null),
         })}
       >
         {loading ? (
@@ -94,6 +95,7 @@ export function Button({
                 fontSize: m.fontSize,
                 fontWeight: '600',
                 textAlign: 'center',
+                textDecorationLine: m.underline && !inactive ? 'underline' : 'none',
                 flexShrink: 1,
               }}
             >
@@ -114,7 +116,7 @@ export function Button({
             left: -4,
             borderRadius: radii.pill,
             borderWidth: 2,
-            borderColor: colors.cobalt,
+            borderColor: colors.focusRing,
           }}
         />
       ) : null}

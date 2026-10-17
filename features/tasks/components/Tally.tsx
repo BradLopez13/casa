@@ -1,64 +1,48 @@
 import { Text, View } from 'react-native';
-import type { Tally } from '@/domain/tasks/tally';
-import { t } from '@/i18n';
+import type { TodayLine } from '@/domain/tasks/todayLine';
+import { todayLineText } from '@/features/tasks/todayLineText';
 import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { useTheme } from '@/ui/theme';
+import { displayFont, displayFontBold } from '@/ui/tokens';
 
-const PIP = 8;
+const LINE_SIZE = 17;
+const NUMBER_SIZE = 20;
 
 /**
- * One pip per task (filled when done), with the count and whose tasks they are underneath. In a
- * compact door (a phone on its side) only the count shows, beside the title: the selected magnet
- * already says whose tasks they are, and the scope stays in the label for screen readers.
+ * The door line of Hoy: what is yours today (or the household's, or a member's), in Rounded 700
+ * with the number in Rounded 800 a little larger and the same colour, and under it what is left
+ * for the household. In a compact door (a phone on its side) only the first phrase shows.
  */
-export function TallyView({ tally, scope }: { tally: Tally; scope: string }) {
-  const { colors, space } = useTheme();
+export function TallyView({ line }: { line: TodayLine }) {
+  const { colors } = useTheme();
   const compact = useDoorCompact();
-  const text =
-    tally.total === 0
-      ? t('today.tallyEmpty')
-      : t('today.tally', { done: tally.done, total: tally.total });
-  if (compact) {
-    return (
-      <Text
-        accessibilityLabel={`${text} · ${scope}`}
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.ink, fontSize: 15, fontVariant: ['tabular-nums'] }}
-      >
-        {text}
-      </Text>
-    );
-  }
+  const { first, number, second } = todayLineText(line);
+  const label = second === null || compact ? first : `${first} ${second}`;
+
+  // The count is the last number in the sentence (a name could hold digits, never the count's tail).
+  const at = number === null ? -1 : first.lastIndexOf(number);
+  const head = at < 0 ? first : first.slice(0, at);
+  const tail = at < 0 ? '' : first.slice(at + (number?.length ?? 0));
+
   return (
-    <View style={{ gap: space(1) }}>
-      {tally.total > 0 ? (
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(1) }}
-        >
-          {Array.from({ length: tally.total }, (_, i) => (
-            <View
-              key={i}
-              style={{
-                width: PIP,
-                height: PIP,
-                borderRadius: PIP / 2,
-                ...(i < tally.done
-                  ? { backgroundColor: colors.ink }
-                  : { borderWidth: 1.5, borderColor: colors.outline }),
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
+    <View accessible accessibilityLabel={label} style={{ gap: 2 }}>
       <Text
-        maxFontSizeMultiplier={1.3}
-        style={{ color: colors.ink, fontSize: 15, fontVariant: ['tabular-nums'] }}
+        style={{
+          color: colors.ink,
+          fontFamily: displayFontBold,
+          fontSize: LINE_SIZE,
+          fontVariant: ['tabular-nums'],
+        }}
       >
-        {text}
-        <Text style={{ color: colors.muted }}>{` · ${scope}`}</Text>
+        {head}
+        {number !== null ? (
+          <Text style={{ fontFamily: displayFont, fontSize: NUMBER_SIZE }}>{number}</Text>
+        ) : null}
+        {tail}
       </Text>
+      {second !== null && !compact ? (
+        <Text style={{ color: colors.muted, fontSize: 15 }}>{second}</Text>
+      ) : null}
     </View>
   );
 }

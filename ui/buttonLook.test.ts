@@ -6,8 +6,8 @@ import { palettes, type Scheme } from './tokens';
 describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
   const p = palettes[scheme];
 
-  it('draws a primary button as the pósit with its edge', () => {
-    const expected = { fill: p.accent, border: p.accentEdge, foreground: p.onAccent };
+  it('draws a primary button as the pósit with no visible edge', () => {
+    const expected = { fill: p.accent, border: p.accent, foreground: p.onAccent };
     expect(buttonLook('primary', 'default', 'enabled', p)).toEqual(expected);
     expect(buttonLook('primary', 'default', 'busy', p)).toEqual(expected);
   });
@@ -81,6 +81,12 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
 });
 
 describe('buttonMetrics', () => {
+  it('underlines only the tertiary label', () => {
+    expect(buttonMetrics('tertiary').underline).toBe(true);
+    expect(buttonMetrics('primary').underline).toBe(false);
+    expect(buttonMetrics('secondary').underline).toBe(false);
+  });
+
   it('sizes each level', () => {
     expect(buttonMetrics('primary')).toEqual({
       minHeight: 48,
@@ -88,6 +94,7 @@ describe('buttonMetrics', () => {
       paddingV: 12,
       paddingH: 24,
       iconSize: 20,
+      underline: false,
     });
     expect(buttonMetrics('secondary')).toEqual({
       minHeight: 44,
@@ -95,6 +102,7 @@ describe('buttonMetrics', () => {
       paddingV: 10,
       paddingH: 20,
       iconSize: 20,
+      underline: false,
     });
     expect(buttonMetrics('tertiary')).toEqual({
       minHeight: 44,
@@ -102,6 +110,7 @@ describe('buttonMetrics', () => {
       paddingV: 8,
       paddingH: 12,
       iconSize: 18,
+      underline: true,
     });
   });
 });

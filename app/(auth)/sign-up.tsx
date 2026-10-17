@@ -107,9 +107,8 @@ export default function SignUpScreen() {
   const matches = pairMatches({ password, confirm });
 
   return (
-    <CenteredCard>
-      <BrandHeader />
-      <ScreenTitle>{t('auth.signUp.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.signUp.title')}</ScreenTitle>
       <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-up.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>

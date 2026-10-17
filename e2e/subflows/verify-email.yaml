@@ -10,9 +10,17 @@ appId: com.bradlopez13.casa
     file: ../scripts/read-email-code.js
     env:
       EMAIL: ${output.email}
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: verify-email.code
 - tapOn:
     id: verify-email.code
 - inputText: ${output.code}
 - hideKeyboard
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: verify-email.submit
 - tapOn:
     id: verify-email.submit

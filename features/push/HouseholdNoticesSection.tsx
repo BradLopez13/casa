@@ -10,7 +10,7 @@ import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
 import { permissionView } from './permissionView';
 import { useNotificationPrefs, useSetNotificationPrefs } from './queries';
 
@@ -77,7 +77,7 @@ export function HouseholdNoticesSection() {
     <View style={{ gap: space(2) }}>
       <Text
         accessibilityRole="header"
-        style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+        style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {t('settings.push')}
       </Text>

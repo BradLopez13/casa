@@ -15,6 +15,7 @@ import { emailSchema, resetPasswordSchema } from '@/features/auth/schemas';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { CodeField } from '@/ui/components/CodeField';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -145,8 +146,8 @@ export default function ForgotPasswordScreen() {
   const matches = pairMatches({ password, confirm });
 
   return (
-    <CenteredCard>
-      <ScreenTitle>{t('auth.forgot.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.forgot.title')}</ScreenTitle>
       {step === 'email' ? (
         <>
           <TextField

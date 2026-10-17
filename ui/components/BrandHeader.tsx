@@ -1,14 +1,36 @@
-import { Text, View } from 'react-native';
-import { t } from '@/i18n';
+import { useIsFocused } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { useLayout } from '../useLayout';
 import { NidoSymbol } from './NidoSymbol';
 
+/**
+ * The slate band that opens sign-in, sign-up, forgot-password and onboarding: full width, under the status bar,
+ * with the symbol at the start. Render it as `CenteredCard`'s `header`, which lets it bleed to the
+ * edges of the window.
+ */
 export function BrandHeader() {
   const { colors, space } = useTheme();
+  const { gutter, shortHeight } = useLayout();
+  const insets = useSafeAreaInsets();
+  // Only while this screen is in front: it must not tint the status bar of a screen pushed on top.
+  const focused = useIsFocused();
   return (
-    <View style={{ alignItems: 'flex-start', gap: space(2) }}>
-      <NidoSymbol size={48} />
-      <Text style={{ color: colors.muted, fontSize: 15 }}>{t('brand.tagline')}</Text>
+    <View
+      style={{
+        backgroundColor: colors.brandBand,
+        paddingTop: insets.top + (shortHeight ? space(3) : space(5)),
+        paddingBottom: shortHeight ? space(3) : space(5),
+        paddingLeft: gutter + insets.left,
+        paddingRight: gutter + insets.right,
+        alignItems: 'flex-start',
+      }}
+    >
+      {/* The band is slate in both themes: light status icons while it is on screen. */}
+      {focused ? <StatusBar style="light" /> : null}
+      <NidoSymbol size={shortHeight ? 48 : 64} onSlate />
     </View>
   );
 }

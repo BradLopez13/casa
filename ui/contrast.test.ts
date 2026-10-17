@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAGNET_COLORS } from '@/domain/members/marks';
 import { contrastRatio, hueDistance } from './contrast';
 import { toggleLook } from './toggleLook';
-import { palettes, type Scheme } from './tokens';
+import { palettes, shadows, type Scheme } from './tokens';
 
 const AA_TEXT = 4.5;
 const AA_NON_TEXT = 3;
@@ -39,10 +39,25 @@ describe('hueDistance', () => {
   });
 });
 
+describe.each<Scheme>(['light', 'dark'])('%s task note paper', (scheme) => {
+  const p = palettes[scheme];
+
+  it('ink, muted text and outlines on the task note', () => {
+    expect(contrastRatio(p.ink, p.taskNote)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.muted, p.taskNote)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.outline, p.taskNote)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+it('the dark task note is the dark note', () => {
+  expect(palettes.dark.taskNote).toBe(palettes.dark.note);
+});
+
 describe('dark palette keeps red apart from the pósit', () => {
-  it('red sits at least 30° of hue away from the action colour', () => {
-    // By hue alone "Vencida" must not read as tappable.
-    expect(hueDistance(palettes.dark.red, palettes.dark.cobalt)).toBeGreaterThanOrEqual(30);
+  it('red sits at least 30° of hue away from the pósit selection and accent', () => {
+    // By hue alone "Vencida" must not read as chosen or tappable.
+    expect(hueDistance(palettes.dark.red, palettes.dark.selection)).toBeGreaterThanOrEqual(30);
+    expect(hueDistance(palettes.dark.red, palettes.dark.accent)).toBeGreaterThanOrEqual(30);
   });
 });
 
@@ -58,10 +73,6 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
 
   it.each(Object.entries(grounds))('cobalt text on %s', (_, ground) => {
     expect(contrastRatio(p.cobalt, ground)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('text on a cobalt pill', () => {
-    expect(contrastRatio(p.onCobalt, p.cobalt)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it.each(Object.entries(grounds))('overdue and danger red on %s', (_, ground) => {
@@ -89,12 +100,6 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
     expect(contrastRatio(p.magnetInk, p.magnet[color])).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it.each(Object.entries(grounds))('magnet ring on %s, where there is one', (_, ground) => {
-    if (p.magnetRing !== 'transparent') {
-      expect(contrastRatio(p.magnetRing, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    }
-  });
-
   it('refresh label on the fridge light', () => {
     expect(contrastRatio(p.light.text, p.light.top)).toBeGreaterThanOrEqual(AA_TEXT);
     expect(contrastRatio(p.light.text, p.page)).toBeGreaterThanOrEqual(AA_TEXT);
@@ -110,16 +115,26 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
   const grounds = { page: p.page, note: p.note };
 
   // WCAG 1.4.11: the parts that show a switch and its state need 3:1 against what is around them.
-  it.each(Object.entries(grounds))('off: track and thumb on %s', (_, ground) => {
-    const off = toggleLook(false, p);
-    expect(contrastRatio(off.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  it.each(Object.entries(grounds))('off: track, edge and thumb on %s', (_, ground) => {
+    const off = toggleLook(false, p, ground);
+    expect(off.track).toBe(ground);
+    expect(contrastRatio(off.trackBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(off.thumb, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(off.check).toBe(false);
   });
 
   it.each(Object.entries(grounds))('on: track on %s, thumb on the track', (_, ground) => {
-    const on = toggleLook(true, p);
+    const on = toggleLook(true, p, ground);
+    expect(on.track).toBe(p.selection);
     expect(contrastRatio(on.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(on.check).toBe(true);
+  });
+
+  it('on in dark: the thumb is the dark slate and keeps its edge', () => {
+    const on = toggleLook(true, palettes.dark, palettes.dark.page);
+    expect(on.thumb).toBe('#151B1E');
+    expect(on.thumbBorder).toBe('#151B1E');
   });
 });
 
@@ -134,10 +149,25 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
     expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('the primary pill edge stands out from the page and from a note', () => {
-    // Primary buttons sit on the page or over notes, never on the door.
-    expect(contrastRatio(p.accentEdge, p.page)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrastRatio(p.accentEdge, p.note)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  it('the light primary pill casts a shadow and the dark one none', () => {
+    expect(shadows.light.primary.shadowOpacity).toBeGreaterThan(0);
+    expect(shadows.dark.primary.shadowOpacity).toBe(0);
+  });
+
+  it('text on a selection fill', () => {
+    expect(contrastRatio(p.onSelection, p.selection)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it.each(['page', 'note', 'door'] as const)('a selection fill stands out on %s', (g) => {
+    expect(contrastRatio(p.selection, p[g])).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it.each(['page', 'note', 'door'] as const)('the focus ring stands out on %s', (g) => {
+    expect(contrastRatio(p.focusRing, p[g])).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('chalk text on the brand band', () => {
+    expect(contrastRatio(p.onBrandBand, p.brandBand)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('the tonal pill shows its shape by fill or by edge', () => {
@@ -162,7 +192,7 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
 });
 
 describe('Pizarra y pósit', () => {
-  const retired = ['#263663', '#F0AD83', '#FFF6E8', '#FBE0CD'];
+  const retired = ['#263663', '#F0AD83', '#FFF6E8', '#FBE0CD', '#C9725C', '#E39A85', '#A8891A'];
   it.each<Scheme>(['light', 'dark'])('%s palette uses no retired brand colour', (scheme) => {
     const values = JSON.stringify(palettes[scheme]).toUpperCase();
     retired.forEach((hex) => expect(values).not.toContain(hex));
@@ -170,5 +200,13 @@ describe('Pizarra y pósit', () => {
   it('fills the main action with the pósit in both themes', () => {
     expect(palettes.light.accent).toBe('#F2D04B');
     expect(palettes.dark.accent).toBe('#F2D04B');
+  });
+  it('keeps the pósit for what is chosen and the main action in dark mode', () => {
+    expect(palettes.dark.cobalt).toBe('#ECEFEA');
+    expect(palettes.dark.selection).toBe('#F2D04B');
+  });
+  it('uses a leaf magnet instead of coral', () => {
+    expect(MAGNET_COLORS).not.toContain('coral');
+    expect(MAGNET_COLORS).toContain('leaf');
   });
 });
