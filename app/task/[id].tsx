@@ -88,7 +88,7 @@ function EditTaskScreen() {
 
   const canDelete = task.createdBy === userId || membership?.role === 'owner';
   const done = task.completedAt !== null;
-  const toggling = toggler.isBusy(task.id);
+  const toggling = toggler.isBusy(task.id) && !isProvisional(task);
   const failure = skip.error ?? remove.error ?? save.error;
   // Saving, deleting or skipping locks the other two, and a success keeps them locked while closing.
   const busy =

@@ -99,9 +99,9 @@ export function Magnet({
       {look && (filledCheck || empty) ? (
         <Ionicons
           name="checkmark"
-          size={Math.round(diameter * (filledCheck ? 0.6 : 0.5))}
+          size={Math.round(diameter * (filledCheck ? 0.66 : 0.5))}
           color={look.tint}
-          style={{ opacity: look.opacity, fontWeight: filledCheck ? '700' : '400' }}
+          style={{ opacity: look.opacity }}
           accessible={false}
         />
       ) : null}
