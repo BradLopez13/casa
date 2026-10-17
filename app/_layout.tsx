@@ -1,3 +1,4 @@
+import { MPLUSRounded1c_700Bold } from '@expo-google-fonts/m-plus-rounded-1c/700Bold';
 import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
 import NetInfo from '@react-native-community/netinfo';
 import {
@@ -26,7 +27,7 @@ import { NoticeProvider, useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { displayFont } from '@/ui/tokens';
+import { displayFont, displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
@@ -275,9 +276,12 @@ function ThemedStatusBar() {
 }
 
 export default function RootLayout() {
-  // Nothing navigates or renders until the display font is registered (the splash stays up).
+  // Nothing navigates or renders until the display fonts are registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
-  const [fontsLoaded, fontError] = useFonts({ [displayFont]: MPLUSRounded1c_800ExtraBold });
+  const [fontsLoaded, fontError] = useFonts({
+    [displayFont]: MPLUSRounded1c_800ExtraBold,
+    [displayFontBold]: MPLUSRounded1c_700Bold,
+  });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
     <QueryClientProvider client={queryClient}>

@@ -20,9 +20,15 @@ appId: com.bradlopez13.casa
       id: sign-in.go-sign-up
 - tapOn:
     id: sign-in.go-sign-up
+- scrollUntilVisible:
+    element:
+      id: sign-up.name
 - tapOn:
     id: sign-up.name
 - inputText: Zoe
+- scrollUntilVisible:
+    element:
+      id: sign-up.email
 - tapOn:
     id: sign-up.email
 - inputText: ${output.email}
@@ -88,11 +94,17 @@ appId: com.bradlopez13.casa
       id: members.copied
     timeout: 10000
 - scrollUntilVisible:
-    element: Revocar
-- tapOn: Revocar
-- extendedWaitUntil:
-    visible: No hay invitaciones pendientes.
-    timeout: 20000
+    element:
+      id: members\.revoke\..*
+# The list refetches right after the copy: a tap during that re-render can be lost, so retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: members\.revoke\..*
+      - extendedWaitUntil:
+          visible: No hay invitaciones pendientes.
+          timeout: 10000
 - assertNotVisible: Revocar
 
 # Delete the household -> back to onboarding

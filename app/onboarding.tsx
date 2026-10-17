@@ -18,6 +18,7 @@ import { CenteredCard } from '@/ui/components/CenteredCard';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 
 export default function OnboardingScreen() {
   const { colors, space } = useTheme();
@@ -70,9 +71,8 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <CenteredCard>
-      <BrandHeader />
-      <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('onboarding.title')}</ScreenTitle>
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('onboarding.welcome')}</Text>
       <TextField
         testID="onboarding.name"
@@ -93,7 +93,12 @@ export default function OnboardingScreen() {
       {/* The second way in starts a new group, further from the first than its own parts are. */}
       <Text
         accessibilityRole="header"
-        style={{ marginTop: space(4), color: colors.ink, fontSize: 18, fontWeight: '600' }}
+        style={{
+          marginTop: space(4),
+          color: colors.ink,
+          fontFamily: displayFontBold,
+          fontSize: 15,
+        }}
       >
         {t('onboarding.linkTitle')}
       </Text>

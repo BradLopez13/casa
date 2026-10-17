@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { TAB_LABEL_MAX_SCALE, tabBarHeight, tabLabelsBeside } from './tabBar';
+import {
+  TAB_BAR_HEIGHT,
+  TAB_LABEL_GAP,
+  TAB_LABEL_LINE,
+  TAB_LABEL_MAX_SCALE,
+  TAB_PILL_HEIGHT,
+  tabBarHeight,
+  tabLabelsBeside,
+  tabPillWidth,
+} from './tabBar';
 
 describe('tabLabelsBeside', () => {
   it('puts labels under the icons on a phone in portrait', () => {
@@ -15,15 +24,17 @@ describe('tabLabelsBeside', () => {
 describe('tabBarHeight', () => {
   const portrait = { width: 412, height: 915, bottomInset: 24 };
 
-  it('leaves the default bar alone at the default text size', () => {
-    expect(tabBarHeight({ ...portrait, fontScale: 1 })).toBeUndefined();
-    expect(tabBarHeight({ ...portrait, fontScale: 0.85 })).toBeUndefined();
+  it('fits the 32 dp pill plus the label line at the default text size', () => {
+    expect(TAB_PILL_HEIGHT).toBe(32);
+    expect(TAB_BAR_HEIGHT).toBeGreaterThanOrEqual(TAB_PILL_HEIGHT + TAB_LABEL_LINE);
+    expect(tabBarHeight({ ...portrait, fontScale: 1 })).toBe(TAB_BAR_HEIGHT + 24);
+    expect(tabBarHeight({ ...portrait, fontScale: 0.85, bottomInset: 0 })).toBe(TAB_BAR_HEIGHT);
   });
 
   it('grows with the label under the icon, keeping the bottom inset', () => {
     // MIUI's largest text: a 16 dp label line becomes 23.2, so the bar grows by 8.
-    expect(tabBarHeight({ ...portrait, fontScale: 1.45 })).toBe(49 + 8 + 24);
-    expect(tabBarHeight({ ...portrait, fontScale: 1.3, bottomInset: 0 })).toBe(49 + 5);
+    expect(tabBarHeight({ ...portrait, fontScale: 1.45 })).toBe(TAB_BAR_HEIGHT + 8 + 24);
+    expect(tabBarHeight({ ...portrait, fontScale: 1.3, bottomInset: 0 })).toBe(TAB_BAR_HEIGHT + 5);
   });
 
   it('stops growing where the label stops: at the rail’s 1.6', () => {
@@ -31,12 +42,23 @@ describe('tabBarHeight', () => {
     expect(tabBarHeight({ ...portrait, fontScale: 2 })).toBe(
       tabBarHeight({ ...portrait, fontScale: 1.6 }),
     );
-    expect(tabBarHeight({ ...portrait, fontScale: 1.6, bottomInset: 0 })).toBe(49 + 10);
+    expect(tabBarHeight({ ...portrait, fontScale: 1.6, bottomInset: 0 })).toBe(TAB_BAR_HEIGHT + 10);
   });
 
   it('leaves the bar alone when the labels sit beside the icons, where the row has room', () => {
     expect(tabBarHeight({ width: 915, height: 412, bottomInset: 0, fontScale: 1.45 })).toBe(
       undefined,
     );
+  });
+});
+
+describe('tabPillWidth', () => {
+  it('hugs the icon when the label sits beside it, and is wider under it', () => {
+    expect(tabPillWidth(true)).toBeLessThan(tabPillWidth(false));
+    expect(tabPillWidth(true)).toBeGreaterThanOrEqual(TAB_PILL_HEIGHT);
+  });
+
+  it('leaves at least 8 dp between the pill and a label beside it', () => {
+    expect(TAB_LABEL_GAP).toBeGreaterThanOrEqual(8);
   });
 });

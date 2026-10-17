@@ -33,9 +33,15 @@ appId: com.bradlopez13.casa
     visible:
       id: sign-up.pending-invite
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: sign-up.name
 - tapOn:
     id: sign-up.name
 - inputText: Carla
+- scrollUntilVisible:
+    element:
+      id: sign-up.email
 - tapOn:
     id: sign-up.email
 - inputText: ${output.email}
@@ -69,6 +75,10 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - assertNotVisible:
     id: onboarding.create
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: invite.accept
 - tapOn:
     id: invite.accept
 - extendedWaitUntil:

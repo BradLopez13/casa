@@ -20,6 +20,7 @@ import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
@@ -54,7 +55,7 @@ function TemplateRow({
         alignItems: 'center',
         gap: space(3),
         paddingVertical: space(3),
-        opacity: pressed ? 0.7 : 1,
+        opacity: pressedOpacity(pressed),
       })}
     >
       {/* The check mark, not only the colour, shows the selection. */}
@@ -66,12 +67,12 @@ function TemplateRow({
           justifyContent: 'center',
           borderRadius: radii.day / 2,
           borderWidth: 2,
-          borderColor: checked ? colors.cobalt : colors.outline,
-          backgroundColor: checked ? colors.cobalt : colors.note,
+          borderColor: checked ? colors.selection : colors.outline,
+          backgroundColor: checked ? colors.selection : colors.note,
         }}
       >
         {checked ? (
-          <Ionicons name="checkmark" size={18} color={colors.onCobalt} accessible={false} />
+          <Ionicons name="checkmark" size={18} color={colors.onSelection} accessible={false} />
         ) : null}
       </View>
       <Text style={{ flex: 1, color: colors.ink, fontSize: 16 }}>{label}</Text>

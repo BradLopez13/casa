@@ -8,7 +8,7 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
+import { displayFontBold, INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { getPermission, requestPermission } from './notifications';
 import type { NotificationPermission } from './plan';
 import { useReminderSettings, useSaveReminderSettings } from './useReminders';
@@ -181,7 +181,7 @@ export function ReminderSettingsSection() {
     <View style={{ gap: space(2) }}>
       <Text
         accessibilityRole="header"
-        style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+        style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {t('settings.reminders')}
       </Text>

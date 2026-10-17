@@ -4,6 +4,7 @@ import { choiceOf, ruleForChoice, type RepeatChoice } from '@/domain/recurrence/
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { IsoWeekday, RecurrenceRule } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -44,14 +45,14 @@ function Pill({
         borderRadius: radii.pill,
         // Filled when chosen, as every selected pill: shape, not only colour.
         borderWidth: 1.5,
-        borderColor: selected ? colors.cobalt : colors.outline,
-        backgroundColor: selected ? colors.cobalt : colors.note,
-        opacity: pressed ? 0.8 : 1,
+        borderColor: selected ? colors.selection : colors.outline,
+        backgroundColor: selected ? colors.selection : colors.note,
+        opacity: pressedOpacity(pressed),
       })}
     >
       <Text
         style={{
-          color: selected ? colors.onCobalt : colors.ink,
+          color: selected ? colors.onSelection : colors.ink,
           fontSize: 15,
           fontWeight: '600',
         }}
@@ -96,15 +97,15 @@ function WeekdayToggles({
               justifyContent: 'center',
               borderRadius: radii.pill,
               borderWidth: 1.5,
-              borderColor: checked ? colors.cobalt : colors.outline,
-              backgroundColor: checked ? colors.cobalt : colors.note,
-              opacity: pressed ? 0.8 : 1,
+              borderColor: checked ? colors.selection : colors.outline,
+              backgroundColor: checked ? colors.selection : colors.note,
+              opacity: pressedOpacity(pressed),
             })}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               style={{
-                color: checked ? colors.onCobalt : colors.ink,
+                color: checked ? colors.onSelection : colors.ink,
                 fontSize: 15,
                 fontWeight: '600',
               }}
@@ -149,7 +150,7 @@ function StepButton({
         borderWidth: 1.5,
         borderColor: colors.outline,
         backgroundColor: colors.note,
-        opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
+        opacity: disabled ? 0.4 : pressedOpacity(pressed),
       })}
     >
       <Ionicons name={icon} size={22} color={colors.cobalt} accessible={false} />

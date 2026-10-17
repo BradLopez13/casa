@@ -4,6 +4,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 
 /** A plain note (no magnet: it is nobody's task) inviting an empty household to start from templates. */
 export function TemplatesCard() {
@@ -23,7 +24,7 @@ export function TemplatesCard() {
       <Text
         accessibilityRole="header"
         maxFontSizeMultiplier={1.3}
-        style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}
+        style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {t('templates.cardTitle')}
       </Text>
