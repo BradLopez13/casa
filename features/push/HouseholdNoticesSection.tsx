@@ -12,6 +12,7 @@ import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
 import { permissionView } from './permissionView';
+import { switchState } from './permissionState';
 import { useNotificationPrefs, useSetNotificationPrefs } from './queries';
 
 /** The phone's notification permission, read again each time the app comes back. */
@@ -56,6 +57,9 @@ export function HouseholdNoticesSection() {
   const taskAssigned = prefs?.taskAssigned ?? true;
   const memberJoined = prefs?.memberJoined ?? true;
   const error = save.error ?? prefsQuery.error;
+  const known = permission ?? 'granted';
+  const taskState = switchState(taskAssigned, known);
+  const joinedState = switchState(memberJoined, known);
 
   const enable = () => {
     setAsking(true);
@@ -81,6 +85,27 @@ export function HouseholdNoticesSection() {
       >
         {t('settings.push')}
       </Text>
+      {view === 'denied' ? (
+        <>
+          <Text
+            testID="settings.push.denied"
+            accessibilityLiveRegion="polite"
+            style={{ color: colors.ink, fontSize: 14 }}
+          >
+            {t('settings.notificationsOff')}
+          </Text>
+          <Button
+            testID="settings.push.open-settings"
+            title={t('settings.openPhoneSettings')}
+            variant="tertiary"
+            icon={actionIcons.openPhoneSettings}
+            width="hug"
+            onPress={() => {
+              Linking.openSettings().catch(() => undefined);
+            }}
+          />
+        </>
+      ) : null}
       <View style={row}>
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushTaskAssigned')}
@@ -88,11 +113,14 @@ export function HouseholdNoticesSection() {
         <Toggle
           testID="settings.push.task-assigned"
           accessibilityLabel={t('settings.pushTaskAssigned')}
-          value={taskAssigned}
-          disabled={busy}
+          value={taskState.value}
+          disabled={busy || taskState.disabled}
           onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
         />
       </View>
+      {taskState.caption ? (
+        <Text style={{ color: colors.muted, fontSize: 13 }}>{taskState.caption}</Text>
+      ) : null}
       <View style={row}>
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushMemberJoined')}
@@ -100,11 +128,14 @@ export function HouseholdNoticesSection() {
         <Toggle
           testID="settings.push.member-joined"
           accessibilityLabel={t('settings.pushMemberJoined')}
-          value={memberJoined}
-          disabled={busy}
+          value={joinedState.value}
+          disabled={busy || joinedState.disabled}
           onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
         />
       </View>
+      {joinedState.caption ? (
+        <Text style={{ color: colors.muted, fontSize: 13 }}>{joinedState.caption}</Text>
+      ) : null}
       {error ? (
         <ErrorText testID="settings.push.error">
           {t(
@@ -124,26 +155,6 @@ export function HouseholdNoticesSection() {
           disabled={asking}
           onPress={enable}
         />
-      ) : null}
-      {view === 'denied' ? (
-        <>
-          <Text
-            testID="settings.push.denied"
-            accessibilityLiveRegion="polite"
-            style={{ color: colors.ink, fontSize: 14 }}
-          >
-            {t('settings.remindersDenied')}
-          </Text>
-          <Button
-            title={t('settings.remindersOpenSettings')}
-            variant="secondary"
-            icon={actionIcons.openPhoneSettings}
-            width="hug"
-            onPress={() => {
-              Linking.openSettings().catch(() => undefined);
-            }}
-          />
-        </>
       ) : null}
     </View>
   );
