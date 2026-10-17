@@ -23,7 +23,7 @@ export default function NewTaskRoute() {
 
 function NewTaskScreen() {
   const close = useCloseModal('/today');
-  const params = useLocalSearchParams<{ assignee?: string }>();
+  const params = useLocalSearchParams<{ assignee?: string; due?: string }>();
   const today = useToday();
   const { userId } = useSession();
   const householdId = useMembership().data?.householdId;
@@ -39,7 +39,7 @@ function NewTaskScreen() {
     title: '',
     room: null,
     assigneeId: params.assignee ?? null,
-    dueOn: today,
+    dueOn: typeof params.due === 'string' && /^d{4}-d{2}-d{2}$/.test(params.due) ? params.due : today,
     recurrence: null,
   };
 

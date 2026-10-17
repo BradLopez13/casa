@@ -62,7 +62,7 @@ describe('reminderText', () => {
     const r = reminder({ count: 4, overdue: 2, titles: ['A', 'B', 'C'] });
     expect(reminderText(r)).toMatchObject({
       title: 'Hoy tienes 4 tareas (2 pendientes de otros días)',
-      body: 'A · B · C',
+      body: 'A, B, C',
     });
   });
 

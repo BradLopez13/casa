@@ -37,5 +37,5 @@ export function reminderText(r: Reminder): ScheduledReminder {
       : count === 1
         ? t('reminders.eveningTitleOne')
         : t('reminders.eveningTitleOther', { count });
-  return { id: r.id, fireAt: r.fireAt, title, body: r.titles.join(' · ') };
+  return { id: r.id, fireAt: r.fireAt, title, body: r.titles.join(', ') };
 }

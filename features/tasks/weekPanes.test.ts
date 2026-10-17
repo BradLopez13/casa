@@ -18,6 +18,12 @@ describe('chosenDay', () => {
     expect(chosenDay(days, '2026-10-12', TODAY)).toBe('2026-10-12');
   });
 
+  it('keeps the tapped day even when it has no tasks', () => {
+    // `days` is the week itself, so a day with nothing on it is still a day to choose.
+    const empty = [{ date: TODAY }, { date: '2026-10-10' }];
+    expect(chosenDay(empty, '2026-10-10', TODAY)).toBe('2026-10-10');
+  });
+
   it('falls back to today once the chosen day has left the week', () => {
     expect(chosenDay(days, '2026-10-08', TODAY)).toBe(TODAY);
     expect(chosenDay(days, '2026-10-30', TODAY)).toBe(TODAY);

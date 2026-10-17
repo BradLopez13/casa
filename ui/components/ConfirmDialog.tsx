@@ -66,7 +66,7 @@ export function ConfirmDialog({
             alignSelf: 'center',
             gap: space(2),
             padding: space(6),
-            borderRadius: radii.door,
+            borderRadius: radii.note,
             backgroundColor: colors.note,
           }}
         >
@@ -91,7 +91,7 @@ export function ConfirmDialog({
             <Button
               testID="members.cancel"
               title={cancelLabel}
-              variant="tertiary"
+              variant="secondary"
               width="full"
               disabled={loading}
               onPress={onCancel}

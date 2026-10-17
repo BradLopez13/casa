@@ -99,8 +99,8 @@ export default function TodayScreen() {
     <DoorHeader
       title={t('today.title')}
       subtitle={
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          <Text style={subtitleStyle}>{`${longDateLabel(today)} · `}</Text>
+        <View>
+          <Text style={subtitleStyle}>{longDateLabel(today)}</Text>
           <Text testID="today.household-name" style={subtitleStyle}>
             {membership?.householdName ?? ''}
           </Text>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, SectionList, Text, View } from 'react-native';
 import { addDays } from '@/domain/tasks/dates';
 import { dayHeading } from '@/domain/tasks/labels';
@@ -28,6 +29,7 @@ import {
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
+import { Button } from '@/ui/components/Button';
 import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -54,6 +56,32 @@ function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
       dueOn={day}
       placeholder={placeholder}
     />
+  );
+}
+
+/**
+ * A chosen day with nothing on it says so by name, and offers the full form for that day. Hoy and
+ * Mañana keep the plain line: «Nada el hoy» would not read.
+ */
+function EmptyDay({ day, today }: { day: string; today: string }) {
+  const { colors, space } = useTheme();
+  const router = useRouter();
+  const named = day !== today && day !== addDays(today, 1);
+  return (
+    <View style={{ gap: space(1), alignItems: 'flex-start' }}>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {named
+          ? t('tasks.dayEmptyNamed', { day: dayHeading(day, today).toLowerCase() })
+          : t('tasks.dayEmpty')}
+      </Text>
+      <Button
+        testID="tasks.add-for-day"
+        title={t('tasks.addForDay')}
+        variant="tertiary"
+        width="hug"
+        onPress={() => router.push({ pathname: '/task/new', params: { due: day } })}
+      />
+    </View>
   );
 }
 
@@ -184,6 +212,7 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
           <DayStrip
             days={strip}
             today={today}
+            chosen={day}
             marks={marks}
             names={screen.names}
             onSelect={scrollToDay}
@@ -218,6 +247,11 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
             {mode === 'week' ? (
               <View style={[column, { paddingTop: space(4) }]}>
                 <DayQuickAdd screen={screen} day={day} />
+                {sections.length > 0 && weekDayPane(sections, day, today).day.count === 0 ? (
+                  <View style={{ paddingTop: space(4) }}>
+                    <EmptyDay day={day} today={today} />
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </>
@@ -313,7 +347,7 @@ const rowProps = (screen: Screen) => ({
 
 /** Semana on two panes: the seven days to choose from, and what the chosen one holds. */
 function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: SplitProps) {
-  const { colors, space } = useTheme();
+  const { space } = useTheme();
   const listStyle = useNewTaskListStyle();
   const lane = useNewTaskLane();
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
@@ -353,7 +387,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
                 {...rowProps(screen)}
               />
               {pane.day.count === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.dayEmpty')}</Text>
+                <EmptyDay day={day} today={screen.today} />
               ) : null}
             </>
           ) : (

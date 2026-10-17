@@ -41,7 +41,7 @@ function TemplateRow({
     templateTitle(template),
     t(`rooms.${template.room}`),
     recurrenceLabel(template.rule),
-  ].join(' · ');
+  ].join(', ');
   return (
     <Pressable
       testID={`templates.item.${template.key}`}

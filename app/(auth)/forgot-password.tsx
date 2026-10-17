@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View, type TextInput } from 'react-native';
 import { requestPasswordReset, resetPassword } from '@/features/auth/api';
@@ -28,6 +28,7 @@ const nowMs = () => Date.now();
 
 export default function ForgotPasswordScreen() {
   const { colors, space } = useTheme();
+  const router = useRouter();
   const params = useLocalSearchParams<{ email?: string }>();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
@@ -148,6 +149,7 @@ export default function ForgotPasswordScreen() {
   return (
     <CenteredCard header={<BrandHeader />}>
       <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.forgot.title')}</ScreenTitle>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('auth.forgotContext')}</Text>
       {step === 'email' ? (
         <>
           <TextField
@@ -248,6 +250,13 @@ export default function ForgotPasswordScreen() {
           />
         </>
       )}
+      <Button
+        testID="forgot-password.back"
+        title={t('auth.backToSignIn')}
+        variant="tertiary"
+        width="hug"
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/sign-in'))}
+      />
     </CenteredCard>
   );
 }
