@@ -122,7 +122,6 @@ export function DayStrip({ days, today, marks, onSelect }: Props) {
               }
             >
               <Text
-                maxFontSizeMultiplier={1.3}
                 numberOfLines={1}
                 style={{
                   color: isToday ? colors.ink : colors.muted,
@@ -133,7 +132,6 @@ export function DayStrip({ days, today, marks, onSelect }: Props) {
                 {date.toLocaleDateString(locale, { weekday: 'short' })}
               </Text>
               <Text
-                maxFontSizeMultiplier={1.3}
                 style={{
                   color: colors.ink,
                   fontFamily: displayFont,

@@ -59,7 +59,6 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
             })}
           >
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 minWidth: NUMBER_COLUMN,
                 textAlign: 'center',

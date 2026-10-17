@@ -48,11 +48,10 @@ export function MemberFilter({ members, marks, userId, selected, onSelect }: Pro
         />
         {compact ? null : (
           <Text
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.3}
+            numberOfLines={2}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            style={{ color: colors.muted, fontSize: 13 }}
+            style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}
           >
             {allName}
           </Text>
@@ -77,11 +76,10 @@ export function MemberFilter({ members, marks, userId, selected, onSelect }: Pro
             {/* The magnet already carries the name for screen readers. */}
             {compact ? null : (
               <Text
-                numberOfLines={1}
-                maxFontSizeMultiplier={1.3}
+                numberOfLines={2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-                style={{ color: colors.muted, fontSize: 13 }}
+                style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}
               >
                 {name}
               </Text>

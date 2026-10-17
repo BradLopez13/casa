@@ -24,11 +24,10 @@ function Choice({ name, children }: { name: string; children: ReactNode }) {
       {children}
       {/* The magnet already carries the name for screen readers. */}
       <Text
-        numberOfLines={1}
-        maxFontSizeMultiplier={1.3}
+        numberOfLines={2}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        style={{ color: colors.muted, fontSize: 13, maxWidth: 72 }}
+        style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}
       >
         {name}
       </Text>

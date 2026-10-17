@@ -23,7 +23,6 @@ export function TemplatesCard() {
     >
       <Text
         accessibilityRole="header"
-        maxFontSizeMultiplier={1.3}
         style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {t('templates.cardTitle')}

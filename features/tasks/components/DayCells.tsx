@@ -70,7 +70,6 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
     >
       {top ? (
         <Text
-          maxFontSizeMultiplier={1.3}
           style={{
             fontFamily: displayFont,
             fontSize: 20,
@@ -82,7 +81,6 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
         </Text>
       ) : null}
       <Text
-        maxFontSizeMultiplier={1.3}
         style={{
           fontSize: top ? 13 : 15,
           fontWeight: top ? undefined : '600',

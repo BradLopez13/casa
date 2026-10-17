@@ -74,7 +74,6 @@ function Chip({
     >
       {children}
       <Text
-        maxFontSizeMultiplier={1.3}
         style={{
           color: disabled ? off.foreground : open ? colors.onSelection : colors.ink,
           fontSize: 15,

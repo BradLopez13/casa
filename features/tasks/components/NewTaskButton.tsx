@@ -109,7 +109,6 @@ export function NewTaskButton({
       />
       {shape.iconOnly ? null : (
         <Text
-          maxFontSizeMultiplier={1.3}
           style={{ color: look.foreground, fontSize: 16, fontWeight: '600' }}
         >
           {t('tasks.new')}

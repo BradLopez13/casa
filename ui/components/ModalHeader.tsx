@@ -64,7 +64,6 @@ export function HeaderAction({
         }
       >
         <Text
-          maxFontSizeMultiplier={1.3}
           style={{
             color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: strong ? 16 : 15,
@@ -138,7 +137,6 @@ export function ModalHeader({
     <Text
       accessibilityRole="header"
       numberOfLines={inline ? 1 : undefined}
-      maxFontSizeMultiplier={1.3}
       style={
         inline
           ? { ...titleStyle, flex: 1, textAlign: 'center' }
@@ -167,7 +165,6 @@ export function ModalHeader({
       >
         <Text
           numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
           style={titleStyle}
           onLayout={width(setTitleWidth)}
         >

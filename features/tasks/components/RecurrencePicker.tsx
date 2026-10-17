@@ -104,7 +104,6 @@ function WeekdayToggles({
             })}
           >
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 color: checked ? colors.onSelection : colors.ink,
                 fontSize: 15,
