@@ -1,6 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
-import { Pressable, Text } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import ReanimatedSwipeable, {
+  SwipeDirection,
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -32,11 +37,22 @@ type Props = {
   assigneeName: string | undefined;
   busy: boolean;
   onToggle: () => void;
+  /** Swipe right to complete; the caller offers the undo. */
+  onComplete?: () => void;
   onOpen: () => void;
 };
 
 /** A task as a paper note; its magnet (the assignee) sticks out of the left edge and completes it. */
-export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOpen }: Props) {
+export function TaskNote({
+  task,
+  today,
+  mark,
+  assigneeName,
+  busy,
+  onToggle,
+  onComplete,
+  onOpen,
+}: Props) {
   const { colors, shadows, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
@@ -45,6 +61,9 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
   const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);
+
+  const swipeable = useRef<SwipeableMethods>(null);
+  const canSwipe = !done && !provisional && !!onComplete;
 
   const press = () => {
     if (!reduceMotion) {
@@ -100,46 +119,83 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
           />
         </Animated.View>
       </Pressable>
-      <Pressable
-        testID={`task-note.${task.id}`}
-        onPress={provisional ? undefined : onOpen}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
-        accessibilityState={{ disabled: provisional }}
-        style={{
-          flex: 1,
-          minHeight: MIN_TOUCH,
-          justifyContent: 'center',
-          gap: space(0.5),
-          padding: space(3),
-        }}
-      >
-        <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
-          {task.title}
-        </Text>
-        <Text style={{ color: colors.muted, fontSize: 14 }}>
-          {room ? `${room} · ` : ''}
-          {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no
-              pill or outline around it (in dark mode red and the apricot actions are close). */}
-          <Text
+      <ReanimatedSwipeable
+        ref={swipeable}
+        enabled={canSwipe}
+        friction={2}
+        leftThreshold={56}
+        overshootLeft={false}
+        overshootRight={false}
+        animationOptions={reduceMotion ? { duration: 0 } : undefined}
+        containerStyle={{ flex: 1, borderRadius: radii.note }}
+        renderLeftActions={() => (
+          <View
             style={{
-              color: overdue ? colors.red : colors.muted,
-              fontWeight: overdue ? '600' : '400',
-              fontVariant: ['tabular-nums'],
+              width: 72,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.accent,
             }}
           >
-            {due}
+            <Ionicons name="checkmark" size={24} color={colors.onAccent} accessible={false} />
+          </View>
+        )}
+        onSwipeableOpen={(direction) => {
+          // Dragging the note right opens the strip on its left; dragging left does nothing.
+          if (direction !== SwipeDirection.RIGHT) return;
+          onComplete?.();
+          swipeable.current?.close();
+        }}
+      >
+        <Pressable
+          testID={`task-note.${task.id}`}
+          onPress={provisional ? undefined : onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
+          accessibilityState={{ disabled: provisional }}
+          accessibilityActions={
+            canSwipe
+              ? [{ name: 'complete', label: t('tasks.a11y.complete', { title: task.title }) }]
+              : undefined
+          }
+          onAccessibilityAction={(e) => {
+            if (e.nativeEvent.actionName === 'complete') onComplete?.();
+          }}
+          style={{
+            flex: 1,
+            minHeight: MIN_TOUCH,
+            justifyContent: 'center',
+            gap: space(0.5),
+            padding: space(3),
+          }}
+        >
+          <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
+            {task.title}
           </Text>
-          {repeat ? (
-            <>
-              {' · '}
-              <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
-              {` ${repeat}`}
-            </>
-          ) : null}
-        </Text>
-      </Pressable>
+          <Text style={{ color: colors.muted, fontSize: 14 }}>
+            {room ? `${room} · ` : ''}
+            {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no
+                pill or outline around it (in dark mode red and the apricot actions are close). */}
+            <Text
+              style={{
+                color: overdue ? colors.red : colors.muted,
+                fontWeight: overdue ? '600' : '400',
+                fontVariant: ['tabular-nums'],
+              }}
+            >
+              {due}
+            </Text>
+            {repeat ? (
+              <>
+                {' · '}
+                <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
+                {` ${repeat}`}
+              </>
+            ) : null}
+          </Text>
+        </Pressable>
+      </ReanimatedSwipeable>
     </Animated.View>
   );
 }

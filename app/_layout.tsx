@@ -16,6 +16,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
 import { forgetEndedHousehold, persister } from '@/data/query/persist';
@@ -323,13 +324,15 @@ export default function RootLayout() {
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemedStatusBar />
-      <NoticeProvider>
-        <SessionProvider>
-          <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-        </SessionProvider>
-      </NoticeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemedStatusBar />
+        <NoticeProvider>
+          <SessionProvider>
+            <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+          </SessionProvider>
+        </NoticeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -213,6 +213,8 @@
   "tasks.a11y.reopenByYou": "Reabrir «{title}», hecha por ti",
   "tasks.a11y.unassigned": "Sin responsable",
   "tasks.a11y.edit": "Abre la tarea para editarla",
+  "tasks.done": "Hecha.",
+  "tasks.undo": "Deshacer",
   "tasks.toggleFailed": "No se pudo completar. Inténtalo de nuevo.",
   "tasks.errors.INVALID_TITLE": "Escribe un título de hasta 100 caracteres.",
   "tasks.errors.INVALID_ROOM": "Esa estancia no es válida.",
