@@ -26,6 +26,8 @@ import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 
 // A note that is still being saved is drawn faded until the server confirms it.
 const PROVISIONAL_OPACITY = 0.6;
+// With Reduce Motion the strip snaps instead of animating.
+const NO_ANIMATION = { duration: 0 };
 const PRESS_MS = 80;
 const PRESS_SCALE = 0.9;
 const TOGGLE_SLOP = Math.ceil((MIN_TOUCH - magnetSizes.md) / 2);
@@ -63,7 +65,7 @@ export function TaskNote({
   const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);
 
   const swipeable = useRef<SwipeableMethods>(null);
-  const canSwipe = !done && !provisional && !!onComplete;
+  const canSwipe = !done && !provisional && !busy && !!onComplete;
 
   const press = () => {
     if (!reduceMotion) {
@@ -126,7 +128,7 @@ export function TaskNote({
         leftThreshold={56}
         overshootLeft={false}
         overshootRight={false}
-        animationOptions={reduceMotion ? { duration: 0 } : undefined}
+        animationOptions={reduceMotion ? NO_ANIMATION : undefined}
         containerStyle={{ flex: 1, borderRadius: radii.note }}
         renderLeftActions={() => (
           <View
@@ -160,7 +162,7 @@ export function TaskNote({
               : undefined
           }
           onAccessibilityAction={(e) => {
-            if (e.nativeEvent.actionName === 'complete') onComplete?.();
+            if (canSwipe && e.nativeEvent.actionName === 'complete') onComplete?.();
           }}
           style={{
             flex: 1,
