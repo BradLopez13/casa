@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -185,6 +185,9 @@ function Guard() {
   const router = useRouter();
   const modalFrame = modalFrameFor(useLayout());
   const segments = useSegments();
+  // Android recreates the activity on a rotation or a font-scale change; navigating before the
+  // root navigator has mounted fails ("Attempted to navigate before mounting the Root Layout").
+  const navReady = useRootNavigationState()?.key !== undefined;
   const session = useSession();
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
@@ -211,8 +214,8 @@ function Guard() {
   });
 
   useEffect(() => {
-    if (target) router.replace(target);
-  }, [target, router]);
+    if (navReady && target) router.replace(target);
+  }, [navReady, target, router]);
 
   const ready =
     !pending.isLoading &&
@@ -228,9 +231,9 @@ function Guard() {
   // handled here too.
   const inHousehold = ready && membership === 'member';
   useEffect(() => {
-    if (!inHousehold) return;
+    if (!navReady || !inHousehold) return;
     return onNotificationTapped((data) => router.push(routeForNotification(data)));
-  }, [inHousehold, router]);
+  }, [navReady, inHousehold, router]);
 
   // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
   // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
