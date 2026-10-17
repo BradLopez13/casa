@@ -39,6 +39,20 @@ describe('hueDistance', () => {
   });
 });
 
+describe.each<Scheme>(['light', 'dark'])('%s task note paper', (scheme) => {
+  const p = palettes[scheme];
+
+  it('ink, muted text and outlines on the task note', () => {
+    expect(contrastRatio(p.ink, p.taskNote)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.muted, p.taskNote)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.outline, p.taskNote)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+it('the dark task note is the dark note', () => {
+  expect(palettes.dark.taskNote).toBe(palettes.dark.note);
+});
+
 describe('dark palette keeps red apart from the pósit', () => {
   it('red sits at least 30° of hue away from the pósit selection and accent', () => {
     // By hue alone "Vencida" must not read as chosen or tappable.

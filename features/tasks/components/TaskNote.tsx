@@ -68,7 +68,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         marginLeft: magnetSizes.md / 2,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.note,
+        backgroundColor: colors.taskNote,
         opacity: provisional ? PROVISIONAL_OPACITY : 1,
         borderRadius: radii.note,
         ...shadows.note,
@@ -92,6 +92,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
             size="md"
             decorative
             variant={mark ? 'filled' : 'empty'}
+            posit={!done}
             color={mark?.color ?? 'teal'}
             initial={mark?.initial ?? ''}
             accessibilityLabel={assigneeName ?? ''}

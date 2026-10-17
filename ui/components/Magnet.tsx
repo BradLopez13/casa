@@ -25,6 +25,8 @@ type Props = {
   accessibilityRole?: 'button' | 'radio';
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
+  /** Empty magnet only: draw the dashed ring in the pósit, 2 dp, in dark mode (the checkbox of a task note). */
+  posit?: boolean;
 };
 
 const RING = 2;
@@ -41,10 +43,13 @@ export function Magnet({
   onPress,
   accessibilityRole = 'button',
   decorative = false,
+  posit = false,
 }: Props) {
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
+  const { scheme } = useTheme();
+  const positRing = empty && posit && scheme === 'dark';
   // The chip-sized magnet sits inside a pill and stays flat.
   const depth = !empty && size !== 'sm' ? shadows.magnet : null;
 
@@ -57,7 +62,11 @@ export function Magnet({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: empty ? 'transparent' : colors.magnet[color],
-        ...(empty ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline } : {}),
+        ...(empty
+          ? positRing
+            ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
+            : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline }
+          : {}),
         // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
         ...(!empty && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }

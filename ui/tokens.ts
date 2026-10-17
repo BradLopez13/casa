@@ -10,6 +10,8 @@ export type Palette = {
   door: string;
   /** Cards and fields that sit on the page. */
   note: string;
+  /** Paper of a task (the notes of Hoy and Tareas): a soft pósit in light, the dark note in dark. */
+  taskNote: string;
   ink: string;
   muted: string;
   /** Replaces `muted` when the phone asks for higher contrast. */
@@ -67,6 +69,7 @@ export const palettes: Record<Scheme, Palette> = {
     page: '#F3F4F0',
     door: '#DCE3E1',
     note: '#FFFFFF',
+    taskNote: '#FDF8E6',
     ink: '#1E2A2F',
     muted: '#56636A',
     mutedStrong: '#3F4A50',
@@ -104,6 +107,7 @@ export const palettes: Record<Scheme, Palette> = {
     page: '#151B1E',
     door: '#27343A',
     note: '#1E272B',
+    taskNote: '#1E272B',
     ink: '#ECEFEA',
     muted: '#A7B2B5',
     mutedStrong: '#CBD3D5',
