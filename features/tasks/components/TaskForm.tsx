@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { useRef, useState, type ReactNode } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MemberMark } from '@/domain/members/marks';
 import { syncMonthly } from '@/domain/recurrence/form';
@@ -26,6 +26,7 @@ import { AssigneePicker } from './AssigneePicker';
 import { DayCells } from './DayCells';
 import { RecurrencePicker } from './RecurrencePicker';
 import { RoomPicker } from './RoomPicker';
+import { saveErrorText } from './taskFormText';
 
 type Props = {
   title: string;
@@ -84,6 +85,7 @@ export function TaskForm({
     busy: saving,
   });
   const [triedSave, setTriedSave] = useState(false);
+  const titleRef = useRef<TextInput>(null);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
   // chosen day changes nothing, so a month-end rule on a short month keeps its day. Without the
@@ -110,17 +112,26 @@ export function TaskForm({
 
   const parsed = taskFormSchema.safeParse(values);
   const blank = values.title.trim() === '';
-  // An empty title only disables Save; a too-long one says why.
+  // An empty title is explained on Save; a too-long one says why as it is typed.
   const titleInvalid =
     !blank && !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'title');
   // The pickers keep a date while a repeat is set; should one still be missing, say so on Save.
   const needsDate = !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'dueOn');
   const save = () => {
     if (parsed.success) onSave(parsed.data);
-    else setTriedSave(true);
+    else {
+      setTriedSave(true);
+      if (blank) titleRef.current?.focus();
+    }
   };
+  // The empty-title message goes away as soon as something is typed.
   const shownError =
-    error ?? (triedSave && needsDate ? t('tasks.errors.RECURRENCE_NEEDS_DATE') : null);
+    error ??
+    (triedSave && blank
+      ? saveErrorText('INVALID_TITLE')
+      : triedSave && needsDate
+        ? saveErrorText('RECURRENCE_NEEDS_DATE')
+        : null);
   const repeating = values.recurrence !== null;
   // What completing it today would produce, as the server computes it: the first date after
   // max(dueOn, today).
@@ -147,7 +158,7 @@ export function TaskForm({
             testID: 'task-form.save',
             label: t('taskForm.save'),
             onPress: save,
-            disabled: blank || saving,
+            disabled: saving,
             busy: saving,
           }}
         />
@@ -169,6 +180,7 @@ export function TaskForm({
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
               <TextField
+                ref={titleRef}
                 testID="task-form.title"
                 label={t('taskForm.titleLabel')}
                 value={values.title}
@@ -181,7 +193,7 @@ export function TaskForm({
                 blurOnSubmit
                 // The keyboard's check mark takes the same path as the header Save.
                 onSubmitEditing={() => {
-                  if (!blank && !saving) save();
+                  if (!saving) save();
                 }}
                 error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
               />

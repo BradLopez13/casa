@@ -40,12 +40,15 @@ export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) 
     setError(undefined);
   };
 
-  const submit = (name: string) => {
+  /** False when the name was rejected, so the field can take focus back. */
+  const submit = (name: string): boolean => {
     const parsed = shoppingNameSchema.safeParse(name);
     if (!parsed.success) {
-      // An empty field just does nothing; a name too long says why.
-      if (name.trim() !== '') setError(t('shopping.errors.INVALID_ITEM_NAME'));
-      return;
+      // An empty field asks for a name; a name too long says why.
+      setError(
+        name.trim() === '' ? t('shopping.nameRequired') : t('shopping.errors.INVALID_ITEM_NAME'),
+      );
+      return false;
     }
     const plan = planAdd(items, parsed.data);
     // Either way the name is on the list now, so the field is ready for the next one.
@@ -53,10 +56,11 @@ export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) 
     if (plan.kind === 'listed') {
       setError(t('shopping.alreadyListed'));
       onListed(plan.id);
-      return;
+      return true;
     }
     setError(undefined);
     onAdd(plan.name);
+    return true;
   };
 
   return { text, error, suggestions, change, submit };
@@ -76,6 +80,7 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
   // elsewhere (on the door) this does nothing.
   const reveal = useFocusReveal();
   const block = useRef<View>(null);
+  const input = useRef<TextInput>(null);
   const shown = entry.suggestions.length;
   useEffect(() => {
     if (focused) reveal(block.current);
@@ -85,10 +90,13 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
     <View ref={block} style={{ gap: space(3) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
         <TextInput
+          ref={input}
           testID="shopping.input"
           value={text}
           onChangeText={change}
-          onSubmitEditing={() => submit(text)}
+          onSubmitEditing={() => {
+            submit(text);
+          }}
           returnKeyType="done"
           // Keeps the keyboard up so several items go in one after another.
           submitBehavior="submit"
@@ -123,8 +131,9 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
             title={t('shopping.add')}
             variant="secondary"
             icon={actionIcons.add}
-            disabled={text.trim() === ''}
-            onPress={() => submit(text)}
+            onPress={() => {
+              if (!submit(text)) input.current?.focus();
+            }}
           />
         </View>
       </View>
