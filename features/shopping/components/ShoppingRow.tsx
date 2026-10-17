@@ -188,7 +188,9 @@ export function ShoppingRow({
           style={({ pressed }) => ({
             flexShrink: 1,
             maxWidth: '35%',
+            minWidth: MIN_TOUCH,
             minHeight: MIN_TOUCH,
+            alignItems: 'flex-end',
             justifyContent: 'center',
             marginLeft: space(2),
             opacity: pressedOpacity(pressed),

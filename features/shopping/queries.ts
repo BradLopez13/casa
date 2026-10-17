@@ -92,6 +92,8 @@ export function useSetCategoryOrder() {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, { householdId: string; order: readonly Category[] }>({
     mutationKey: ['shopping-categories', 'order'],
+    // Each call sends the whole order: quick taps must arrive in the order they were made.
+    scope: { id: 'category-order' },
     networkMode: 'online',
     mutationFn: ({ order }) => setCategoryOrder(order),
     onMutate: async ({ householdId, order }) => {

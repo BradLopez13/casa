@@ -359,6 +359,33 @@ describe('restart', () => {
     ).toEqual(['success', 'success']);
   });
 
+  it('sends a category change queued offline after a restart, with its optimistic state', async () => {
+    const before = setup();
+    before.queryClient.setQueryData(key, [existing]);
+    before.queryClient.setQueryData(itemCategoriesKey('h'), { order: null, overrides: [] });
+    onlineManager.setOnline(false);
+    void before.category({ id: 'x', householdId: 'h', category: 'drinks' }).catch(() => undefined);
+    await vi.waitFor(() => expect(list(before.queryClient)?.[0]?.category).toBe('drinks'));
+
+    const after = restart(before.queryClient);
+    expect(list(after.queryClient)?.[0]?.category).toBe('drinks');
+    expect(
+      after.queryClient.getQueryData<ItemCategories>(itemCategoriesKey('h'))?.overrides,
+    ).toEqual([['leche', 'drinks']]);
+    expect(
+      after.queryClient
+        .getMutationCache()
+        .getAll()
+        .map((m) => m.state.variables),
+    ).toEqual([{ id: 'x', householdId: 'h', category: 'drinks' }]);
+
+    vi.mocked(setItemCategory).mockResolvedValue(undefined);
+    onlineManager.setOnline(true);
+    await resumeShoppingQueue(after.queryClient);
+    expect(setItemCategory).toHaveBeenCalledWith('x', 'drinks');
+    expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
+  });
+
   it('resends an add that was in flight when the app closed', async () => {
     const before = setup();
     before.queryClient.setQueryData(key, []);
