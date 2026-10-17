@@ -82,6 +82,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # The APK embeds the local Supabase key, which `supabase status` only prints with the API
+      # up. It comes up in the background while the job installs the rest. The key comes from
+      # config.toml, so every shard's stack hands out the same one (each shard checks it).
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - run: bash scripts/ci-supabase.sh start
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -93,15 +100,8 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - run: pnpm install --frozen-lockfile
-
-      # The APK embeds the local Supabase key, which `supabase status` only prints with the API
-      # up. The key comes from config.toml, so every shard's stack hands out the same one (each
-      # shard checks it).
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.119.0
-      - name: Start local Supabase
-        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+      - name: Wait for local Supabase
+        run: bash scripts/ci-supabase.sh wait
       - run: pnpm e2e:env
 
       - name: Build the release APK
@@ -129,11 +129,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The flows of each shard are listed in scripts/e2e-shard.sh.
-        shard: [1, 2]
+        # One job per shard of scripts/e2e-shard.sh, which lists the flows of each.
+        shard: [1, 2, 3]
     name: e2e-android (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@v4
+      # Supabase comes up in the background while the job installs and boots the emulator.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - run: bash scripts/ci-supabase.sh start
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -155,21 +160,6 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.119.0
-      - name: Start local Supabase
-        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
-      - run: pnpm e2e:fixtures
-      - run: pnpm e2e:env
-      - name: Check the APK has this stack's key
-        run: |
-          if ! cmp -s .env.e2e e2e-apk/.env.e2e; then
-            echo "The APK was built for another Supabase key:"
-            diff e2e-apk/.env.e2e .env.e2e || true
-            exit 1
-          fi
-
       - name: Install Maestro
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
@@ -187,6 +177,7 @@ jobs:
           fi
           "$tools/latest/bin/sdkmanager" --version
 
+      # Each script line runs on its own and the first failing one stops it.
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -194,6 +185,10 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            bash scripts/ci-supabase.sh wait
+            pnpm e2e:fixtures
+            pnpm e2e:env
+            cmp .env.e2e e2e-apk/.env.e2e || { echo "The APK was built for another Supabase key"; exit 1; }
             adb install e2e-apk/android/app/build/outputs/apk/release/app-release.apk
             set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh ${{ matrix.shard }}) --format junit --output e2e-report.xml
 

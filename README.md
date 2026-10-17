@@ -85,7 +85,7 @@ Tres jobs en `.github/workflows/ci.yml`, sin secretos ni proyecto en la nube:
 - `app`: Prettier, ESLint con `--max-warnings 0`, typecheck, Vitest y `expo export` para Android e iOS.
 - `db`: levanta Postgres con el CLI de Supabase, pasa pgTAP y falla si los tipos generados (`data/supabase/database.types.ts`) no están al día.
 - `build-apk`: corre a la vez que los dos anteriores y compila una sola vez el APK de release para el E2E, con la clave del Supabase local.
-- `e2e-android (1)` y `e2e-android (2)`: dependen de los tres anteriores. Cada uno levanta su Supabase local, carga los datos de prueba y ejecuta la mitad de los flujos Maestro (`scripts/e2e-shard.sh`) en un emulador de API 34.
+- `e2e-android (1)`, `(2)` y `(3)`: dependen de los tres anteriores. Cada uno levanta su Supabase local, carga los datos de prueba y ejecuta un tercio de los flujos Maestro (`scripts/e2e-shard.sh`) en un emulador de API 34.
 - Si un cambio solo toca `docs/`, Markdown o tests unitarios, `build-apk` y `e2e-android` no corren.
 
 ### Comprobaciones en local
