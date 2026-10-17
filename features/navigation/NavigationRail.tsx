@@ -2,6 +2,7 @@ import type { BottomTabBarProps } from 'expo-router/tabs';
 import { CommonActions } from 'expo-router/react-navigation';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { RAIL_WIDTH } from '@/ui/layout';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -10,10 +11,11 @@ const ICON_SIZE = 24;
 /**
  * The tab bar for wide windows: a column at the left edge, 88 dp plus the left safe-area inset (a
  * notch in landscape). Same screens, icons, names and testIDs as the bottom bar; the selected tab
- * sits in a tonal pill, as in the bottom bar, so the state shows as shape as well as colour.
+ * sits in a tonal pill, as in the bottom bar, so the state shows as shape as well as colour. The
+ * pill is drawn by the screens' own `tabIcon`, so the rail only gives its icon the same 64 dp width.
  */
 export function NavigationRail({ state, descriptors, navigation, insets }: BottomTabBarProps) {
-  const { colors, radii, space } = useTheme();
+  const { colors, space } = useTheme();
   return (
     <View
       accessibilityRole="tablist"
@@ -61,31 +63,18 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
               justifyContent: 'center',
               gap: space(1),
               paddingVertical: space(1),
-              opacity: pressed ? 0.85 : 1,
+              opacity: pressedOpacity(pressed),
             })}
           >
             <View
               collapsable={false}
               style={{
-                width: space(14),
+                width: space(16),
                 height: space(8),
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {/*
-               * The pill is its own view, mounted with its radius and colour together when the tab
-               * is selected. Toggling the colour of one view from transparent left later
-               * selections square on Android.
-               */}
-              {focused ? (
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    { borderRadius: radii.pill, backgroundColor: colors.tonal },
-                  ]}
-                />
-              ) : null}
               {options.tabBarIcon?.({ focused, color: tint, size: ICON_SIZE })}
             </View>
             <Text

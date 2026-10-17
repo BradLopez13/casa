@@ -4,6 +4,7 @@ import { visibleAuthError } from '@/features/auth/form-errors';
 import { t, type MessageKey } from '@/i18n';
 import { Divider } from '@/ui/components/Divider';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { GoogleMark } from './GoogleMark';
@@ -75,7 +76,7 @@ export function SocialButtons() {
             borderWidth: 1,
             borderColor: look.border,
             backgroundColor: look.fill,
-            opacity: busy !== null && busy !== 'google' ? 0.5 : pressed ? 0.85 : 1,
+            opacity: busy !== null && busy !== 'google' ? 0.5 : pressedOpacity(pressed),
           })}
         >
           {busy === 'google' ? (

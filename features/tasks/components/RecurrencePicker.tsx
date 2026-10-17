@@ -4,6 +4,7 @@ import { choiceOf, ruleForChoice, type RepeatChoice } from '@/domain/recurrence/
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { IsoWeekday, RecurrenceRule } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -46,7 +47,7 @@ function Pill({
         borderWidth: 1.5,
         borderColor: selected ? colors.selection : colors.outline,
         backgroundColor: selected ? colors.selection : colors.note,
-        opacity: pressed ? 0.8 : 1,
+        opacity: pressedOpacity(pressed),
       })}
     >
       <Text
@@ -98,7 +99,7 @@ function WeekdayToggles({
               borderWidth: 1.5,
               borderColor: checked ? colors.selection : colors.outline,
               backgroundColor: checked ? colors.selection : colors.note,
-              opacity: pressed ? 0.8 : 1,
+              opacity: pressedOpacity(pressed),
             })}
           >
             <Text
@@ -149,7 +150,7 @@ function StepButton({
         borderWidth: 1.5,
         borderColor: colors.outline,
         backgroundColor: colors.note,
-        opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
+        opacity: disabled ? 0.4 : pressedOpacity(pressed),
       })}
     >
       <Ionicons name={icon} size={22} color={colors.cobalt} accessible={false} />

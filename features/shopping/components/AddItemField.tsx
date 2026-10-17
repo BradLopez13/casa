@@ -7,6 +7,7 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useFocusReveal } from '@/ui/focusReveal';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
@@ -105,7 +106,7 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
             minHeight: CONTROL_HEIGHT,
             paddingHorizontal: space(4),
             paddingVertical: space(3),
-            borderRadius: radii.note,
+            borderRadius: radii.pill,
             // Same width in every state, so focusing never shifts the text.
             borderWidth: 2,
             borderColor: focused ? colors.cobalt : colors.outline,
@@ -152,7 +153,7 @@ function ItemSuggestions({ entry }: { entry: ItemEntry }) {
             borderWidth: 1.5,
             borderColor: colors.cobalt,
             backgroundColor: colors.note,
-            opacity: pressed ? 0.8 : 1,
+            opacity: pressedOpacity(pressed),
           })}
         >
           <Text style={{ color: colors.cobalt, fontSize: 15 }}>{suggestion.name}</Text>

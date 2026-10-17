@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import { t } from '@/i18n';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -34,7 +35,7 @@ export function RoomPicker({ value, onChange }: Props) {
               borderWidth: 1.5,
               borderColor: selected ? colors.selection : colors.outline,
               backgroundColor: selected ? colors.selection : colors.note,
-              opacity: pressed ? 0.8 : 1,
+              opacity: pressedOpacity(pressed),
             })}
           >
             <Text

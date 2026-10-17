@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
-import { buttonLook } from '../buttonLook';
+import { buttonLook, pressedOpacity } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
 import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFontBold } from '../tokens';
@@ -38,7 +38,7 @@ export function HeaderAction({
         minHeight: MIN_TOUCH,
         alignItems: strong ? 'flex-end' : 'flex-start',
         justifyContent: 'center',
-        opacity: pressed ? 0.7 : 1,
+        opacity: pressedOpacity(pressed),
       })}
     >
       {/* The main action is a compact primary button (filled), so it stands apart from

@@ -1,5 +1,6 @@
 import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
+import { pressedOpacity } from '../buttonLook';
 import { useTheme } from '../theme';
 import {
   displayFont,
@@ -116,7 +117,7 @@ export function Magnet({
             ? { selected, ...(accessibilityRole === 'radio' ? { checked: selected } : null) }
             : undefined
         }
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+        style={({ pressed }) => ({ opacity: pressedOpacity(pressed) })}
       >
         {ringed}
       </Pressable>
