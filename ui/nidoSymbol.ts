@@ -1,4 +1,4 @@
-import type { Scheme } from './tokens';
+import { palettes, type Scheme } from './tokens';
 
 /** Geometry of assets/brand/symbol.svg (viewBox 0 0 512 512). */
 export const NIDO_SYMBOL_VIEWBOX = '0 0 512 512';
@@ -23,5 +23,9 @@ export function nidoSymbolColors(scheme: Scheme): {
   right: string;
   tile: string | null;
 } {
-  return { left: '#F3F4F0', right: '#F2D04B', tile: scheme === 'dark' ? null : '#2E3B41' };
+  return {
+    left: palettes[scheme].onBrandBand,
+    right: '#F2D04B',
+    tile: scheme === 'dark' ? null : '#2E3B41',
+  };
 }
