@@ -104,14 +104,14 @@ export default function TodayScreen() {
           </Text>
         </View>
       }
-      status={<TallyView line={line} />}
+      status={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
     >
       <MemberFilter
         members={members}
         marks={screen.marks}
         userId={userId}
         selected={assigneeId}
-        onToggle={screen.toggleFilter}
+        onSelect={screen.selectFilter}
       />
     </DoorHeader>
   );

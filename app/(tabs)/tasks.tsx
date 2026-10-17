@@ -167,7 +167,7 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
           marks={marks}
           userId={userId}
           selected={assigneeId}
-          onToggle={screen.toggleFilter}
+          onSelect={screen.selectFilter}
         />
         <ModeSwitch value={mode} onChange={setMode} />
       </DoorControls>
@@ -247,7 +247,7 @@ function TasksSplit(parts: TasksParts) {
           marks={screen.marks}
           userId={screen.userId}
           selected={screen.assigneeId}
-          onToggle={screen.toggleFilter}
+          onSelect={screen.selectFilter}
         />
         <ModeSwitch value={mode} onChange={setMode} />
       </DoorControls>

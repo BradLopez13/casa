@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
 import { pressedOpacity } from '../buttonLook';
@@ -31,6 +32,8 @@ type Props = {
   posit?: boolean;
   /** faint: an open check (corner badge, or centred when empty). filled: the magnet fills with the accent and shows the check. */
   check?: MagnetCheck;
+  /** Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member colour. */
+  glyph?: { node: ReactNode; fill: string };
 };
 
 const RING = 2;
@@ -49,6 +52,7 @@ export function Magnet({
   decorative = false,
   posit = false,
   check,
+  glyph,
 }: Props) {
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
@@ -68,7 +72,8 @@ export function Magnet({
         borderRadius: diameter / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: look?.fill ?? (empty ? 'transparent' : colors.magnet[color]),
+        backgroundColor:
+          look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]),
         ...(empty && !filledCheck
           ? positRing
             ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
@@ -81,7 +86,8 @@ export function Magnet({
         ...depth,
       }}
     >
-      {empty || filledCheck ? null : (
+      {glyph && !empty && !filledCheck ? glyph.node : null}
+      {empty || filledCheck || glyph ? null : (
         <Text
           maxFontSizeMultiplier={1.6}
           style={{
