@@ -106,12 +106,11 @@ export function ModalHeader({
 }: {
   title: string;
   cancel: Action;
-  /** The main action, drawn as a pill. */
-  action: Action;
+  /** The main action, drawn as a pill. Left out when the form keeps its primary at the foot. */
+  action?: Action;
   /** Padding above and below the bar, in `space()` steps. */
   step: number;
 }) {
-  const { quiet, ...rest } = action;
   const { colors, space } = useTheme();
   const [row, setRow] = useState(0);
   const [cancelWidth, setCancelWidth] = useState(0);
@@ -122,7 +121,7 @@ export function ModalHeader({
     row,
     gap,
     cancel: cancelWidth,
-    save: saveWidth,
+    save: action ? saveWidth : cancelWidth,
     title: titleWidth,
   });
   const width = (set: (w: number) => void) => (e: LayoutChangeEvent) =>
@@ -180,9 +179,14 @@ export function ModalHeader({
           <HeaderAction {...cancel} />
         </View>
         {inline ? heading : <View style={{ flex: 1 }} />}
-        <View onLayout={width(setSaveWidth)}>
-          <HeaderAction {...rest} strong={!quiet} />
-        </View>
+        {action ? (
+          <View onLayout={width(setSaveWidth)}>
+            <HeaderAction {...action} strong={!action.quiet} />
+          </View>
+        ) : (
+          // No main action: an empty slot as wide as Cancel keeps the title centred.
+          <View style={{ width: cancelWidth }} />
+        )}
       </View>
       {inline ? null : heading}
     </View>

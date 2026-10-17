@@ -155,14 +155,16 @@ function EditTaskScreen() {
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}
-        saveQuiet={!done}
+        // Save is the foot's one pósit: completing and reopening are secondary next to it.
         footer={
-          <View style={{ gap: space(3) }}>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(3) }}
+          >
             <Button
               testID={done ? 'task-form.reopen' : 'task-form.complete'}
               title={t(done ? 'taskForm.reopen' : 'taskForm.complete')}
               icon={done ? undefined : actionIcons.confirm}
-              variant={done ? 'secondary' : 'primary'}
+              variant="secondary"
               disabled={busy || isProvisional(task)}
               onPress={toggleDone}
             />
@@ -176,25 +178,28 @@ function EditTaskScreen() {
                 onPress={skipOnce}
               />
             ) : null}
-            {canDelete ? (
-              <Button
-                testID="task-form.delete"
-                title={t('taskForm.delete')}
-                variant="tertiary"
-                tone="destructive"
-                icon={actionIcons.delete}
-                // A saved edit or skip is already closing the modal: no confirm dialog on top.
-                disabled={
-                  save.isPending ||
-                  save.isSuccess ||
-                  remove.isSuccess ||
-                  skip.isPending ||
-                  skip.isSuccess
-                }
-                onPress={() => setConfirming(true)}
-              />
-            ) : null}
           </View>
+        }
+        // Deleting stays apart from the foot, at the end of the note's scroll.
+        dangerZone={
+          canDelete ? (
+            <Button
+              testID="task-form.delete"
+              title={t('taskForm.delete')}
+              variant="tertiary"
+              tone="destructive"
+              icon={actionIcons.delete}
+              // A saved edit or skip is already closing the modal: no confirm dialog on top.
+              disabled={
+                save.isPending ||
+                save.isSuccess ||
+                remove.isSuccess ||
+                skip.isPending ||
+                skip.isSuccess
+              }
+              onPress={() => setConfirming(true)}
+            />
+          ) : null
         }
       />
       <ConfirmDialog

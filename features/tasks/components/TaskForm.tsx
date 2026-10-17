@@ -1,5 +1,13 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MemberMark } from '@/domain/members/marks';
 import { syncMonthly } from '@/domain/recurrence/form';
@@ -10,6 +18,7 @@ import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
+import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { useModalFill } from '@/ui/components/ModalSheet';
@@ -24,6 +33,8 @@ import type { TaskInput } from '../api';
 import { taskFormSchema } from '../schemas';
 import { AssigneePicker } from './AssigneePicker';
 import { DayCells } from './DayCells';
+import { openFieldFor, type FormField } from './formState';
+import { PropertyMagnets } from './PropertyMagnets';
 import { RecurrencePicker } from './RecurrencePicker';
 import { RoomPicker } from './RoomPicker';
 import { saveErrorText } from './taskFormText';
@@ -39,27 +50,23 @@ type Props = {
   error: string | null;
   onCancel: () => void;
   onSave: (input: TaskInput) => void;
+  /** Secondary actions at the foot, above Save ("Marcar como hecha", "Saltar esta vez"). */
   footer?: ReactNode;
+  /** Kept apart from the foot, at the end of the scroll ("Borrar tarea"). */
+  dangerZone?: ReactNode;
   /**
    * False on a completed or skipped occurrence: a rule added there would start a series that
-   * never generates a successor. The row is hidden and the rule saves as it was.
+   * never generates a successor. The repeat magnet waits and the rule saves as it was.
    */
   repeatEditable?: boolean;
-  /** True when the footer holds the screen's one primary: Save in the header turns quiet. */
-  saveQuiet?: boolean;
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  const { colors, space } = useTheme();
-  return (
-    <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}>{label}</Text>
-      {children}
-    </View>
-  );
-}
+const TITLE_SIZE = 26;
 
-/** The task form inside the create and edit modals, with its own Cancel | title | Save bar. */
+/**
+ * The task form inside the create and edit modals: a blank note with the title on top, a row of
+ * property magnets that open their pickers one at a time, and Save fixed at the foot.
+ */
 export function TaskForm({
   title,
   initial,
@@ -72,16 +79,19 @@ export function TaskForm({
   onCancel,
   onSave,
   footer,
+  dangerZone,
   repeatEditable = true,
-  saveQuiet = false,
 }: Props) {
-  const { colors, space } = useTheme();
+  const { colors, radii, noteEdge, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
   const [values, setValues] = useState<TaskInput>(initial);
   // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
   const [opened] = useState(initial);
+  // Only a new task starts with an empty title.
+  const isNew = opened.title === '';
+  const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
   const { requestClose, dialog } = useDiscardGuard({
     dirty: isDirty(opened, values),
     onCancel,
@@ -90,9 +100,11 @@ export function TaskForm({
   const [triedSave, setTriedSave] = useState(false);
   const titleRef = useRef<TextInput>(null);
   const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
+  // Tapping the open magnet closes it; tapping another swaps the picker.
+  const toggle = (field: FormField) => setOpen((current) => (current === field ? null : field));
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
   // chosen day changes nothing, so a month-end rule on a short month keeps its day. Without the
-  // repeat row the rule is not the user's to change, so it stays as it is.
+  // repeat magnet the rule is not the user's to change, so it stays as it is.
   const setDueOn = (dueOn: string | null) =>
     setValues((current) =>
       dueOn === current.dueOn
@@ -125,6 +137,7 @@ export function TaskForm({
     else {
       setTriedSave(true);
       if (blank) titleRef.current?.focus();
+      else if (needsDate) setOpen('due');
     }
   };
   // The empty-title message goes away as soon as something is typed.
@@ -146,6 +159,23 @@ export function TaskForm({
         ).toLowerCase()
       : null;
 
+  const assigneeMember = members.find((m) => m.userId === values.assigneeId);
+  const assigneeMark = assigneeMember ? marks.get(assigneeMember.userId) : undefined;
+  const assignee =
+    assigneeMember && assigneeMark
+      ? {
+          name:
+            assigneeMember.userId === userId ? t('members.youName') : assigneeMember.displayName,
+          mark: assigneeMark,
+        }
+      : null;
+  // The date it was due on, kept as a choice while editing an overdue task.
+  const pastDue = opened.dueOn !== null && opened.dueOn < today ? opened.dueOn : null;
+
+  // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in,
+  // as on the shopping sheet.
+  const hasEdge = noteEdge.borderWidth > 0;
+
   return (
     <>
       <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
@@ -157,14 +187,6 @@ export function TaskForm({
             label: t('taskForm.cancel'),
             onPress: requestClose,
           }}
-          action={{
-            testID: 'task-form.save',
-            label: t('taskForm.save'),
-            onPress: save,
-            disabled: saving,
-            busy: saving,
-            quiet: saveQuiet,
-          }}
         />
         <KeyboardAvoidingView
           enabled={avoidKeyboard}
@@ -173,6 +195,7 @@ export function TaskForm({
         >
           <ScrollView
             {...scroll}
+            style={fill}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               paddingHorizontal: space(5),
@@ -183,66 +206,120 @@ export function TaskForm({
           >
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
-              <TextField
-                ref={titleRef}
-                testID="task-form.title"
-                label={t('taskForm.titleLabel')}
-                placeholder={t('taskForm.titlePlaceholder')}
-                value={values.title}
-                onChangeText={(text) => set({ title: text })}
-                // Only a new task starts with an empty title; on a short window the keyboard would
-                // hide the rest of the form, so there the field waits for a tap.
-                autoFocus={initial.title === '' && density.autoFocusTitle}
-                maxLength={200}
-                returnKeyType="done"
-                blurOnSubmit
-                // The keyboard's check mark takes the same path as the header Save.
-                onSubmitEditing={() => {
-                  if (!saving) save();
+              <View
+                style={{
+                  padding: space(4),
+                  gap: space(4),
+                  borderRadius: radii.note,
+                  backgroundColor: colors.note,
+                  borderWidth: hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth,
+                  borderColor: hasEdge ? noteEdge.borderColor : colors.hairline,
                 }}
-                error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
-              />
-              <Field label={t('taskForm.roomLabel')}>
-                <RoomPicker value={values.room} onChange={(room) => set({ room })} />
-              </Field>
-              <Field label={t('taskForm.assigneeLabel')}>
-                <AssigneePicker
-                  value={values.assigneeId}
-                  members={members}
-                  marks={marks}
-                  userId={userId}
-                  onChange={(assigneeId) => set({ assigneeId })}
-                />
-              </Field>
-              <Field label={t('taskForm.dueLabel')}>
-                <DayCells
-                  value={values.dueOn}
-                  today={today}
-                  onChange={setDueOn}
-                  noneDisabled={repeating}
-                />
-              </Field>
-              {repeatEditable ? (
-                <Field label={t('taskForm.repeatLabel')}>
-                  <RecurrencePicker
-                    value={values.recurrence}
-                    dueOn={values.dueOn ?? today}
-                    onChange={setRecurrence}
+              >
+                <View style={{ gap: space(2) }}>
+                  <TextField
+                    ref={titleRef}
+                    testID="task-form.title"
+                    label={t('taskForm.titleLabel')}
+                    placeholder={t('taskForm.titlePlaceholder')}
+                    value={values.title}
+                    onChangeText={(text) => set({ title: text })}
+                    // On a short window the keyboard would hide the rest of the note, so there
+                    // the field waits for a tap.
+                    autoFocus={isNew && density.autoFocusTitle}
+                    maxLength={200}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    // The keyboard's check mark takes the same path as Save.
+                    onSubmitEditing={() => {
+                      if (!saving) save();
+                    }}
+                    error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
+                    inputStyle={{
+                      fontFamily: displayFontBold,
+                      fontSize: TITLE_SIZE,
+                      ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
+                    }}
                   />
-                  {nextDate !== null ? (
-                    <Text
-                      testID="task-form.repeat.next"
-                      style={{ color: colors.muted, fontSize: 13 }}
-                    >
-                      {t('taskForm.repeatNext', { date: nextDate })}
-                    </Text>
+                  {/* Right under the title, so the empty-title message is seen where it is fixed. */}
+                  {shownError ? (
+                    <ErrorText testID="task-form.error">{shownError}</ErrorText>
                   ) : null}
-                </Field>
-              ) : null}
-              {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
-              {footer}
+                </View>
+                <PropertyMagnets
+                  room={values.room}
+                  assignee={assignee}
+                  due={values.dueOn}
+                  repeat={values.recurrence}
+                  today={today}
+                  open={open}
+                  onOpen={toggle}
+                  repeatEditable={repeatEditable}
+                />
+                {open === 'room' ? (
+                  <RoomPicker value={values.room} onChange={(room) => set({ room })} />
+                ) : null}
+                {open === 'assignee' ? (
+                  <AssigneePicker
+                    value={values.assigneeId}
+                    members={members}
+                    marks={marks}
+                    userId={userId}
+                    onChange={(assigneeId) => set({ assigneeId })}
+                  />
+                ) : null}
+                {open === 'due' ? (
+                  <DayCells
+                    value={values.dueOn}
+                    today={today}
+                    onChange={setDueOn}
+                    noneDisabled={repeating}
+                    past={pastDue}
+                  />
+                ) : null}
+                {open === 'repeat' && repeatEditable ? (
+                  <View style={{ gap: space(3) }}>
+                    <RecurrencePicker
+                      value={values.recurrence}
+                      dueOn={values.dueOn ?? today}
+                      onChange={setRecurrence}
+                    />
+                    {nextDate !== null ? (
+                      <Text
+                        testID="task-form.repeat.next"
+                        style={{ color: colors.muted, fontSize: 13 }}
+                      >
+                        {t('taskForm.repeatNext', { date: nextDate })}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+              {dangerZone}
             </FocusRevealContext.Provider>
           </ScrollView>
+          {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
+              actions on the task right above it. */}
+          <View
+            style={{
+              paddingHorizontal: space(5),
+              paddingTop: space(3),
+              paddingBottom: space(density.headerStep + 1),
+              gap: space(3),
+              borderTopWidth: 1,
+              borderTopColor: colors.hairline,
+              backgroundColor: colors.page,
+            }}
+          >
+            {footer}
+            <Button
+              testID="task-form.save"
+              title={t('taskForm.save')}
+              onPress={save}
+              disabled={saving}
+              width="full"
+            />
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
       {dialog}

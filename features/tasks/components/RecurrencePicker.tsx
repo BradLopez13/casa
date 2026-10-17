@@ -4,7 +4,7 @@ import { choiceOf, ruleForChoice, type RepeatChoice } from '@/domain/recurrence/
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { IsoWeekday, RecurrenceRule } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
-import { pressedOpacity } from '@/ui/buttonLook';
+import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { repeatPillText } from './repeatPillText';
 import { MIN_TOUCH } from '@/ui/tokens';
@@ -134,6 +134,8 @@ function StepButton({
   onPress: () => void;
 }) {
   const { colors, radii } = useTheme();
+  // At its limit the step waits dashed and outlined, never faded (§5.6).
+  const off = buttonLook('secondary', 'default', 'disabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -149,12 +151,18 @@ function StepButton({
         justifyContent: 'center',
         borderRadius: radii.pill,
         borderWidth: 1.5,
-        borderColor: colors.outline,
-        backgroundColor: colors.note,
-        opacity: disabled ? 0.4 : pressedOpacity(pressed),
+        borderStyle: disabled ? 'dashed' : 'solid',
+        borderColor: disabled ? off.border : colors.outline,
+        backgroundColor: disabled ? off.fill : colors.note,
+        opacity: pressedOpacity(pressed),
       })}
     >
-      <Ionicons name={icon} size={22} color={colors.cobalt} accessible={false} />
+      <Ionicons
+        name={icon}
+        size={22}
+        color={disabled ? off.foreground : colors.cobalt}
+        accessible={false}
+      />
     </Pressable>
   );
 }

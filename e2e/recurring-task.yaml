@@ -34,6 +34,9 @@ appId: com.bradlopez13.casa
     id: task-form.title
 - inputText: Sacar la basura
 - hideKeyboard
+# The form opens on the day picker: the repeat magnet opens its own picker in its place.
+- tapOn:
+    id: task-form.prop.repeat
 - scrollUntilVisible:
     element:
       id: task-form.repeat.daily

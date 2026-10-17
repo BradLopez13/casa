@@ -165,6 +165,8 @@
   "tasks.due.yesterday": "Ayer",
   "tasks.due.none": "Sin fecha",
   "taskForm.dueOther": "Otro día",
+  "taskForm.pastDate": "{date} (pasada)",
+  "taskForm.noRepeat": "No se repite",
   "taskForm.newTitle": "Nueva tarea",
   "taskForm.editTitle": "Editar tarea",
   "taskForm.cancel": "Cancelar",
