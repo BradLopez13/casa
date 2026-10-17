@@ -40,9 +40,10 @@ describe('hueDistance', () => {
 });
 
 describe('dark palette keeps red apart from the pósit', () => {
-  it('red sits at least 30° of hue away from the action colour', () => {
-    // By hue alone "Vencida" must not read as tappable.
-    expect(hueDistance(palettes.dark.red, palettes.dark.cobalt)).toBeGreaterThanOrEqual(30);
+  it('red sits at least 30° of hue away from the pósit selection and accent', () => {
+    // By hue alone "Vencida" must not read as chosen or tappable.
+    expect(hueDistance(palettes.dark.red, palettes.dark.selection)).toBeGreaterThanOrEqual(30);
+    expect(hueDistance(palettes.dark.red, palettes.dark.accent)).toBeGreaterThanOrEqual(30);
   });
 });
 
@@ -58,10 +59,6 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
 
   it.each(Object.entries(grounds))('cobalt text on %s', (_, ground) => {
     expect(contrastRatio(p.cobalt, ground)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('text on a cobalt pill', () => {
-    expect(contrastRatio(p.onCobalt, p.cobalt)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it.each(Object.entries(grounds))('overdue and danger red on %s', (_, ground) => {
@@ -181,7 +178,7 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
 });
 
 describe('Pizarra y pósit', () => {
-  const retired = ['#263663', '#F0AD83', '#FFF6E8', '#FBE0CD'];
+  const retired = ['#263663', '#F0AD83', '#FFF6E8', '#FBE0CD', '#C9725C', '#E39A85', '#A8891A'];
   it.each<Scheme>(['light', 'dark'])('%s palette uses no retired brand colour', (scheme) => {
     const values = JSON.stringify(palettes[scheme]).toUpperCase();
     retired.forEach((hex) => expect(values).not.toContain(hex));

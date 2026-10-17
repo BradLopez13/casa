@@ -19,7 +19,6 @@ export type Palette = {
   /** Background of selected text in a field: the ink at 30%, so the text stays readable on top. */
   textSelection: string;
   /** Text and icons on a cobalt fill. */
-  onCobalt: string;
   /** Fill of the main action pill: the pósit, in both themes. */
   accent: string;
   /** Text and icons on the accent fill. */
@@ -74,7 +73,6 @@ export const palettes: Record<Scheme, Palette> = {
     // Slate. It is also the colour of tappable text, so actions must differ by shape too.
     cobalt: '#2E3B41',
     textSelection: 'rgba(30,42,47,0.3)',
-    onCobalt: '#F3F4F0',
     accent: '#F2D04B',
     onAccent: '#1E2A2F',
     accentEdge: '#F2D04B',
@@ -112,7 +110,6 @@ export const palettes: Record<Scheme, Palette> = {
     // Chalk: the pósit is kept for what is chosen and the main action.
     cobalt: '#ECEFEA',
     textSelection: 'rgba(236,239,234,0.3)',
-    onCobalt: '#151B1E',
     accent: '#F2D04B',
     onAccent: '#151B1E',
     accentEdge: '#F2D04B',
