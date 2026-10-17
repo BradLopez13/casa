@@ -63,13 +63,12 @@ export function TextField({
           style={{
             minHeight: CONTROL_HEIGHT,
             // An error thickens the border by one point; the padding gives that point back, so
-            // the text never shifts. Focus keeps the normal width, so the two never look alike
-            // even where cobalt and ink are the same colour.
+            // the text never shifts. Focus keeps the normal width and adds the outer ring below.
             paddingHorizontal: space(4) - (error ? 1 : 0),
             paddingVertical: space(3) - (error ? 1 : 0),
             borderRadius: radii.note,
             borderWidth: error ? 3 : 2,
-            borderColor: focused ? colors.cobalt : error ? colors.ink : colors.outline,
+            borderColor: focused ? colors.focusRing : error ? colors.ink : colors.outline,
             backgroundColor: colors.note,
             color: colors.ink,
             fontSize: 17,
@@ -87,6 +86,22 @@ export function TextField({
             ...inputStyle,
           }}
         />
+        {focused && !bare ? (
+          // The focus ring: a 2 dp line in focusRing, 2 dp outside the field's own border.
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: -4,
+              left: -4,
+              right: -4,
+              bottom: -4,
+              borderWidth: 2,
+              borderColor: colors.focusRing,
+              borderRadius: radii.note + 4,
+            }}
+          />
+        ) : null}
         {trailing ? (
           <View
             style={{

@@ -318,6 +318,8 @@
   "tasks.quickAddTomorrow": "Añadir tarea para mañana…",
   "tasks.stripDay": "{day}, {count} tareas",
   "tasks.stripDayOne": "{day}, 1 tarea",
+  "tasks.stripDayNamed": "{day}, {count} tareas: {names}",
+  "tasks.stripDayNamedOne": "{day}, 1 tarea: {names}",
   "recurrence.daily": "Cada día",
   "recurrence.everyN": "Cada {n} días",
   "recurrence.allDays": "Todos los días",

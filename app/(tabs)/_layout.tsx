@@ -160,6 +160,7 @@ export default function TabsLayout() {
           name="today"
           options={{
             title: t('tabs.today'),
+            tabBarAccessibilityLabel: t('tabs.today'),
             tabBarButtonTestID: 'tab.today',
             tabBarIcon: tabIcon('sunny', 'sunny-outline'),
           }}
@@ -168,6 +169,7 @@ export default function TabsLayout() {
           name="tasks"
           options={{
             title: t('tabs.tasks'),
+            tabBarAccessibilityLabel: t('tabs.tasks'),
             tabBarButtonTestID: 'tab.tasks',
             tabBarIcon: tabIcon('list', 'list-outline'),
           }}
@@ -176,6 +178,7 @@ export default function TabsLayout() {
           name="shopping"
           options={{
             title: t('tabs.shopping'),
+            tabBarAccessibilityLabel: t('tabs.shopping'),
             tabBarButtonTestID: 'tab.shopping',
             tabBarIcon: tabIcon('basket', 'basket-outline'),
           }}
@@ -184,6 +187,7 @@ export default function TabsLayout() {
           name="settings"
           options={{
             title: t('tabs.settings'),
+            tabBarAccessibilityLabel: t('tabs.settings'),
             tabBarButtonTestID: 'tab.settings',
             tabBarIcon: tabIcon('settings', 'settings-outline'),
           }}

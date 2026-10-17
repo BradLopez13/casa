@@ -1,12 +1,13 @@
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { toLocalDate } from '@/domain/tasks/dates';
+import { dayCountLabel } from '@/domain/tasks/strip';
 import { dayName } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
-import { DayDots, dayCountLabel } from './DayStrip';
+import { DayDots } from './DayStrip';
 
 type Props = {
   /** The same seven days as the strip (`weekStrip`). */
@@ -16,6 +17,7 @@ type Props = {
   onSelect: (date: string) => void;
   today: string;
   marks: Map<string, MemberMark>;
+  names: Map<string, string>;
 };
 
 /** Wide enough for "30" in the display face, so the names start on one line. */
@@ -26,7 +28,7 @@ const NUMBER_COLUMN = 32;
  * something that day and how many open tasks. The chosen day is a filled block, the rest sit
  * flat on the page, so the choice reads by shape as well as colour.
  */
-export function DayList({ days, selected, onSelect, today, marks }: Props) {
+export function DayList({ days, selected, onSelect, today, marks, names }: Props) {
   const { colors, radii, space } = useTheme();
   // Name and count grow with the system text; once a name may run to two lines, the number sits
   // level with its first line instead of floating in the middle.
@@ -44,7 +46,7 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
             testID={`day-list.${day.date}`}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={dayCountLabel(day, today)}
+            accessibilityLabel={dayCountLabel(day, today, names)}
             onPress={() => onSelect(day.date)}
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH,

@@ -1,10 +1,5 @@
+import { joinNames } from '@/domain/members/names';
 import { t } from '@/i18n';
-
-/** «Bob», «Bob y Eva», «Bob, Eva y Leo». */
-function joinNames(names: readonly string[]): string {
-  if (names.length <= 1) return names.join('');
-  return `${names.slice(0, -1).join(', ')} ${t('settings.and')} ${names[names.length - 1]}`;
-}
 
 /**
  * The secondary line of the Ajustes door: the household and who else lives in it, or only the

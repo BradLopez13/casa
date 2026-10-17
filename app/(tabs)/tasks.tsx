@@ -181,7 +181,13 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
       titleSize="medium"
       below={
         mode === 'week' ? (
-          <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
+          <DayStrip
+            days={strip}
+            today={today}
+            marks={marks}
+            names={screen.names}
+            onSelect={scrollToDay}
+          />
         ) : null
       }
     >
@@ -333,6 +339,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
             onSelect={chooseDay}
             today={screen.today}
             marks={screen.marks}
+            names={screen.names}
           />
         </View>
       }
