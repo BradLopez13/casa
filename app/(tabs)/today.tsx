@@ -150,6 +150,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
+        keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
@@ -220,6 +221,7 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
 
   return (
     <TwoPane
+      keyboardShouldPersistTaps="handled"
       header={door}
       leftTestID="today.pane.pending"
       rightTestID="today.pane.done"

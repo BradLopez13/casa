@@ -201,6 +201,7 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
+        keyboardShouldPersistTaps="handled"
         ref={listRef}
         sections={sections}
         keyExtractor={taskRowKey}
@@ -314,6 +315,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
 
   return (
     <TwoPane
+      keyboardShouldPersistTaps="handled"
       header={door}
       leftTestID="tasks.pane.days"
       rightTestID="tasks.pane.day"

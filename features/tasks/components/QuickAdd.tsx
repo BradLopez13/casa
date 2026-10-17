@@ -32,6 +32,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const [text, setText] = useState('');
   const [focused, setFocused] = useState(false);
   const input = useRef<TextInput>(null);
+  // Set synchronously, so a second Enter before the next render cannot send twice.
+  const inFlight = useRef(false);
   const look = buttonLook('primary', 'default', 'enabled', colors);
   const create = useTaskMutation(
     ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) =>
@@ -41,17 +43,25 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const send = () => {
     const task = quickAddInput(text, assigneeId, dueOn);
     // An empty field is not an error: it just stays.
-    // One at a time. (`submit` stays locked after a success, made for forms that close.)
-    if (task === null || householdId === undefined || create.isPending) return;
+    if (task === null || householdId === undefined || inFlight.current) return;
+    inFlight.current = true;
+    // Cleared at once, so the next task can be typed while this one saves; put back on error.
+    setText('');
     create.mutate(
       { id: newTaskId(), task },
       {
         onSuccess: () => {
-          setText('');
           input.current?.focus();
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
         },
-        onError: (error) => notify(taskErrorMessage(error)),
+        onError: (error) => {
+          // Only what was typed since is kept in front of the failed title.
+          setText((typed) => (typed === '' ? task.title : typed));
+          notify(taskErrorMessage(error));
+        },
+        onSettled: () => {
+          inFlight.current = false;
+        },
       },
     );
   };
