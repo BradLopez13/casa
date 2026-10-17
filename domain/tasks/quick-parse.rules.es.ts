@@ -57,8 +57,9 @@ const room = alt(ROOMS);
 export const RULES_ES: QuickRules = {
   relative: new RegExp(`(?:para )?(?<rel>${alt(RELATIVE)})`, 'g'),
   relativeOffsets: RELATIVE,
-  // «Comprar pan de mañana»: after «de» the word belongs to a noun phrase.
-  relativeGuards: ['de'],
+  // «Comprar pan de mañana» is a noun phrase; «por la mañana», «esta mañana», «cada mañana» a
+  // time of day.
+  relativeGuards: ['de', 'la', 'esta', 'cada'],
   weekday: new RegExp(`(?:para )?el (?<day>${day})`, 'g'),
   dayOfMonth: new RegExp(
     `(?:para )?el (?:dia )?(?<day>\\d{1,2})(?: de (?<month>${alt(MONTHS)}))?`,
@@ -71,6 +72,8 @@ export const RULES_ES: QuickRules = {
   everyWeek: /cada semana|todas las semanas/g,
   everyMonth: /cada mes|todos los meses/g,
   assigneeLead: /para |@/g,
+  assigneePrefixLeads: ['@'],
+  assigneeStopwords: ['el', 'la', 'los', 'las', 'mi', 'tu', 'su', 'un', 'una', 'que'],
   roomPhrase: new RegExp(`en (?:el |la )?(?<room>${room})`, 'g'),
   roomBare: new RegExp(`(?:(?:del|de la|el|la) )?(?<room>${room})`, 'g'),
   roomBareExcluded: ['otra'],

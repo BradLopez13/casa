@@ -31,7 +31,10 @@ export type QuickRules = {
   /** Group `rel`: a key of `relativeOffsets`. */
   relative: RegExp;
   relativeOffsets: Readonly<Record<string, number>>;
-  /** A relative word right after one of these words is part of a noun phrase, not a date. */
+  /**
+   * A relative word right after one of these words is not a date: a noun phrase («pan de
+   * mañana») or a time of day («por la mañana», «esta mañana»).
+   */
   relativeGuards: readonly string[];
   /** Group `day`: a key of `weekdays`. */
   weekday: RegExp;
@@ -47,6 +50,10 @@ export type QuickRules = {
   everyMonth: RegExp;
   /** What comes right before a member's name («para », «@»). */
   assigneeLead: RegExp;
+  /** Leads after which a unique prefix of a name is enough («@seg»); others need a whole word. */
+  assigneePrefixLeads: readonly string[];
+  /** Words after a lead that are never a name («para el perro»). */
+  assigneeStopwords: readonly string[];
   /** Group `room`: a key of `rooms`, anywhere. */
   roomPhrase: RegExp;
   /** Group `room`: a key of `rooms`, only when nothing but other expressions follows it. */
@@ -83,11 +90,28 @@ function bounded(folded: string, start: number, end: number): boolean {
   return !isWordChar(folded[start - 1]) && !isWordChar(folded[end]);
 }
 
-function* matches(pattern: RegExp, folded: string) {
-  for (const match of folded.matchAll(pattern)) {
+const anchored = new WeakMap<RegExp, RegExp>();
+
+/**
+ * The rule pattern behind a «not after a letter or digit» lookbehind, so a match that would start
+ * inside a word is never tried and cannot hide a valid one right after it («Prepara mañana»:
+ * «para mañana» starts inside «Prepara», «mañana» alone is still found).
+ */
+function startAtWord(pattern: RegExp): RegExp {
+  let compiled = anchored.get(pattern);
+  if (!compiled) {
+    compiled = new RegExp(`(?<![\\p{L}\\p{N}])(?:${pattern.source})`, 'gu');
+    anchored.set(pattern, compiled);
+  }
+  return compiled;
+}
+
+/** Matches that start, and unless `openEnd` also end, on a word boundary. */
+function* matches(pattern: RegExp, folded: string, openEnd = false) {
+  for (const match of folded.matchAll(startAtWord(pattern))) {
     const start = match.index;
     const end = start + match[0].length;
-    if (bounded(folded, start, end)) yield { start, end, groups: match.groups ?? {} };
+    if (openEnd || bounded(folded, start, end)) yield { start, end, groups: match.groups ?? {} };
   }
 }
 
@@ -202,11 +226,12 @@ function assigneeCandidates(
 ): Candidate[] {
   const names = members.map((m) => ({ id: m.id, name: fold(m.name).trim().replace(/\s+/g, ' ') }));
   const out: Candidate[] = [];
-  for (const match of folded.matchAll(rules.assigneeLead)) {
-    const start = match.index;
-    const at = start + match[0].length;
-    if (isWordChar(folded[start - 1])) continue;
+  for (const { start, end: at } of matches(rules.assigneeLead, folded, true)) {
+    const lead = folded.slice(start, at);
     const rest = folded.slice(at);
+    const token = /^[\p{L}\p{N}]+/u.exec(rest)?.[0];
+    // «para el perro», «para la cena», «para mi»: never a name, whoever lives in the house.
+    if (!token || rules.assigneeStopwords.includes(token)) continue;
 
     // A full name wins, the longest one first («Ana María» over «Ana»).
     const exact = names
@@ -219,11 +244,13 @@ function assigneeCandidates(
       continue;
     }
 
-    // Otherwise one word that starts exactly one member's name.
-    const token = /^[\p{L}\p{N}]+/u.exec(rest)?.[0];
-    if (!token || token.length < 2) continue;
-    const prefixed = names.filter((m) => m.name.startsWith(token));
-    const only = prefixed.length === 1 ? prefixed[0] : undefined;
+    // Otherwise one word: the whole first word of exactly one member's name or, after a prefix
+    // lead («@seg»), the start of exactly one member's name.
+    const prefixAllowed = rules.assigneePrefixLeads.includes(lead) && token.length >= 2;
+    const fitting = names.filter((m) =>
+      prefixAllowed ? m.name.startsWith(token) : m.name.split(' ')[0] === token,
+    );
+    const only = fitting.length === 1 ? fitting[0] : undefined;
     if (only) out.push({ start, end: at + token.length, apply: (d) => (d.assigneeId = only.id) });
   }
   return out;

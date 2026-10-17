@@ -164,7 +164,7 @@ describe('quickParse: assignee', () => {
     expect(parse('Limpiar para angel').assigneeId).toBe('m-angel');
   });
 
-  it('accepts a unique prefix', () => {
+  it('accepts a unique prefix after «@»', () => {
     expect(parse('Limpiar @seg').assigneeId).toBe('m-segundo');
   });
 
@@ -250,6 +250,75 @@ describe('quickParse: room', () => {
     const result = parse('baño');
     expect(result.room).toBeNull();
     expect(result.title).toBe('baño');
+  });
+});
+
+describe('quickParse: review round 1', () => {
+  const household = {
+    members: [
+      { id: 'm-elena', name: 'Elena' },
+      { id: 'm-laura', name: 'Laura' },
+      { id: 'm-miguel', name: 'Miguel' },
+    ],
+  };
+
+  it.each([
+    'Comprar pienso para el perro',
+    'Hacer la compra para la cena',
+    'Guardar sitio para mi',
+  ])('«%s» has no assignee and keeps its title', (text) => {
+    const result = parse(text, household);
+    expect(result.assigneeId).toBeNull();
+    expect(result.title).toBe(text);
+  });
+
+  it('needs the whole first word after «para»', () => {
+    expect(parse('Limpiar para Seg').assigneeId).toBeNull();
+    expect(parse('Limpiar para Ana').assigneeId).toBe('m-ana');
+  });
+
+  it('never reads a stopword after «@»', () => {
+    expect(parse('Limpiar @el', household).assigneeId).toBeNull();
+  });
+
+  it.each(['Sacar al perro por la mañana', 'Llamó esta mañana', 'Pasear cada mañana'])(
+    '«%s» has no date',
+    (text) => {
+      const result = parse(text);
+      expect(result.dueOn).toBeNull();
+      expect(result.title).toBe(text);
+    },
+  );
+
+  it('finds a date after a match that started inside a word', () => {
+    const result = parse('Prepara mañana el informe');
+    expect(result.dueOn).toBe('2026-10-18');
+    expect(result.title).toBe('Prepara el informe');
+  });
+
+  it('finds a room after a match that started inside a word', () => {
+    const result = parse('Arregla cocina');
+    expect(result.room).toBe('kitchen');
+    expect(result.title).toBe('Arregla');
+  });
+
+  it.each(['Regar cada 0 días', 'Regar cada 400 días'])('rejects «%s»', (text) => {
+    const result = parse(text);
+    expect(result.recurrence).toBeNull();
+    expect(result.title).toBe(text);
+  });
+
+  it('ignores «el 31 de febrero»', () => {
+    const result = parse('Pagar el 31 de febrero');
+    expect(result.dueOn).toBeNull();
+    expect(result.title).toBe('Pagar el 31 de febrero');
+  });
+
+  it('reads no assignee without «para» or «@»', () => {
+    const result = parse('Recoger a Ana mañana');
+    expect(result.assigneeId).toBeNull();
+    expect(result.dueOn).toBe('2026-10-18');
+    expect(result.title).toBe('Recoger a Ana');
   });
 });
 

@@ -67,6 +67,8 @@ export const RULES_EN: QuickRules = {
   everyWeek: /every week|weekly/g,
   everyMonth: /every month|monthly/g,
   assigneeLead: /for |@/g,
+  assigneePrefixLeads: ['@'],
+  assigneeStopwords: ['the', 'a', 'an', 'my', 'your', 'his', 'her', 'our', 'their', 'me', 'us'],
   roomPhrase: new RegExp(`in (?:the )?(?<room>${room})`, 'g'),
   roomBare: new RegExp(`(?:the )?(?<room>${room})`, 'g'),
   roomBareExcluded: ['other'],
