@@ -1,6 +1,6 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { CommonActions } from 'expo-router/react-navigation';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { TabMagnet, tabHandlers } from '@/features/navigation/FridgeTabBar';
 import { RAIL_WIDTH } from '@/ui/layout';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
@@ -11,11 +11,12 @@ const ICON_SIZE = 24;
 /**
  * The tab bar for wide windows: a column at the left edge, 88 dp plus the left safe-area inset (a
  * notch in landscape). Same screens, icons, names and testIDs as the bottom bar; the selected tab
- * sits in a tonal pill, as in the bottom bar, so the state shows as shape as well as colour. The
- * pill is drawn by the screens' own `tabIcon`, so the rail only gives its icon the same 64 dp width.
+ * holds its icon on the same pósit magnet (`TabMagnet`), so the state shows as shape as well as
+ * colour.
  */
 export function NavigationRail({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { colors, space } = useTheme();
+  const handlers = tabHandlers({ state, navigation });
   return (
     <View
       accessibilityRole="tablist"
@@ -36,17 +37,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
         const { options } = descriptor;
         const focused = index === state.index;
         const title = options.title ?? route.name;
-        const tint = focused ? colors.cobalt : colors.muted;
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.dispatch({ ...CommonActions.navigate(route), target: state.key });
-          }
-        };
+        const tint = focused ? colors.onAccent : colors.muted;
         return (
           <Pressable
             key={route.key}
@@ -55,8 +46,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
             accessibilityRole={Platform.OS === 'ios' ? 'button' : 'tab'}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? title}
             accessibilityState={{ selected: focused }}
-            onPress={onPress}
-            onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+            {...handlers(route, focused)}
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH + space(4),
               alignItems: 'center',
@@ -66,17 +56,10 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
               opacity: pressedOpacity(pressed),
             })}
           >
-            <View
-              collapsable={false}
-              style={{
-                width: space(16),
-                height: space(8),
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {options.tabBarIcon?.({ focused, color: tint, size: ICON_SIZE })}
-            </View>
+            <TabMagnet
+              focused={focused}
+              icon={options.tabBarIcon?.({ focused, color: tint, size: ICON_SIZE })}
+            />
             <Text
               numberOfLines={1}
               maxFontSizeMultiplier={1.6}

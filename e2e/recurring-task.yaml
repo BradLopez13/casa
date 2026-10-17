@@ -23,18 +23,26 @@ appId: com.bradlopez13.casa
       text: Piso Rita
     timeout: 20000
 
-# Create a daily recurring task from the modal form
+# Create the task from the quick add, then make it daily in its form
 - tapOn:
-    id: today.new-task
-- extendedWaitUntil:
-    visible:
-      id: task-form.title
-    timeout: 20000
-- tapOn:
-    id: task-form.title
+    id: today.quick-add
 - inputText: Sacar la basura
+- tapOn:
+    id: today.quick-add.submit
 - hideKeyboard
-# The form opens on the day picker: the repeat magnet opens its own picker in its place.
+- extendedWaitUntil:
+    visible: Sacar la basura
+    timeout: 20000
+# A note still on its way to the server does not open: tap again until the form shows.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Sacar la basura
+      - extendedWaitUntil:
+          visible:
+            id: task-form.title
+          timeout: 5000
+# The repeat magnet opens its own picker in the form.
 - tapOn:
     id: task-form.prop.repeat
 - scrollUntilVisible:

@@ -9,11 +9,6 @@ import { DayList } from '@/features/tasks/components/DayList';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
-import {
-  NewTaskButton,
-  useNewTaskLane,
-  useNewTaskListStyle,
-} from '@/features/tasks/components/NewTaskButton';
 import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
@@ -38,6 +33,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
 
 /** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
 function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
@@ -123,7 +119,7 @@ export default function TasksScreen() {
   const { colors } = useTheme();
   const layout = useLayout();
   const screen = useTaskScreen();
-  const { today, members, assigneeId, filtered } = screen;
+  const { today, members, filtered } = screen;
   const [mode, setMode] = useState<TasksMode>('week');
   // The screen owns the chosen day, not either layout, so turning the tablet keeps it.
   const [chosen, setChosen] = useState<string | null>(null);
@@ -165,7 +161,6 @@ export default function TasksScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TasksSplit {...parts} /> : <TasksStack {...parts} />}
-      <NewTaskButton testID="tasks.new-task" assigneeId={assigneeId} />
     </View>
   );
 }
@@ -173,9 +168,8 @@ export default function TasksScreen() {
 /** One column (phones, small tablets): the door with the day strip, and one list under it. */
 function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, empty }: TasksParts) {
   const { space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
-  const column = useOneColumn(useNewTaskLane());
+  const listStyle = { paddingBottom: useListEndPadding() };
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
@@ -270,7 +264,8 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
                 ) : null}
               </View>
             ) : (
-              <View style={[column, { paddingTop: space(4) }]}>
+              <View style={[column, { paddingTop: space(4), gap: space(2) }]}>
+                <DayQuickAdd screen={screen} day={today} />
                 <IdeasButton />
               </View>
             )}
@@ -368,8 +363,7 @@ const rowProps = (screen: Screen) => ({
 /** Semana on two panes: the seven days to choose from, and what the chosen one holds. */
 function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: SplitProps) {
   const { space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  const lane = useNewTaskLane();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const pane = weekDayPane(sections, day, screen.today);
 
@@ -383,7 +377,6 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
       wide="right"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
-      rightLane={lane}
       left={
         // Level with the first heading on the right.
         <View style={{ paddingTop: space(6) }}>
@@ -425,8 +418,8 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
  */
 function AllColumn({ screen, sections, empty, door }: SplitProps) {
   const { space } = useTheme();
-  const column = useOneColumn(useNewTaskLane());
-  const listStyle = useNewTaskListStyle();
+  const column = useOneColumn();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
 
   return (
@@ -438,7 +431,8 @@ function AllColumn({ screen, sections, empty, door }: SplitProps) {
         contentContainerStyle={listStyle}
       >
         <View style={column}>
-          <View style={{ paddingTop: space(4) }}>
+          <View style={{ paddingTop: space(4), gap: space(2) }}>
+            <DayQuickAdd screen={screen} day={screen.today} />
             <IdeasButton />
           </View>
           {sections.length > 0 ? (

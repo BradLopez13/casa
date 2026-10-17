@@ -14,7 +14,7 @@ const ALLOWED = [
   'ui/components/FridgeRefresh.tsx',
   'app/(tabs)/settings.tsx',
   'features/navigation/NavigationRail.tsx',
-  'app/(tabs)/_layout.tsx',
+  'features/navigation/FridgeTabBar.tsx',
 ];
 
 function walk(dir: string): string[] {

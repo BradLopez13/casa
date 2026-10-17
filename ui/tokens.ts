@@ -36,6 +36,10 @@ export type Palette = {
   brandBand: string;
   /** Chalk text and the symbol's left figure on the brand band, the same in both themes. */
   onBrandBand: string;
+  /** Inactive tab icons and labels on the brand band: `onBrandBand` at 80 %. */
+  onBrandBandMuted: string;
+  /** The hairline along the top of the tab bar, the door's bottom edge: `onBrandBand` at 12 %. */
+  brandBandEdge: string;
   /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
   tonal: string;
   /** Edge of the secondary pill, for when its fill alone does not show against the ground. */
@@ -83,6 +87,8 @@ export const palettes: Record<Scheme, Palette> = {
     focusRing: '#1E2A2F',
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
+    onBrandBandMuted: 'rgba(243,244,240,0.8)',
+    brandBandEdge: 'rgba(243,244,240,0.12)',
     tonal: '#D3DCD9',
     tonalEdge: '#6F7B80',
     red: '#B3392F',
@@ -121,6 +127,8 @@ export const palettes: Record<Scheme, Palette> = {
     focusRing: '#ECEFEA',
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
+    onBrandBandMuted: 'rgba(243,244,240,0.8)',
+    brandBandEdge: 'rgba(243,244,240,0.12)',
     tonal: '#34444B',
     tonalEdge: '#34444B',
     red: '#F08A80',
@@ -156,11 +164,12 @@ export const noteEdges: Record<Scheme, NoteEdge> = {
 
 export const radii = { note: 14, door: 30, pill: 999 } as const;
 
-export const magnetSizes = { lg: 50, md: 38, sm: 26 } as const;
+/** `tab` is the pósit under the active tab's icon. */
+export const magnetSizes = { lg: 50, tab: 40, md: 38, sm: 26 } as const;
 export type MagnetSize = keyof typeof magnetSizes;
 
 /** Initial size inside each magnet. */
-export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, md: 16, sm: 12 };
+export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, tab: 17, md: 16, sm: 12 };
 
 /** Loaded in app/_layout.tsx; used only for screen titles, day numbers and magnet initials. */
 export const displayFont = 'MPLUSRounded1c_800ExtraBold';

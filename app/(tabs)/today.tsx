@@ -4,11 +4,6 @@ import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { todayLine } from '@/domain/tasks/todayLine';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
-import {
-  NewTaskButton,
-  useNewTaskLane,
-  useNewTaskListStyle,
-} from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
@@ -28,6 +23,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { useLayout } from '@/ui/useLayout';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
 import { actionIcons } from '@/ui/actionIcons';
 
 type Screen = ReturnType<typeof useTaskScreen>;
@@ -131,7 +127,6 @@ export default function TodayScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TodaySplit {...parts} /> : <TodayStack {...parts} />}
-      <NewTaskButton testID="today.new-task" assigneeId={assigneeId} />
     </View>
   );
 }
@@ -143,9 +138,8 @@ export default function TodayScreen() {
  */
 function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
-  const column = useOneColumn(useNewTaskLane());
+  const listStyle = { paddingBottom: useListEndPadding() };
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery } = screen;
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
@@ -200,8 +194,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
  */
 function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { colors, space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  const lane = useNewTaskLane();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const { left, right } = todayPanes(sections);
   const rows = {
@@ -227,7 +220,6 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
       rightTestID="today.pane.done"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
-      rightLane={lane}
       left={
         <>
           {quickAdd}

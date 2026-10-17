@@ -1,6 +1,7 @@
 import { PixelRatio, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tabBarClearance } from './tabBar';
+import { space } from './theme';
 import { useLayout } from './useLayout';
 
 /**
@@ -19,4 +20,15 @@ export function useTabBarClearance(): number {
     bottomInset: bottom,
     rail,
   });
+}
+
+/**
+ * Room under the last item of a tab screen's list. The bottom bar already sits below the list,
+ * so only a little air; beside the rail the list runs to the screen's edge and also clears the
+ * home indicator.
+ */
+export function useListEndPadding(): number {
+  const { rail } = useLayout();
+  const { bottom } = useSafeAreaInsets();
+  return space(7) + (rail ? bottom : 0);
 }
