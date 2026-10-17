@@ -4,16 +4,23 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = join(__dirname, '..');
 
-// The only places a literal opacity is allowed: a glow animation, the provisional note, the
-// faint check, and the Apple button (its guidelines dictate the dimmed state).
-const ALLOWED = new Set([
-  'features/tasks/components/TaskNote.tsx',
-  'features/shopping/components/ShoppingRow.tsx',
-  'ui/components/FridgeRefresh.tsx',
-  'features/auth/social/AppleButton.tsx',
-  'features/auth/social/AppleButton.ios.tsx',
-  'ui/components/Magnet.tsx',
-]);
+// Files where an opacity other than a press, a glow or a show/hide is deliberate. One reason each.
+const ALLOWED: Record<string, string> = {
+  'features/tasks/components/TaskNote.tsx':
+    'a task still on its way to the server is provisional (0.6)',
+  'features/auth/social/AppleButton.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
+  'features/auth/social/AppleButton.ios.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
+};
+
+// Opacity that is fine anywhere: press feedback, the faint check, animated glows (shared values),
+// and the 0 / 1 literals used to hide or show.
+const FINE = [
+  /\bopacity:\s*pressedOpacity\([^)]*\)/g,
+  /\bpressedOpacity\b/g,
+  /\bopacity:\s*look\.opacity\b/g,
+  /\bopacity:\s*[a-zA-Z.]*\.value\b/g,
+  /\bopacity:\s*[01]\b(?!\.)/g,
+];
 
 function tsxFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -23,13 +30,21 @@ function tsxFiles(dir: string): string[] {
   });
 }
 
+function offending(file: string): string[] {
+  return readFileSync(join(ROOT, file), 'utf8')
+    .split('\n')
+    .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
+    .map((line) => FINE.reduce((l, re) => l.replace(re, ''), line))
+    .filter((line) => /opacity/i.test(line));
+}
+
 describe('opacity', () => {
   it('is never used to say a control is off, outside the allowlist', () => {
-    const offenders = ['features', 'ui/components']
+    const offenders = ['app', 'features', 'ui/components']
       .flatMap((d) => tsxFiles(join(ROOT, d)))
       .map((f) => relative(ROOT, f).split(sep).join('/'))
-      .filter((f) => !ALLOWED.has(f))
-      .filter((f) => /opacity:\s*0\./.test(readFileSync(join(ROOT, f), 'utf8')));
+      .filter((f) => !(f in ALLOWED))
+      .filter((f) => offending(f).length > 0);
     expect(offenders).toEqual([]);
   });
 });

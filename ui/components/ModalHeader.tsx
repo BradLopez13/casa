@@ -164,7 +164,11 @@ export function ModalHeader({
         importantForAccessibility="no-hide-descendants"
         style={{ position: 'absolute', left: 0, top: 0, opacity: 0, flexDirection: 'row' }}
       >
-        <Text numberOfLines={1} style={titleStyle} onLayout={width(setTitleWidth)}>
+        <Text
+          numberOfLines={1}
+          style={titleStyle}
+          onLayout={width(setTitleWidth)}
+        >
           {title}
         </Text>
       </View>

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CONTROL_HEIGHT, INLINE_PILL_HEIGHT, MIN_TOUCH, noteEdges, palettes } from './tokens';
+import {
+  CONTROL_HEIGHT,
+  INLINE_PILL_HEIGHT,
+  MIN_TOUCH,
+  noteEdges,
+  palettes,
+  radii,
+} from './tokens';
 
 describe('noteEdges', () => {
   it('gives dark notes a 1 dp hairline edge, where the shadow is lost on navy', () => {
@@ -18,5 +25,11 @@ describe('control heights', () => {
 
   it('draws the inline pill inside a full touch target, never as one', () => {
     expect(INLINE_PILL_HEIGHT).toBeLessThan(MIN_TOUCH);
+  });
+});
+
+describe('radii', () => {
+  it('locks the radii to note, door and pill', () => {
+    expect(Object.keys(radii)).toEqual(['note', 'door', 'pill']);
   });
 });
