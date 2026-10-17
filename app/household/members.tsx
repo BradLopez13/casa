@@ -36,6 +36,7 @@ import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
 type Pending = { kind: 'remove' | 'transfer' | 'leave' | 'delete'; userId?: string };
@@ -232,7 +233,7 @@ export default function MembersScreen() {
   const heading = (key: MessageKey) => (
     <Text
       accessibilityRole="header"
-      style={{ marginTop: space(4), color: colors.ink, fontSize: 20, fontWeight: '700' }}
+      style={{ marginTop: space(4), color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
     >
       {t(key)}
     </Text>
