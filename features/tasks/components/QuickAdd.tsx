@@ -32,12 +32,18 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const [text, setText] = useState('');
   const [focused, setFocused] = useState(false);
   const input = useRef<TextInput>(null);
-  // Set synchronously, so a second Enter before the next render cannot send twice.
+  // Set synchronously, so a second Enter before the next render cannot send twice. Cleared when
+  // the create itself ends, not when the list refetch that follows it does.
   const inFlight = useRef(false);
   const look = buttonLook('primary', 'default', 'enabled', colors);
   const create = useTaskMutation(
-    ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) =>
-      createTask(id, householdId as string, task),
+    async ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) => {
+      try {
+        return await createTask(id, householdId as string, task);
+      } finally {
+        inFlight.current = false;
+      }
+    },
   );
 
   const send = () => {
@@ -55,12 +61,9 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
         },
         onError: (error) => {
-          // Only what was typed since is kept in front of the failed title.
+          // The failed title comes back only if nothing was typed since; the notice carries the error.
           setText((typed) => (typed === '' ? task.title : typed));
           notify(taskErrorMessage(error));
-        },
-        onSettled: () => {
-          inFlight.current = false;
         },
       },
     );
