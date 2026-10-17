@@ -94,16 +94,20 @@ export function TaskForm({
   const [typed, setTyped] = useState<TaskInput>(initial);
   // Fields chosen by hand: the title no longer fills them and their words stay in it.
   const [touched, setTouched] = useState<ReadonlySet<FormField>>(() => new Set());
-  // An existing title is read only once it is edited, so opening a task never rewrites it.
-  const [titleEdited, setTitleEdited] = useState(false);
   // Without the repeat magnet the rule is not the user's to change, nor the title's.
   const skipped = repeatEditable ? touched : new Set<FormField>([...touched, 'repeat']);
-  const values = titleEdited
-    ? parsedFormValues(typed, skipped, {
-        today,
-        members: members.map((m) => ({ id: m.userId, name: m.displayName })),
-        locale: quickLocale(locale),
-      })
+  // Only a new task reads its title: editing an existing one never reassigns or rewrites it.
+  const values = isNew
+    ? parsedFormValues(
+        typed,
+        skipped,
+        {
+          today,
+          members: members.map((m) => ({ id: m.userId, name: m.displayName })),
+          locale: quickLocale(locale),
+        },
+        repeatEditable,
+      )
     : typed;
   // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
   const [opened] = useState(initial);
@@ -238,10 +242,7 @@ export function TaskForm({
                     label={t('taskForm.titleLabel')}
                     placeholder={t('taskForm.titlePlaceholder')}
                     value={typed.title}
-                    onChangeText={(text) => {
-                      setTitleEdited(true);
-                      setTyped((current) => ({ ...current, title: text }));
-                    }}
+                    onChangeText={(text) => setTyped((current) => ({ ...current, title: text }))}
                     // On a short window the keyboard would hide the rest of the note, so there
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}
@@ -281,7 +282,9 @@ export function TaskForm({
                     members={members}
                     marks={marks}
                     userId={userId}
-                    onChange={(assigneeId) => choose('assignee', { assigneeId })}
+                    onChange={(assigneeId) => {
+                      if (assigneeId !== values.assigneeId) choose('assignee', { assigneeId });
+                    }}
                   />
                 ) : null}
                 {open === 'due' ? (

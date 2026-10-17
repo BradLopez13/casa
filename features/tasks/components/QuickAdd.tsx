@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, Text, TextInput, View, type TextStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { syncMonthly } from '@/domain/recurrence/form';
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import { dueLabel } from '@/domain/tasks/labels';
 import {
@@ -25,6 +26,9 @@ import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
 const CHIP_HEIGHT = 32;
+// Off until the overlay is checked on a device (the chips alone meet the spec); set to true to
+// draw the recognised words highlighted in the field again.
+const INLINE_HIGHLIGHT = false;
 
 const KIND_ICONS = {
   due: 'calendar-outline',
@@ -42,12 +46,20 @@ type Props = {
 };
 
 /** What a recognised part says on its chip: the date, the repeat, the person or the room. */
-function chipLabel(kind: QuickSpanKind, parse: QuickParse, ctx: QuickAddContext): string {
+function chipLabel(
+  kind: QuickSpanKind,
+  parse: QuickParse,
+  ctx: QuickAddContext,
+  dueOn: string,
+): string {
   switch (kind) {
     case 'due':
       return dueLabel(parse.dueOn, ctx.today);
-    case 'repeat':
-      return parse.recurrence === null ? '' : recurrenceLabel(parse.recurrence);
+    case 'repeat': {
+      // The rule as it will be saved: a monthly one keeps the day it starts on.
+      const rule = syncMonthly(parse.recurrence, parse.dueOn ?? dueOn);
+      return rule === null ? '' : recurrenceLabel(rule);
+    }
     case 'assignee':
       return ctx.members.find((m) => m.id === parse.assigneeId)?.name ?? '';
     case 'room':
@@ -143,7 +155,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     setDisabled((current) => new Set([...current, kind]));
   };
 
-  const highlighted = parse.spans.length > 0 && !overflows;
+  const highlighted = INLINE_HIGHLIGHT && parse.spans.length > 0 && !overflows;
   // The input and the drawing under it share these, so their letters sit on top of each other.
   const textStyle: TextStyle = {
     fontSize: 17,
@@ -171,7 +183,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
           style={{ flex: 1, alignSelf: 'stretch', justifyContent: 'center' }}
           onLayout={(e) => setFieldWidth(e.nativeEvent.layout.width)}
         >
-          {parse.spans.length > 0 ? (
+          {INLINE_HIGHLIGHT && parse.spans.length > 0 ? (
             <View
               pointerEvents="none"
               accessible={false}
@@ -257,7 +269,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
       {parse.spans.length > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
           {parse.spans.map((span) => {
-            const value = chipLabel(span.kind, parse, ctx);
+            const value = chipLabel(span.kind, parse, ctx, dueOn);
             return (
               <Pressable
                 key={span.kind}

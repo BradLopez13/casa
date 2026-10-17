@@ -156,3 +156,32 @@ describe('parsedFormValues', () => {
     });
   });
 });
+
+describe('monthly repeats follow the date', () => {
+  it('quick add keeps a monthly repeat on the given day', () => {
+    expect(quickAddInput('Pagar cada mes', 'u1', '2026-10-25', ctx)).toMatchObject({
+      title: 'Pagar',
+      dueOn: '2026-10-25',
+      recurrence: { kind: 'monthly', day: 25 },
+    });
+  });
+
+  it('the form moves a chosen monthly rule to a date the title gives', () => {
+    const values = {
+      title: 'Pagar el 20',
+      room: null,
+      assigneeId: null,
+      dueOn: '2026-10-25',
+      recurrence: { kind: 'monthly' as const, day: 25 },
+    };
+    const repeat = new Set(['repeat' as const]);
+    expect(parsedFormValues(values, repeat, ctx)).toMatchObject({
+      dueOn: '2026-10-20',
+      recurrence: { kind: 'monthly', day: 20 },
+    });
+    expect(parsedFormValues(values, repeat, ctx, false).recurrence).toEqual({
+      kind: 'monthly',
+      day: 25,
+    });
+  });
+});

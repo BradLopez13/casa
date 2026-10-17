@@ -24,12 +24,14 @@ export function quickAddInput(
   const raw = text.trim();
   if (raw === '') return null;
   const parse = quickParse(raw, ctx);
+  // A repeat with no date of its own starts on the given day, and a monthly one keeps that day.
+  const due = parse.dueOn ?? dueOn;
   return {
     title: parse.title === '' ? raw : parse.title,
     room: parse.room,
     assigneeId: parse.assigneeId ?? assigneeId,
-    dueOn: parse.dueOn ?? dueOn,
-    recurrence: parse.recurrence,
+    dueOn: due,
+    recurrence: syncMonthly(parse.recurrence, due),
   };
 }
 
@@ -64,10 +66,17 @@ export function parsedFormValues(
   values: TaskInput,
   touched: ReadonlySet<QuickSpanKind>,
   ctx: Omit<QuickParseContext, 'disabled'>,
+  /** False when the rule is not the person's to change: a chosen rule then keeps its day. */
+  repeatEditable = true,
 ): TaskInput {
   const parse = quickParse(values.title, { ...ctx, disabled: touched });
   const dueOn = parse.dueOn ?? values.dueOn;
-  const recurrence = syncMonthly(parse.recurrence, dueOn) ?? values.recurrence;
+  // A monthly rule chosen by hand follows a date the title gives, as it follows a picked one.
+  const chosen =
+    parse.dueOn !== null && repeatEditable
+      ? syncMonthly(values.recurrence, dueOn)
+      : values.recurrence;
+  const recurrence = syncMonthly(parse.recurrence, dueOn) ?? chosen;
   return {
     title: parse.spans.length === 0 ? values.title : parse.title,
     room: parse.room ?? values.room,
