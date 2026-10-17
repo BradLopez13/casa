@@ -53,3 +53,25 @@ export function tabBarHeight({
   const growth = Math.ceil(TAB_LABEL_LINE * (scale - 1) - 1e-9);
   return TAB_BAR_HEIGHT + growth + bottomInset;
 }
+
+/**
+ * How far from the screen's bottom edge something floating must sit to clear the tab bar: the
+ * bar's height with the safe area when it is at the bottom; only the bottom inset when the
+ * side rail takes its place.
+ */
+export function tabBarClearance({
+  width,
+  height,
+  fontScale,
+  bottomInset,
+  rail,
+}: {
+  width: number;
+  height: number;
+  fontScale: number;
+  bottomInset: number;
+  rail: boolean;
+}): number {
+  if (rail) return bottomInset;
+  return tabBarHeight({ width, height, fontScale, bottomInset }) ?? TAB_BAR_HEIGHT + bottomInset;
+}

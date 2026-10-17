@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { SectionList, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
 import type { ShoppingItem } from '@/domain/shopping/list';
@@ -10,6 +10,8 @@ import { ShoppingRow } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
+
+type ListSection = { key: 'pending' | 'bought'; data: ShoppingItem[] };
 
 type Props = {
   pending: ShoppingItem[];
@@ -48,10 +50,9 @@ export function BoughtTitle({ count }: { count: number }) {
 }
 
 /**
- * The list as one white sheet on the page: what is left to buy, then "Compradas". Every row is a
- * child of the same view, so a row that is marked keeps its identity and slides down. On two
- * panes each side gets a sheet of its own (one of `pending` or `bought` empty), so a marked row
- * moves across instead.
+ * The list as one white sheet on the page: a SectionList with what is left to buy, then
+ * "Compradas". On two panes each side gets a sheet of its own (one of `pending` or `bought`
+ * empty), so a marked row moves across.
  */
 export function ShoppingSheet({
   pending,
@@ -71,22 +72,10 @@ export function ShoppingSheet({
   const reduceMotion = useReduceMotion();
   const layout = reduceMotion ? undefined : LinearTransition;
 
-  const row = (item: ShoppingItem, first: boolean) => {
-    const buyer = item.boughtBy ?? undefined;
-    return (
-      <ShoppingRow
-        key={item.id}
-        item={item}
-        first={first}
-        unsent={unsentIds.has(item.id)}
-        buyerMark={buyer ? marks.get(buyer) : undefined}
-        buyerName={buyer ? names.get(buyer) : undefined}
-        flash={flash?.id === item.id ? flash.count : 0}
-        onToggle={() => onToggle(item)}
-        onOpen={item.boughtAt === null ? () => onOpen(item.id) : undefined}
-      />
-    );
-  };
+  const sections: ListSection[] = [
+    { key: 'pending', data: pending },
+    { key: 'bought', data: bought },
+  ];
 
   return (
     <View
@@ -100,43 +89,64 @@ export function ShoppingSheet({
     >
       {/* Clips the rows' flash to the rounded corners; the outer view keeps the shadow. */}
       <View style={{ borderRadius: radii.note, overflow: 'hidden' }}>
-        {/* One flat array of keyed children: a row that moves to "Compradas" keeps its identity. */}
-        {[
-          ...pending.map((item, index) => row(item, index === 0)),
-          bought.length > 0 ? (
-            <Animated.View
-              key="bought-header"
-              layout={layout}
-              entering={FadeIn}
-              exiting={FadeOut}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: space(3),
-                paddingHorizontal: space(4),
-                paddingTop: space(4),
-                paddingBottom: space(2),
-                borderTopWidth: pending.length > 0 ? StyleSheet.hairlineWidth : 0,
-                borderTopColor: colors.hairline,
-              }}
-            >
-              <BoughtTitle count={bought.length} />
-              <Button
-                testID="shopping.clear"
-                title={t('shopping.clear')}
-                variant="tertiary"
-                tone="destructive"
-                icon={actionIcons.delete}
-                disabled={!online}
-                loading={clearing}
-                onPress={onClear}
+        {/* The screen already scrolls (its door and field are part of the same scroll), so the
+            list lays out in full; it still keys and renders its rows as a list. */}
+        <SectionList<ShoppingItem, ListSection>
+          sections={sections}
+          scrollEnabled={false}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          stickySectionHeadersEnabled={false}
+          renderItem={({ item, index, section }) => {
+            const buyer = item.boughtBy ?? undefined;
+            return (
+              <ShoppingRow
+                item={item}
+                first={section.key === 'pending' && index === 0}
+                unsent={unsentIds.has(item.id)}
+                buyerMark={buyer ? marks.get(buyer) : undefined}
+                buyerName={buyer ? names.get(buyer) : undefined}
+                flash={flash?.id === item.id ? flash.count : 0}
+                onToggle={() => onToggle(item)}
+                onOpen={item.boughtAt === null ? () => onOpen(item.id) : undefined}
               />
-            </Animated.View>
-          ) : null,
-          ...bought.map((item) => row(item, false)),
-        ]}
+            );
+          }}
+          renderSectionHeader={({ section }) =>
+            section.key === 'bought' && bought.length > 0 ? (
+              <Animated.View
+                layout={layout}
+                entering={FadeIn}
+                exiting={FadeOut}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: space(3),
+                  paddingHorizontal: space(4),
+                  paddingTop: space(4),
+                  paddingBottom: space(2),
+                  backgroundColor: colors.note,
+                  borderTopWidth: pending.length > 0 ? StyleSheet.hairlineWidth : 0,
+                  borderTopColor: colors.hairline,
+                }}
+              >
+                <BoughtTitle count={bought.length} />
+                <Button
+                  testID="shopping.clear"
+                  title={t('shopping.clear')}
+                  variant="tertiary"
+                  tone="destructive"
+                  icon={actionIcons.delete}
+                  disabled={!online}
+                  loading={clearing}
+                  onPress={onClear}
+                />
+              </Animated.View>
+            ) : null
+          }
+        />
       </View>
     </View>
   );

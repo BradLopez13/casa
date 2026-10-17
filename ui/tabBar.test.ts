@@ -5,6 +5,7 @@ import {
   TAB_LABEL_LINE,
   TAB_LABEL_MAX_SCALE,
   TAB_PILL_HEIGHT,
+  tabBarClearance,
   tabBarHeight,
   tabLabelsBeside,
   tabPillWidth,
@@ -60,5 +61,28 @@ describe('tabPillWidth', () => {
 
   it('leaves at least 8 dp between the pill and a label beside it', () => {
     expect(TAB_LABEL_GAP).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe('tabBarClearance', () => {
+  it('is the bar with the inset when the bar is at the bottom', () => {
+    expect(
+      tabBarClearance({ width: 412, height: 915, fontScale: 1, bottomInset: 24, rail: false }),
+    ).toBe(TAB_BAR_HEIGHT + 24);
+    expect(
+      tabBarClearance({ width: 412, height: 915, fontScale: 1.6, bottomInset: 0, rail: false }),
+    ).toBe(TAB_BAR_HEIGHT + 10);
+  });
+
+  it('falls back to the plain bar when the labels sit beside the icons', () => {
+    expect(
+      tabBarClearance({ width: 800, height: 600, fontScale: 1, bottomInset: 0, rail: false }),
+    ).toBe(TAB_BAR_HEIGHT);
+  });
+
+  it('is only the inset beside the rail', () => {
+    expect(
+      tabBarClearance({ width: 1000, height: 700, fontScale: 1, bottomInset: 12, rail: true }),
+    ).toBe(12);
   });
 });

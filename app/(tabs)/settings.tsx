@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isOwnerAlone } from '@/domain/account/delete';
@@ -13,6 +14,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
+import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { PaneHeader } from '@/ui/components/PaneHeader';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
@@ -24,6 +26,14 @@ import { useLayout } from '@/ui/useLayout';
 export default function SettingsScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
+  const notify = useNotice();
+  const [signingOut, setSigningOut] = useState(false);
+  const leave = () => {
+    setSigningOut(true);
+    signOut()
+      .catch(() => notify(t('auth.signOutFailed')))
+      .finally(() => setSigningOut(false));
+  };
   const { userId } = useSession();
   const membership = useMembership().data;
   const members = useMembers(membership?.householdId);
@@ -64,7 +74,8 @@ export default function SettingsScreen() {
               variant="tertiary"
               icon={actionIcons.signOut}
               width="hug"
-              onPress={() => void signOut().catch(() => undefined)}
+              loading={signingOut}
+              onPress={leave}
             />
             <DeleteAccountButton
               testID="settings.delete-account"
@@ -88,7 +99,7 @@ export default function SettingsScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.page }}>
       <TwoPane
         header={
           <PaneHeader>

@@ -13,6 +13,7 @@ import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
 import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
+import { useNotice } from '@/ui/components/Notice';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
@@ -30,6 +31,14 @@ export default function OnboardingScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [link, setLink] = useState('');
   const [linkError, setLinkError] = useState<string | undefined>();
+  const notify = useNotice();
+  const [signingOut, setSigningOut] = useState(false);
+  const leave = () => {
+    setSigningOut(true);
+    signOut()
+      .catch(() => notify(t('auth.signOutFailed')))
+      .finally(() => setSigningOut(false));
+  };
 
   function submitCreate() {
     setFormError(undefined);
@@ -134,7 +143,8 @@ export default function OnboardingScreen() {
           variant="tertiary"
           icon={actionIcons.signOut}
           width="hug"
-          onPress={() => void signOut().catch(() => undefined)}
+          loading={signingOut}
+          onPress={leave}
         />
         <DeleteAccountButton testID="onboarding.delete-account" />
       </AccountZone>

@@ -56,6 +56,7 @@
   "auth.forgot.submit": "Guardar y entrar",
   "auth.pendingInvite": "Tienes una invitación pendiente: inicia sesión o crea una cuenta para unirte.",
   "auth.signOut": "Cerrar sesión",
+  "auth.signOutFailed": "No se pudo cerrar la sesión. Inténtalo de nuevo.",
   "onboarding.title": "Crea tu hogar",
   "onboarding.welcome": "Aquí repartís las tareas y la compra de casa.",
   "onboarding.defaultName": "Mi hogar",

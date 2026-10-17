@@ -123,6 +123,14 @@ function MembershipError({
   onRetry: () => void;
 }) {
   const { colors } = useTheme();
+  const notify = useNotice();
+  const [signingOut, setSigningOut] = useState(false);
+  const leave = () => {
+    setSigningOut(true);
+    signOut()
+      .catch(() => notify(t('auth.signOutFailed')))
+      .finally(() => setSigningOut(false));
+  };
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.page }]}>
       <Screen>
@@ -142,7 +150,8 @@ function MembershipError({
           title={t('auth.signOut')}
           variant="tertiary"
           icon={actionIcons.signOut}
-          onPress={() => void signOut().catch(() => undefined)}
+          loading={signingOut}
+          onPress={leave}
         />
       </Screen>
     </View>
