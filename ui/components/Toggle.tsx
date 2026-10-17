@@ -2,13 +2,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View, type SwitchProps } from 'react-native';
 import { actionIcons } from '../actionIcons';
 import { useTheme } from '../theme';
+import { MIN_TOUCH } from '../tokens';
 import { toggleLook } from '../toggleLook';
 
 const WIDTH = 52;
 const HEIGHT = 32;
 const THUMB = 22;
 const EDGE = 2;
-const INSET = 4;
+const GAP = (HEIGHT - 2 * EDGE - THUMB) / 2;
+const SLOP_Y = Math.max(0, Math.ceil((MIN_TOUCH - HEIGHT) / 2));
+const SLOP_X = Math.max(0, Math.ceil((MIN_TOUCH - WIDTH) / 2));
 
 type Props = Pick<
   SwitchProps,
@@ -32,6 +35,7 @@ export function Toggle({ value = false, disabled, onValueChange, surface, ...res
       accessibilityRole="switch"
       accessibilityState={{ checked: value, disabled: !!disabled }}
       disabled={disabled}
+      hitSlop={{ top: SLOP_Y, bottom: SLOP_Y, left: SLOP_X, right: SLOP_X }}
       onPress={() => void onValueChange?.(!value)}
       style={{
         width: WIDTH,
@@ -54,7 +58,7 @@ export function Toggle({ value = false, disabled, onValueChange, surface, ...res
           backgroundColor: look.thumb,
           alignItems: 'center',
           justifyContent: 'center',
-          marginLeft: value ? WIDTH - 2 * EDGE - THUMB - INSET / 2 : INSET / 2,
+          marginLeft: value ? WIDTH - 2 * EDGE - THUMB - GAP : GAP,
         }}
       >
         {look.check ? (
