@@ -49,19 +49,19 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - hideKeyboard
 
-# Mark it as bought: it moves under "Compradas"
+# Mark it as bought: it moves under "En la bolsa"
 - tapOn: Marcar «Leche» como comprado
 - extendedWaitUntil:
-    visible: Compradas \(1\)
+    visible: En la bolsa \(1\)
     timeout: 20000
 
 # Clear the bought ones: the section goes away (it fades out after the server answers)
 - tapOn:
     id: shopping.clear
 - extendedWaitUntil:
-    notVisible: Compradas.*
+    notVisible: En la bolsa.*
     timeout: 20000
-- assertNotVisible: Compradas.*
+- assertNotVisible: En la bolsa.*
 
 # The history suggests it again while typing
 - tapOn:

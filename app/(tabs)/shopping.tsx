@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
-import { countLabel } from '@/domain/shopping/screen';
-import type { HistoryEntry } from '@/domain/shopping/suggest';
+import { countLabel, pendingNames } from '@/domain/shopping/screen';
+import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { newShoppingItemId } from '@/features/shopping/api';
@@ -15,6 +15,7 @@ import {
 import { OfflineBand } from '@/features/shopping/components/OfflineBand';
 import {
   BoughtTitle,
+  EmptyList,
   ShoppingSheet,
   type Flash,
 } from '@/features/shopping/components/ShoppingSheet';
@@ -174,7 +175,9 @@ export default function ShoppingScreen() {
       </View>
     );
   } else if (state === 'empty') {
-    stateView = <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>;
+    stateView = (
+      <EmptyList usual={usual(history, pendingNames(items))} onAdd={(name) => entry.submit(name)} />
+    );
   }
 
   const parts: ShoppingParts = {

@@ -11,10 +11,16 @@ export function isBoughtHeader(row: SheetRow): row is BoughtHeaderRow {
 }
 
 /**
- * The sheet as one flat keyed list: what is left to buy, the «Compradas» header (only when
- * something is bought), then the bought ones. One list, one key per row (the item id), so a row
- * that is marked keeps its identity and slides down instead of remounting.
+ * The sheet as one flat keyed list: what is left to buy, the «En la bolsa» header (only when
+ * something is bought), then the bought ones unless the group is collapsed. One list, one key per
+ * row (the item id), so a row that is marked keeps its identity and slides down instead of
+ * remounting.
  */
-export function sheetRows(pending: ShoppingItem[], bought: ShoppingItem[]): SheetRow[] {
-  return bought.length > 0 ? [...pending, HEADER, ...bought] : [...pending];
+export function sheetRows(
+  pending: ShoppingItem[],
+  bought: ShoppingItem[],
+  boughtCollapsed = false,
+): SheetRow[] {
+  if (bought.length === 0) return [...pending];
+  return boughtCollapsed ? [...pending, HEADER] : [...pending, HEADER, ...bought];
 }

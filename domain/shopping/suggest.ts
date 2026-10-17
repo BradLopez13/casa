@@ -26,3 +26,17 @@ export function suggest(
   );
   return [...starts, ...words].slice(0, MAX_SUGGESTIONS);
 }
+
+const MAX_USUAL = 6;
+
+/** The most used names in the history that are not on the list now, for an empty list. */
+export function usual(
+  history: readonly HistoryEntry[],
+  pendingNormalized: ReadonlySet<string>,
+  n = MAX_USUAL,
+): HistoryEntry[] {
+  return history
+    .filter((e) => !pendingNormalized.has(e.normalizedName))
+    .sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, 'es'))
+    .slice(0, n);
+}

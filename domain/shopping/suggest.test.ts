@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeItemName } from './normalize';
-import { suggest, type HistoryEntry } from './suggest';
+import { suggest, usual, type HistoryEntry } from './suggest';
 
 const entry = (name: string): HistoryEntry => ({
   name,
@@ -33,5 +33,34 @@ describe('suggest', () => {
   it('returns at most 5', () => {
     const many = Array.from({ length: 8 }, (_, i) => entry(`Pan ${i}`));
     expect(suggest(many, 'pan', new Set())).toHaveLength(5);
+  });
+});
+
+describe('usual', () => {
+  const used = (name: string, uses: number): HistoryEntry => ({ ...entry(name), uses });
+
+  it('returns the six most used that are not pending, by uses then name', () => {
+    const list = [
+      used('Pan', 5),
+      used('Arroz', 5),
+      used('Leche', 9),
+      used('Sal', 1),
+      used('Huevos', 4),
+      used('Aceite', 3),
+      used('Café', 2),
+      used('Té', 1),
+    ];
+    expect(names(usual(list, new Set(['pan'])))).toEqual([
+      'Leche',
+      'Arroz',
+      'Huevos',
+      'Aceite',
+      'Café',
+      'Sal',
+    ]);
+  });
+
+  it('is empty without history', () => {
+    expect(usual([], new Set())).toEqual([]);
   });
 });

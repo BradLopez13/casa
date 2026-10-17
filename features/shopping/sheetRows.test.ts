@@ -20,4 +20,9 @@ describe('sheetRows', () => {
     const after = sheetRows([], [item('a')]);
     expect(before[0]?.id).toBe(after[1]?.id);
   });
+
+  it('keeps the header but drops the bought rows when collapsed', () => {
+    const rows = sheetRows([item('a')], [item('c')], true);
+    expect(rows.map((r) => r.id)).toEqual(['a', BOUGHT_HEADER_ID]);
+  });
 });
