@@ -149,7 +149,9 @@ export default function ForgotPasswordScreen() {
   return (
     <CenteredCard header={<BrandHeader />}>
       <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.forgot.title')}</ScreenTitle>
-      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('auth.forgotContext')}</Text>
+      {step === 'email' ? (
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('auth.forgotContext')}</Text>
+      ) : null}
       {step === 'email' ? (
         <>
           <TextField

@@ -97,6 +97,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
             testID={`day-strip.${day.date}`}
             accessibilityRole="button"
             accessibilityLabel={dayCountLabel(day, today, names)}
+            accessibilityState={{ selected: isChosen }}
             onPress={() => onSelect(day.date)}
             style={({ pressed }) => ({
               flex: 1,
