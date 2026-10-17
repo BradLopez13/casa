@@ -62,7 +62,11 @@ export function Magnet({
   // The chip-sized magnet sits inside a pill and stays flat.
   const look = check ? magnetCheckStyle(check, colors) : null;
   const filledCheck = look?.fill != null;
-  const depth = !empty && size !== 'sm' ? shadows.magnet : null;
+  const raised = !empty && size !== 'sm';
+  const fill = look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]);
+  // Two stacked Views: Android allows one elevation per View, so ambient outside, contact inside.
+  const depth = raised ? shadows.magnet : null;
+  const showHighlight = raised && !glyph;
 
   const disc = (
     <View
@@ -72,8 +76,7 @@ export function Magnet({
         borderRadius: diameter / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor:
-          look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]),
+        backgroundColor: fill,
         ...(empty && !filledCheck
           ? positRing
             ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
@@ -86,6 +89,21 @@ export function Magnet({
         ...depth,
       }}
     >
+      {showHighlight ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 1,
+            left: 1,
+            right: 1,
+            bottom: 1,
+            borderRadius: diameter / 2,
+            borderTopWidth: 1,
+            borderTopColor: colors.magnetHighlight,
+          }}
+        />
+      ) : null}
       {glyph && !empty && !filledCheck ? glyph.node : null}
       {empty || filledCheck || glyph ? null : (
         <Text
@@ -137,6 +155,14 @@ export function Magnet({
     </View>
   );
 
+  const lifted = raised ? (
+    <View style={{ borderRadius: diameter / 2, backgroundColor: fill, ...shadows.magnetAmbient }}>
+      {disc}
+    </View>
+  ) : (
+    disc
+  );
+
   // A selectable magnet always reserves the ring's space, so selecting never shifts the row.
   const selectable = selected !== undefined;
   const ringed = selectable ? (
@@ -149,10 +175,10 @@ export function Magnet({
         backgroundColor: selected ? colors.door : 'transparent',
       }}
     >
-      {disc}
+      {lifted}
     </View>
   ) : (
-    disc
+    lifted
   );
 
   const outer = diameter + (selectable ? 2 * (GAP + RING) : 0);

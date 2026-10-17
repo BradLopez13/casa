@@ -6,6 +6,7 @@ import {
   noteEdges,
   palettes,
   radii,
+  shadows,
 } from './tokens';
 
 describe('noteEdges', () => {
@@ -31,5 +32,20 @@ describe('control heights', () => {
 describe('radii', () => {
   it('locks the radii to note, door and pill', () => {
     expect(Object.keys(radii)).toEqual(['note', 'door', 'pill']);
+  });
+});
+
+describe('magnet material', () => {
+  it('has a short contact shadow and a wide ambient one in both schemes', () => {
+    expect(shadows.light.magnet.shadowOpacity).toBe(0.3);
+    expect(shadows.light.magnet.shadowRadius).toBe(3);
+    expect(shadows.light.magnetAmbient).toBeDefined();
+    expect(shadows.dark.magnetAmbient).toBeDefined();
+    expect(shadows.light.magnetAmbient.shadowRadius).toBe(10);
+    expect(shadows.dark.magnetAmbient.shadowRadius).toBe(10);
+  });
+  it('has a top highlight colour in both palettes', () => {
+    expect(palettes.light.magnetHighlight).toBe('rgba(255,255,255,0.28)');
+    expect(palettes.dark.magnetHighlight).toBe('rgba(255,255,255,0.35)');
   });
 });

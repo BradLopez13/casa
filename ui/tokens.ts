@@ -52,6 +52,8 @@ export type Palette = {
   magnetInk: string;
   /** Soft translucent ring around a magnet to keep its edge on the ground; 'transparent' for none. */
   magnetRing: string;
+  /** 1 dp lighter arc along the top inside edge of a magnet. */
+  magnetHighlight: string;
   magnet: Record<MagnetColor, string>;
   /** The fridge light revealed by pull-to-refresh. */
   light: { top: string; text: string; shelf: string };
@@ -89,6 +91,7 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#6F7B80',
     magnetInk: '#151B1E',
     magnetRing: 'rgba(21,27,30,0.35)',
+    magnetHighlight: 'rgba(255,255,255,0.28)',
     magnet: {
       teal: '#579488',
       leaf: '#6E9A4E',
@@ -126,6 +129,7 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#7F8B90',
     magnetInk: '#151B1E',
     magnetRing: 'transparent',
+    magnetHighlight: 'rgba(255,255,255,0.35)',
     magnet: {
       teal: '#8FC3BA',
       leaf: '#A5C98A',
@@ -193,14 +197,25 @@ export type Shadow = {
 };
 
 /** Depth exists only on magnets and notes. Shadows are tinted with the slate ink, never grey. */
-export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow; primary: Shadow }> = {
+export const shadows: Record<
+  Scheme,
+  { magnet: Shadow; magnetAmbient: Shadow; note: Shadow; primary: Shadow }
+> = {
   light: {
+    // A magnet is two stacked shadows: a short contact one and a wide faint ambient one.
     magnet: {
       shadowColor: '#1E2A2F',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.22,
-      shadowRadius: 5,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    magnetAmbient: {
+      shadowColor: '#1E2A2F',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 6,
     },
     note: {
       shadowColor: '#1E2A2F',
@@ -221,10 +236,17 @@ export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow; primary: Sh
   dark: {
     magnet: {
       shadowColor: '#080C0E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.55,
-      shadowRadius: 6,
-      elevation: 5,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    magnetAmbient: {
+      shadowColor: '#080C0E',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 6,
     },
     note: {
       shadowColor: '#080C0E',
