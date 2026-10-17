@@ -17,7 +17,8 @@ describe('dueLabel', () => {
 
 describe('overdueLabel', () => {
   const today = '2026-10-09';
-  it('says yesterday', () => expect(overdueLabel('2026-10-08', today)).toBe('Pendiente desde ayer'));
+  it('says yesterday', () =>
+    expect(overdueLabel('2026-10-08', today)).toBe('Pendiente desde ayer'));
   it('uses weekday and day within the last week', () =>
     expect(overdueLabel('2026-10-05', today)).toBe('Pendiente desde el lunes 5'));
   it('uses day and month from seven days on', () =>

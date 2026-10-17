@@ -15,11 +15,8 @@ const ALLOWED: Record<string, string> = {
 // Opacity that is fine anywhere: press feedback, the faint check, animated glows (shared values),
 // and the 0 / 1 literals used to hide or show.
 const FINE = [
-  /\bopacity:\s*pressedOpacity\([^)]*\)/g,
+  /\bopacity:\s*(0|1|pressedOpacity\([^)]*\)|look\.opacity|[\w.]+\.value)\s*(?=[,}]|$)/g,
   /\bpressedOpacity\b/g,
-  /\bopacity:\s*look\.opacity\b/g,
-  /\bopacity:\s*[a-zA-Z.]*\.value\b/g,
-  /\bopacity:\s*[01]\b(?!\.)/g,
 ];
 
 function tsxFiles(dir: string): string[] {

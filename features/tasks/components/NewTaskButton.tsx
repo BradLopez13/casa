@@ -108,9 +108,7 @@ export function NewTaskButton({
         accessible={false}
       />
       {shape.iconOnly ? null : (
-        <Text
-          style={{ color: look.foreground, fontSize: 16, fontWeight: '600' }}
-        >
+        <Text style={{ color: look.foreground, fontSize: 16, fontWeight: '600' }}>
           {t('tasks.new')}
         </Text>
       )}

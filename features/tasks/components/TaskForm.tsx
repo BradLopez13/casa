@@ -244,9 +244,7 @@ export function TaskForm({
                     }}
                   />
                   {/* Right under the title, so the empty-title message is seen where it is fixed. */}
-                  {shownError ? (
-                    <ErrorText testID="task-form.error">{shownError}</ErrorText>
-                  ) : null}
+                  {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
                 </View>
                 <PropertyMagnets
                   room={values.room}

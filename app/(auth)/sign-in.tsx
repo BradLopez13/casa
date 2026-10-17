@@ -38,8 +38,7 @@ export default function SignInScreen() {
       const found = fieldErrors(parsed.error, { form: 'signIn' });
       setErrors(found);
       const first: TextInput | null =
-        (found.email ? emailRef.current : null) ??
-        (found.password ? passwordRef.current : null);
+        (found.email ? emailRef.current : null) ?? (found.password ? passwordRef.current : null);
       first?.focus();
       return;
     }

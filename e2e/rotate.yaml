@@ -1,14 +1,14 @@
 appId: com.bradlopez13.casa
 ---
 - runFlow: subflows/sign-in.yaml
-- assertVisible: { id: "tab.today" }
+- assertVisible: { id: 'tab.today' }
 - setOrientation: LANDSCAPE_LEFT
-- assertVisible: { id: "tab.today" }
-- assertNotVisible: "Render Error"
-- tapOn: { id: "today.new-task" }
+- assertVisible: { id: 'tab.today' }
+- assertNotVisible: 'Render Error'
+- tapOn: { id: 'today.new-task' }
 - setOrientation: PORTRAIT
-- assertVisible: { id: "task-form.title" }
+- assertVisible: { id: 'task-form.title' }
 - setOrientation: LANDSCAPE_LEFT
-- tapOn: { id: "task-form.cancel" }
+- tapOn: { id: 'task-form.cancel' }
 - setOrientation: PORTRAIT
-- assertVisible: { id: "tab.today" }
+- assertVisible: { id: 'tab.today' }

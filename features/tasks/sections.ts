@@ -1,5 +1,11 @@
 import { dayHeading } from '@/domain/tasks/labels';
-import { isOverdue, selectAll, selectToday, type selectWeek, type TaskItem } from '@/domain/tasks/views';
+import {
+  isOverdue,
+  selectAll,
+  selectToday,
+  type selectWeek,
+  type TaskItem,
+} from '@/domain/tasks/views';
 import { t } from '@/i18n';
 
 /** One row of a task list: a note per open task, or the tray holding every finished one. */

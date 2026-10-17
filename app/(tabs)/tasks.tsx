@@ -386,9 +386,7 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
                 sections={pane.overdue ? [pane.overdue, pane.day] : [pane.day]}
                 {...rowProps(screen)}
               />
-              {pane.day.count === 0 ? (
-                <EmptyDay day={day} today={screen.today} />
-              ) : null}
+              {pane.day.count === 0 ? <EmptyDay day={day} today={screen.today} /> : null}
             </>
           ) : (
             <View style={{ paddingTop: space(6) }}>
