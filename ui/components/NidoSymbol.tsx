@@ -6,10 +6,22 @@ import { radii } from '../tokens';
 
 const TILE_INSET = 8;
 
-/** The Nido symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for use on the brand band. */
-export function NidoSymbol({ size, onSlate = false }: { size: number; onSlate?: boolean }) {
+/**
+ * The Nido symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for
+ * use on the brand band; `mono` draws both figures in that one colour, with no tile.
+ */
+export function NidoSymbol({
+  size,
+  onSlate = false,
+  mono,
+}: {
+  size: number;
+  onSlate?: boolean;
+  mono?: string;
+}) {
   const { scheme } = useTheme();
-  const c = nidoSymbolColors(scheme);
+  const brand = nidoSymbolColors(scheme);
+  const c = mono === undefined ? brand : { left: mono, right: mono, tile: null };
   const { left, right } = NIDO_SYMBOL_PATHS;
   // On the brand band the slate is already behind it: no tile of its own.
   const tile = onSlate ? null : c.tile;

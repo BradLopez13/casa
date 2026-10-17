@@ -1,9 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { enterAnimation, layoutTransition, tiltFor } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 
@@ -27,8 +28,9 @@ export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
       : t('tasks.a11y.reopen', { title: task.title });
   return (
     <Animated.View
-      layout={reduceMotion ? undefined : LinearTransition}
-      entering={reduceMotion ? undefined : FadeIn}
+      // It arrives from the list on the same spring the note left it with.
+      layout={layoutTransition(reduceMotion)}
+      entering={enterAnimation(reduceMotion, tiltFor(task.id))}
       style={{ marginLeft: magnetSizes.sm / 2 }}
     >
       <Pressable

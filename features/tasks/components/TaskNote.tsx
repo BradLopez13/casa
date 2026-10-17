@@ -1,18 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import ReanimatedSwipeable, {
   SwipeDirection,
   type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
-  FadeIn,
-  FadeOut,
-  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
@@ -21,6 +18,14 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import {
+  enterAnimation,
+  exitAnimation,
+  haptic,
+  layoutTransition,
+  SPRING,
+  tiltFor,
+} from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 
@@ -30,6 +35,8 @@ const PROVISIONAL_OPACITY = 0.6;
 const NO_ANIMATION = { duration: 0 };
 const PRESS_MS = 80;
 const PRESS_SCALE = 0.9;
+// A new note's magnet starts a little small and snaps onto the door.
+const SNAP_SCALE = 0.85;
 const TOGGLE_SLOP = Math.ceil((MIN_TOUCH - magnetSizes.md) / 2);
 
 type Props = {
@@ -57,8 +64,17 @@ export function TaskNote({
 }: Props) {
   const { colors, shadows, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
-  const scale = useSharedValue(1);
+  const scale = useSharedValue(reduceMotion ? 1 : SNAP_SCALE);
   const magnetStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  // The magnet snaps on as the note lands (QuickAdd gives the rigid vibration).
+  useEffect(() => {
+    // Reanimated shared values are mutated through .value by design.
+    // eslint-disable-next-line react-hooks/immutability
+    scale.value = reduceMotion ? 1 : withSpring(1, SPRING);
+    // Only on arrival: later presses animate the magnet themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
@@ -69,22 +85,28 @@ export function TaskNote({
 
   const press = () => {
     if (!reduceMotion) {
-      // Reanimated shared values are mutated through .value by design.
+      // The magnet sinks and springs back; the note then lifts off (exitAnimation).
       // eslint-disable-next-line react-hooks/immutability
       scale.value = withSequence(
         withTiming(PRESS_SCALE, { duration: PRESS_MS }),
-        withTiming(1, { duration: PRESS_MS }),
+        withSpring(1, SPRING),
       );
     }
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Tapping an open note's magnet completes it; a done one only reopens.
+    void haptic(done ? 'light' : 'success');
     onToggle();
+  };
+
+  const complete = () => {
+    void haptic('success');
+    onComplete?.();
   };
 
   return (
     <Animated.View
-      layout={reduceMotion ? undefined : LinearTransition}
-      entering={reduceMotion ? undefined : FadeIn}
-      exiting={reduceMotion ? undefined : FadeOut}
+      layout={layoutTransition(reduceMotion)}
+      entering={enterAnimation(reduceMotion, tiltFor(task.id))}
+      exiting={exitAnimation(reduceMotion)}
       style={{
         marginLeft: magnetSizes.md / 2,
         flexDirection: 'row',
@@ -145,7 +167,7 @@ export function TaskNote({
         onSwipeableOpen={(direction) => {
           // Dragging the note right opens the strip on its left; dragging left does nothing.
           if (direction !== SwipeDirection.RIGHT) return;
-          onComplete?.();
+          complete();
           swipeable.current?.close();
         }}
       >
@@ -162,7 +184,7 @@ export function TaskNote({
               : undefined
           }
           onAccessibilityAction={(e) => {
-            if (canSwipe && e.nativeEvent.actionName === 'complete') onComplete?.();
+            if (canSwipe && e.nativeEvent.actionName === 'complete') complete();
           }}
           style={{
             flex: 1,

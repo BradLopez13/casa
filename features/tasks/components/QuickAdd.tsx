@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, Text, TextInput, View, type TextStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -16,6 +15,7 @@ import { locale, t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useNotice } from '@/ui/components/Notice';
+import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { createTask, newTaskId } from '../api';
@@ -133,7 +133,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
       {
         onSuccess: () => {
           input.current?.focus();
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+          void haptic('rigid');
         },
         onError: (error) => {
           // What was typed comes back, with its dismissed chips, only if nothing was typed since;

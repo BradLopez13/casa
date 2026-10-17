@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -17,6 +16,7 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
 import { pressedOpacity } from '@/ui/buttonLook';
+import { haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -74,7 +74,8 @@ export function ShoppingRow({
   }, [flash, glow]);
 
   const toggle = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Into the bag is a thing done; taking it back out is just a press.
+    void haptic(bought ? 'light' : 'success');
     onToggle();
   };
 

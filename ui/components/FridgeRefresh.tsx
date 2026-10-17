@@ -18,10 +18,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMembership } from '@/features/households/queries';
+import { useShoppingItems } from '@/features/shopping/queries';
 import { t } from '@/i18n';
+import { FADE_MS, MAX_MS } from '../motion';
 import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
 import { DoorInsetContext, FridgeRefreshContext } from './DoorHeader';
+import { NidoSymbol } from './NidoSymbol';
 
 export { useFridgeRefresh } from './DoorHeader';
 
@@ -38,7 +42,7 @@ type Props = {
   children: ReactElement<ScrollableProps>;
 };
 
-const SLIDE = { duration: 280, easing: Easing.out(Easing.exp) };
+const SLIDE = { duration: MAX_MS, easing: Easing.out(Easing.exp) };
 
 function useRefreshAnnouncement(refreshing: boolean) {
   useEffect(() => {
@@ -67,7 +71,17 @@ export function usePaneRefreshControl(
     />
   );
 }
-const FADE = { duration: 200 };
+const FADE = { duration: FADE_MS };
+
+/** What the light shows inside the fridge: how much is left on the shopping list. */
+function useInsideLine(): string | null {
+  const householdId = useMembership().data?.householdId;
+  const items = useShoppingItems(householdId).data;
+  if (items === undefined) return null;
+  const n = items.filter((item) => item.boughtAt === null).length;
+  if (n === 0) return t('refresh.insideNone');
+  return n === 1 ? t('refresh.insideOne') : t('refresh.inside', { n });
+}
 
 /**
  * Pull-to-refresh that opens the fridge door: the native RefreshControl does the gesture, and
@@ -79,13 +93,14 @@ const FADE = { duration: 200 };
  * in over the top of the door instead (the native iOS refresh gap is the system's own).
  */
 export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const ios = Platform.OS === 'ios';
   const offset = useSharedValue(0);
   // Only the Reduce Motion band fades; the band behind the door is always lit.
   const glow = useSharedValue(0);
+  const inside = useInsideLine();
 
   useRefreshAnnouncement(refreshing);
 
@@ -144,22 +159,38 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           backgroundColor: colors.light.shelf,
         }}
       />
-      {/* The band has a fixed height, so the label's growth with text size is capped. */}
-      <Text
-        maxFontSizeMultiplier={1.6}
+      {/* The band has a fixed height, so the label's growth with text size is capped. The band
+          only shows while the door is open, so the inside of the fridge is seen only then. */}
+      <View
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: ios ? 20 : 12,
-          textAlign: 'center',
-          color: colors.light.text,
-          fontSize: 13,
-          fontWeight: '600',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: space(2),
         }}
       >
-        {t('refresh.label')}
-      </Text>
+        {inside === null ? null : <NidoSymbol size={20} mono={colors.light.text} />}
+        <Text
+          maxFontSizeMultiplier={1.6}
+          numberOfLines={1}
+          style={{ color: colors.light.text, fontSize: 13, fontWeight: '600' }}
+        >
+          {t('refresh.label')}
+        </Text>
+        {inside === null ? null : (
+          <Text
+            maxFontSizeMultiplier={1.6}
+            numberOfLines={1}
+            style={{ flexShrink: 1, color: colors.light.text, fontSize: 13 }}
+          >
+            {inside}
+          </Text>
+        )}
+      </View>
     </Animated.View>
   );
 
