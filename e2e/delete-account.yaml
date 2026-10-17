@@ -20,9 +20,15 @@ appId: com.bradlopez13.casa
       id: sign-in.go-sign-up
 - tapOn:
     id: sign-in.go-sign-up
+- scrollUntilVisible:
+    element:
+      id: sign-up.name
 - tapOn:
     id: sign-up.name
 - inputText: Ines
+- scrollUntilVisible:
+    element:
+      id: sign-up.email
 - tapOn:
     id: sign-up.email
 - inputText: ${output.email}

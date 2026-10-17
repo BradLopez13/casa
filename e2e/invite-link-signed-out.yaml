@@ -33,9 +33,15 @@ appId: com.bradlopez13.casa
     visible:
       id: sign-up.pending-invite
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: sign-up.name
 - tapOn:
     id: sign-up.name
 - inputText: Carla
+- scrollUntilVisible:
+    element:
+      id: sign-up.email
 - tapOn:
     id: sign-up.email
 - inputText: ${output.email}
