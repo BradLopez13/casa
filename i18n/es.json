@@ -167,6 +167,7 @@
   "taskForm.dueOther": "Otro día",
   "taskForm.pastDate": "{date} (pasada)",
   "taskForm.noRepeat": "No se repite",
+  "taskForm.noRoom": "Sin estancia",
   "taskForm.newTitle": "Nueva tarea",
   "taskForm.editTitle": "Editar tarea",
   "taskForm.cancel": "Cancelar",

@@ -46,6 +46,7 @@ function NewTaskScreen() {
   return (
     <TaskForm
       title={t('taskForm.newTitle')}
+      isNew
       initial={initial}
       members={members ?? []}
       marks={marks}

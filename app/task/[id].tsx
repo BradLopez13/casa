@@ -140,6 +140,7 @@ function EditTaskScreen() {
     <>
       <TaskForm
         title={t('taskForm.editTitle')}
+        isNew={false}
         initial={initial}
         members={members ?? []}
         marks={marks}

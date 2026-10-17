@@ -50,6 +50,8 @@ type Props = {
   error: string | null;
   onCancel: () => void;
   onSave: (input: TaskInput) => void;
+  /** A task being created: the title takes the focus and the day picker starts open. */
+  isNew: boolean;
   /** Secondary actions at the foot, above Save ("Marcar como hecha", "Saltar esta vez"). */
   footer?: ReactNode;
   /** Kept apart from the foot, at the end of the scroll ("Borrar tarea"). */
@@ -78,6 +80,7 @@ export function TaskForm({
   error,
   onCancel,
   onSave,
+  isNew,
   footer,
   dangerZone,
   repeatEditable = true,
@@ -89,8 +92,6 @@ export function TaskForm({
   const [values, setValues] = useState<TaskInput>(initial);
   // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
   const [opened] = useState(initial);
-  // Only a new task starts with an empty title.
-  const isNew = opened.title === '';
   const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
   const { requestClose, dialog } = useDiscardGuard({
     dirty: isDirty(opened, values),
@@ -219,6 +220,7 @@ export function TaskForm({
                 <View style={{ gap: space(2) }}>
                   <TextField
                     ref={titleRef}
+                    bare
                     testID="task-form.title"
                     label={t('taskForm.titleLabel')}
                     placeholder={t('taskForm.titlePlaceholder')}
@@ -316,7 +318,7 @@ export function TaskForm({
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
-              disabled={saving}
+              loading={saving}
               width="full"
             />
           </View>

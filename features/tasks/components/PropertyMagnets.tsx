@@ -33,6 +33,7 @@ function Chip({
   disabled = false,
   onOpen,
   children,
+  spoken,
 }: {
   field: FormField;
   label: string;
@@ -41,6 +42,8 @@ function Chip({
   disabled?: boolean;
   onOpen: (field: FormField) => void;
   children?: ReactNode;
+  /** Read instead of «label, value» when the value already says what it is. */
+  spoken?: string;
 }) {
   const { colors, radii, space } = useTheme();
   // One selected style (§14.1): the open magnet is filled with `selection`, the rest are outlined
@@ -50,7 +53,8 @@ function Chip({
     <Pressable
       testID={`task-form.prop.${field}`}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${value}`}
+      // A value that already names its field («No se repite») is read alone, not after it.
+      accessibilityLabel={spoken ?? `${label}, ${value}`}
       accessibilityState={{ expanded: open, disabled }}
       disabled={disabled}
       onPress={() => onOpen(field)}
@@ -104,7 +108,7 @@ export function PropertyMagnets({
       <Chip
         field="room"
         label={t('taskForm.roomLabel')}
-        value={room === null ? t('taskForm.roomLabel') : t(`rooms.${room}`)}
+        value={room === null ? t('taskForm.noRoom') : t(`rooms.${room}`)}
         open={open === 'room'}
         onOpen={onOpen}
       />
@@ -136,6 +140,7 @@ export function PropertyMagnets({
         field="repeat"
         label={t('taskForm.repeatLabel')}
         value={repeat === null ? t('taskForm.noRepeat') : recurrenceLabel(repeat)}
+        spoken={repeat === null ? t('taskForm.noRepeat') : undefined}
         open={open === 'repeat'}
         disabled={!repeatEditable}
         onOpen={onOpen}

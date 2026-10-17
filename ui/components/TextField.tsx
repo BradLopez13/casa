@@ -14,6 +14,11 @@ type Props = Omit<TextInputProps, 'style'> & {
   /** Sits inside the input's box, on the right (e.g. a show/hide eye). */
   trailing?: ReactNode;
   ref?: Ref<TextInput>;
+  /**
+   * No visible label and no box: the label is only read by screen readers, and a 2 dp bottom line
+   * (`focusRing` while focused, `hairline` otherwise) is the whole field. For the task title.
+   */
+  bare?: boolean;
 };
 
 export function TextField({
@@ -23,6 +28,7 @@ export function TextField({
   inputStyle,
   trailing,
   ref,
+  bare = false,
   onFocus,
   onBlur,
   ...inputProps
@@ -33,7 +39,9 @@ export function TextField({
   const reveal = useFocusReveal();
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+      {bare ? null : (
+        <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+      )}
       <View style={{ position: 'relative', justifyContent: 'center' }}>
         <TextInput
           ref={ref}
@@ -66,6 +74,16 @@ export function TextField({
             color: colors.ink,
             fontSize: 17,
             ...(trailing ? { paddingRight: 52 - (error ? 1 : 0) } : null),
+            ...(bare
+              ? {
+                  paddingHorizontal: 0,
+                  borderRadius: 0,
+                  borderWidth: 0,
+                  borderBottomWidth: 2,
+                  borderColor: focused ? colors.focusRing : colors.hairline,
+                  backgroundColor: 'transparent',
+                }
+              : null),
             ...inputStyle,
           }}
         />
