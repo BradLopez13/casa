@@ -86,6 +86,8 @@ type Action = {
   onPress: () => void;
   disabled?: boolean;
   busy?: boolean;
+  /** Drawn as plain text instead of the pósit pill (another primary owns the screen). */
+  quiet?: boolean;
 };
 
 const TITLE_SIZE = 20;
@@ -109,6 +111,7 @@ export function ModalHeader({
   /** Padding above and below the bar, in `space()` steps. */
   step: number;
 }) {
+  const { quiet, ...rest } = action;
   const { colors, space } = useTheme();
   const [row, setRow] = useState(0);
   const [cancelWidth, setCancelWidth] = useState(0);
@@ -178,7 +181,7 @@ export function ModalHeader({
         </View>
         {inline ? heading : <View style={{ flex: 1 }} />}
         <View onLayout={width(setSaveWidth)}>
-          <HeaderAction {...action} strong />
+          <HeaderAction {...rest} strong={!quiet} />
         </View>
       </View>
       {inline ? null : heading}

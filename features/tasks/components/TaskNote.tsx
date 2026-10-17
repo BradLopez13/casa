@@ -93,6 +93,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
             decorative
             variant={mark ? 'filled' : 'empty'}
             posit={!done}
+            check={done ? 'filled' : 'faint'}
             color={mark?.color ?? 'teal'}
             initial={mark?.initial ?? ''}
             accessibilityLabel={assigneeName ?? ''}

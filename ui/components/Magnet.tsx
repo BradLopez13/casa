@@ -1,6 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
 import { pressedOpacity } from '../buttonLook';
+import { magnetCheckStyle, type MagnetCheck } from '../magnetCheck';
 import { useTheme } from '../theme';
 import {
   displayFont,
@@ -27,6 +29,8 @@ type Props = {
   decorative?: boolean;
   /** Empty magnet only: draw the dashed ring in the pósit, 2 dp, in dark mode (the checkbox of a task note). */
   posit?: boolean;
+  /** faint: an open check (corner badge, or centred when empty). filled: the magnet fills with the accent and shows the check. */
+  check?: MagnetCheck;
 };
 
 const RING = 2;
@@ -44,6 +48,7 @@ export function Magnet({
   accessibilityRole = 'button',
   decorative = false,
   posit = false,
+  check,
 }: Props) {
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
@@ -51,6 +56,8 @@ export function Magnet({
   const { scheme } = useTheme();
   const positRing = empty && posit && scheme === 'dark';
   // The chip-sized magnet sits inside a pill and stays flat.
+  const look = check ? magnetCheckStyle(check, colors) : null;
+  const filledCheck = look?.fill != null;
   const depth = !empty && size !== 'sm' ? shadows.magnet : null;
 
   const disc = (
@@ -61,20 +68,20 @@ export function Magnet({
         borderRadius: diameter / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: empty ? 'transparent' : colors.magnet[color],
-        ...(empty
+        backgroundColor: look?.fill ?? (empty ? 'transparent' : colors.magnet[color]),
+        ...(empty && !filledCheck
           ? positRing
             ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
             : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline }
           : {}),
         // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
-        ...(!empty && colors.magnetRing !== 'transparent'
+        ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
           : {}),
         ...depth,
       }}
     >
-      {empty ? null : (
+      {empty || filledCheck ? null : (
         <Text
           maxFontSizeMultiplier={1.6}
           style={{
@@ -89,6 +96,38 @@ export function Magnet({
           {initial}
         </Text>
       )}
+      {look && (filledCheck || empty) ? (
+        <Ionicons
+          name="checkmark"
+          size={Math.round(diameter * (filledCheck ? 0.6 : 0.5))}
+          color={look.tint}
+          style={{ opacity: look.opacity, fontWeight: filledCheck ? '700' : '400' }}
+          accessible={false}
+        />
+      ) : null}
+      {look && !filledCheck && !empty ? (
+        <View
+          style={{
+            position: 'absolute',
+            right: -2,
+            bottom: -2,
+            width: Math.round(diameter * 0.42),
+            height: Math.round(diameter * 0.42),
+            borderRadius: diameter,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.taskNote,
+          }}
+        >
+          <Ionicons
+            name="checkmark"
+            size={Math.round(diameter * 0.34)}
+            color={look.tint}
+            style={{ opacity: look.opacity }}
+            accessible={false}
+          />
+        </View>
+      ) : null}
     </View>
   );
 

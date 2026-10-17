@@ -45,6 +45,8 @@ type Props = {
    * never generates a successor. The row is hidden and the rule saves as it was.
    */
   repeatEditable?: boolean;
+  /** True when the footer holds the screen's one primary: Save in the header turns quiet. */
+  saveQuiet?: boolean;
 };
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -71,6 +73,7 @@ export function TaskForm({
   onSave,
   footer,
   repeatEditable = true,
+  saveQuiet = false,
 }: Props) {
   const { colors, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
@@ -160,6 +163,7 @@ export function TaskForm({
             onPress: save,
             disabled: saving,
             busy: saving,
+            quiet: saveQuiet,
           }}
         />
         <KeyboardAvoidingView

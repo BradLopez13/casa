@@ -191,6 +191,8 @@
   "taskForm.everyPlus": "Más días",
   "taskForm.repeatNext": "Después: {date}",
   "taskForm.skip": "Saltar esta vez",
+  "taskForm.complete": "Marcar como hecha",
+  "taskForm.reopen": "Reabrir",
   "tasks.skipped": "Saltada. La siguiente: {date}",
   "tasks.overdue.yesterday": "Vencida ayer",
   "tasks.overdue.on": "Vencida el {date}",

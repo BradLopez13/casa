@@ -11,7 +11,7 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
-import { useSkipTask, useTaskMutation, useTasks } from '@/features/tasks/queries';
+import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -55,6 +55,7 @@ function EditTaskScreen() {
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const remove = useTaskMutation<void, void>(() => deleteTask(id));
   const skip = useSkipTask(householdId);
+  const toggler = useToggleTask(householdId, userId);
   const close = useCloseModal('/today');
 
   if (task === undefined) {
@@ -86,6 +87,8 @@ function EditTaskScreen() {
   }
 
   const canDelete = task.createdBy === userId || membership?.role === 'owner';
+  const done = task.completedAt !== null;
+  const toggling = toggler.isBusy(task.id);
   const failure = skip.error ?? remove.error ?? save.error;
   // Saving, deleting or skipping locks the other two, and a success keeps them locked while closing.
   const busy =
@@ -94,7 +97,8 @@ function EditTaskScreen() {
     remove.isPending ||
     remove.isSuccess ||
     skip.isPending ||
-    skip.isSuccess;
+    skip.isSuccess ||
+    toggling;
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&
@@ -115,6 +119,14 @@ function EditTaskScreen() {
         },
       },
     );
+  };
+  const toggleDone = () => {
+    if (isProvisional(task)) return;
+    save.reset();
+    remove.reset();
+    skip.reset();
+    toggler.toggle({ id: task.id, done: !done });
+    close();
   };
   const initial: TaskInput = {
     title: task.title,
@@ -143,39 +155,46 @@ function EditTaskScreen() {
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}
+        saveQuiet={!done}
         footer={
-          canSkip || canDelete ? (
-            <View style={{ gap: space(3) }}>
-              {canSkip ? (
-                <Button
-                  testID="task-form.skip"
-                  title={t('taskForm.skip')}
-                  icon={actionIcons.skip}
-                  variant="secondary"
-                  disabled={busy}
-                  onPress={skipOnce}
-                />
-              ) : null}
-              {canDelete ? (
-                <Button
-                  testID="task-form.delete"
-                  title={t('taskForm.delete')}
-                  variant="tertiary"
-                  tone="destructive"
-                  icon={actionIcons.delete}
-                  // A saved edit or skip is already closing the modal: no confirm dialog on top.
-                  disabled={
-                    save.isPending ||
-                    save.isSuccess ||
-                    remove.isSuccess ||
-                    skip.isPending ||
-                    skip.isSuccess
-                  }
-                  onPress={() => setConfirming(true)}
-                />
-              ) : null}
-            </View>
-          ) : null
+          <View style={{ gap: space(3) }}>
+            <Button
+              testID={done ? 'task-form.reopen' : 'task-form.complete'}
+              title={t(done ? 'taskForm.reopen' : 'taskForm.complete')}
+              icon={done ? undefined : actionIcons.confirm}
+              variant={done ? 'secondary' : 'primary'}
+              disabled={busy || isProvisional(task)}
+              onPress={toggleDone}
+            />
+            {canSkip ? (
+              <Button
+                testID="task-form.skip"
+                title={t('taskForm.skip')}
+                icon={actionIcons.skip}
+                variant="tertiary"
+                disabled={busy}
+                onPress={skipOnce}
+              />
+            ) : null}
+            {canDelete ? (
+              <Button
+                testID="task-form.delete"
+                title={t('taskForm.delete')}
+                variant="tertiary"
+                tone="destructive"
+                icon={actionIcons.delete}
+                // A saved edit or skip is already closing the modal: no confirm dialog on top.
+                disabled={
+                  save.isPending ||
+                  save.isSuccess ||
+                  remove.isSuccess ||
+                  skip.isPending ||
+                  skip.isSuccess
+                }
+                onPress={() => setConfirming(true)}
+              />
+            ) : null}
+          </View>
         }
       />
       <ConfirmDialog
