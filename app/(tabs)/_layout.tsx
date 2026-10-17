@@ -2,7 +2,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import type { ComponentProps } from 'react';
-import { Platform, Text, useWindowDimensions, type ColorValue } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type ColorValue,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMembership } from '@/features/households/queries';
 import { NavigationRail } from '@/features/navigation/NavigationRail';
@@ -12,6 +19,10 @@ import { t } from '@/i18n';
 import { TAB_LABEL_LINE, TAB_LABEL_MAX_SCALE, tabBarHeight } from '@/ui/tabBar';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
+
+// The active tab's tonal pill behind its icon.
+const PILL_WIDTH = 64;
+const PILL_HEIGHT = 32;
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -25,7 +36,30 @@ function tabIcon(active: IconName, inactive: IconName) {
     size: number;
     focused: boolean;
   }) {
-    return <Ionicons name={focused ? active : inactive} color={color} size={size} />;
+    const { colors, radii } = useTheme();
+    return (
+      <View
+        collapsable={false}
+        style={{
+          width: PILL_WIDTH,
+          height: PILL_HEIGHT,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {/* Mounted with its radius and colour together; toggling one view's colour from transparent
+            leaves later pills square on Android. */}
+        {focused ? (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { borderRadius: radii.pill, backgroundColor: colors.tonal },
+            ]}
+          />
+        ) : null}
+        <Ionicons name={focused ? active : inactive} color={color} size={size} />
+      </View>
+    );
   }
   return TabIcon;
 }
