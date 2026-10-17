@@ -156,7 +156,7 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
   });
 
   it('chalk text on the brand band', () => {
-    expect(contrastRatio('#F3F4F0', p.brandBand)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(p.onBrandBand, p.brandBand)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('the tonal pill shows its shape by fill or by edge', () => {

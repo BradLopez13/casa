@@ -63,9 +63,8 @@ export default function SignInScreen() {
   };
 
   return (
-    <CenteredCard>
-      <BrandHeader />
-      <ScreenTitle>{t('auth.signIn.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.signIn.title')}</ScreenTitle>
       <SocialButtons />
       {hasPendingInvite ? (
         <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>

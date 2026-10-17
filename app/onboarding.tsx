@@ -70,9 +70,8 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <CenteredCard>
-      <BrandHeader />
-      <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
+    <CenteredCard header={<BrandHeader />}>
+      <ScreenTitle subtitle={t('brand.tagline')}>{t('onboarding.title')}</ScreenTitle>
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('onboarding.welcome')}</Text>
       <TextField
         testID="onboarding.name"
