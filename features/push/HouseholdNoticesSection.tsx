@@ -5,6 +5,7 @@ import { useSession } from '@/features/auth/SessionProvider';
 import { getPermission, requestPermission } from '@/features/reminders/notifications';
 import type { NotificationPermission } from '@/features/reminders/plan';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Toggle } from '@/ui/components/Toggle';
@@ -118,6 +119,8 @@ export function HouseholdNoticesSection() {
           testID="settings.push.enable"
           title={t('settings.pushEnable')}
           variant="secondary"
+          icon={actionIcons.openPhoneSettings}
+          width="hug"
           disabled={asking}
           onPress={enable}
         />
@@ -134,6 +137,8 @@ export function HouseholdNoticesSection() {
           <Button
             title={t('settings.remindersOpenSettings')}
             variant="secondary"
+            icon={actionIcons.openPhoneSettings}
+            width="hug"
             onPress={() => {
               Linking.openSettings().catch(() => undefined);
             }}

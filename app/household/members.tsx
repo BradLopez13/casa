@@ -26,6 +26,8 @@ import { forgetHouseholdData } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
 import { locale, t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
@@ -224,7 +226,7 @@ export default function MembersScreen() {
   const dialog = pending ? DIALOGS[pending.kind] : null;
   const marks = memberMarks(members.data ?? []);
   const markOf = (m: { userId: string; displayName: string }): MemberMark =>
-    marks.get(m.userId) ?? { color: 'mustard', initial: firstInitial(m.displayName) };
+    marks.get(m.userId) ?? { color: 'teal', initial: firstInitial(m.displayName) };
 
   // A section title sits further from what comes before it than from its own content.
   const heading = (key: MessageKey) => (
@@ -245,6 +247,9 @@ export default function MembersScreen() {
           <Button
             testID="members.retry"
             title={t('errors.retry')}
+            variant="secondary"
+            icon={actionIcons.retry}
+            width="hug"
             loading={members.isFetching}
             onPress={() => void members.refetch()}
           />
@@ -273,19 +278,25 @@ export default function MembersScreen() {
   // below them like every other item.
   const household = (
     <View style={{ gap: space(4), paddingTop: split ? 0 : space(4) }}>
-      <Button
-        testID="members.invite"
-        title={t('members.invite')}
-        loading={action === 'share'}
-        onPress={() => void onInvite()}
-      />
-      <Button
-        testID="members.copy-link"
-        title={t('members.copyLink')}
-        variant="secondary"
-        loading={action === 'copy'}
-        onPress={() => void onCopyLink()}
-      />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(3) }}>
+        <Button
+          testID="members.invite"
+          title={t('members.invite')}
+          icon={actionIcons.invite}
+          width="hug"
+          loading={action === 'share'}
+          onPress={() => void onInvite()}
+        />
+        <Button
+          testID="members.copy-link"
+          title={t('members.copyLink')}
+          variant="secondary"
+          icon={actionIcons.copyLink}
+          width="hug"
+          loading={action === 'copy'}
+          onPress={() => void onCopyLink()}
+        />
+      </View>
       {copied ? (
         <Text testID="members.copied" style={{ color: colors.muted, fontSize: 14 }}>
           {t('members.copied')}
@@ -300,6 +311,9 @@ export default function MembersScreen() {
           <Button
             testID="members.invites-retry"
             title={t('errors.retry')}
+            variant="secondary"
+            icon={actionIcons.retry}
+            width="hug"
             loading={invites.isFetching}
             onPress={() => void invites.refetch()}
           />
@@ -329,7 +343,9 @@ export default function MembersScreen() {
                 <Button
                   testID={`members.revoke.${inv.id}`}
                   title={t('members.revoke')}
-                  variant="secondary"
+                  variant="tertiary"
+                  icon={actionIcons.revoke}
+                  width="hug"
                   loading={revoke.isPending && revoke.variables === inv.id}
                   onPress={() => onRevoke(inv.id)}
                 />
@@ -340,25 +356,30 @@ export default function MembersScreen() {
       ) : (
         <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
       )}
-      <View style={{ marginTop: space(4) }}>
+      <AccountZone>
         <Button
           testID="members.leave"
           title={t('members.leave')}
-          variant="secondary"
+          variant="tertiary"
+          icon={actionIcons.signOut}
+          width="hug"
           onPress={onLeave}
         />
-      </View>
-      {isOwner ? (
-        <Button
-          testID="members.delete-household"
-          title={t('members.deleteHousehold')}
-          variant="danger"
-          onPress={() => {
-            setFooterError(undefined);
-            setPending({ kind: 'delete' });
-          }}
-        />
-      ) : null}
+        {isOwner ? (
+          <Button
+            testID="members.delete-household"
+            title={t('members.deleteHousehold')}
+            variant="tertiary"
+            tone="destructive"
+            icon={actionIcons.delete}
+            width="hug"
+            onPress={() => {
+              setFooterError(undefined);
+              setPending({ kind: 'delete' });
+            }}
+          />
+        ) : null}
+      </AccountZone>
       {footerError ? <ErrorText testID="members.footer-error">{footerError}</ErrorText> : null}
     </View>
   );
@@ -380,12 +401,17 @@ export default function MembersScreen() {
                   : { gap: space(4) }
               }
             >
-              <Button
-                testID="members.back"
-                title={t('members.back')}
-                variant="secondary"
-                onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
-              />
+              {/* A hug button pins itself to the start; this wrapper centres it on the row. */}
+              <View style={{ alignSelf: split ? 'center' : 'flex-start' }}>
+                <Button
+                  testID="members.back"
+                  title={t('members.back')}
+                  variant="tertiary"
+                  icon={actionIcons.back}
+                  width="hug"
+                  onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
+                />
+              </View>
               <View style={{ flexShrink: 1 }}>
                 <ScreenTitle>{t('members.title')}</ScreenTitle>
               </View>

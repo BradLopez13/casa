@@ -28,6 +28,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { useLayout } from '@/ui/useLayout';
+import { actionIcons } from '@/ui/actionIcons';
 
 type Screen = ReturnType<typeof useTaskScreen>;
 
@@ -71,6 +72,8 @@ export default function TodayScreen() {
       <Button
         testID="today.invite"
         title={t('today.empty.cta')}
+        variant="primary"
+        icon={actionIcons.invite}
         onPress={() => router.push('/household/members')}
       />
     </View>

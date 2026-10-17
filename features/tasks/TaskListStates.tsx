@@ -6,6 +6,7 @@ import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { taskErrorMessage } from './errors';
+import { actionIcons } from '@/ui/actionIcons';
 
 type Props = { query: UseQueryResult<unknown>; empty: ReactNode };
 
@@ -26,6 +27,7 @@ export function TaskListStates({ query, empty }: Props) {
         <Button
           title={t('errors.retry')}
           variant="secondary"
+          icon={actionIcons.retry}
           loading={query.isFetching}
           onPress={() => void query.refetch()}
         />

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { signOut } from '@/features/auth/api';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
 import { createHousehold } from '@/features/households/api';
@@ -9,6 +9,9 @@ import { parseInviteToken } from '@/features/households/invite-link';
 import { householdNameSchema } from '@/features/households/schemas';
 import { membershipKey, useHouseholdMutation } from '@/features/households/queries';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { AccountZone } from '@/ui/components/AccountZone';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
@@ -68,7 +71,9 @@ export default function OnboardingScreen() {
 
   return (
     <CenteredCard>
+      <BrandHeader />
       <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
+      <Text style={{ color: colors.ink, fontSize: 16 }}>{t('onboarding.welcome')}</Text>
       <TextField
         testID="onboarding.name"
         label={t('onboarding.nameLabel')}
@@ -80,6 +85,8 @@ export default function OnboardingScreen() {
       <Button
         testID="onboarding.create"
         title={t('onboarding.create')}
+        icon={actionIcons.home}
+        width="full"
         loading={create.isPending}
         onPress={submitCreate}
       />
@@ -103,17 +110,21 @@ export default function OnboardingScreen() {
         testID="onboarding.join"
         title={t('onboarding.join')}
         variant="secondary"
+        icon={actionIcons.join}
+        width="full"
         onPress={submitJoin}
       />
-      <View style={{ marginTop: space(4), gap: space(3) }}>
+      <AccountZone>
         <Button
           testID="onboarding.sign-out"
           title={t('auth.signOut')}
-          variant="secondary"
+          variant="tertiary"
+          icon={actionIcons.signOut}
+          width="hug"
           onPress={() => void signOut().catch(() => undefined)}
         />
         <DeleteAccountButton testID="onboarding.delete-account" />
-      </View>
+      </AccountZone>
     </CenteredCard>
   );
 }

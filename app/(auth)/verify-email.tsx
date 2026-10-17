@@ -1,12 +1,13 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { resendSignUpCode, verifySignUpCode } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { fieldErrors, visibleAuthError } from '@/features/auth/form-errors';
 import { secondsLeft } from '@/features/auth/resend-cooldown';
 import { codeSchema } from '@/features/auth/schemas';
 import { t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { CodeField } from '@/ui/components/CodeField';
@@ -18,7 +19,7 @@ import { z } from 'zod';
 const nowMs = () => Date.now();
 
 export default function VerifyEmailScreen() {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; name?: string }>();
   const email = typeof params.email === 'string' ? params.email : '';
@@ -96,23 +97,31 @@ export default function VerifyEmailScreen() {
       <Button
         testID="verify-email.submit"
         title={t('auth.verify.submit')}
+        icon={actionIcons.confirm}
+        width="full"
         onPress={() => void submit()}
         loading={loading}
       />
-      <Button
-        testID="verify-email.resend"
-        title={left > 0 ? t('auth.verify.resendIn', { seconds: left }) : t('auth.verify.resend')}
-        variant="secondary"
-        disabled={left > 0}
-        loading={resending}
-        onPress={() => void resend()}
-      />
-      <Button
-        testID="verify-email.change-email"
-        title={t('auth.verify.changeEmail')}
-        variant="secondary"
-        onPress={() => router.replace({ pathname: '/sign-up', params: { email, name } })}
-      />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(4) }}>
+        <Button
+          testID="verify-email.resend"
+          title={left > 0 ? t('auth.verify.resendIn', { seconds: left }) : t('auth.verify.resend')}
+          variant="tertiary"
+          icon={actionIcons.resend}
+          width="hug"
+          disabled={left > 0}
+          loading={resending}
+          onPress={() => void resend()}
+        />
+        <Button
+          testID="verify-email.change-email"
+          title={t('auth.verify.changeEmail')}
+          variant="tertiary"
+          icon={actionIcons.changeEmail}
+          width="hug"
+          onPress={() => router.replace({ pathname: '/sign-up', params: { email, name } })}
+        />
+      </View>
     </CenteredCard>
   );
 }

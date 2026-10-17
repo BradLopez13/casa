@@ -46,6 +46,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+import { actionIcons } from '@/ui/actionIcons';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
@@ -160,6 +161,7 @@ export default function ShoppingScreen() {
         <Button
           title={t('errors.retry')}
           variant="secondary"
+          icon={actionIcons.retry}
           loading={itemsQuery.isFetching}
           onPress={() => void itemsQuery.refetch()}
         />

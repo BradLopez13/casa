@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { Magnet } from '@/ui/components/Magnet';
 import { useTheme } from '@/ui/theme';
@@ -73,17 +74,24 @@ export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemo
         </View>
       </View>
       {canManage && !isSelf ? (
-        <View style={{ gap: space(2) }}>
+        // Side by side when they fit; on a phone they wrap, and each already has a 44 dp target,
+        // so the lines need no extra gap to stay apart.
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space(2) }}>
           <Button
             testID={`members.make-owner.${member.userId}`}
             title={t('members.makeOwner')}
-            variant="secondary"
+            variant="tertiary"
+            icon={actionIcons.makeOwner}
+            width="hug"
             onPress={onMakeOwner}
           />
           <Button
             testID={`members.remove.${member.userId}`}
             title={t('members.remove')}
-            variant="secondary"
+            variant="tertiary"
+            tone="destructive"
+            icon={actionIcons.removeMember}
+            width="hug"
             onPress={onRemove}
           />
         </View>

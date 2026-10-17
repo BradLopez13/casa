@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { signIn } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
@@ -8,16 +8,19 @@ import { signInSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
+import { PasswordField } from '@/ui/components/PasswordField';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 
 export default function SignInScreen() {
   const { hasPendingInvite } = usePendingInvite();
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const router = useRouter();
   const { error: errorParam } = useLocalSearchParams<{ error?: string }>();
   const [email, setEmail] = useState('');
@@ -61,6 +64,7 @@ export default function SignInScreen() {
 
   return (
     <CenteredCard>
+      <BrandHeader />
       <ScreenTitle>{t('auth.signIn.title')}</ScreenTitle>
       <SocialButtons />
       {hasPendingInvite ? (
@@ -80,38 +84,53 @@ export default function SignInScreen() {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <TextField
+      <PasswordField
         testID="sign-in.password"
         label={t('auth.fields.password')}
         value={password}
         onChangeText={setPassword}
         error={fieldError('password')}
-        secureTextEntry
         textContentType="password"
         autoComplete="current-password"
-        autoCapitalize="none"
       />
+      <View style={{ alignSelf: 'flex-end' }}>
+        <Button
+          testID="sign-in.forgot-password"
+          title={t('auth.forgot.link')}
+          variant="tertiary"
+          width="hug"
+          onPress={() =>
+            router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+          }
+        />
+      </View>
       {shownError ? <ErrorText>{t(shownError)}</ErrorText> : null}
       <Button
         testID="sign-in.submit"
         title={t('auth.signIn.submit')}
+        icon={actionIcons.logIn}
+        width="full"
         onPress={() => void submit()}
         loading={loading}
       />
-      <Button
-        testID="sign-in.go-sign-up"
-        title={t('auth.signIn.goSignUp')}
-        variant="secondary"
-        onPress={() => router.replace('/sign-up')}
-      />
-      <Button
-        testID="sign-in.forgot-password"
-        title={t('auth.forgot.link')}
-        variant="secondary"
-        onPress={() =>
-          router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
-        }
-      />
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: space(1),
+        }}
+      >
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('auth.signIn.noAccount')}</Text>
+        <Button
+          testID="sign-in.go-sign-up"
+          title={t('auth.signIn.goSignUp')}
+          variant="tertiary"
+          width="hug"
+          onPress={() => router.replace('/sign-up')}
+        />
+      </View>
     </CenteredCard>
   );
 }

@@ -11,7 +11,7 @@ appId: com.bradlopez13.casa
           stopApp: true
       - extendedWaitUntil:
           visible:
-            id: sign-in.go-sign-up
+            id: sign-in.email
           timeout: 30000
 
 # Sign in as Ana
@@ -57,4 +57,4 @@ appId: com.bradlopez13.casa
 # It shows up through the broadcast, without pulling to refresh
 - extendedWaitUntil:
     visible: Pan
-    timeout: 10000
+    timeout: 20000

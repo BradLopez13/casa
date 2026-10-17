@@ -190,7 +190,7 @@ export function ShoppingRow({
           <Magnet
             size="sm"
             variant={buyerMark ? 'filled' : 'empty'}
-            color={buyerMark?.color ?? 'mustard'}
+            color={buyerMark?.color ?? 'teal'}
             initial={buyerMark?.initial ?? ''}
             accessibilityLabel={buyerName ? t('shopping.a11y.boughtBy', { name: buyerName }) : ''}
             decorative={buyerName === undefined}

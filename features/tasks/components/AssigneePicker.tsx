@@ -64,7 +64,7 @@ export function AssigneePicker({ value, members, marks, userId, onChange }: Prop
       <Choice name={t('taskForm.nobody')}>
         <Magnet
           initial=""
-          color="mustard"
+          color="teal"
           variant="empty"
           size="md"
           selected={value === null}

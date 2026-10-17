@@ -45,6 +45,7 @@ import {
   persistDehydrateOptions,
   resumeShoppingQueue,
 } from '@/features/shopping/offline';
+import { actionIcons } from '@/ui/actionIcons';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -130,13 +131,16 @@ function MembershipError({
         <Button
           testID="membership.retry"
           title={t('errors.retry')}
+          variant="secondary"
+          icon={actionIcons.retry}
           loading={retrying}
           onPress={onRetry}
         />
         <Button
           testID="membership.sign-out"
           title={t('auth.signOut')}
-          variant="secondary"
+          variant="tertiary"
+          icon={actionIcons.signOut}
           onPress={() => void signOut().catch(() => undefined)}
         />
       </Screen>

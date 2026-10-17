@@ -79,14 +79,17 @@ export function ConfirmDialog({
             <Button
               testID="members.confirm"
               title={content.confirmLabel}
-              variant={content.destructive ? 'danger' : 'primary'}
+              variant="primary"
+              width="full"
+              tone={content.destructive ? 'destructive' : 'default'}
               loading={loading}
               onPress={onConfirm}
             />
             <Button
               testID="members.cancel"
               title={t('members.cancel')}
-              variant="secondary"
+              variant="tertiary"
+              width="full"
               disabled={loading}
               onPress={onCancel}
             />

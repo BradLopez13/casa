@@ -49,6 +49,33 @@ describe('fieldErrors', () => {
   });
 });
 
+describe('fieldErrors for the confirmation', () => {
+  it('maps a mismatch', () => {
+    const r = resetPasswordSchema.safeParse({
+      code: '123456',
+      password: '12345678',
+      passwordConfirm: '1234567x',
+    });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'reset' })).toEqual({
+      passwordConfirm: 'auth.errors.passwordMismatch',
+    });
+  });
+
+  it('maps an empty repetition', () => {
+    const r = signUpSchema.safeParse({
+      displayName: 'Ana',
+      email: 'a@b.co',
+      password: '12345678',
+      passwordConfirm: '',
+    });
+    if (r.success) throw new Error('expected failure');
+    expect(fieldErrors(r.error, { form: 'signUp' })).toEqual({
+      passwordConfirm: 'auth.errors.passwordConfirmRequired',
+    });
+  });
+});
+
 describe('authErrorKey', () => {
   it('namespaces the code', () => {
     expect(authErrorKey('EMAIL_TAKEN')).toBe('auth.errors.EMAIL_TAKEN');

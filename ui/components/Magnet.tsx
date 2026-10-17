@@ -57,6 +57,10 @@ export function Magnet({
         justifyContent: 'center',
         backgroundColor: empty ? 'transparent' : colors.magnet[color],
         ...(empty ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline } : {}),
+        // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
+        ...(!empty && colors.magnetRing !== 'transparent'
+          ? { borderWidth: 1, borderColor: colors.magnetRing }
+          : {}),
         ...depth,
       }}
     >

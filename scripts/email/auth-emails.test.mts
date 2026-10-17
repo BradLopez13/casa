@@ -19,7 +19,13 @@ describe('auth emails', () => {
     expect(html).toContain('<meta name="color-scheme" content="light">');
     expect(html).toContain(SYMBOL_URL);
     expect(html).toContain('La casa, en equipo.');
-    expect(html).toContain('#263663');
+  });
+
+  it.each(names)('%s uses the Pizarra y pósit palette', (name) => {
+    const html = authEmails()[name].html.toUpperCase();
+    for (const old of ['#263663', '#F0AD83', '#FFF6E8']) expect(html).not.toContain(old);
+    expect(html).toContain('#2E3B41');
+    expect(html).toContain('#F2D04B');
   });
 
   it.each(names)('%s has no links to click', (name) => {
@@ -28,6 +34,10 @@ describe('auth emails', () => {
 
   it.each(['confirmation', 'recovery'] as const)('%s shows the code once', (name) => {
     expect(count(authEmails()[name].html, '{{ .Token }}')).toBe(1);
+  });
+
+  it.each(['confirmation', 'recovery'] as const)('%s code pill has a slate border', (name) => {
+    expect(authEmails()[name].html).toMatch(/border: 2px solid #2E3B41[^"]*">{{ .Token }}/);
   });
 
   it('the password notice has no code', () => {

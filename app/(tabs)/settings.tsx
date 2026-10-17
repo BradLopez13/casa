@@ -10,7 +10,10 @@ import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSe
 import { useMembers, useMembership } from '@/features/households/queries';
 import { settingsPanes, startsBlock, type SettingsGroup } from '@/features/settings/settingsPanes';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
+import { ListRow } from '@/ui/components/ListRow';
 import { PaneHeader } from '@/ui/components/PaneHeader';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -33,21 +36,18 @@ export default function SettingsScreen() {
       case 'profile':
         return (
           <View style={{ gap: space(1) }}>
-            <Text style={{ color: colors.muted, fontSize: 14 }}>{t('settings.displayName')}</Text>
-            <Text
-              testID="settings.display-name"
-              style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}
-            >
+            <Text style={{ color: colors.muted, fontSize: 15 }}>{t('settings.displayName')}</Text>
+            <Text testID="settings.display-name" style={{ color: colors.ink, fontSize: 17 }}>
               {displayName}
             </Text>
           </View>
         );
       case 'members':
         return (
-          <Button
+          <ListRow
             testID="settings.members"
             title={t('settings.members')}
-            variant="secondary"
+            icon={actionIcons.people}
             onPress={() => router.push('/household/members')}
           />
         );
@@ -57,11 +57,13 @@ export default function SettingsScreen() {
         return <HouseholdNoticesSection />;
       case 'account':
         return (
-          <View style={{ gap: space(3) }}>
+          <AccountZone>
             <Button
               testID="settings.sign-out"
               title={t('auth.signOut')}
-              variant="secondary"
+              variant="tertiary"
+              icon={actionIcons.signOut}
+              width="hug"
               onPress={() => void signOut().catch(() => undefined)}
             />
             <DeleteAccountButton
@@ -69,7 +71,7 @@ export default function SettingsScreen() {
               alone={alone}
               disabled={!members.data}
             />
-          </View>
+          </AccountZone>
         );
     }
   };

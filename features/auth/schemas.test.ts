@@ -7,7 +7,12 @@ import {
   signUpSchema,
 } from './schemas';
 
-const valid = { displayName: 'Ana', email: 'ana@example.com', password: '12345678' };
+const valid = {
+  displayName: 'Ana',
+  email: 'ana@example.com',
+  password: '12345678',
+  passwordConfirm: '12345678',
+};
 
 describe('signUpSchema', () => {
   it('accepts valid input', () => {
@@ -20,7 +25,9 @@ describe('signUpSchema', () => {
   });
 
   it('rejects a 7 character password', () => {
-    expect(signUpSchema.safeParse({ ...valid, password: '1234567' }).success).toBe(false);
+    expect(
+      signUpSchema.safeParse({ ...valid, password: '1234567', passwordConfirm: '1234567' }).success,
+    ).toBe(false);
   });
 
   it('accepts an 8 character password', () => {
@@ -72,15 +79,56 @@ describe('emailSchema', () => {
 
 describe('resetPasswordSchema', () => {
   it('accepts a code and an 8 character password', () => {
-    expect(resetPasswordSchema.safeParse({ code: '123456', password: '12345678' }).success).toBe(
-      true,
-    );
+    expect(
+      resetPasswordSchema.safeParse({
+        code: '123456',
+        password: '12345678',
+        passwordConfirm: '12345678',
+      }).success,
+    ).toBe(true);
   });
 
   it('rejects a 7 character password on password', () => {
-    const r = resetPasswordSchema.safeParse({ code: '123456', password: '1234567' });
+    const r = resetPasswordSchema.safeParse({
+      code: '123456',
+      password: '1234567',
+      passwordConfirm: '1234567',
+    });
     expect(r.success).toBe(false);
     if (r.success) return;
     expect(r.error.issues[0]?.path[0]).toBe('password');
+  });
+});
+
+describe('password confirmation', () => {
+  const reset = { code: '123456', password: '12345678', passwordConfirm: '12345678' };
+  const cases = [
+    ['signUp', signUpSchema, valid],
+    ['reset', resetPasswordSchema, reset],
+  ] as const;
+  const confirmParams = (
+    schema: typeof signUpSchema | typeof resetPasswordSchema,
+    input: object,
+  ): unknown[] | null => {
+    const r = schema.safeParse(input);
+    if (r.success) return null;
+    const issues: { path: PropertyKey[]; params?: unknown }[] = r.error.issues;
+    return issues.filter((i) => i.path[0] === 'passwordConfirm').map((i) => i.params);
+  };
+
+  it.each(cases)('%s: accepts matching passwords', (_n, schema, base) => {
+    expect(schema.safeParse(base).success).toBe(true);
+  });
+
+  it.each(cases)('%s: flags a mismatch on passwordConfirm', (_n, schema, base) => {
+    expect(confirmParams(schema, { ...base, passwordConfirm: '87654321' })).toEqual([
+      { reason: 'mismatch' },
+    ]);
+  });
+
+  it.each(cases)('%s: flags an empty repetition as required', (_n, schema, base) => {
+    expect(confirmParams(schema, { ...base, passwordConfirm: '' })).toEqual([
+      { reason: 'required' },
+    ]);
   });
 });

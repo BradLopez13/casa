@@ -18,16 +18,30 @@ export type Palette = {
   cobalt: string;
   /** Text and icons on a cobalt fill. */
   onCobalt: string;
+  /** Fill of the main action pill: the pósit, in both themes. */
+  accent: string;
+  /** Text and icons on the accent fill. */
+  onAccent: string;
+  /** Edge of the accent pill, so it shows on the page where the yellow alone would not. */
+  accentEdge: string;
+  /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
+  tonal: string;
+  /** Edge of the secondary pill, for when its fill alone does not show against the ground. */
+  tonalEdge: string;
   /** Only for overdue tasks and irreversible actions, always next to the written word. */
   red: string;
+  /** Text and icons on a red fill (the destructive primary button). */
+  onRed: string;
   /** Quiet separators that carry no meaning on their own. */
   hairline: string;
   /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
   outline: string;
   /** The door handle. */
   handle: string;
-  /** Initials on a magnet: the deepest navy of the brand ink, readable on every magnet colour. */
+  /** Initials on a magnet: the deepest slate, readable on every magnet colour. */
   magnetInk: string;
+  /** Thin ring around a magnet where its fill is light on the ground; 'transparent' for none. */
+  magnetRing: string;
   magnet: Record<MagnetColor, string>;
   /** The fridge light revealed by pull-to-refresh. */
   light: { top: string; text: string; shelf: string };
@@ -35,65 +49,73 @@ export type Palette = {
   scrim: string;
 };
 
-// Nido brand: ink #263663, apricot #F0AD83, cream #FFF6E8, white. page, door, note, ink, cobalt,
-// onCobalt and red are fixed by the spec; the rest are mixes of those colours, warm and quiet.
+// Pizarra y pósit: slate #2E3B41, pósit #F2D04B, paper #F3F4F0. The whole palette comes from the
+// Pizarra y pósit spec (§1.1).
 export const palettes: Record<Scheme, Palette> = {
   light: {
-    page: '#FFF6E8',
-    door: '#FBE0CD',
+    page: '#F3F4F0',
+    door: '#DCE3E1',
     note: '#FFFFFF',
-    ink: '#263663',
-    // Ink softened with 30% apricot: a warm dusk grey, 5.2:1 on the door.
-    muted: '#635A6D',
-    mutedStrong: '#444868',
-    // Same as ink here, so actions must also differ by shape (pill, border, underline, icon).
-    cobalt: '#263663',
-    onCobalt: '#FFF6E8',
-    red: '#B4382E',
-    hairline: '#EEE2D6',
-    // Ink and apricot half and half: a warm taupe, 3.5:1 on the door.
-    outline: '#8B7173',
-    // Apricot is safe here: in light mode it never means "tappable".
-    handle: '#F0AD83',
-    magnetInk: '#151C33',
+    ink: '#1E2A2F',
+    muted: '#56636A',
+    mutedStrong: '#3F4A50',
+    // Slate. It is also the colour of tappable text, so actions must differ by shape too.
+    cobalt: '#2E3B41',
+    onCobalt: '#F3F4F0',
+    accent: '#F2D04B',
+    onAccent: '#1E2A2F',
+    // A darker pósit: the pill's edge on the paper (the yellow alone is only 1.4:1 there).
+    accentEdge: '#A8891A',
+    tonal: '#D3DCD9',
+    tonalEdge: '#6F7B80',
+    red: '#B3392F',
+    onRed: '#FFFFFF',
+    hairline: '#E3E7E3',
+    outline: '#6F7B80',
+    handle: '#6F7B80',
+    magnetInk: '#151B1E',
+    magnetRing: '#6F7B80',
     magnet: {
-      mustard: '#D9A740',
-      sage: '#6FA383',
-      coral: '#DD8C6C',
-      // #4C8E9C reached only 4.33:1 under the initial; one step lighter, same hue.
-      petrol: '#4F93A1',
-      pink: '#D58BA8',
+      teal: '#579488',
+      coral: '#C9725C',
+      sky: '#5B90BE',
+      pink: '#B86E97',
+      lilac: '#9284C8',
     },
-    light: { top: '#FDEBD9', text: '#6D606E', shelf: 'rgba(240,173,131,0.55)' },
-    scrim: 'rgba(38,54,99,0.45)',
+    light: { top: '#FFFFFF', text: '#56636A', shelf: 'rgba(242,208,75,0.40)' },
+    scrim: 'rgba(30,42,47,0.45)',
   },
   dark: {
-    page: '#151C33',
-    door: '#263663',
-    note: '#1E2744',
-    ink: '#FFF6E8',
-    // The light door colour dimmed toward ink: warm, clearly quieter than ink, 5.4:1 on the door.
-    muted: '#BBADAD',
-    mutedStrong: '#DBC7BD',
-    cobalt: '#F0AD83',
-    onCobalt: '#263663',
-    // Raspberry, ~30° of hue from the apricot action colour: overdue never reads as tappable.
-    red: '#F2808F',
-    hairline: '#353C54',
-    // Kept cool and grey so an unselected border never looks like the apricot selection.
-    outline: '#918B98',
-    // Not apricot: in dark mode apricot is the colour of what can be tapped.
-    handle: '#475377',
-    magnetInk: '#151C33',
+    page: '#151B1E',
+    door: '#27343A',
+    note: '#1E272B',
+    ink: '#ECEFEA',
+    muted: '#A7B2B5',
+    mutedStrong: '#CBD3D5',
+    // The pósit is the colour of what can be tapped in dark mode.
+    cobalt: '#F2D04B',
+    onCobalt: '#151B1E',
+    accent: '#F2D04B',
+    onAccent: '#151B1E',
+    accentEdge: '#F2D04B',
+    tonal: '#34444B',
+    tonalEdge: '#34444B',
+    red: '#F08A80',
+    onRed: '#151B1E',
+    hairline: '#2C383E',
+    outline: '#7F8B90',
+    handle: '#7F8B90',
+    magnetInk: '#151B1E',
+    magnetRing: 'transparent',
     magnet: {
-      mustard: '#E3B65A',
-      sage: '#86B898',
-      coral: '#E8A285',
-      petrol: '#69A7B4',
-      pink: '#E2A2BB',
+      teal: '#8FC3BA',
+      coral: '#E39A85',
+      sky: '#7FAED3',
+      pink: '#D9A0C0',
+      lilac: '#B3A6D9',
     },
-    light: { top: '#4C4047', text: '#FBE0CD', shelf: 'rgba(240,173,131,0.25)' },
-    scrim: 'rgba(10,13,26,0.65)',
+    light: { top: '#2B3A40', text: '#DCE3E1', shelf: 'rgba(242,208,75,0.40)' },
+    scrim: 'rgba(8,12,14,0.65)',
   },
 };
 
@@ -101,7 +123,7 @@ export type NoteEdge = { borderWidth: number; borderColor: string };
 
 /**
  * The edge of a note (and of anything drawn as one). In dark mode the note is barely lighter than
- * the page and the shadow is lost on navy, so a 1 dp hairline gives the paper its edge back; in
+ * the page and the shadow is lost on slate, so a 1 dp hairline gives the paper its edge back; in
  * light mode the shadow is enough.
  */
 export const noteEdges: Record<Scheme, NoteEdge> = {
@@ -134,6 +156,9 @@ export const CONTROL_HEIGHT = 48;
  */
 export const INLINE_PILL_HEIGHT = 36;
 
+/** Width of the edge on every primary (pósit) button. */
+export const PRIMARY_EDGE = 1.5;
+
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;
 
@@ -146,18 +171,18 @@ export type Shadow = {
   elevation: number;
 };
 
-/** Depth exists only on magnets and notes. Shadows are tinted with the brand ink, never grey. */
+/** Depth exists only on magnets and notes. Shadows are tinted with the slate ink, never grey. */
 export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow }> = {
   light: {
     magnet: {
-      shadowColor: '#263663',
+      shadowColor: '#1E2A2F',
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.32,
       shadowRadius: 5,
       elevation: 4,
     },
     note: {
-      shadowColor: '#263663',
+      shadowColor: '#1E2A2F',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.12,
       shadowRadius: 10,
@@ -166,14 +191,14 @@ export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow }> = {
   },
   dark: {
     magnet: {
-      shadowColor: '#0A0D1A',
+      shadowColor: '#080C0E',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.55,
       shadowRadius: 6,
       elevation: 5,
     },
     note: {
-      shadowColor: '#0A0D1A',
+      shadowColor: '#080C0E',
       shadowOffset: { width: 0, height: 5 },
       shadowOpacity: 0.45,
       shadowRadius: 10,

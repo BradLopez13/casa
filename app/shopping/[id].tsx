@@ -14,6 +14,7 @@ import {
 } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -78,7 +79,13 @@ function EditShoppingItemScreen() {
                 ? shoppingErrorMessage(itemsQuery.error)
                 : t('shopping.errors.ITEM_NOT_FOUND')}
             </ErrorText>
-            <Button testID="shopping.edit.close" title={t('taskForm.close')} onPress={close} />
+            <Button
+              testID="shopping.edit.close"
+              title={t('taskForm.close')}
+              variant="tertiary"
+              icon={actionIcons.close}
+              onPress={close}
+            />
           </>
         )}
       </Screen>
@@ -228,7 +235,9 @@ function EditForm({
             <Button
               testID="shopping.edit.delete"
               title={t('shopping.edit.delete')}
-              variant="danger"
+              variant="tertiary"
+              tone="destructive"
+              icon={actionIcons.delete}
               disabled={!online || busy}
               onPress={onDelete}
             />

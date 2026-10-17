@@ -4,6 +4,7 @@ import { AppState, Linking, Platform, Pressable, Text, View } from 'react-native
 import type { ReminderSettings } from '@/domain/reminders/settings';
 import { useSession } from '@/features/auth/SessionProvider';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
@@ -216,6 +217,8 @@ export function ReminderSettingsSection() {
           <Button
             title={t('settings.remindersOpenSettings')}
             variant="secondary"
+            icon={actionIcons.openPhoneSettings}
+            width="hug"
             onPress={() => {
               Linking.openSettings().catch(() => undefined);
             }}

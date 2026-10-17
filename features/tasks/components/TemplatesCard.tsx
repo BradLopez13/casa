@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { useTheme } from '@/ui/theme';
 
@@ -29,6 +30,7 @@ export function TemplatesCard() {
       <Button
         testID="today.templates"
         title={t('templates.cardAction')}
+        icon={actionIcons.templates}
         variant="secondary"
         onPress={() => router.push('/templates')}
       />

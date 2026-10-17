@@ -5,11 +5,12 @@
 // background so dark mode cannot recolour it.
 
 export const SYMBOL_URL =
-  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol.png';
+  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol-v2.png';
 
-const INK = '#263663';
-const APRICOT = '#F0AD83';
-const CREAM = '#FFF6E8';
+const SLATE = '#2E3B41';
+const POSIT = '#F2D04B';
+const PAPER = '#F3F4F0';
+const TEXT = '#1E2A2F';
 const WHITE = '#FFFFFF';
 // M PLUS Rounded 1c only loads in clients that honour web fonts (Apple Mail, iOS).
 const FONT = "'M PLUS Rounded 1c', 'Arial Rounded MT Bold', Arial, Helvetica, sans-serif";
@@ -30,12 +31,12 @@ const GREETING =
   '{{ if .Data.display_name }}Hola, {{ .Data.display_name }}.{{ else }}Hola.{{ end }}';
 
 const paragraph = (text: string, size = 16) =>
-  `<p style="margin: 0 0 16px; font-family: ${FONT}; font-size: ${size}px; line-height: 1.5; color: ${INK};">${text}</p>`;
+  `<p style="margin: 0 0 16px; font-family: ${FONT}; font-size: ${size}px; line-height: 1.5; color: ${TEXT};">${text}</p>`;
 
 const codePill = () =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 8px auto 16px;">
               <tr>
-                <td align="center" bgcolor="${CREAM}" style="background: ${CREAM}; border: 2px solid ${APRICOT}; border-radius: 999px; padding: 12px 28px; font-family: ${MONO}; font-size: 30px; font-weight: bold; letter-spacing: 6px; color: ${INK};">{{ .Token }}</td>
+                <td align="center" bgcolor="${PAPER}" style="background: ${PAPER}; border: 2px solid ${SLATE}; border-radius: 999px; padding: 12px 28px; font-family: ${MONO}; font-size: 30px; font-weight: bold; letter-spacing: 6px; color: ${TEXT};">{{ .Token }}</td>
               </tr>
             </table>`;
 
@@ -53,27 +54,27 @@ const layout = ({ title, preheader, heading, body, footer }: Content) => `<!doct
       body { margin: 0; padding: 0; }
     </style>
   </head>
-  <body style="margin: 0; padding: 0; background: ${CREAM};">
+  <body style="margin: 0; padding: 0; background: ${PAPER};">
     <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">${preheader}</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${CREAM}" style="background: ${CREAM};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAPER}" style="background: ${PAPER};">
       <tr>
-        <td align="center" bgcolor="${INK}" style="background: ${INK}; padding: 28px 16px 64px;">
+        <td align="center" bgcolor="${SLATE}" style="background: ${SLATE}; padding: 28px 16px 64px;">
           <img src="${SYMBOL_URL}" width="48" height="48" alt="" style="display: block; width: 48px; height: 48px; border: 0;">
-          <p style="margin: 8px 0 0; font-family: ${FONT}; font-size: 22px; font-weight: 800; color: ${CREAM};">Nido</p>
-          <p style="margin: 2px 0 0; font-family: ${FONT}; font-size: 14px; color: ${CREAM};">La casa, en equipo.</p>
+          <p style="margin: 8px 0 0; font-family: ${FONT}; font-size: 22px; font-weight: 800; color: ${PAPER};">Nido</p>
+          <p style="margin: 2px 0 0; font-family: ${FONT}; font-size: 14px; color: ${PAPER};">La casa, en equipo.</p>
         </td>
       </tr>
       <tr>
-        <td align="center" style="padding: 0 16px; background: linear-gradient(${INK} 0, ${INK} 40px, ${CREAM} 40px);">
+        <td align="center" style="padding: 0 16px; background: linear-gradient(${SLATE} 0, ${SLATE} 40px, ${PAPER} 40px);">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${WHITE}" style="max-width: 480px; background: ${WHITE}; border-radius: 16px;">
             <tr>
               <td align="center" style="padding: 20px 24px 8px;">
-                <div style="width: 20px; height: 20px; border-radius: 10px; background: ${APRICOT}; font-size: 0; line-height: 0;">&nbsp;</div>
+                <div style="width: 20px; height: 20px; border-radius: 10px; background: ${POSIT}; font-size: 0; line-height: 0;">&nbsp;</div>
               </td>
             </tr>
             <tr>
               <td align="center" style="padding: 8px 24px 24px; text-align: center;">
-                <h1 style="margin: 0 0 12px; font-family: ${FONT}; font-size: 26px; font-weight: 800; line-height: 1.2; color: ${INK};">${heading}</h1>
+                <h1 style="margin: 0 0 12px; font-family: ${FONT}; font-size: 26px; font-weight: 800; line-height: 1.2; color: ${TEXT};">${heading}</h1>
                 ${body}
               </td>
             </tr>

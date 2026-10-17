@@ -6,6 +6,7 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { ShoppingRow } from './ShoppingRow';
+import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
 
@@ -124,7 +125,9 @@ export function ShoppingSheet({
               <Button
                 testID="shopping.clear"
                 title={t('shopping.clear')}
-                variant="secondary"
+                variant="tertiary"
+                tone="destructive"
+                icon={actionIcons.delete}
                 disabled={!online}
                 loading={clearing}
                 onPress={onClear}

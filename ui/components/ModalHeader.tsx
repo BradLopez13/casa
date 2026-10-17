@@ -3,7 +3,7 @@ import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-n
 import { buttonLook } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, displayFont } from '../tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFont } from '../tokens';
 
 export function HeaderAction({
   testID,
@@ -23,7 +23,7 @@ export function HeaderAction({
   const { colors, radii, space } = useTheme();
   // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
   // turns muted. Neither is faded, so the label stays readable.
-  const look = buttonLook('primary', disabled ? 'disabled' : 'enabled', colors);
+  const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -41,17 +41,21 @@ export function HeaderAction({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      {/* The main action is a small cobalt pill, so it stands apart from "Cancelar" by shape and
-          not only by weight (in light mode cobalt is the same colour as the text). */}
+      {/* The main action is a compact primary button (filled), so it stands apart from
+          "Cancelar", a tertiary text action, by shape and not only by weight. No icon: the bar
+          must leave the title room to stay on the actions' line at the default text size.
+          Disabled, it waits as an empty outlined pill, like every disabled Button. */}
       <View
         style={
           strong
             ? {
                 minHeight: INLINE_PILL_HEIGHT,
-                justifyContent: 'center',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: space(2),
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
-                borderWidth: 1.5,
+                borderWidth: PRIMARY_EDGE,
                 borderColor: look.border,
                 backgroundColor: look.fill,
               }
@@ -62,8 +66,8 @@ export function HeaderAction({
           maxFontSizeMultiplier={1.3}
           style={{
             color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
-            fontSize: 17,
-            fontWeight: strong ? '600' : '400',
+            fontSize: strong ? 16 : 15,
+            fontWeight: '600',
           }}
         >
           {label}

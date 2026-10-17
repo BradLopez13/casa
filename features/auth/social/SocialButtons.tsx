@@ -2,6 +2,7 @@ import { lazy, Suspense, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { visibleAuthError } from '@/features/auth/form-errors';
 import { t, type MessageKey } from '@/i18n';
+import { Divider } from '@/ui/components/Divider';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
@@ -20,7 +21,7 @@ const GOOGLE_LOOK = {
 } as const;
 
 export function SocialButtons() {
-  const { scheme, colors, radii, space } = useTheme();
+  const { scheme, radii, space } = useTheme();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
 
@@ -106,9 +107,7 @@ export function SocialButtons() {
         </Suspense>
       ) : null}
       {error ? <ErrorText>{t(error)}</ErrorText> : null}
-      <Text style={{ color: colors.ink, fontSize: 15, textAlign: 'center' }}>
-        {t('auth.social.or')}
-      </Text>
+      <Divider label={t('auth.social.or')} />
     </View>
   );
 }
