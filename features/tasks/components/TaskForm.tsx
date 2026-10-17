@@ -15,6 +15,7 @@ import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
@@ -47,7 +48,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   const { colors, space } = useTheme();
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}>{label}</Text>
       {children}
     </View>
   );

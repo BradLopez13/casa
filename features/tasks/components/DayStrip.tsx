@@ -5,6 +5,7 @@ import { dayHeading } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { locale, t } from '@/i18n';
 import { useDoorCompact } from '@/ui/components/DoorHeader';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 
@@ -110,7 +111,7 @@ export function DayStrip({ days, today, marks, onSelect }: Props) {
               // bold ink: the cell stands out by weight as well as tone. The other days need no
               // box; their aligned columns already read as a week.
               backgroundColor: isToday ? colors.page : 'transparent',
-              opacity: pressed ? 0.7 : 1,
+              opacity: pressedOpacity(pressed),
             })}
           >
             <View

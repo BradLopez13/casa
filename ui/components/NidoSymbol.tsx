@@ -6,12 +6,14 @@ import { radii } from '../tokens';
 
 const TILE_INSET = 8;
 
-/** The Nido symbol: two figures sharing a hollow. Decorative. */
-export function NidoSymbol({ size }: { size: number }) {
+/** The Nido symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for use on the brand band. */
+export function NidoSymbol({ size, onSlate = false }: { size: number; onSlate?: boolean }) {
   const { scheme } = useTheme();
   const c = nidoSymbolColors(scheme);
   const { left, right } = NIDO_SYMBOL_PATHS;
-  const inset = c.tile === null ? 0 : TILE_INSET;
+  // On the brand band the slate is already behind it: no tile of its own.
+  const tile = onSlate ? null : c.tile;
+  const inset = tile === null ? 0 : TILE_INSET;
   const symbol = (
     <Svg
       width={size - inset * 2}
@@ -30,7 +32,7 @@ export function NidoSymbol({ size }: { size: number }) {
       </G>
     </Svg>
   );
-  if (c.tile === null) return symbol;
+  if (tile === null) return symbol;
   return (
     <View
       accessible={false}
@@ -39,7 +41,7 @@ export function NidoSymbol({ size }: { size: number }) {
         width: size,
         height: size,
         padding: inset,
-        backgroundColor: c.tile,
+        backgroundColor: tile,
         borderRadius: radii.note,
       }}
     >

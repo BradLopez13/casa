@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
-import { buttonLook } from '../buttonLook';
+import { buttonLook, pressedOpacity } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFont } from '../tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFontBold } from '../tokens';
 
 export function HeaderAction({
   testID,
@@ -20,7 +20,7 @@ export function HeaderAction({
   busy?: boolean;
   strong?: boolean;
 }) {
-  const { colors, radii, space } = useTheme();
+  const { colors, radii, space, shadows } = useTheme();
   // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
   // turns muted. Neither is faded, so the label stays readable.
   const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
@@ -38,7 +38,7 @@ export function HeaderAction({
         minHeight: MIN_TOUCH,
         alignItems: strong ? 'flex-end' : 'flex-start',
         justifyContent: 'center',
-        opacity: pressed ? 0.7 : 1,
+        opacity: pressedOpacity(pressed),
       })}
     >
       {/* The main action is a compact primary button (filled), so it stands apart from
@@ -58,6 +58,7 @@ export function HeaderAction({
                 borderWidth: PRIMARY_EDGE,
                 borderColor: look.border,
                 backgroundColor: look.fill,
+                ...(disabled ? null : shadows.primary),
               }
             : null
         }
@@ -68,6 +69,8 @@ export function HeaderAction({
             color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: strong ? 16 : 15,
             fontWeight: '600',
+            // A plain action ("Cancelar") is a tertiary action, underlined like every other one.
+            textDecorationLine: !strong && !disabled ? 'underline' : 'none',
           }}
         >
           {label}
@@ -85,7 +88,7 @@ type Action = {
   busy?: boolean;
 };
 
-const TITLE_SIZE = 18;
+const TITLE_SIZE = 20;
 
 /**
  * The Cancel | title | Save bar of every modal (new and edit task, edit item, templates). The
@@ -124,7 +127,7 @@ export function ModalHeader({
 
   const titleStyle = {
     color: colors.ink,
-    fontFamily: displayFont,
+    fontFamily: displayFontBold,
     fontSize: TITLE_SIZE,
     ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
   } as const;

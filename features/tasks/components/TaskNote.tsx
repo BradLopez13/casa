@@ -17,7 +17,7 @@ import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
 import { useReduceMotion, useTheme } from '@/ui/theme';
-import { magnetSizes, MIN_TOUCH } from '@/ui/tokens';
+import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 
 // A note that is still being saved is drawn faded until the server confirms it.
 const PROVISIONAL_OPACITY = 0.6;
@@ -68,7 +68,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
         marginLeft: magnetSizes.md / 2,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.note,
+        backgroundColor: colors.taskNote,
         opacity: provisional ? PROVISIONAL_OPACITY : 1,
         borderRadius: radii.note,
         ...shadows.note,
@@ -92,6 +92,7 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
             size="md"
             decorative
             variant={mark ? 'filled' : 'empty'}
+            posit={!done}
             color={mark?.color ?? 'teal'}
             initial={mark?.initial ?? ''}
             accessibilityLabel={assigneeName ?? ''}
@@ -113,7 +114,9 @@ export function TaskNote({ task, today, mark, assigneeName, busy, onToggle, onOp
           padding: space(3),
         }}
       >
-        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '600' }}>{task.title}</Text>
+        <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
+          {task.title}
+        </Text>
         <Text style={{ color: colors.muted, fontSize: 14 }}>
           {room ? `${room} · ` : ''}
           {/* Overdue is a state, never an action: the word "Vencida" in red, semibold, with no

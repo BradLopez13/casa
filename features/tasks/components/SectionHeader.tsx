@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 
 /**
  * A task list section heading with its count on the right. `flush` drops its side padding, for a
@@ -28,7 +29,7 @@ export function SectionHeader({
     >
       <Text
         accessibilityRole="header"
-        style={{ flexShrink: 1, color: colors.ink, fontSize: 15, fontWeight: '600' }}
+        style={{ flexShrink: 1, color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {title}
       </Text>

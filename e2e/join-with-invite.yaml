@@ -34,6 +34,10 @@ appId: com.bradlopez13.casa
     visible:
       id: invite.accept
     timeout: 20000
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: invite.accept
 - tapOn:
     id: invite.accept
 - extendedWaitUntil:
@@ -43,6 +47,10 @@ appId: com.bradlopez13.casa
     timeout: 20000
 
 # Back to onboarding, paste the valid link
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: invite.continue
 - tapOn:
     id: invite.continue
 - extendedWaitUntil:
@@ -60,6 +68,10 @@ appId: com.bradlopez13.casa
     visible:
       id: invite.accept
     timeout: 20000
+# On a small screen the brand header can push this element below the fold.
+- scrollUntilVisible:
+    element:
+      id: invite.accept
 - tapOn:
     id: invite.accept
 - extendedWaitUntil:

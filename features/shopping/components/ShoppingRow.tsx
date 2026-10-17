@@ -150,13 +150,13 @@ export function ShoppingRow({
             height: BOX,
             borderRadius: BOX / 2,
             borderWidth: 2,
-            borderColor: bought ? colors.cobalt : colors.outline,
-            backgroundColor: bought ? colors.cobalt : 'transparent',
+            borderColor: bought ? colors.selection : colors.outline,
+            backgroundColor: bought ? colors.selection : 'transparent',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          {bought ? <Ionicons name="checkmark" size={16} color={colors.onCobalt} /> : null}
+          {bought ? <Ionicons name="checkmark" size={16} color={colors.onSelection} /> : null}
         </View>
       </Pressable>
       {onOpen ? (

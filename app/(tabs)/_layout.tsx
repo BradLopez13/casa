@@ -2,30 +2,77 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import type { ComponentProps } from 'react';
-import { Platform, Text, useWindowDimensions, type ColorValue } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type ColorValue,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMembership } from '@/features/households/queries';
 import { NavigationRail } from '@/features/navigation/NavigationRail';
 import { useHouseholdChannel } from '@/features/realtime/useHouseholdChannel';
 import { TaskFilterProvider } from '@/features/tasks/filter';
 import { t } from '@/i18n';
-import { TAB_LABEL_LINE, TAB_LABEL_MAX_SCALE, tabBarHeight } from '@/ui/tabBar';
+import {
+  TAB_LABEL_GAP,
+  TAB_LABEL_LINE,
+  TAB_LABEL_MAX_SCALE,
+  TAB_PILL_HEIGHT,
+  tabBarHeight,
+  tabLabelsBeside,
+  tabPillWidth,
+} from '@/ui/tabBar';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
+function TabPillIcon({
+  name,
+  color,
+  size,
+  focused,
+}: {
+  name: IconName;
+  color: ColorValue;
+  size: number;
+  focused: boolean;
+}) {
+  const { colors, radii } = useTheme();
+  const { width, height } = useWindowDimensions();
+  // With the label beside the icon the pill hugs the icon, so the two never overlap.
+  const pillWidth = tabPillWidth(tabLabelsBeside(width, height));
+  return (
+    <View
+      collapsable={false}
+      style={{
+        width: pillWidth,
+        height: TAB_PILL_HEIGHT,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Mounted with its radius and colour together; toggling one view's colour from transparent
+          leaves later pills square on Android. */}
+      {focused ? (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { borderRadius: radii.pill, backgroundColor: colors.tonal },
+          ]}
+        />
+      ) : null}
+      <Ionicons name={name} color={color} size={size} />
+    </View>
+  );
+}
+
 function tabIcon(active: IconName, inactive: IconName) {
-  function TabIcon({
-    color,
-    size,
-    focused,
-  }: {
-    color: ColorValue;
-    size: number;
-    focused: boolean;
-  }) {
-    return <Ionicons name={focused ? active : inactive} color={color} size={size} />;
+  function TabIcon(p: { color: ColorValue; size: number; focused: boolean }) {
+    return <TabPillIcon {...p} name={p.focused ? active : inactive} />;
   }
   return TabIcon;
 }
@@ -35,8 +82,8 @@ function tabIcon(active: IconName, inactive: IconName) {
 const LABELS_SCALE = Platform.OS !== 'ios';
 
 /**
- * A tab's label on Android and the web with enlarged text: React Navigation's own look, capped at the rail's 1.6 and on a fixed line, so the
- * bar's height (`tabBarHeight`) knows how tall it gets.
+ * A tab's label on Android and the web with enlarged text or beside the icon: React Navigation's own look, capped at the rail's 1.6, on a fixed line (so the
+ * bar's height (`tabBarHeight`) knows how tall it gets), with a fixed gap after a beside pill.
  */
 function TabLabel({
   color,
@@ -57,7 +104,7 @@ function TabLabel({
         lineHeight: TAB_LABEL_LINE,
         fontWeight: '600',
         textAlign: 'center',
-        ...(position === 'beside-icon' ? { marginStart: 5 } : null),
+        ...(position === 'beside-icon' ? { marginStart: TAB_LABEL_GAP } : null),
       }}
     >
       {children}
@@ -75,9 +122,11 @@ export default function TabsLayout() {
   const { rail } = useLayout();
   const { width, height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  // With enlarged text the bar grows with its labels, still clearing the gesture bar. At the
-  // default size (or smaller) the bar and its labels are React Navigation's own, as before.
-  const enlarged = LABELS_SCALE && fontScale > 1;
+  // The bar height is ours (53 dp at the default text size) and grows with enlarged text, still
+  // clearing the gesture bar. The label is ours too when text is enlarged or when it sits beside
+  // the icon (Android and web), to keep an 8 dp gap from the pill. On iOS with labels beside (iPad
+  // landscape) React Navigation's own label is used, so that gap is not guaranteed.
+  const customLabel = LABELS_SCALE && (fontScale > 1 || tabLabelsBeside(width, height));
   const barHeight = tabBarHeight({
     width,
     height,
@@ -104,7 +153,7 @@ export default function TabsLayout() {
           },
           // The default label's style, kept wherever the custom one is not used.
           tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-          tabBarLabel: enlarged ? TabLabel : undefined,
+          tabBarLabel: customLabel ? TabLabel : undefined,
         }}
       >
         <Tabs.Screen

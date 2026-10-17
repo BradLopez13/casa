@@ -12,7 +12,7 @@ const MODES: { value: TasksMode; label: MessageKey }[] = [
 
 type Props = { value: TasksMode; onChange: (mode: TasksMode) => void };
 
-/** "Semana · Todas": two pills, the chosen one filled in cobalt. */
+/** "Semana · Todas": two pills, the chosen one filled with the selection colour. */
 export function ModeSwitch({ value, onChange }: Props) {
   const { colors, radii, space } = useTheme();
   return (
@@ -31,15 +31,15 @@ export function ModeSwitch({ value, onChange }: Props) {
               paddingHorizontal: space(5),
               justifyContent: 'center',
               borderRadius: radii.pill,
-              backgroundColor: selected ? colors.cobalt : 'transparent',
+              backgroundColor: selected ? colors.selection : 'transparent',
               borderWidth: 1.5,
-              borderColor: selected ? colors.cobalt : colors.outline,
+              borderColor: selected ? colors.selection : colors.outline,
             }}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               style={{
-                color: selected ? colors.onCobalt : colors.ink,
+                color: selected ? colors.onSelection : colors.ink,
                 fontSize: 15,
                 fontWeight: '600',
               }}

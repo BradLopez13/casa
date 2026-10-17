@@ -3,6 +3,7 @@ import type { MemberMark } from '@/domain/members/marks';
 import { toLocalDate } from '@/domain/tasks/dates';
 import { dayName } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 import { DayDots, dayCountLabel } from './DayStrip';
@@ -35,8 +36,8 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
       {days.map((day) => {
         const isSelected = day.date === selected;
         const isToday = day.date === today;
-        const ink = isSelected ? colors.onCobalt : colors.ink;
-        const quiet = isSelected ? colors.onCobalt : colors.muted;
+        const ink = isSelected ? colors.onSelection : colors.ink;
+        const quiet = isSelected ? colors.onSelection : colors.muted;
         return (
           <Pressable
             key={day.date}
@@ -53,8 +54,8 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
               paddingVertical: space(2),
               paddingHorizontal: space(3),
               borderRadius: radii.day,
-              backgroundColor: isSelected ? colors.cobalt : 'transparent',
-              opacity: pressed ? 0.7 : 1,
+              backgroundColor: isSelected ? colors.selection : 'transparent',
+              opacity: pressedOpacity(pressed),
             })}
           >
             <Text
@@ -82,7 +83,11 @@ export function DayList({ days, selected, onSelect, today, marks }: Props) {
                 {dayName(day.date, today)}
               </Text>
               {day.people.length > 0 || day.unassigned ? (
-                <DayDots day={day} marks={marks} ring={isSelected ? colors.onCobalt : undefined} />
+                <DayDots
+                  day={day}
+                  marks={marks}
+                  ring={isSelected ? colors.onSelection : undefined}
+                />
               ) : null}
             </View>
             <Text

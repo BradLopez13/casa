@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { t } from '@/i18n';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { AppleMark } from './AppleMark';
@@ -32,7 +33,7 @@ export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
         paddingHorizontal: space(5),
         borderRadius: radii.pill,
         backgroundColor: look.fill,
-        opacity: dimmed ? 0.5 : pressed ? 0.85 : 1,
+        opacity: dimmed ? 0.5 : pressedOpacity(pressed),
       })}
     >
       {busy ? (

@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, type ReactElement, type ReactNode } from 'react';
 import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
-import { tallyToday } from '@/domain/tasks/tally';
+import { todayLine } from '@/domain/tasks/todayLine';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import {
   NewTaskButton,
@@ -14,7 +14,6 @@ import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
-import { scopeLabel } from '@/features/tasks/scope';
 import { todaySections, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
@@ -48,13 +47,19 @@ export default function TodayScreen() {
   const layout = useLayout();
   const screen = useTaskScreen();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
+  const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
   const subtitleStyle: TextStyle = {
     color: colors.muted,
     fontSize: 15,
     fontVariant: ['tabular-nums'],
   };
 
-  const tally = useMemo(() => tallyToday(filtered, today), [filtered, today]);
+  // The door counts the whole household, so the line can say what is left for everyone else.
+  const tasks = tasksQuery.data;
+  const line = useMemo(
+    () => todayLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
+    [tasks, today, userId, assigneeId, filterName],
+  );
   const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
   const cards = todayCards({
     loaded: tasksQuery.isSuccess,
@@ -78,7 +83,15 @@ export default function TodayScreen() {
       />
     </View>
   );
-  const nothing = <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>;
+  // When the door already says there is nothing for this view, the list does not say it twice.
+  const doorSaysNothing =
+    line.kind === 'empty' ||
+    line.kind === 'allDone' ||
+    line.kind === 'nothingMine' ||
+    (line.kind === 'person' && line.count === 0);
+  const nothing = doorSaysNothing ? null : (
+    <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
+  );
 
   const door = (
     <DoorHeader
@@ -91,7 +104,7 @@ export default function TodayScreen() {
           </Text>
         </View>
       }
-      status={<TallyView tally={tally} scope={scopeLabel(assigneeId, userId, members)} />}
+      status={<TallyView line={line} />}
     >
       <MemberFilter
         members={members}

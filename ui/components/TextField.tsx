@@ -40,7 +40,7 @@ export function TextField({
           testID={testID}
           accessibilityLabel={error ? `${label}, ${error}` : label}
           placeholderTextColor={colors.muted}
-          selectionColor={colors.cobalt}
+          selectionColor={colors.textSelection}
           cursorColor={colors.cobalt}
           onFocus={(e) => {
             setFocused(true);
