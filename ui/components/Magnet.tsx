@@ -15,7 +15,7 @@ type Props = {
   size: MagnetSize;
   /** 'empty' is the dashed circle used for an unassigned task. */
   variant?: 'filled' | 'empty';
-  /** Pass a boolean when the magnet can be selected; true draws the cobalt ring. */
+  /** Pass a boolean when the magnet can be selected; true draws the selection ring. */
   selected?: boolean;
   accessibilityLabel: string;
   testID?: string;
@@ -90,7 +90,7 @@ export function Magnet({
         padding: GAP,
         borderWidth: RING,
         borderRadius: (diameter + 2 * (GAP + RING)) / 2,
-        borderColor: selected ? colors.cobalt : 'transparent',
+        borderColor: selected ? colors.selection : 'transparent',
         backgroundColor: selected ? colors.door : 'transparent',
       }}
     >

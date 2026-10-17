@@ -66,12 +66,12 @@ function TemplateRow({
           justifyContent: 'center',
           borderRadius: radii.day / 2,
           borderWidth: 2,
-          borderColor: checked ? colors.cobalt : colors.outline,
-          backgroundColor: checked ? colors.cobalt : colors.note,
+          borderColor: checked ? colors.selection : colors.outline,
+          backgroundColor: checked ? colors.selection : colors.note,
         }}
       >
         {checked ? (
-          <Ionicons name="checkmark" size={18} color={colors.onCobalt} accessible={false} />
+          <Ionicons name="checkmark" size={18} color={colors.onSelection} accessible={false} />
         ) : null}
       </View>
       <Text style={{ flex: 1, color: colors.ink, fontSize: 16 }}>{label}</Text>

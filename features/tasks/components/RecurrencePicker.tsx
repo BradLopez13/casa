@@ -44,14 +44,14 @@ function Pill({
         borderRadius: radii.pill,
         // Filled when chosen, as every selected pill: shape, not only colour.
         borderWidth: 1.5,
-        borderColor: selected ? colors.cobalt : colors.outline,
-        backgroundColor: selected ? colors.cobalt : colors.note,
+        borderColor: selected ? colors.selection : colors.outline,
+        backgroundColor: selected ? colors.selection : colors.note,
         opacity: pressed ? 0.8 : 1,
       })}
     >
       <Text
         style={{
-          color: selected ? colors.onCobalt : colors.ink,
+          color: selected ? colors.onSelection : colors.ink,
           fontSize: 15,
           fontWeight: '600',
         }}
@@ -96,15 +96,15 @@ function WeekdayToggles({
               justifyContent: 'center',
               borderRadius: radii.pill,
               borderWidth: 1.5,
-              borderColor: checked ? colors.cobalt : colors.outline,
-              backgroundColor: checked ? colors.cobalt : colors.note,
+              borderColor: checked ? colors.selection : colors.outline,
+              backgroundColor: checked ? colors.selection : colors.note,
               opacity: pressed ? 0.8 : 1,
             })}
           >
             <Text
               maxFontSizeMultiplier={1.3}
               style={{
-                color: checked ? colors.onCobalt : colors.ink,
+                color: checked ? colors.onSelection : colors.ink,
                 fontSize: 15,
                 fontWeight: '600',
               }}

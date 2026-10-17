@@ -10,7 +10,7 @@ const ICON_SIZE = 24;
 /**
  * The tab bar for wide windows: a column at the left edge, 88 dp plus the left safe-area inset (a
  * notch in landscape). Same screens, icons, names and testIDs as the bottom bar; the selected tab
- * sits in a filled cobalt pill, so the state shows as shape as well as colour.
+ * sits in a filled selection pill, so the state shows as shape as well as colour.
  */
 export function NavigationRail({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { colors, radii, space } = useTheme();
@@ -34,7 +34,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
         const { options } = descriptor;
         const focused = index === state.index;
         const title = options.title ?? route.name;
-        const tint = focused ? colors.onCobalt : colors.muted;
+        const tint = focused ? colors.onSelection : colors.muted;
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
@@ -82,7 +82,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
                 <View
                   style={[
                     StyleSheet.absoluteFill,
-                    { borderRadius: radii.pill, backgroundColor: colors.cobalt },
+                    { borderRadius: radii.pill, backgroundColor: colors.selection },
                   ]}
                 />
               ) : null}

@@ -20,7 +20,7 @@ export function HeaderAction({
   busy?: boolean;
   strong?: boolean;
 }) {
-  const { colors, radii, space } = useTheme();
+  const { colors, radii, space, shadows } = useTheme();
   // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
   // turns muted. Neither is faded, so the label stays readable.
   const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
@@ -58,6 +58,7 @@ export function HeaderAction({
                 borderWidth: PRIMARY_EDGE,
                 borderColor: look.border,
                 backgroundColor: look.fill,
+                ...(disabled ? null : shadows.primary),
               }
             : null
         }

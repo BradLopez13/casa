@@ -66,7 +66,7 @@ export function NewTaskButton({
   assigneeId: string | null;
 }) {
   const router = useRouter();
-  const { colors, radii } = useTheme();
+  const { colors, radii, shadows } = useTheme();
   const placement = usePlacement();
   const shape = useShape();
   const look = buttonLook('primary', 'default', 'enabled', colors);
@@ -95,6 +95,7 @@ export function NewTaskButton({
         borderWidth: PRIMARY_EDGE,
         borderColor: look.border,
         opacity: pressed ? 0.85 : 1,
+        ...shadows.primary,
         ...(shape.iconOnly
           ? { width: shape.height, height: shape.height }
           : { paddingLeft: space(4), paddingRight: space(5) }),
