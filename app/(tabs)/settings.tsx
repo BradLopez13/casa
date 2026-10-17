@@ -13,6 +13,7 @@ import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSe
 import { useMembers, useMembership, useSetDisplayName } from '@/features/households/queries';
 import { householdLine } from '@/features/settings/householdLine';
 import { settingsPanes, type SettingsGroup } from '@/features/settings/settingsPanes';
+import { ShoppingOrderSection } from '@/features/settings/ShoppingOrderSection';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t, type MessageKey } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
@@ -78,6 +79,12 @@ export default function SettingsScreen() {
               variant={editing ? 'secondary' : 'primary'}
               onPress={() => router.push('/household/members')}
             />
+          </Note>
+        );
+      case 'shopping':
+        return (
+          <Note>
+            <ShoppingOrderSection />
           </Note>
         );
       case 'reminders':

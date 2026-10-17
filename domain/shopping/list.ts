@@ -1,3 +1,4 @@
+import type { Category } from './categories';
 import { normalizeItemName } from './normalize';
 
 export type ShoppingItem = {
@@ -5,6 +6,8 @@ export type ShoppingItem = {
   name: string;
   normalizedName: string;
   quantity: string | null;
+  /** Set by hand (or from a household correction); null falls back to the local dictionary. */
+  category: Category | null;
   createdAt: string;
   createdBy: string | null;
   boughtAt: string | null;

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
+import { DEFAULT_ORDER, type Category } from '@/domain/shopping/categories';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { countLabel, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
@@ -24,8 +25,10 @@ import {
   useAddItem,
   useClearBought,
   useIsOnline,
+  useItemCategories,
   usePendingItemIds,
   useSetBought,
+  useSetCategory,
   useShoppingHistory,
   useShoppingItems,
 } from '@/features/shopping/queries';
@@ -81,8 +84,10 @@ export default function ShoppingScreen() {
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
+  const categories = useItemCategories(householdId);
   const addItem = useAddItem();
   const setBought = useSetBought();
+  const setCategory = useSetCategory();
   const clearBought = useClearBought();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
@@ -95,6 +100,10 @@ export default function ShoppingScreen() {
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
   const { pending, bought } = useMemo(() => sortList(items), [items]);
+  const grouping = useMemo(
+    () => ({ order: categories.order ?? DEFAULT_ORDER, overrides: categories.overrides }),
+    [categories.order, categories.overrides],
+  );
 
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
@@ -115,6 +124,11 @@ export default function ShoppingScreen() {
     setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
   };
 
+  const changeCategory = (item: ShoppingItem, category: Category) => {
+    if (householdId === undefined) return;
+    setCategory.mutate({ id: item.id, householdId, category });
+  };
+
   const clear = () => {
     if (householdId === undefined) return;
     clearBought.mutate(
@@ -132,7 +146,12 @@ export default function ShoppingScreen() {
     if (!online) return;
     setPulling(true);
     try {
-      await Promise.all([itemsQuery.refetch(), historyQuery.refetch(), membersQuery.refetch()]);
+      await Promise.all([
+        itemsQuery.refetch(),
+        historyQuery.refetch(),
+        membersQuery.refetch(),
+        categories.query.refetch(),
+      ]);
     } finally {
       setPulling(false);
     }
@@ -196,6 +215,8 @@ export default function ShoppingScreen() {
       onToggle: toggle,
       onOpen: open,
       onClear: clear,
+      grouping,
+      onCategory: changeCategory,
     },
     online,
     door,

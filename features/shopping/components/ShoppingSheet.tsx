@@ -11,6 +11,7 @@ import {
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MemberMark } from '@/domain/members/marks';
+import { categorize, type Category } from '@/domain/shopping/categories';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
@@ -18,7 +19,14 @@ import { Button } from '@/ui/components/Button';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
-import { isBoughtHeader, sheetRows, type SheetRow } from '../sheetRows';
+import {
+  isBoughtHeader,
+  isCategoryHeader,
+  sheetRows,
+  type SheetGrouping,
+  type SheetRow,
+} from '../sheetRows';
+import { CategoryPicker } from './CategoryPicker';
 import { ShoppingRow } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
@@ -38,6 +46,10 @@ type Props = {
   onToggle: (item: ShoppingItem) => void;
   onOpen: (id: string) => void;
   onClear: () => void;
+  /** Groups what is left to buy by category, in the household order, under a quiet heading. */
+  grouping?: SheetGrouping;
+  /** Moves a pending item to another category (for the whole household). */
+  onCategory?: (item: ShoppingItem, category: Category) => void;
   /** No side margin of its own: inside a TwoPane pane, which already keeps the gutter. */
   flush?: boolean;
   /**
@@ -90,6 +102,8 @@ export function ShoppingSheet({
   onToggle,
   onOpen,
   onClear,
+  grouping,
+  onCategory,
   flush = false,
   header,
   column,
@@ -100,7 +114,14 @@ export function ShoppingSheet({
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const [boughtCollapsed, setBoughtCollapsed] = useState(false);
-  const rows = sheetRows(pending, bought, boughtCollapsed);
+  const [picking, setPicking] = useState<{
+    item: ShoppingItem;
+    name: string;
+    category: Category;
+  } | null>(null);
+  const rows = sheetRows(pending, bought, boughtCollapsed, grouping);
+  const categoryOf = (item: ShoppingItem) =>
+    item.category ?? categorize(item.normalizedName, grouping?.overrides);
   // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
   const hasEdge = noteEdge.borderWidth > 0;
   const edge = hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth;
@@ -127,85 +148,117 @@ export function ShoppingSheet({
   };
 
   return (
-    <Animated.FlatList<SheetRow>
-      data={rows}
-      keyExtractor={(row) => row.id}
-      scrollEnabled={header !== undefined}
-      keyboardShouldPersistTaps="handled"
-      itemLayoutAnimation={reduceMotion ? undefined : LinearTransition}
-      ListHeaderComponent={header}
-      refreshControl={refreshControl}
-      contentContainerStyle={contentContainerStyle}
-      contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
-      renderItem={({ item: row, index }) => (
-        <View style={column}>
-          <View style={cell(index)}>
-            {isBoughtHeader(row) ? (
-              <Animated.View
-                entering={reduceMotion ? undefined : FadeIn}
-                exiting={reduceMotion ? undefined : FadeOut}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: space(3),
-                  paddingHorizontal: space(4),
-                  paddingTop: space(4),
-                  paddingBottom: space(2),
-                  borderTopWidth: index > 0 ? StyleSheet.hairlineWidth : 0,
-                  borderTopColor: colors.hairline,
-                }}
-              >
-                <Pressable
-                  testID="shopping.bought.toggle"
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: !boughtCollapsed }}
-                  onPress={() => setBoughtCollapsed((c) => !c)}
-                  style={({ pressed }) => ({
+    <>
+      <Animated.FlatList<SheetRow>
+        data={rows}
+        keyExtractor={(row) => row.id}
+        scrollEnabled={header !== undefined}
+        keyboardShouldPersistTaps="handled"
+        itemLayoutAnimation={reduceMotion ? undefined : LinearTransition}
+        ListHeaderComponent={header}
+        refreshControl={refreshControl}
+        contentContainerStyle={contentContainerStyle}
+        contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
+        renderItem={({ item: row, index }) => (
+          <View style={column}>
+            <View style={cell(index)}>
+              {isCategoryHeader(row) ? (
+                <Text
+                  testID={`shopping.${row.id}`}
+                  accessibilityRole="header"
+                  style={{
+                    color: colors.muted,
+                    fontFamily: displayFontBold,
+                    fontSize: 13,
+                    paddingHorizontal: space(4),
+                    paddingTop: space(index > 0 ? 4 : 3),
+                    paddingBottom: space(1),
+                    borderTopWidth: index > 0 ? StyleSheet.hairlineWidth : 0,
+                    borderTopColor: colors.hairline,
+                  }}
+                >
+                  {t(`shopping.category.${row.category}`)}
+                </Text>
+              ) : isBoughtHeader(row) ? (
+                <Animated.View
+                  entering={reduceMotion ? undefined : FadeIn}
+                  exiting={reduceMotion ? undefined : FadeOut}
+                  style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    gap: space(2),
-                    minHeight: MIN_TOUCH,
-                    opacity: pressedOpacity(pressed),
-                  })}
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: space(3),
+                    paddingHorizontal: space(4),
+                    paddingTop: space(4),
+                    paddingBottom: space(2),
+                    borderTopWidth: index > 0 ? StyleSheet.hairlineWidth : 0,
+                    borderTopColor: colors.hairline,
+                  }}
                 >
-                  <Ionicons
-                    name={boughtCollapsed ? 'chevron-forward' : 'chevron-down'}
-                    size={18}
-                    color={colors.muted}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
+                  <Pressable
+                    testID="shopping.bought.toggle"
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: !boughtCollapsed }}
+                    onPress={() => setBoughtCollapsed((c) => !c)}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: space(2),
+                      minHeight: MIN_TOUCH,
+                      opacity: pressedOpacity(pressed),
+                    })}
+                  >
+                    <Ionicons
+                      name={boughtCollapsed ? 'chevron-forward' : 'chevron-down'}
+                      size={18}
+                      color={colors.muted}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    />
+                    <BoughtTitle count={bought.length} />
+                  </Pressable>
+                  <Button
+                    testID="shopping.clear"
+                    title={t('shopping.clear')}
+                    variant="tertiary"
+                    tone="destructive"
+                    icon={actionIcons.delete}
+                    disabled={!online}
+                    loading={clearing}
+                    onPress={onClear}
                   />
-                  <BoughtTitle count={bought.length} />
-                </Pressable>
-                <Button
-                  testID="shopping.clear"
-                  title={t('shopping.clear')}
-                  variant="tertiary"
-                  tone="destructive"
-                  icon={actionIcons.delete}
-                  disabled={!online}
-                  loading={clearing}
-                  onPress={onClear}
+                </Animated.View>
+              ) : (
+                <ShoppingRow
+                  item={row}
+                  first={index === 0 || isCategoryHeader(rows[index - 1] as SheetRow)}
+                  unsent={unsentIds.has(row.id)}
+                  buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
+                  buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
+                  flash={flash?.id === row.id ? flash.count : 0}
+                  onToggle={() => onToggle(row)}
+                  onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
+                  category={row.boughtAt === null && onCategory ? categoryOf(row) : undefined}
+                  onCategory={() =>
+                    setPicking({ item: row, name: row.name, category: categoryOf(row) })
+                  }
                 />
-              </Animated.View>
-            ) : (
-              <ShoppingRow
-                item={row}
-                first={index === 0}
-                unsent={unsentIds.has(row.id)}
-                buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
-                buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
-                flash={flash?.id === row.id ? flash.count : 0}
-                onToggle={() => onToggle(row)}
-                onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
-              />
-            )}
+              )}
+            </View>
           </View>
-        </View>
-      )}
-    />
+        )}
+      />
+      <CategoryPicker
+        target={picking}
+        onCancel={() => setPicking(null)}
+        onPick={(category) => {
+          const item = picking?.item;
+          setPicking(null);
+          if (item && category !== picking?.category) onCategory?.(item, category);
+        }}
+      />
+    </>
   );
 }
 

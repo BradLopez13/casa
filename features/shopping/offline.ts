@@ -7,15 +7,21 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
+import type { Category } from '@/domain/shopping/categories';
 import { applyAdd, applyBought, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
 import { t } from '@/i18n';
-import { addShoppingItem, setItemBought } from './api';
+import { addShoppingItem, setItemBought, setItemCategory, type ItemCategories } from './api';
 
 /** Shopping mutations share one scope, so a queue built offline reaches the server in order. */
 export const SHOPPING_SCOPE = { id: 'shopping' };
 export const addKey = ['shopping', 'add'];
 export const boughtKey = ['shopping', 'bought'];
+export const categoryKey = ['shopping', 'category'];
+
+/** The household's aisle order and corrections; outside the ['shopping'] prefix on purpose. */
+export const itemCategoriesKey = (householdId: string | undefined) =>
+  ['shopping-categories', householdId] as const;
 
 export type AddVars = {
   id: string;
@@ -29,15 +35,22 @@ export type AddContext = { item: ShoppingItem; added: boolean };
 export type BoughtVars = { id: string; householdId: string; bought: boolean; userId: string };
 export type BoughtContext = { previous: ShoppingItem | undefined };
 
+export type CategoryVars = { id: string; householdId: string; category: Category };
+export type CategoryContext = {
+  previous: ShoppingItem | undefined;
+  previousOverride: Category | undefined;
+};
+
 const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping',
   'shopping-history',
+  'shopping-categories',
   'membership',
   'members',
 ]);
 
 /**
- * Kept on the device: the shopping list and its history, plus the membership (an offline cold
+ * Kept on the device: the shopping list, its history and its categories, plus the membership (an offline cold
  * start gets past the route guard) and the members (the buyers' magnets).
  */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {
@@ -45,20 +58,22 @@ export function shouldPersistQuery(queryKey: QueryKey): boolean {
 }
 
 /**
- * Only the queued add and bought survive a restart: theirs are the only mutation functions
- * registered (as defaults) before the cache is restored.
+ * Only the queued add, bought and category survive a restart: theirs are the only mutation
+ * functions registered (as defaults) before the cache is restored.
  */
 export function shouldPersistMutation(mutationKey: MutationKey | undefined): boolean {
   return (
     mutationKey?.[0] === 'shopping' &&
-    (mutationKey[1] === addKey[1] || mutationKey[1] === boughtKey[1])
+    (mutationKey[1] === addKey[1] ||
+      mutationKey[1] === boughtKey[1] ||
+      mutationKey[1] === categoryKey[1])
   );
 }
 
 /**
- * What goes on the device: settled persisted queries, and every queued add or bought still
- * pending. That includes one in flight or waiting to retry when the app closes; resending it is
- * safe, because the add is idempotent by id and the bought sets an absolute value.
+ * What goes on the device: settled persisted queries, and every queued add, bought or category
+ * still pending. That includes one in flight or waiting to retry when the app closes; resending
+ * it is safe, because the add is idempotent by id and the bought and category set absolute values.
  */
 export const persistDehydrateOptions: DehydrateOptions = {
   shouldDehydrateQuery: (query) =>
@@ -122,6 +137,7 @@ export function buildShoppingMutationDefaults(
 ): {
   add: MutationOptions<string, AppError, AddVars, AddContext>;
   bought: MutationOptions<void, AppError, BoughtVars, BoughtContext>;
+  category: MutationOptions<void, AppError, CategoryVars, CategoryContext>;
 } {
   // An add can resolve to an item that was already on the list; a bought queued behind it
   // must reach that item.
@@ -145,6 +161,7 @@ export function buildShoppingMutationDefaults(
         name: trimItemText(name),
         normalizedName: normalizeItemName(name),
         quantity,
+        category: null,
         createdAt: new Date().toISOString(),
         createdBy: userId,
         boughtAt: null,
@@ -215,5 +232,60 @@ export function buildShoppingMutationDefaults(
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
 
-  return { add, bought };
+  const setOverride = (householdId: string, name: string, value: Category | undefined) =>
+    queryClient.setQueryData<ItemCategories>(itemCategoriesKey(householdId), (current) => {
+      if (!current) return current;
+      const rest = current.overrides.filter(([n]) => n !== name);
+      return { ...current, overrides: value ? [...rest, [name, value]] : rest };
+    });
+
+  // Moves the item to its group at once and remembers the name for the household, as the server
+  // does; a final error puts back both.
+  const category: MutationOptions<void, AppError, CategoryVars, CategoryContext> = {
+    mutationKey: categoryKey,
+    scope: SHOPPING_SCOPE,
+    networkMode: 'online',
+    retry: retryOnNetwork,
+    mutationFn: ({ id, category: value }) => setItemCategory(resolve(id), value),
+    onMutate: async ({ id, householdId, category: value }) => {
+      const key = listKey(householdId);
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: key }),
+        queryClient.cancelQueries({ queryKey: itemCategoriesKey(householdId) }),
+      ]);
+      const target = resolve(id);
+      const previous = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
+      const previousOverride = previous
+        ? queryClient
+            .getQueryData<ItemCategories>(itemCategoriesKey(householdId))
+            ?.overrides.find(([n]) => n === previous.normalizedName)?.[1]
+        : undefined;
+      queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
+        current?.map((i) => (i.id === target ? { ...i, category: value } : i)),
+      );
+      if (previous) setOverride(householdId, previous.normalizedName, value);
+      return { previous, previousOverride };
+    },
+    onError: (_error, { id, householdId }, context) => {
+      const key = listKey(householdId);
+      const target = resolve(id);
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
+          current?.map((i) => (i.id === target ? { ...i, category: previous.category } : i)),
+        );
+        setOverride(householdId, previous.normalizedName, context.previousOverride);
+      }
+      const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
+      if (item) syncFailed(item.name);
+    },
+    onSettled: async () => {
+      if (queryClient.isMutating({ mutationKey: ['shopping'] }) === 1) {
+        await queryClient.invalidateQueries({ queryKey: ['shopping-categories'] });
+      }
+      await invalidateShoppingWhenIdle(queryClient);
+    },
+  };
+
+  return { add, bought, category };
 }

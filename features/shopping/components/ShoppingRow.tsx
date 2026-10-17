@@ -12,9 +12,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
+import type { Category } from '@/domain/shopping/categories';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { pressedOpacity } from '@/ui/buttonLook';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -35,6 +37,10 @@ type Props = {
   onToggle: () => void;
   /** Only pending items can be edited, so only theirs is given; a bought name is plain text. */
   onOpen: (() => void) | undefined;
+  /** The category it is listed under; only pending rows show it. */
+  category?: Category;
+  /** Opens the category picker; given with `category`. */
+  onCategory?: () => void;
 };
 
 /** One item on the sheet: a round checkbox, the name (opens a pending one) and its quantity. */
@@ -47,6 +53,8 @@ export function ShoppingRow({
   flash,
   onToggle,
   onOpen,
+  category,
+  onCategory,
 }: Props) {
   const { colors, space } = useTheme();
   const reduceMotion = useReduceMotion();
@@ -169,6 +177,28 @@ export function ShoppingRow({
           {name}
         </View>
       )}
+      {category && onCategory ? (
+        <Pressable
+          testID={`shopping.item.${item.id}.category`}
+          onPress={onCategory}
+          accessibilityRole="button"
+          accessibilityLabel={t('shopping.changeCategory')}
+          accessibilityValue={{ text: t(`shopping.category.${category}`) }}
+          hitSlop={{ top: space(2), bottom: space(2) }}
+          style={({ pressed }) => ({
+            flexShrink: 1,
+            maxWidth: '35%',
+            minHeight: MIN_TOUCH,
+            justifyContent: 'center',
+            marginLeft: space(2),
+            opacity: pressedOpacity(pressed),
+          })}
+        >
+          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12 }}>
+            {t(`shopping.category.${category}`)}
+          </Text>
+        </Pressable>
+      ) : null}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}
