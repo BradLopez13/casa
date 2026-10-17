@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import type { TodayLine } from '@/domain/tasks/todayLine';
+import { DayDone } from '@/features/tasks/components/DayDone';
 import { todayLineText } from '@/features/tasks/todayLineText';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
@@ -35,20 +36,24 @@ export function TallyView({ line, onSeeAll }: { line: TodayLine; onSeeAll?: () =
         accessibilityLiveRegion="polite"
         style={{ gap: 2 }}
       >
-        <Text
-          style={{
-            color: colors.ink,
-            fontFamily: displayFontBold,
-            fontSize: LINE_SIZE,
-            fontVariant: ['tabular-nums'],
-          }}
-        >
-          {head}
-          {number !== null ? (
-            <Text style={{ fontFamily: displayFont, fontSize: NUMBER_SIZE }}>{number}</Text>
-          ) : null}
-          {tail}
-        </Text>
+        {line.kind === 'allDone' ? (
+          <DayDone />
+        ) : (
+          <Text
+            style={{
+              color: colors.ink,
+              fontFamily: displayFontBold,
+              fontSize: LINE_SIZE,
+              fontVariant: ['tabular-nums'],
+            }}
+          >
+            {head}
+            {number !== null ? (
+              <Text style={{ fontFamily: displayFont, fontSize: NUMBER_SIZE }}>{number}</Text>
+            ) : null}
+            {tail}
+          </Text>
+        )}
         {second !== null && !compact ? (
           <Text style={{ color: colors.muted, fontSize: 15 }}>{second}</Text>
         ) : null}

@@ -1,10 +1,8 @@
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskItem } from '@/domain/tasks/views';
-import { t } from '@/i18n';
-import { Magnet } from '@/ui/components/Magnet';
+import { DoneNote } from '@/features/tasks/components/DoneNote';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
 
 type Props = {
   tasks: TaskItem[];
@@ -15,63 +13,21 @@ type Props = {
   onReopen: (task: TaskItem) => void;
 };
 
-/** Finished tasks as small pills; tapping one reopens it. */
+/** Finished tasks as a stack of compact notes; tapping one reopens it. */
 export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
-  const { colors, radii, space } = useTheme();
+  const { space } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-      {tasks.map((task) => {
-        const mark = task.completedBy ? marks.get(task.completedBy) : undefined;
-        const name = task.completedBy ? names.get(task.completedBy) : undefined;
-        const label =
-          task.completedBy !== null && task.completedBy === userId
-            ? t('tasks.a11y.reopenByYou', { title: task.title })
-            : name
-              ? t('tasks.a11y.reopenBy', { title: task.title, name })
-              : t('tasks.a11y.reopen', { title: task.title });
-        return (
-          <Pressable
-            key={task.id}
-            testID={`done-tray.${task.id}`}
-            onPress={() => onReopen(task)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: true }}
-            accessibilityLabel={label}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: space(2),
-              minHeight: MIN_TOUCH,
-              maxWidth: '100%',
-              paddingLeft: space(2),
-              paddingRight: space(3),
-              borderRadius: radii.pill,
-              borderWidth: 1,
-              borderColor: colors.outline,
-            }}
-          >
-            <Magnet
-              size="sm"
-              decorative
-              variant={mark ? 'filled' : 'empty'}
-              color={mark?.color ?? 'teal'}
-              initial={mark?.initial ?? ''}
-              accessibilityLabel={name ?? ''}
-            />
-            <Text
-              numberOfLines={2}
-              style={{
-                flexShrink: 1,
-                color: colors.muted,
-                fontSize: 14,
-                textDecorationLine: 'line-through',
-              }}
-            >
-              {task.title}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View style={{ gap: space(2) }}>
+      {tasks.map((task) => (
+        <DoneNote
+          key={task.id}
+          task={task}
+          mark={task.completedBy ? marks.get(task.completedBy) : undefined}
+          name={task.completedBy ? names.get(task.completedBy) : undefined}
+          byYou={task.completedBy !== null && task.completedBy === userId}
+          onReopen={onReopen}
+        />
+      ))}
     </View>
   );
 }
