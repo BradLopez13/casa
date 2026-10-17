@@ -1,0 +1,17 @@
+# Signs in as ${EMAIL}, a user from the fixtures (password e2e-password-2026, see
+# supabase/e2e/fixtures.sql). Run from the sign-in screen; the caller waits for where it lands.
+appId: com.bradlopez13.casa
+---
+- tapOn:
+    id: sign-in.email
+- inputText: ${EMAIL}
+- tapOn:
+    id: sign-in.password
+- inputText: e2e-password-2026
+- hideKeyboard
+# On a small screen the keyboard or the brand header can leave this button below the fold.
+- scrollUntilVisible:
+    element:
+      id: sign-in.submit
+- tapOn:
+    id: sign-in.submit

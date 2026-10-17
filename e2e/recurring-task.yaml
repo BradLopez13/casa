@@ -11,56 +11,12 @@ appId: com.bradlopez13.casa
           visible:
             id: sign-in.email
           timeout: 30000
-- evalScript: ${output.email = 'rita' + Date.now() + '@e2e.dev'}
 
-# Sign up
-# On a small screen the keyboard or the brand header can leave this field below the fold.
-- scrollUntilVisible:
-    element:
-      id: sign-in.go-sign-up
-- tapOn:
-    id: sign-in.go-sign-up
-- tapOn:
-    id: sign-up.name
-- inputText: Rita
-- tapOn:
-    id: sign-up.email
-- inputText: ${output.email}
-# On a small screen the keyboard or the brand header can leave this field below the fold.
-- scrollUntilVisible:
-    element:
-      id: sign-up.password
-- tapOn:
-    id: sign-up.password
-- inputText: e2e-password-2026
-- hideKeyboard
-# On a small screen the keyboard or the brand header can leave this field below the fold.
-- scrollUntilVisible:
-    element:
-      id: sign-up.password-confirm
-- tapOn:
-    id: sign-up.password-confirm
-- inputText: e2e-password-2026
-- hideKeyboard
-- scrollUntilVisible:
-    element:
-      id: sign-up.submit
-- tapOn:
-    id: sign-up.submit
-- runFlow: subflows/verify-email.yaml
-
-# Onboarding: create the household
-- extendedWaitUntil:
-    visible:
-      id: onboarding.name
-    timeout: 20000
-- tapOn:
-    id: onboarding.name
-- eraseText: 60
-- inputText: Piso Rita
-- hideKeyboard
-- tapOn:
-    id: onboarding.create
+# Sign in as Rita, a fixture user who already owns "Piso Rita"
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: rita@e2e.dev
 - extendedWaitUntil:
     visible:
       id: today.household-name

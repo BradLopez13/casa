@@ -50,10 +50,36 @@ jobs:
       - run: pnpm gen:normalize-tests && git diff --exit-code supabase/tests/normalize_cases.test.sql
       - run: pnpm db:types && git diff --exit-code data/supabase/database.types.ts
 
-  e2e-android:
-    needs: [app, db]
+  # Whether the e2e jobs are worth running: not when only docs, Markdown or unit tests changed.
+  changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # A file counts only when it matches every pattern: anything but the ignored ones.
+          predicate-quantifier: every
+          filters: |
+            e2e:
+              - '**'
+              - '!docs/**'
+              - '!**/*.md'
+              - '!**/*.test.ts'
+              - '!**/*.test.tsx'
+              - '!supabase/tests/**'
+
+  # Built once, in parallel with app and db, and shared by every e2e shard.
+  build-apk:
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -68,6 +94,60 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: pnpm install --frozen-lockfile
 
+      # The APK embeds the local Supabase key. The CLI derives it from config.toml, not from
+      # the running containers, so the database alone is enough to read it; every shard checks
+      # that its own stack hands out the same key.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - run: supabase db start
+      - run: pnpm e2e:env
+
+      - name: Build the release APK
+        env:
+          E2E: '1'
+        run: |
+          set -a; . ./.env.e2e; set +a
+          pnpm expo prebuild --platform android --clean
+          cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: e2e-apk
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            .env.e2e
+          include-hidden-files: true
+          retention-days: 3
+          if-no-files-found: error
+
+  e2e-android:
+    needs: [app, db, build-apk]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # The flows of each shard are listed in scripts/e2e-shard.sh.
+        shard: [1, 2]
+    name: e2e-android (${{ matrix.shard }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: List the shard's flows
+        run: bash scripts/e2e-shard.sh ${{ matrix.shard }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-apk
+          path: e2e-apk
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -81,14 +161,13 @@ jobs:
         run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
       - run: pnpm e2e:fixtures
       - run: pnpm e2e:env
-
-      - name: Build the release APK
-        env:
-          E2E: '1'
+      - name: Check the APK has this stack's key
         run: |
-          set -a; . ./.env.e2e; set +a
-          pnpm expo prebuild --platform android --clean
-          cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
+          if ! cmp -s .env.e2e e2e-apk/.env.e2e; then
+            echo "The APK was built for another Supabase key:"
+            diff e2e-apk/.env.e2e .env.e2e || true
+            exit 1
+          fi
 
       - name: Install Maestro
         run: |
@@ -114,13 +193,13 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
-            adb install android/app/build/outputs/apk/release/app-release.apk
-            set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" e2e/ --format junit --output e2e-report.xml
+            adb install e2e-apk/android/app/build/outputs/apk/release/app-release.apk
+            set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh ${{ matrix.shard }}) --format junit --output e2e-report.xml
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: e2e-android-report
+          name: e2e-android-report-${{ matrix.shard }}
           path: |
             e2e-report.xml
             ~/.maestro/tests/

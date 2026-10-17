@@ -84,7 +84,9 @@ Tres jobs en `.github/workflows/ci.yml`, sin secretos ni proyecto en la nube:
 
 - `app`: Prettier, ESLint con `--max-warnings 0`, typecheck, Vitest y `expo export` para Android e iOS.
 - `db`: levanta Postgres con el CLI de Supabase, pasa pgTAP y falla si los tipos generados (`data/supabase/database.types.ts`) no están al día.
-- `e2e-android`: depende de los dos anteriores. Levanta Supabase local, carga los datos de prueba, compila un APK de release y ejecuta los flujos Maestro en un emulador de API 34.
+- `build-apk`: corre a la vez que los dos anteriores y compila una sola vez el APK de release para el E2E, con la clave del Supabase local.
+- `e2e-android (1)` y `e2e-android (2)`: dependen de los tres anteriores. Cada uno levanta su Supabase local, carga los datos de prueba y ejecuta la mitad de los flujos Maestro (`scripts/e2e-shard.sh`) en un emulador de API 34.
+- Si un cambio solo toca `docs/`, Markdown o tests unitarios, `build-apk` y `e2e-android` no corren.
 
 ### Comprobaciones en local
 
@@ -99,7 +101,7 @@ E2E en local. Necesita Android Studio (emulador y `adb`), Docker y `psql`:
 ```bash
 pnpm supabase start
 pnpm db:reset                       # las invitaciones son de un solo uso: reinicia antes de cada ejecución
-pnpm e2e:fixtures                   # crea a Ana y Berta, su hogar y las invitaciones de prueba (usa psql)
+pnpm e2e:fixtures                   # crea los usuarios de prueba, sus hogares y las invitaciones (usa psql)
 pnpm e2e:env                        # escribe .env.e2e con la clave local y 10.0.2.2 como host
 set -a; . ./.env.e2e; set +a
 E2E=1 pnpm expo prebuild --platform android --clean
