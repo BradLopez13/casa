@@ -70,13 +70,13 @@ isOneToOne: false
                   ]
                 },"households": {
                   Row: {
-                    "category_order": (string)[] | null,"created_at": string,"created_by": string | null,"deleted_at": string | null,"id": string,"name": string
+                    "category_order": (string)[] | null,"created_at": string,"created_by": string | null,"deleted_at": string | null,"id": string,"name": string,"rooms": (string)[]
                   }
                   Insert: {
-                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name": string
+                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name": string,"rooms"?: (string)[]
                   }
                   Update: {
-                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name"?: string
+                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name"?: string,"rooms"?: (string)[]
                   }
                   Relationships: [
                     
@@ -276,6 +276,9 @@ isOneToOne: false
                            },
 "set_display_name":
 { Args: { "p_name": string }; Returns: undefined
+                           },
+"set_household_rooms":
+{ Args: { "p_rooms": (string)[] }; Returns: undefined
                            },
 "set_item_bought":
 { Args: { "p_bought": boolean,"p_id": string }; Returns: undefined

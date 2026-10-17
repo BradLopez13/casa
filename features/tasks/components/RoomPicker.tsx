@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
-import { ROOMS, type Room } from '@/domain/tasks/rooms';
+import { offeredRooms } from '@/domain/tasks/catalog';
+import type { Room } from '@/domain/tasks/rooms';
+import { useMembership } from '@/features/households/queries';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
@@ -7,16 +9,20 @@ import { MIN_TOUCH } from '@/ui/tokens';
 
 type Props = { value: Room | null; onChange: (room: Room | null) => void };
 
-/** One pill per room, single choice; tapping the chosen room clears it. */
+/**
+ * One pill per room of the household, single choice; tapping the chosen room clears it. A room
+ * the household dropped still shows while the task has it, so editing never loses it.
+ */
 export function RoomPicker({ value, onChange }: Props) {
   const { colors, radii, space } = useTheme();
+  const rooms = offeredRooms(useMembership().data?.rooms, value);
   return (
     <View
       accessibilityRole="radiogroup"
       accessibilityLabel={t('taskForm.roomLabel')}
       style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}
     >
-      {ROOMS.map((room) => {
+      {rooms.map((room) => {
         const selected = room === value;
         return (
           <Pressable

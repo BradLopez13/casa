@@ -29,6 +29,7 @@ import {
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
@@ -82,6 +83,21 @@ function EmptyDay({ day, today }: { day: string; today: string }) {
         onPress={() => router.push({ pathname: '/task/new', params: { due: day } })}
       />
     </View>
+  );
+}
+
+/** Todas offers the catalogue of typical chores the household does not have yet. */
+function IdeasButton() {
+  const router = useRouter();
+  return (
+    <Button
+      testID="tasks.ideas"
+      title={t('tasks.ideas')}
+      icon={actionIcons.templates}
+      variant="tertiary"
+      width="hug"
+      onPress={() => router.push('/templates')}
+    />
   );
 }
 
@@ -253,7 +269,11 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
                   </View>
                 ) : null}
               </View>
-            ) : null}
+            ) : (
+              <View style={[column, { paddingTop: space(4) }]}>
+                <IdeasButton />
+              </View>
+            )}
           </>
         }
         ListEmptyComponent={
@@ -418,6 +438,9 @@ function AllColumn({ screen, sections, empty, door }: SplitProps) {
         contentContainerStyle={listStyle}
       >
         <View style={column}>
+          <View style={{ paddingTop: space(4) }}>
+            <IdeasButton />
+          </View>
           {sections.length > 0 ? (
             <TaskSections sections={sections} {...rowProps(screen)} />
           ) : (

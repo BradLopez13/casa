@@ -1,9 +1,16 @@
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
+import { ROOMS, type Room } from '@/domain/tasks/rooms';
 
 export type Role = 'owner' | 'member';
 
-export type Membership = { householdId: string; householdName: string; role: Role };
+export type Membership = {
+  householdId: string;
+  householdName: string;
+  role: Role;
+  /** The rooms the home has, in the usual order. A membership persisted before rooms existed lacks it. */
+  rooms: Room[];
+};
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
 
@@ -42,7 +49,7 @@ export async function getMyMembership(): Promise<Membership | null> {
   const data = await unwrapMaybe(
     supabase
       .from('household_members')
-      .select('household_id, role, households(name)')
+      .select('household_id, role, households(name, rooms)')
       .eq('user_id', userId)
       .is('left_at', null)
       .maybeSingle(),
@@ -52,7 +59,14 @@ export async function getMyMembership(): Promise<Membership | null> {
     householdId: data.household_id,
     householdName: data.households?.name ?? '',
     role: data.role as Role,
+    rooms: toRooms(data.households?.rooms),
   };
+}
+
+/** Known rooms only, in the usual order; none known falls back to every room. */
+function toRooms(rooms: readonly string[] | undefined): Room[] {
+  const known = ROOMS.filter((room) => rooms?.includes(room));
+  return known.length > 0 ? known : [...ROOMS];
 }
 
 export async function listMembers(householdId: string): Promise<Member[]> {
@@ -92,6 +106,11 @@ export async function listActiveInvites(householdId: string): Promise<ActiveInvi
 
 export async function createHousehold(name: string): Promise<string> {
   return unwrap(supabase.rpc('create_household', { p_name: name }));
+}
+
+/** Replaces the rooms of the caller's household (at least one, known rooms only). */
+export async function setHouseholdRooms(rooms: readonly Room[]): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_household_rooms', { p_rooms: [...rooms] }));
 }
 
 export async function createInvite(

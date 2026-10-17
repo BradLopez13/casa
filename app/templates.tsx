@@ -1,19 +1,25 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import {
-  TEMPLATES,
-  templateInputs,
-  templateTitle,
-  type TaskTemplate,
-  type TemplateKey,
-} from '@/domain/tasks/templates';
+  CATALOG,
+  CATALOG_ROOMS,
+  catalogFor,
+  catalogId,
+  catalogInputs,
+  catalogTitle,
+  normalizeTaskTitle,
+  type CatalogItem,
+  type CatalogRoom,
+} from '@/domain/tasks/catalog';
+import { ROOMS } from '@/domain/tasks/rooms';
 import { useMembership } from '@/features/households/queries';
 import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
+import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { taskErrorMessage } from '@/features/tasks/errors';
-import { useTaskMutation } from '@/features/tasks/queries';
+import { useTaskMutation, useTasks } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
@@ -26,23 +32,24 @@ import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
 
 function TemplateRow({
-  template,
+  room,
+  item,
   checked,
   onToggle,
 }: {
-  template: TaskTemplate;
+  room: CatalogRoom;
+  item: CatalogItem;
   checked: boolean;
   onToggle: () => void;
 }) {
   const { colors, space } = useTheme();
-  const label = [
-    templateTitle(template),
-    t(`rooms.${template.room}`),
-    recurrenceLabel(template.rule),
-  ].join(', ');
+  // The room is the section heading, so the row says only the chore and its repeat.
+  const label = [catalogTitle(item), item.recurrence ? recurrenceLabel(item.recurrence) : null]
+    .filter((part) => part !== null)
+    .join(', ');
   return (
     <Pressable
-      testID={`templates.item.${template.key}`}
+      testID={`templates.item.${catalogId(room, item)}`}
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       accessibilityLabel={label}
@@ -80,17 +87,41 @@ export default function TemplatesRoute() {
   );
 }
 
+function roomHeading(room: CatalogRoom): string {
+  return room === 'general' ? t('catalog.general') : t(`rooms.${room}`);
+}
+
 function TemplatesScreen() {
   const { colors, space } = useTheme();
   const { fill, edges } = useModalFill();
   const close = useCloseModal('/today');
   const today = useToday();
   const queryClient = useQueryClient();
-  const householdId = useMembership().data?.householdId;
-  const [selected, setSelected] = useState<ReadonlySet<TemplateKey>>(new Set());
-  // One id per template: a retry sends the same ids, so a task created before a failure
+  const membership = useMembership().data;
+  const householdId = membership?.householdId;
+  const tasks = useTasks(householdId).data;
+  // Only what the household has rooms for and does not do yet (by normalised title). A
+  // membership persisted before rooms existed has none: every room then.
+  const rooms = membership?.rooms;
+  const groups = useMemo(
+    () =>
+      catalogFor(
+        rooms ?? ROOMS,
+        new Set((tasks ?? []).map((task) => normalizeTaskTitle(task.title))),
+      ),
+    [rooms, tasks],
+  );
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  // One id per catalogue entry: a retry sends the same ids, so a task created before a failure
   // comes back as itself instead of a copy.
-  const [ids] = useState(() => new Map(TEMPLATES.map((template) => [template.key, newTaskId()])));
+  const [ids] = useState(
+    () =>
+      new Map(
+        CATALOG_ROOMS.flatMap((room) =>
+          CATALOG[room].map((item) => [catalogId(room, item), newTaskId()] as const),
+        ),
+      ),
+  );
   const save = useTaskMutation(async ({ tasks }: { tasks: [string, TaskInput][] }) => {
     for (const [id, input] of tasks) {
       await createTask(id, householdId as string, input);
@@ -99,10 +130,13 @@ function TemplatesScreen() {
 
   // Once a save fails the button stays "Reintentar", also while retrying, until one succeeds.
   const [failed, setFailed] = useState(false);
-  // In TEMPLATES order, the same order templateInputs returns them in.
-  const keys = TEMPLATES.map((template) => template.key).filter((key) => selected.has(key));
+  // Only the chosen entries still on offer: one created before a failed save drops out of the
+  // list once the tasks refresh, and out of the count with it.
+  const keys = groups.flatMap((group) =>
+    group.items.map((item) => catalogId(group.room, item)).filter((key) => selected.has(key)),
+  );
   const saving = save.isPending || save.isSuccess;
-  const toggle = (key: TemplateKey) =>
+  const toggle = (key: string) =>
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(key)) next.delete(key);
@@ -111,13 +145,12 @@ function TemplatesScreen() {
     });
   const add = () => {
     if (householdId === undefined || keys.length === 0) return;
-    const inputs = templateInputs(keys, today);
-    const tasks = keys.map((key, i): [string, TaskInput] => [
-      ids.get(key) as string,
-      inputs[i] as TaskInput,
+    const picks = catalogInputs(keys, today).map(({ id, input }): [string, TaskInput] => [
+      ids.get(id) as string,
+      input,
     ]);
     save.submit(
-      { tasks },
+      { tasks: picks },
       {
         onSuccess: close,
         onError: () => {
@@ -138,7 +171,11 @@ function TemplatesScreen() {
         cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: close }}
         action={{
           testID: 'templates.add',
-          label: failed ? t('templates.retry') : t('templates.add', { n: keys.length }),
+          label: failed
+            ? t('templates.retry')
+            : keys.length === 1
+              ? t('templates.addOne')
+              : t('templates.addCount', { n: keys.length }),
           onPress: add,
           disabled: keys.length === 0 || saving,
           busy: saving,
@@ -151,14 +188,28 @@ function TemplatesScreen() {
           paddingBottom: space(8),
         }}
       >
-        {TEMPLATES.map((template) => (
-          <TemplateRow
-            key={template.key}
-            template={template}
-            checked={selected.has(template.key)}
-            onToggle={() => toggle(template.key)}
-          />
+        {groups.map((group) => (
+          <View key={group.room}>
+            <SectionHeader title={roomHeading(group.room)} count={group.items.length} flush />
+            {group.items.map((item) => {
+              const key = catalogId(group.room, item);
+              return (
+                <TemplateRow
+                  key={key}
+                  room={group.room}
+                  item={item}
+                  checked={selected.has(key)}
+                  onToggle={() => toggle(key)}
+                />
+              );
+            })}
+          </View>
         ))}
+        {groups.length === 0 ? (
+          <Text style={{ paddingTop: space(4), color: colors.muted, fontSize: 16 }}>
+            {t('templates.empty')}
+          </Text>
+        ) : null}
         {save.error ? (
           <View style={{ paddingTop: space(4) }}>
             <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>

@@ -67,6 +67,13 @@ appId: com.bradlopez13.casa
 - hideKeyboard
 - tapOn:
     id: onboarding.create
+# Every room starts chosen: continue with all of them.
+- extendedWaitUntil:
+    visible:
+      id: onboarding.rooms.continue
+    timeout: 20000
+- tapOn:
+    id: onboarding.rooms.continue
 - extendedWaitUntil:
     visible:
       id: today.household-name
