@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
-import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -181,13 +181,32 @@ function useForgetEndedHousehold(membership: { householdId: string } | null | un
   }, [client, membership]);
 }
 
+/**
+ * Runs `run` once the navigation container is ready: now if it already is, otherwise on the
+ * first state change that finds it ready. Returns the cancel function.
+ */
+function whenNavReady(navRef: ReturnType<typeof useNavigationContainerRef>, run: () => void) {
+  if (navRef.isReady()) {
+    run();
+    return () => undefined;
+  }
+  const unsubscribe = navRef.addListener('state', () => {
+    if (!navRef.isReady()) return;
+    unsubscribe();
+    run();
+  });
+  return unsubscribe;
+}
+
 function Guard() {
   const router = useRouter();
   const modalFrame = modalFrameFor(useLayout());
   const segments = useSegments();
-  // Android recreates the activity on a rotation or a font-scale change; navigating before the
-  // root navigator has mounted fails ("Attempted to navigate before mounting the Root Layout").
-  const navReady = useRootNavigationState()?.key !== undefined;
+  // Android recreates the activity on a rotation or a font-scale change, and a redirect can then
+  // fire before the navigation container is mounted: expo-router's store.assertIsReady() throws
+  // "Attempted to navigate before mounting the Root Layout" unless navigationRef.isReady().
+  // So navigation waits for that same signal (see `whenNavReady`).
+  const navRef = useNavigationContainerRef();
   const session = useSession();
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
@@ -214,8 +233,9 @@ function Guard() {
   });
 
   useEffect(() => {
-    if (navReady && target) router.replace(target);
-  }, [navReady, target, router]);
+    if (!target) return;
+    return whenNavReady(navRef, () => router.replace(target));
+  }, [navRef, target, router]);
 
   const ready =
     !pending.isLoading &&
@@ -231,9 +251,16 @@ function Guard() {
   // handled here too.
   const inHousehold = ready && membership === 'member';
   useEffect(() => {
-    if (!navReady || !inHousehold) return;
-    return onNotificationTapped((data) => router.push(routeForNotification(data)));
-  }, [navReady, inHousehold, router]);
+    if (!inHousehold) return;
+    let unsubscribeTaps: (() => void) | undefined;
+    const cancel = whenNavReady(navRef, () => {
+      unsubscribeTaps = onNotificationTapped((data) => router.push(routeForNotification(data)));
+    });
+    return () => {
+      cancel();
+      unsubscribeTaps?.();
+    };
+  }, [navRef, inHousehold, router]);
 
   // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
   // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
