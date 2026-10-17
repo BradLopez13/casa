@@ -3,7 +3,7 @@ import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-n
 import { buttonLook } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFont } from '../tokens';
+import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFontBold } from '../tokens';
 
 export function HeaderAction({
   testID,
@@ -86,7 +86,7 @@ type Action = {
   busy?: boolean;
 };
 
-const TITLE_SIZE = 18;
+const TITLE_SIZE = 20;
 
 /**
  * The Cancel | title | Save bar of every modal (new and edit task, edit item, templates). The
@@ -125,7 +125,7 @@ export function ModalHeader({
 
   const titleStyle = {
     color: colors.ink,
-    fontFamily: displayFont,
+    fontFamily: displayFontBold,
     fontSize: TITLE_SIZE,
     ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
   } as const;
