@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAGNET_COLORS } from '@/domain/members/marks';
 import { contrastRatio, hueDistance } from './contrast';
 import { toggleLook } from './toggleLook';
-import { palettes, type Scheme } from './tokens';
+import { palettes, shadows, type Scheme } from './tokens';
 
 const AA_TEXT = 4.5;
 const AA_NON_TEXT = 3;
@@ -89,12 +89,6 @@ describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) =>
     expect(contrastRatio(p.magnetInk, p.magnet[color])).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it.each(Object.entries(grounds))('magnet ring on %s, where there is one', (_, ground) => {
-    if (p.magnetRing !== 'transparent') {
-      expect(contrastRatio(p.magnetRing, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    }
-  });
-
   it('refresh label on the fridge light', () => {
     expect(contrastRatio(p.light.text, p.light.top)).toBeGreaterThanOrEqual(AA_TEXT);
     expect(contrastRatio(p.light.text, p.page)).toBeGreaterThanOrEqual(AA_TEXT);
@@ -134,10 +128,25 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
     expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('the primary pill edge stands out from the page and from a note', () => {
-    // Primary buttons sit on the page or over notes, never on the door.
-    expect(contrastRatio(p.accentEdge, p.page)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrastRatio(p.accentEdge, p.note)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  it('the light primary pill casts a shadow and the dark one none', () => {
+    expect(shadows.light.primary.shadowOpacity).toBeGreaterThan(0);
+    expect(shadows.dark.primary.shadowOpacity).toBe(0);
+  });
+
+  it('text on a selection fill', () => {
+    expect(contrastRatio(p.onSelection, p.selection)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it.each(['page', 'note', 'door'] as const)('a selection fill stands out on %s', (g) => {
+    expect(contrastRatio(p.selection, p[g])).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it.each(['page', 'note', 'door'] as const)('the focus ring stands out on %s', (g) => {
+    expect(contrastRatio(p.focusRing, p[g])).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('chalk text on the brand band', () => {
+    expect(contrastRatio('#F3F4F0', p.brandBand)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('the tonal pill shows its shape by fill or by edge', () => {
@@ -170,5 +179,13 @@ describe('Pizarra y pósit', () => {
   it('fills the main action with the pósit in both themes', () => {
     expect(palettes.light.accent).toBe('#F2D04B');
     expect(palettes.dark.accent).toBe('#F2D04B');
+  });
+  it('keeps the pósit for what is chosen and the main action in dark mode', () => {
+    expect(palettes.dark.cobalt).toBe('#ECEFEA');
+    expect(palettes.dark.selection).toBe('#F2D04B');
+  });
+  it('uses a leaf magnet instead of coral', () => {
+    expect(MAGNET_COLORS).not.toContain('coral');
+    expect(MAGNET_COLORS).toContain('leaf');
   });
 });
