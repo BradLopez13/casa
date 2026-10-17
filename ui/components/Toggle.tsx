@@ -28,7 +28,7 @@ type Props = Pick<
  */
 export function Toggle({ value = false, disabled, onValueChange, surface, ...rest }: Props) {
   const { colors } = useTheme();
-  const look = toggleLook(value, colors, surface ?? colors.page);
+  const look = toggleLook(value, colors, surface ?? colors.page, !!disabled);
   return (
     <Pressable
       {...rest}
@@ -43,9 +43,9 @@ export function Toggle({ value = false, disabled, onValueChange, surface, ...res
         borderRadius: HEIGHT / 2,
         borderWidth: EDGE,
         borderColor: look.trackBorder,
+        borderStyle: look.dashed ? 'dashed' : 'solid',
         backgroundColor: look.track,
         justifyContent: 'center',
-        opacity: disabled ? 0.5 : 1,
       }}
     >
       <View

@@ -76,7 +76,7 @@ export function Magnet({
     >
       {empty ? null : (
         <Text
-          maxFontSizeMultiplier={1.2}
+          maxFontSizeMultiplier={1.6}
           style={{
             color: colors.magnetInk,
             fontFamily: displayFont,

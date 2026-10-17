@@ -155,7 +155,7 @@ function ItemSuggestions({ entry }: { entry: ItemEntry }) {
           testID={`shopping.suggestion.${suggestion.normalizedName}`}
           onPress={() => entry.submit(suggestion.name)}
           accessibilityRole="button"
-          accessibilityLabel={suggestion.name}
+          accessibilityLabel={t('shopping.a11y.addSuggestion', { name: suggestion.name })}
           style={({ pressed }) => ({
             minHeight: MIN_TOUCH,
             justifyContent: 'center',

@@ -25,7 +25,7 @@ export function TallyView({ line }: { line: TodayLine }) {
   const tail = at < 0 ? '' : first.slice(at + (number?.length ?? 0));
 
   return (
-    <View accessible accessibilityLabel={label} style={{ gap: 2 }}>
+    <View accessible accessibilityLabel={label} accessibilityLiveRegion="polite" style={{ gap: 2 }}>
       <Text
         style={{
           color: colors.ink,

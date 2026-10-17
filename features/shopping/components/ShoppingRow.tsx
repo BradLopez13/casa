@@ -113,8 +113,8 @@ export function ShoppingRow({
   return (
     <Animated.View
       layout={reduceMotion ? undefined : LinearTransition}
-      entering={FadeIn}
-      exiting={FadeOut}
+      entering={reduceMotion ? undefined : FadeIn}
+      exiting={reduceMotion ? undefined : FadeOut}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
