@@ -7,12 +7,20 @@ describe('categorize', () => {
     expect(categorize('manzanas')).toBe('produce');
     expect(categorize('papel higienico')).toBe('hygiene');
     expect(categorize('leche de avena')).toBe('dairy_eggs');
+    expect(categorize('yogur de fresa')).toBe('dairy_eggs');
+    expect(categorize('zumo de naranja')).toBe('drinks');
+    expect(categorize('salsa de tomate')).toBe('pantry');
+    expect(categorize('pasta de dientes')).toBe('hygiene');
+    expect(categorize('tomate frito')).toBe('pantry');
+    expect(categorize('pan integral')).toBe('bakery');
   });
   it('falls back to other', () => {
     expect(categorize('xyz')).toBe('other');
   });
   it('does not match inside words', () => {
     expect(categorize('panadero')).toBe('other');
+    expect(categorize('panal')).toBe('other');
+    expect(categorize('pantalla')).toBe('other');
   });
   it('override wins', () => {
     expect(categorize('leche', new Map<string, Category>([['leche', 'drinks']]))).toBe('drinks');
@@ -31,12 +39,21 @@ describe('groupByCategory', () => {
     expect(groups.map((g) => g.category)).toEqual(['produce', 'dairy_eggs', 'bakery']);
     expect(groups[1]?.items.map((i) => i.id)).toEqual([2, 3]);
     const custom = groupByCategory(items, ['bakery', 'dairy_eggs']);
-    expect(custom.map((g) => g.category)).toEqual(['bakery', 'dairy_eggs']);
+    expect(custom.map((g) => g.category)).toEqual(['bakery', 'dairy_eggs', 'produce']);
   });
   it('uses an explicit category', () => {
     const groups = groupByCategory(
       [{ normalizedName: 'leche', category: 'drinks' }],
       DEFAULT_ORDER,
+    );
+    expect(groups.map((g) => g.category)).toEqual(['drinks']);
+  });
+  it('treats null category as unset and applies overrides', () => {
+    const overrides = new Map<string, Category>([['leche', 'drinks']]);
+    const groups = groupByCategory(
+      [{ normalizedName: 'leche', category: null }],
+      DEFAULT_ORDER,
+      overrides,
     );
     expect(groups.map((g) => g.category)).toEqual(['drinks']);
   });
