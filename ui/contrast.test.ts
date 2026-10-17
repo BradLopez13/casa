@@ -104,16 +104,26 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
   const grounds = { page: p.page, note: p.note };
 
   // WCAG 1.4.11: the parts that show a switch and its state need 3:1 against what is around them.
-  it.each(Object.entries(grounds))('off: track and thumb on %s', (_, ground) => {
-    const off = toggleLook(false, p);
-    expect(contrastRatio(off.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  it.each(Object.entries(grounds))('off: track, edge and thumb on %s', (_, ground) => {
+    const off = toggleLook(false, p, ground);
+    expect(off.track).toBe(ground);
+    expect(contrastRatio(off.trackBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(off.thumb, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(off.check).toBe(false);
   });
 
   it.each(Object.entries(grounds))('on: track on %s, thumb on the track', (_, ground) => {
-    const on = toggleLook(true, p);
+    const on = toggleLook(true, p, ground);
+    expect(on.track).toBe(p.selection);
     expect(contrastRatio(on.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(on.check).toBe(true);
+  });
+
+  it('on in dark: the thumb is the dark slate and keeps its edge', () => {
+    const on = toggleLook(true, palettes.dark, palettes.dark.page);
+    expect(on.thumb).toBe('#151B1E');
+    expect(on.thumbBorder).toBe('#151B1E');
   });
 });
 
