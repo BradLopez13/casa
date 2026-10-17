@@ -69,6 +69,8 @@ export function HeaderAction({
             color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: strong ? 16 : 15,
             fontWeight: '600',
+            // A plain action ("Cancelar") is a tertiary action, underlined like every other one.
+            textDecorationLine: !strong && !disabled ? 'underline' : 'none',
           }}
         >
           {label}

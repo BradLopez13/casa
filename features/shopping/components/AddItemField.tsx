@@ -103,9 +103,11 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
+            // The same height as the secondary «Añadir» beside it: its minimum sets the height, so
+            // the padding stays small enough not to push past it at the default text size.
             minHeight: buttonMetrics('secondary').minHeight,
             paddingHorizontal: space(4),
-            paddingVertical: space(3),
+            paddingVertical: space(2),
             borderRadius: radii.pill,
             // Same width in every state, so focusing never shifts the text.
             borderWidth: 2,
