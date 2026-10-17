@@ -17,7 +17,7 @@ import { dayHeading } from '@/domain/tasks/labels';
 import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import type { Member } from '@/features/households/api';
-import { t } from '@/i18n';
+import { locale, t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
@@ -30,6 +30,7 @@ import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
+import { parsedFormValues, quickLocale } from '../quickAddInput';
 import { taskFormSchema } from '../schemas';
 import { AssigneePicker } from './AssigneePicker';
 import { DayCells } from './DayCells';
@@ -89,42 +90,54 @@ export function TaskForm({
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
-  const [values, setValues] = useState<TaskInput>(initial);
+  // What the person typed and chose; `values` adds what the title says.
+  const [typed, setTyped] = useState<TaskInput>(initial);
+  // Fields chosen by hand: the title no longer fills them and their words stay in it.
+  const [touched, setTouched] = useState<ReadonlySet<FormField>>(() => new Set());
+  // An existing title is read only once it is edited, so opening a task never rewrites it.
+  const [titleEdited, setTitleEdited] = useState(false);
+  // Without the repeat magnet the rule is not the user's to change, nor the title's.
+  const skipped = repeatEditable ? touched : new Set<FormField>([...touched, 'repeat']);
+  const values = titleEdited
+    ? parsedFormValues(typed, skipped, {
+        today,
+        members: members.map((m) => ({ id: m.userId, name: m.displayName })),
+        locale: quickLocale(locale),
+      })
+    : typed;
   // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
   const [opened] = useState(initial);
   const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
   const { requestClose, dialog } = useDiscardGuard({
-    dirty: isDirty(opened, values),
+    dirty: isDirty(opened, typed) || isDirty(opened, values),
     onCancel,
     busy: saving,
   });
   const [triedSave, setTriedSave] = useState(false);
   const titleRef = useRef<TextInput>(null);
-  const set = (patch: Partial<TaskInput>) => setValues((current) => ({ ...current, ...patch }));
+  // A value chosen in a picker is the person's: the title stops filling that field.
+  const choose = (field: FormField, patch: Partial<TaskInput>) => {
+    setTouched((current) => (current.has(field) ? current : new Set([...current, field])));
+    setTyped((current) => ({ ...current, ...patch }));
+  };
   // Tapping the open magnet closes it; tapping another swaps the picker.
   const toggle = (field: FormField) => setOpen((current) => (current === field ? null : field));
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
   // chosen day changes nothing, so a month-end rule on a short month keeps its day. Without the
   // repeat magnet the rule is not the user's to change, so it stays as it is.
-  const setDueOn = (dueOn: string | null) =>
-    setValues((current) =>
-      dueOn === current.dueOn
-        ? current
-        : {
-            ...current,
-            dueOn,
-            recurrence: repeatEditable
-              ? syncMonthly(current.recurrence, dueOn)
-              : current.recurrence,
-          },
-    );
+  const setDueOn = (dueOn: string | null) => {
+    if (dueOn === values.dueOn) return;
+    choose('due', {
+      dueOn,
+      recurrence: repeatEditable ? syncMonthly(typed.recurrence, dueOn) : typed.recurrence,
+    });
+  };
   // A repeating task needs a date: choosing a repeat without one starts it today.
   const setRecurrence = (recurrence: RecurrenceRule | null) =>
-    setValues((current) => ({
-      ...current,
+    choose('repeat', {
       recurrence,
-      dueOn: recurrence !== null && current.dueOn === null ? today : current.dueOn,
-    }));
+      dueOn: recurrence !== null && values.dueOn === null ? today : typed.dueOn,
+    });
 
   const parsed = taskFormSchema.safeParse(values);
   const blank = values.title.trim() === '';
@@ -224,8 +237,11 @@ export function TaskForm({
                     testID="task-form.title"
                     label={t('taskForm.titleLabel')}
                     placeholder={t('taskForm.titlePlaceholder')}
-                    value={values.title}
-                    onChangeText={(text) => set({ title: text })}
+                    value={typed.title}
+                    onChangeText={(text) => {
+                      setTitleEdited(true);
+                      setTyped((current) => ({ ...current, title: text }));
+                    }}
                     // On a short window the keyboard would hide the rest of the note, so there
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}
@@ -257,7 +273,7 @@ export function TaskForm({
                   repeatEditable={repeatEditable}
                 />
                 {open === 'room' ? (
-                  <RoomPicker value={values.room} onChange={(room) => set({ room })} />
+                  <RoomPicker value={values.room} onChange={(room) => choose('room', { room })} />
                 ) : null}
                 {open === 'assignee' ? (
                   <AssigneePicker
@@ -265,7 +281,7 @@ export function TaskForm({
                     members={members}
                     marks={marks}
                     userId={userId}
-                    onChange={(assigneeId) => set({ assigneeId })}
+                    onChange={(assigneeId) => choose('assignee', { assigneeId })}
                   />
                 ) : null}
                 {open === 'due' ? (

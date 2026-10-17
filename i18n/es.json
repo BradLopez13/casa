@@ -337,6 +337,7 @@
   "tasks.addForDay": "Añadir tarea para ese día",
   "tasks.quickAddDay": "Añadir tarea para el {day}…",
   "tasks.quickAddTomorrow": "Añadir tarea para mañana…",
+  "tasks.quickRemove": "Quitar {value}",
   "tasks.stripDay": "{day}, {count} tareas",
   "tasks.stripDayOne": "{day}, 1 tarea",
   "tasks.stripDayNamed": "{day}, {count} tareas: {names}",
