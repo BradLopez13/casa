@@ -56,6 +56,7 @@ export function HeaderAction({
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
                 borderWidth: PRIMARY_EDGE,
+                borderStyle: look.borderStyle,
                 borderColor: look.border,
                 backgroundColor: look.fill,
                 ...(disabled ? null : shadows.primary),
@@ -163,11 +164,7 @@ export function ModalHeader({
         importantForAccessibility="no-hide-descendants"
         style={{ position: 'absolute', left: 0, top: 0, opacity: 0, flexDirection: 'row' }}
       >
-        <Text
-          numberOfLines={1}
-          style={titleStyle}
-          onLayout={width(setTitleWidth)}
-        >
+        <Text numberOfLines={1} style={titleStyle} onLayout={width(setTitleWidth)}>
           {title}
         </Text>
       </View>

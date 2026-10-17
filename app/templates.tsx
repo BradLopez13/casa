@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -18,14 +17,13 @@ import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { Magnet } from '@/ui/components/Magnet';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
-
-const CHECK_SIZE = 26;
 
 function TemplateRow({
   template,
@@ -36,7 +34,7 @@ function TemplateRow({
   checked: boolean;
   onToggle: () => void;
 }) {
-  const { colors, radii, space } = useTheme();
+  const { colors, space } = useTheme();
   const label = [
     templateTitle(template),
     t(`rooms.${template.room}`),
@@ -59,22 +57,15 @@ function TemplateRow({
       })}
     >
       {/* The check mark, not only the colour, shows the selection. */}
-      <View
-        style={{
-          width: CHECK_SIZE,
-          height: CHECK_SIZE,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: radii.day / 2,
-          borderWidth: 2,
-          borderColor: checked ? colors.selection : colors.outline,
-          backgroundColor: checked ? colors.selection : colors.note,
-        }}
-      >
-        {checked ? (
-          <Ionicons name="checkmark" size={18} color={colors.onSelection} accessible={false} />
-        ) : null}
-      </View>
+      <Magnet
+        size="sm"
+        decorative
+        variant="empty"
+        check={checked ? 'filled' : 'faint'}
+        color="teal"
+        initial=""
+        accessibilityLabel={label}
+      />
       <Text style={{ flex: 1, color: colors.ink, fontSize: 16 }}>{label}</Text>
     </Pressable>
   );

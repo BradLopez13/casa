@@ -55,7 +55,7 @@ export function DayList({ days, selected, onSelect, today, marks, names }: Props
               gap: space(3),
               paddingVertical: space(2),
               paddingHorizontal: space(3),
-              borderRadius: radii.day,
+              borderRadius: radii.note,
               backgroundColor: isSelected ? colors.selection : 'transparent',
               opacity: pressedOpacity(pressed),
             })}

@@ -106,7 +106,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
               justifyContent: 'center',
               paddingVertical: compact ? space(1) : space(2),
               gap: space(1),
-              borderRadius: radii.day,
+              borderRadius: radii.pill,
               // The chosen day is filled with `selection`, whatever day it is. Today is only
               // marked by a bold weekday and a 3 dp underline, so it never reads as a hole.
               backgroundColor: isChosen ? colors.selection : 'transparent',

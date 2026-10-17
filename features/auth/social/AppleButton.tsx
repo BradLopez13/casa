@@ -33,6 +33,7 @@ export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
         paddingHorizontal: space(5),
         borderRadius: radii.pill,
         backgroundColor: look.fill,
+        // Apple's guidelines dictate this dimmed state, so it keeps the opacity.
         opacity: dimmed ? 0.5 : pressedOpacity(pressed),
       })}
     >

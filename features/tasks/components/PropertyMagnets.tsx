@@ -66,7 +66,7 @@ function Chip({
         paddingHorizontal: space(4),
         borderRadius: radii.pill,
         borderWidth: 1.5,
-        borderStyle: disabled ? 'dashed' : 'solid',
+        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : open ? colors.selection : colors.outline,
         backgroundColor: disabled ? off.fill : open ? colors.selection : colors.note,
         opacity: pressedOpacity(pressed),

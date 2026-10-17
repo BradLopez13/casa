@@ -140,7 +140,7 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           left: 26,
           right: 26,
           height: 3,
-          borderRadius: 2,
+          borderRadius: 2, // decorativo: no es un control
           backgroundColor: colors.light.shelf,
         }}
       />

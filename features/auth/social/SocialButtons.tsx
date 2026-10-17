@@ -4,7 +4,7 @@ import { visibleAuthError } from '@/features/auth/form-errors';
 import { t, type MessageKey } from '@/i18n';
 import { Divider } from '@/ui/components/Divider';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { pressedOpacity } from '@/ui/buttonLook';
+import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { CONTROL_HEIGHT } from '@/ui/tokens';
 import { GoogleMark } from './GoogleMark';
@@ -22,7 +22,7 @@ const GOOGLE_LOOK = {
 } as const;
 
 export function SocialButtons() {
-  const { scheme, radii, space } = useTheme();
+  const { scheme, colors, radii, space } = useTheme();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
 
@@ -48,6 +48,9 @@ export function SocialButtons() {
   }
 
   const look = GOOGLE_LOOK[scheme];
+  // While the other provider signs in, this one waits as a dashed empty pill, never faded.
+  const waiting = busy !== null && busy !== 'google';
+  const off = buttonLook('secondary', 'default', 'disabled', colors);
 
   return (
     <View style={{ gap: space(3) }}>
@@ -74,9 +77,10 @@ export function SocialButtons() {
             paddingHorizontal: space(5),
             borderRadius: radii.pill,
             borderWidth: 1,
-            borderColor: look.border,
-            backgroundColor: look.fill,
-            opacity: busy !== null && busy !== 'google' ? 0.5 : pressedOpacity(pressed),
+            borderStyle: waiting ? off.borderStyle : 'solid',
+            borderColor: waiting ? off.border : look.border,
+            backgroundColor: waiting ? off.fill : look.fill,
+            opacity: pressedOpacity(pressed),
           })}
         >
           {busy === 'google' ? (
@@ -84,7 +88,13 @@ export function SocialButtons() {
           ) : (
             <>
               <GoogleMark />
-              <Text style={{ color: look.text, fontSize: 17, fontWeight: '600' }}>
+              <Text
+                style={{
+                  color: waiting ? off.foreground : look.text,
+                  fontSize: 17,
+                  fontWeight: '600',
+                }}
+              >
                 {t('auth.social.google')}
               </Text>
             </>

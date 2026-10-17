@@ -28,6 +28,7 @@ export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
     <View
       testID="auth-apple"
       pointerEvents={disabled ? 'none' : 'auto'}
+      // Apple's guidelines dictate this dimmed state, so it keeps the opacity.
       style={{ opacity: dimmed ? 0.5 : 1 }}
     >
       {busy ? (

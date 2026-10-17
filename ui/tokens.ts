@@ -48,8 +48,6 @@ export type Palette = {
   hairline: string;
   /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
   outline: string;
-  /** The door handle. */
-  handle: string;
   /** Initials on a magnet: the deepest slate, readable on every magnet colour. */
   magnetInk: string;
   /** Soft translucent ring around a magnet to keep its edge on the ground; 'transparent' for none. */
@@ -89,7 +87,6 @@ export const palettes: Record<Scheme, Palette> = {
     onRed: '#FFFFFF',
     hairline: '#E3E7E3',
     outline: '#6F7B80',
-    handle: '#6F7B80',
     magnetInk: '#151B1E',
     magnetRing: 'rgba(21,27,30,0.35)',
     magnet: {
@@ -127,7 +124,6 @@ export const palettes: Record<Scheme, Palette> = {
     onRed: '#151B1E',
     hairline: '#2C383E',
     outline: '#7F8B90',
-    handle: '#7F8B90',
     magnetInk: '#151B1E',
     magnetRing: 'transparent',
     magnet: {
@@ -154,7 +150,7 @@ export const noteEdges: Record<Scheme, NoteEdge> = {
   dark: { borderWidth: 1, borderColor: palettes.dark.hairline },
 };
 
-export const radii = { day: 12, note: 14, door: 30, pill: 999 } as const;
+export const radii = { note: 14, door: 30, pill: 999 } as const;
 
 export const magnetSizes = { lg: 50, md: 38, sm: 26 } as const;
 export type MagnetSize = keyof typeof magnetSizes;

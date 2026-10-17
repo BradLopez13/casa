@@ -62,7 +62,7 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
         // One selected style (§14.1): chosen is filled with `selection`, the rest outlined on
         // the note, so it reads by shape and not by the label's colour alone.
         borderWidth: 1.5,
-        borderStyle: disabled ? 'dashed' : 'solid',
+        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : selected ? colors.selection : colors.outline,
         backgroundColor: disabled ? off.fill : selected ? colors.selection : colors.note,
         opacity: pressedOpacity(pressed),

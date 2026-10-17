@@ -18,7 +18,6 @@ import { Magnet } from '@/ui/components/Magnet';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
-const BOX = 24;
 const FLASH_IN_MS = 150;
 const FLASH_OUT_MS = 450;
 
@@ -144,20 +143,15 @@ export function ShoppingRow({
           justifyContent: 'center',
         }}
       >
-        <View
-          style={{
-            width: BOX,
-            height: BOX,
-            borderRadius: BOX / 2,
-            borderWidth: 2,
-            borderColor: bought ? colors.selection : colors.outline,
-            backgroundColor: bought ? colors.selection : 'transparent',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {bought ? <Ionicons name="checkmark" size={16} color={colors.onSelection} /> : null}
-        </View>
+        <Magnet
+          size="sm"
+          decorative
+          variant="empty"
+          check={bought ? 'filled' : 'faint'}
+          color="teal"
+          initial=""
+          accessibilityLabel={item.name}
+        />
       </Pressable>
       {onOpen ? (
         <Pressable
