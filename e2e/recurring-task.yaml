@@ -61,13 +61,17 @@ appId: com.bradlopez13.casa
     visible: Hechas hoy
     timeout: 20000
 
-# Tareas opens in the week view: the next occurrence shows up under "Mañana"
+# Tareas opens in the week view: tomorrow's cell in the day strip counts the next occurrence
+# (its label reads «Mañana, 1 tarea: Tú»), and choosing it shows the task.
 - tapOn:
     id: tab.tasks
 - extendedWaitUntil:
-    visible: Mañana
+    visible: Mañana, 1 tarea.*
     timeout: 20000
-- assertVisible: Sacar la basura
+- tapOn: Mañana, 1 tarea.*
+- extendedWaitUntil:
+    visible: Sacar la basura
+    timeout: 20000
 
 # Reopen it from the done tray: it goes back to "Para hoy"
 - tapOn:
@@ -77,9 +81,9 @@ appId: com.bradlopez13.casa
     visible: Para hoy
     timeout: 20000
 
-# The successor for tomorrow is gone again once the list refetches
+# The successor for tomorrow is gone again once the list refetches: tomorrow counts none
 - tapOn:
     id: tab.tasks
 - extendedWaitUntil:
-    notVisible: Mañana
+    visible: Mañana, 0 tareas
     timeout: 20000

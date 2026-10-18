@@ -67,11 +67,15 @@ appId: com.bradlopez13.casa
 - hideKeyboard
 - tapOn:
     id: onboarding.create
-# Every room starts chosen: continue with all of them.
+# Every room starts chosen: continue with all of them. On a small screen the seven rooms push
+# the button below the fold: wait for the first room, then scroll to the button.
 - extendedWaitUntil:
     visible:
-      id: onboarding.rooms.continue
+      id: onboarding.room.kitchen
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: onboarding.rooms.continue
 - tapOn:
     id: onboarding.rooms.continue
 - extendedWaitUntil:

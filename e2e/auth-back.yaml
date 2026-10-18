@@ -1,6 +1,7 @@
 appId: com.bradlopez13.casa
 ---
 # Back from the sign-up returns to the sign-in, with the link and with the system button.
+# The sign-up is told apart by its first field: on a small screen its submit is below the fold.
 - clearState
 # Android can kill the first start while the cleared task is still being removed: retry it.
 - retry:
@@ -19,7 +20,7 @@ appId: com.bradlopez13.casa
     id: sign-in.go-sign-up
 - extendedWaitUntil:
     visible:
-      id: sign-up.submit
+      id: sign-up.name
     timeout: 15000
 - scrollUntilVisible:
     element:
@@ -31,7 +32,7 @@ appId: com.bradlopez13.casa
       id: sign-in.submit
     timeout: 15000
 - assertNotVisible:
-    id: sign-up.submit
+    id: sign-up.name
 # Again, now with the system back button.
 - scrollUntilVisible:
     element:
@@ -40,7 +41,7 @@ appId: com.bradlopez13.casa
     id: sign-in.go-sign-up
 - extendedWaitUntil:
     visible:
-      id: sign-up.submit
+      id: sign-up.name
     timeout: 15000
 - back
 - extendedWaitUntil:
@@ -48,4 +49,4 @@ appId: com.bradlopez13.casa
       id: sign-in.submit
     timeout: 15000
 - assertNotVisible:
-    id: sign-up.submit
+    id: sign-up.name
