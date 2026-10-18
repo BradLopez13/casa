@@ -24,6 +24,7 @@ import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Magnet } from '@/ui/components/Magnet';
+import { Button } from '@/ui/components/Button';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { pressedOpacity } from '@/ui/buttonLook';
@@ -170,19 +171,9 @@ function TemplatesScreen() {
         title={t('templates.title')}
         step={2}
         cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: close }}
-        action={{
-          testID: 'templates.add',
-          label: failed
-            ? t('templates.retry')
-            : keys.length === 1
-              ? t('templates.addOne')
-              : t('templates.addCount', { n: keys.length }),
-          onPress: add,
-          disabled: keys.length === 0 || saving,
-          busy: saving,
-        }}
       />
       <ScrollView
+        style={fill}
         contentContainerStyle={{
           paddingHorizontal: space(5),
           paddingTop: space(3),
@@ -217,6 +208,32 @@ function TemplatesScreen() {
           </View>
         ) : null}
       </ScrollView>
+      {/* The foot, as on the task form: «Añadir» is the sheet's one pósit, under the thumb. */}
+      <View
+        style={{
+          paddingHorizontal: space(5),
+          paddingTop: space(3),
+          paddingBottom: space(3),
+          borderTopWidth: 1,
+          borderTopColor: colors.hairline,
+          backgroundColor: colors.page,
+        }}
+      >
+        <Button
+          testID="templates.add"
+          title={
+            failed
+              ? t('templates.retry')
+              : keys.length === 1
+                ? t('templates.addOne')
+                : t('templates.addCount', { n: keys.length })
+          }
+          onPress={add}
+          disabled={keys.length === 0}
+          loading={saving}
+          width="full"
+        />
+      </View>
     </SafeAreaView>
   );
 }

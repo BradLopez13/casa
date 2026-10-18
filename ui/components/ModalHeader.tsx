@@ -3,125 +3,81 @@ import { Platform, Pressable, Text, View, type LayoutChangeEvent } from 'react-n
 import { buttonLook, pressedOpacity } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
-import { INLINE_PILL_HEIGHT, MIN_TOUCH, PRIMARY_EDGE, displayFontBold } from '../tokens';
-
-export function HeaderAction({
-  testID,
-  label,
-  onPress,
-  disabled = false,
-  busy = false,
-  strong = false,
-}: {
-  testID: string;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  busy?: boolean;
-  strong?: boolean;
-}) {
-  const { colors, radii, space, shadows } = useTheme();
-  // A disabled main action waits as an empty outlined pill with a faded label, like a disabled
-  // Button; a plain action fades its label too.
-  const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled, busy }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={space(1)}
-      style={({ pressed }) => ({
-        minWidth: MIN_TOUCH,
-        minHeight: MIN_TOUCH,
-        alignItems: strong ? 'flex-end' : 'flex-start',
-        justifyContent: 'center',
-        opacity: pressedOpacity(pressed),
-      })}
-    >
-      {/* The main action is a compact primary button (filled), so it stands apart from
-          "Cancelar", a tertiary text action, by shape and not only by weight. No icon: the bar
-          must leave the title room to stay on the actions' line at the default text size.
-          Disabled, it waits as an empty outlined pill, like every disabled Button. */}
-      <View
-        style={
-          strong
-            ? {
-                minHeight: INLINE_PILL_HEIGHT,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: space(2),
-                paddingHorizontal: space(4),
-                borderRadius: radii.pill,
-                borderWidth: PRIMARY_EDGE,
-                borderColor: look.border,
-                backgroundColor: look.fill,
-                ...(disabled ? null : shadows.primary),
-              }
-            : null
-        }
-      >
-        <Text
-          style={{
-            color: strong || disabled ? look.foreground : colors.cobalt,
-            opacity: look.labelOpacity,
-            fontSize: strong ? 16 : 15,
-            fontWeight: '600',
-            // A plain action ("Cancelar") is a tertiary action, underlined like every other one.
-            textDecorationLine: !strong && !disabled ? 'underline' : 'none',
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
+import { MIN_TOUCH, displayFontBold } from '../tokens';
 
 type Action = {
   testID: string;
   label: string;
   onPress: () => void;
   disabled?: boolean;
-  busy?: boolean;
-  /** Drawn as plain text instead of the pósit pill (another primary owns the screen). */
-  quiet?: boolean;
 };
+
+/** The bar's text action («Cancelar», «Volver»): a tertiary action, underlined like every other. */
+function HeaderAction({ testID, label, onPress, disabled = false }: Action) {
+  const { colors, space } = useTheme();
+  const look = buttonLook('tertiary', 'default', disabled ? 'disabled' : 'enabled', colors);
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={space(1)}
+      style={({ pressed }) => ({
+        minWidth: MIN_TOUCH,
+        minHeight: MIN_TOUCH,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        opacity: pressedOpacity(pressed),
+      })}
+    >
+      <Text
+        style={{
+          color: look.foreground,
+          opacity: look.labelOpacity,
+          fontSize: 15,
+          fontWeight: '600',
+          textDecorationLine: disabled ? 'none' : 'underline',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 const TITLE_SIZE = 20;
 
 /**
- * The Cancel | title | Save bar of every modal (new and edit task, edit item, templates). The
- * title sits centred between the actions while it fits on one line; with large system text on a
- * phone it would be cut, so it moves to a line of its own under the actions instead, whole and
- * free to wrap (`modalTitleInline`). The actions keep their 44 dp targets either way.
+ * The one header of every sheet and secondary screen (new and edit task, edit item, templates,
+ * members): a text action on the left («Cancelar» or «Volver») and the title, in one size,
+ * centred. The main action never sits here: it is the pósit at the foot. The title stays centred
+ * between the action and an empty slot as wide while it fits on one line; with large system text
+ * on a phone it would be cut, so it moves to a line of its own under the action instead, whole
+ * and free to wrap (`modalTitleInline`).
  */
 export function ModalHeader({
   title,
   cancel,
-  action,
   step,
 }: {
   title: string;
   cancel: Action;
-  /** The main action, drawn as a pill. Left out when the form keeps its primary at the foot. */
-  action?: Action;
   /** Padding above and below the bar, in `space()` steps. */
   step: number;
 }) {
   const { colors, space } = useTheme();
   const [row, setRow] = useState(0);
   const [cancelWidth, setCancelWidth] = useState(0);
-  const [saveWidth, setSaveWidth] = useState(0);
   const [titleWidth, setTitleWidth] = useState(0);
   const gap = space(2);
   const inline = modalTitleInline({
     row,
     gap,
     cancel: cancelWidth,
-    save: action ? saveWidth : cancelWidth,
+    save: cancelWidth,
     title: titleWidth,
   });
   const width = (set: (w: number) => void) => (e: LayoutChangeEvent) =>
@@ -157,7 +113,7 @@ export function ModalHeader({
         borderBottomColor: colors.hairline,
       }}
     >
-      {/* The title on one line, unconstrained and unseen: what it would need beside the actions. */}
+      {/* The title on one line, unconstrained and unseen: what it would need beside the action. */}
       <View
         pointerEvents="none"
         accessibilityElementsHidden
@@ -173,14 +129,8 @@ export function ModalHeader({
           <HeaderAction {...cancel} />
         </View>
         {inline ? heading : <View style={{ flex: 1 }} />}
-        {action ? (
-          <View onLayout={width(setSaveWidth)}>
-            <HeaderAction {...action} strong={!action.quiet} />
-          </View>
-        ) : (
-          // No main action: an empty slot as wide as Cancel keeps the title centred.
-          <View style={{ width: cancelWidth }} />
-        )}
+        {/* An empty slot as wide as the action keeps the title centred. */}
+        <View style={{ width: cancelWidth }} />
       </View>
       {inline ? null : heading}
     </View>

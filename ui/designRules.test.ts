@@ -150,6 +150,24 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect([...found, ...tints]).toEqual([]);
   });
 
+  // «Una cabecera»: sheets and secondary screens share ModalHeader (a text action, the title in
+  // one size) and keep their main action at the foot. ScreenTitle stays on auth and onboarding
+  // (and the invitation, which phase 1 redraws).
+  it('one header: no main action in ModalHeader, no display title outside auth', () => {
+    const headed = offenders(sources, (line, lines, i) => {
+      if (!/<ModalHeader\b/.test(line)) return false;
+      const end = lines.findIndex((l, j) => j >= i && /\/>/.test(l));
+      return /\baction=\{/.test(lines.slice(i, end + 1).join('\n'));
+    });
+    const titled = sources.filter(
+      (f) =>
+        /\bScreenTitle\b/.test(read(f)) &&
+        !/^app\/\(auth\)\//.test(f) &&
+        !['app/onboarding.tsx', 'app/invite.tsx', 'ui/components/ScreenTitle.tsx'].includes(f),
+    );
+    expect([...headed, ...titled]).toEqual([]);
+  });
+
   // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is secondary,
   // or the red primary when it destroys.
   it('the confirm dialog never draws the pósit', () => {
