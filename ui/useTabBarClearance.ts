@@ -1,6 +1,7 @@
 import { PixelRatio, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tabBarClearance } from './tabBar';
+import { useMeasuredTabBarHeight } from './tabBarHeight';
 import { space } from './theme';
 import { useLayout } from './useLayout';
 
@@ -13,12 +14,14 @@ export function useTabBarClearance(): number {
   const { rail } = useLayout();
   const { width, height } = useWindowDimensions();
   const { bottom } = useSafeAreaInsets();
+  const measured = useMeasuredTabBarHeight();
   return tabBarClearance({
     width,
     height,
     fontScale: PixelRatio.getFontScale(),
     bottomInset: bottom,
     rail,
+    measured,
   });
 }
 

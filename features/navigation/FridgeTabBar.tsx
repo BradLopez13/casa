@@ -1,6 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { CommonActions } from 'expo-router/react-navigation';
-import type { ReactNode } from 'react';
+import { BottomTabBarHeightCallbackContext } from 'expo-router/tabs';
+import { useContext, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
@@ -13,6 +14,7 @@ import {
   tabBarHeight,
   tabLabelsBeside,
 } from '@/ui/tabBar';
+import { useReportTabBarHeight } from '@/ui/tabBarHeight';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -87,11 +89,20 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
   const beside = tabLabelsBeside(width, height);
   const barHeight = tabBarHeight({ width, height, fontScale, bottomInset: insets.bottom });
   const handlers = tabHandlers({ state, navigation });
+  const report = useReportTabBarHeight();
+  const reportToNavigation = useContext(BottomTabBarHeightCallbackContext);
   return (
     <View
       accessibilityRole="tablist"
+      // The estimate is a floor: enlarged text may make the bar taller, and what floats above it
+      // (the notice) follows the height it really got.
+      onLayout={(e) => {
+        const measured = e.nativeEvent.layout.height;
+        report(measured);
+        reportToNavigation?.(measured);
+      }}
       style={{
-        height: barHeight,
+        minHeight: barHeight,
         flexDirection: 'row',
         paddingTop: TAB_BAR_PAD,
         paddingBottom: insets.bottom + TAB_BAR_PAD,
