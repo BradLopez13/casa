@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(31);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -139,6 +139,59 @@ select is(
   1::bigint,
   'that update message is a shopping_items broadcast'
 );
+
+-- One message per statement and household: clearing several bought items sends one.
+select tests.authenticate_as(:'bob');
+select public.add_shopping_item(
+  '00000000-0000-0000-0000-0000000000d4', '00000000-0000-0000-0000-0000000000a1', 'Sal', null
+);
+select public.add_shopping_item(
+  '00000000-0000-0000-0000-0000000000d5', '00000000-0000-0000-0000-0000000000a1', 'Aceite', null
+);
+select public.set_item_bought('00000000-0000-0000-0000-0000000000d4', true);
+select public.set_item_bought('00000000-0000-0000-0000-0000000000d5', true);
+select tests.clear_auth();
+
+select pg_temp.casa_messages('shopping_items') as items_before \gset
+select tests.authenticate_as(:'bob');
+select public.clear_bought_items('00000000-0000-0000-0000-0000000000a1');
+select tests.clear_auth();
+
+select is(
+  (select count(*) from public.shopping_items
+   where household_id = '00000000-0000-0000-0000-0000000000a1'
+     and bought_at is not null and cleared_at is null),
+  0::bigint,
+  'clearing archives every bought item'
+);
+select is(
+  pg_temp.casa_messages('shopping_items') - :items_before,
+  1::bigint,
+  'clearing three bought items sends one shopping_items message'
+);
+
+select pg_temp.casa_messages() as all_casa_before \gset
+update public.shopping_items set name = name where false;
+select is(
+  pg_temp.casa_messages() - :all_casa_before,
+  0::bigint,
+  'a statement that changes no row sends nothing'
+);
+
+-- An update reaches the households of the old and the new rows.
+select count(*) as otra_before from realtime.messages
+where topic = 'household:00000000-0000-0000-0000-0000000000a2' \gset
+select pg_temp.casa_messages('shopping_items') as items_before \gset
+update public.shopping_items set household_id = '00000000-0000-0000-0000-0000000000a2'
+where id = '00000000-0000-0000-0000-0000000000d2';
+select ok(
+  pg_temp.casa_messages('shopping_items') - :items_before = 1
+    and (select count(*) from realtime.messages
+         where topic = 'household:00000000-0000-0000-0000-0000000000a2') - :otra_before = 1,
+  'moving a row between households tells both'
+);
+update public.shopping_items set household_id = '00000000-0000-0000-0000-0000000000a1'
+where id = '00000000-0000-0000-0000-0000000000d2';
 
 -- Carla's household gets its own message, so other topics exist in the table.
 select tests.authenticate_as(:'carla');
