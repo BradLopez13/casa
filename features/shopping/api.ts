@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
+import { CATEGORIES, type Category } from '@/domain/shopping/categories';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName } from '@/domain/shopping/normalize';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
@@ -35,12 +36,20 @@ const nullable = (value: string | null) => value as string;
 const toIso = (value: string) => new Date(value).toISOString();
 const toIsoOrNull = (value: string | null) => (value === null ? null : toIso(value));
 
+const KNOWN: ReadonlySet<string> = new Set(CATEGORIES);
+
+/** A category id from the server; one this build does not know reads as none. */
+export const toCategory = (value: string | null | undefined): Category | null =>
+  value != null && KNOWN.has(value) ? (value as Category) : null;
+
 /** The items on the list: everything not yet cleared. */
 export async function listShoppingItems(householdId: string): Promise<ShoppingItem[]> {
   const data = await unwrap(
     supabase
       .from('shopping_items')
-      .select('id, name, normalized_name, quantity, created_at, created_by, bought_at, bought_by')
+      .select(
+        'id, name, normalized_name, quantity, category, created_at, created_by, bought_at, bought_by',
+      )
       .eq('household_id', householdId)
       .is('cleared_at', null),
   );
@@ -49,6 +58,7 @@ export async function listShoppingItems(householdId: string): Promise<ShoppingIt
     name: row.name,
     normalizedName: row.normalized_name ?? normalizeItemName(row.name),
     quantity: row.quantity,
+    category: toCategory(row.category),
     createdAt: toIso(row.created_at),
     createdBy: row.created_by,
     boughtAt: toIsoOrNull(row.bought_at),
@@ -63,6 +73,7 @@ export async function shoppingHistory(householdId: string): Promise<HistoryEntry
     normalizedName: row.normalized_name,
     uses: row.uses,
     lastUsedAt: toIso(row.last_used_at),
+    category: toCategory(row.category),
   }));
 }
 
@@ -107,4 +118,48 @@ export async function deleteShoppingItem(id: string): Promise<void> {
 
 export async function clearBoughtItems(householdId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('clear_bought_items', { p_household_id: householdId }));
+}
+
+/** Sets the item's category and remembers it for the household under the item's name. */
+export async function setItemCategory(id: string, category: Category): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_item_category', { p_id: id, p_category: category }));
+}
+
+/** The household's aisle order; an empty one goes back to the default. */
+export async function setCategoryOrder(order: readonly Category[]): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_category_order', { p_order: [...order] }));
+}
+
+/**
+ * The household's categories: its aisle order (null for the default) and the corrections its
+ * members made, as [normalized name, category] pairs (a Map would not survive the persisted
+ * cache).
+ */
+export type ItemCategories = {
+  order: Category[] | null;
+  overrides: [string, Category][];
+};
+
+export async function listItemCategories(householdId: string): Promise<ItemCategories> {
+  const [household, corrections] = await Promise.all([
+    unwrapMaybe(
+      supabase.from('households').select('category_order').eq('id', householdId).maybeSingle(),
+    ),
+    unwrap(
+      supabase
+        .from('household_item_categories')
+        .select('normalized_name, category')
+        .eq('household_id', householdId),
+    ),
+  ]);
+  const order = (household?.category_order ?? [])
+    .map(toCategory)
+    .filter((c): c is Category => c !== null);
+  return {
+    order: order.length > 0 ? order : null,
+    overrides: corrections.flatMap((row): [string, Category][] => {
+      const category = toCategory(row.category);
+      return category ? [[row.normalized_name, category]] : [];
+    }),
+  };
 }

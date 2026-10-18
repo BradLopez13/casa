@@ -11,6 +11,7 @@
 --   leo@e2e.dev   = Leo, owner of "Piso Leo" (create-complete-task)
 --   olga@e2e.dev  = Olga, owner of "Piso Olga" (shopping-offline)
 --   rita@e2e.dev  = Rita, owner of "Piso Rita" (recurring-task)
+--   rosa@e2e.dev  = Rosa, owner of "Piso Rosa" (rotate)
 --   sara@e2e.dev  = Sara, owner of "Piso Sara" (shopping)
 -- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
 -- The sign-up path itself stays covered by sign-up-create-household, forgot-password and
@@ -109,6 +110,7 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('leo@e2e.dev', 'Leo'), 'Piso Leo');
   perform pg_temp.e2e_household(pg_temp.e2e_user('olga@e2e.dev', 'Olga'), 'Piso Olga');
   perform pg_temp.e2e_household(pg_temp.e2e_user('rita@e2e.dev', 'Rita'), 'Piso Rita');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('rosa@e2e.dev', 'Rosa'), 'Piso Rosa');
   perform pg_temp.e2e_household(pg_temp.e2e_user('sara@e2e.dev', 'Sara'), 'Piso Sara');
 end
 $$;

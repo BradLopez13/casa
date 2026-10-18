@@ -4,14 +4,16 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { pendingNames, planAdd } from '@/domain/shopping/screen';
 import { suggest, type HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
-import { Button } from '@/ui/components/Button';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { useFocusReveal } from '@/ui/focusReveal';
-import { buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
+import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 import { actionIcons } from '@/ui/actionIcons';
+
+const ADD_SIZE = 40;
 
 type EntryOptions = {
   items: readonly ShoppingItem[];
@@ -40,12 +42,15 @@ export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) 
     setError(undefined);
   };
 
-  const submit = (name: string) => {
+  /** False when the name was rejected, so the field can take focus back. */
+  const submit = (name: string): boolean => {
     const parsed = shoppingNameSchema.safeParse(name);
     if (!parsed.success) {
-      // An empty field just does nothing; a name too long says why.
-      if (name.trim() !== '') setError(t('shopping.errors.INVALID_ITEM_NAME'));
-      return;
+      // An empty field asks for a name; a name too long says why.
+      setError(
+        name.trim() === '' ? t('shopping.nameRequired') : t('shopping.errors.INVALID_ITEM_NAME'),
+      );
+      return false;
     }
     const plan = planAdd(items, parsed.data);
     // Either way the name is on the list now, so the field is ready for the next one.
@@ -53,10 +58,11 @@ export function useItemEntry({ items, history, onAdd, onListed }: EntryOptions) 
     if (plan.kind === 'listed') {
       setError(t('shopping.alreadyListed'));
       onListed(plan.id);
-      return;
+      return true;
     }
     setError(undefined);
     onAdd(plan.name);
+    return true;
   };
 
   return { text, error, suggestions, change, submit };
@@ -75,7 +81,9 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
   // In Compra's left pane, the field with its error and suggestions stays above the keyboard;
   // elsewhere (on the door) this does nothing.
   const reveal = useFocusReveal();
+  const look = buttonLook('primary', 'default', 'enabled', colors);
   const block = useRef<View>(null);
+  const input = useRef<TextInput>(null);
   const shown = entry.suggestions.length;
   useEffect(() => {
     if (focused) reveal(block.current);
@@ -83,12 +91,28 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
 
   return (
     <View ref={block} style={{ gap: space(3) }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          minHeight: buttonMetrics('primary').minHeight,
+          paddingLeft: space(4),
+          paddingRight: space(1),
+          borderRadius: radii.pill,
+          // Same width in every state, so focusing never shifts the text.
+          borderWidth: 2,
+          borderColor: focused ? colors.cobalt : colors.outline,
+          backgroundColor: colors.note,
+        }}
+      >
         <TextInput
+          ref={input}
           testID="shopping.input"
           value={text}
           onChangeText={change}
-          onSubmitEditing={() => submit(text)}
+          onSubmitEditing={() => {
+            submit(text);
+          }}
           returnKeyType="done"
           // Keeps the keyboard up so several items go in one after another.
           submitBehavior="submit"
@@ -103,30 +127,34 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           onBlur={() => setFocused(false)}
           style={{
             flex: 1,
-            // The same height as the secondary «Añadir» beside it: its minimum sets the height, so
-            // the padding stays small enough not to push past it at the default text size.
-            minHeight: buttonMetrics('secondary').minHeight,
-            paddingHorizontal: space(4),
+            alignSelf: 'stretch',
             paddingVertical: space(2),
-            borderRadius: radii.pill,
-            // Same width in every state, so focusing never shifts the text.
-            borderWidth: 2,
-            borderColor: focused ? colors.cobalt : colors.outline,
-            backgroundColor: colors.note,
             color: colors.ink,
             fontSize: 17,
           }}
         />
-        <View style={{ flexShrink: 0 }}>
-          <Button
-            testID="shopping.add"
-            title={t('shopping.add')}
-            variant="secondary"
-            icon={actionIcons.add}
-            disabled={text.trim() === ''}
-            onPress={() => submit(text)}
-          />
-        </View>
+        <Pressable
+          testID="shopping.add"
+          accessibilityRole="button"
+          accessibilityLabel={t('shopping.add')}
+          // The circle is 40 dp inside the pill; the slop brings the touch area to 44 dp.
+          hitSlop={space(1)}
+          onPress={() => {
+            if (!submit(text)) input.current?.focus();
+          }}
+          style={({ pressed }) => ({
+            width: ADD_SIZE,
+            height: ADD_SIZE,
+            flexShrink: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: radii.pill,
+            backgroundColor: look.fill,
+            opacity: pressedOpacity(pressed),
+          })}
+        >
+          <Ionicons name={actionIcons.add} size={24} color={look.foreground} accessible={false} />
+        </Pressable>
       </View>
       {error ? <ErrorText testID="shopping.error">{error}</ErrorText> : null}
       <ItemSuggestions entry={entry} />
@@ -146,7 +174,7 @@ function ItemSuggestions({ entry }: { entry: ItemEntry }) {
           testID={`shopping.suggestion.${suggestion.normalizedName}`}
           onPress={() => entry.submit(suggestion.name)}
           accessibilityRole="button"
-          accessibilityLabel={suggestion.name}
+          accessibilityLabel={t('shopping.a11y.addSuggestion', { name: suggestion.name })}
           style={({ pressed }) => ({
             minHeight: MIN_TOUCH,
             justifyContent: 'center',

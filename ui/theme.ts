@@ -64,7 +64,7 @@ export function useReduceMotion(): boolean {
 export type Theme = {
   scheme: Scheme;
   colors: Colors;
-  shadows: { magnet: Shadow; note: Shadow; primary: Shadow };
+  shadows: { magnet: Shadow; magnetAmbient: Shadow; note: Shadow; primary: Shadow };
   /** Spread on every note surface next to `shadows.note`: a hairline edge in dark mode only. */
   noteEdge: NoteEdge;
   radii: typeof radii;

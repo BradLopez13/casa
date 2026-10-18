@@ -1,3 +1,5 @@
+import { locale } from '@/i18n';
+import type { Category } from './categories';
 import { normalizeItemName } from './normalize';
 
 export type HistoryEntry = {
@@ -5,6 +7,8 @@ export type HistoryEntry = {
   normalizedName: string;
   uses: number;
   lastUsedAt: string;
+  /** The aisle it was last filed under, when the server knows one. */
+  category: Category | null;
 };
 
 const MAX_SUGGESTIONS = 5;
@@ -25,4 +29,18 @@ export function suggest(
       e.normalizedName.split(' ').some((word) => word.startsWith(needle)),
   );
   return [...starts, ...words].slice(0, MAX_SUGGESTIONS);
+}
+
+const MAX_USUAL = 6;
+
+/** The most used names in the history that are not on the list now, for an empty list. */
+export function usual(
+  history: readonly HistoryEntry[],
+  pendingNormalized: ReadonlySet<string>,
+  n = MAX_USUAL,
+): HistoryEntry[] {
+  return history
+    .filter((e) => !pendingNormalized.has(e.normalizedName))
+    .sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, locale))
+    .slice(0, n);
 }

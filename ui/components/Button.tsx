@@ -42,7 +42,7 @@ export function Button({
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const { fill, border, foreground } = buttonLook(
+  const { fill, border, foreground, borderStyle } = buttonLook(
     variant,
     tone,
     loading ? 'busy' : disabled ? 'disabled' : 'enabled',
@@ -70,6 +70,7 @@ export function Button({
           paddingVertical: m.paddingV,
           borderRadius: radii.pill,
           borderWidth: border === 'transparent' ? 0 : PRIMARY_EDGE,
+          borderStyle,
           borderColor: border,
           backgroundColor: fill,
           opacity: pressedOpacity(pressed),

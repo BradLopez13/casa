@@ -36,6 +36,10 @@ export type Palette = {
   brandBand: string;
   /** Chalk text and the symbol's left figure on the brand band, the same in both themes. */
   onBrandBand: string;
+  /** Inactive tab icons and labels on the brand band: `onBrandBand` at 80 %. */
+  onBrandBandMuted: string;
+  /** The hairline along the top of the tab bar, the door's bottom edge: `onBrandBand` at 12 %. */
+  brandBandEdge: string;
   /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
   tonal: string;
   /** Edge of the secondary pill, for when its fill alone does not show against the ground. */
@@ -48,12 +52,12 @@ export type Palette = {
   hairline: string;
   /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
   outline: string;
-  /** The door handle. */
-  handle: string;
   /** Initials on a magnet: the deepest slate, readable on every magnet colour. */
   magnetInk: string;
   /** Soft translucent ring around a magnet to keep its edge on the ground; 'transparent' for none. */
   magnetRing: string;
+  /** 1 dp lighter arc along the top inside edge of a magnet. */
+  magnetHighlight: string;
   magnet: Record<MagnetColor, string>;
   /** The fridge light revealed by pull-to-refresh. */
   light: { top: string; text: string; shelf: string };
@@ -83,15 +87,17 @@ export const palettes: Record<Scheme, Palette> = {
     focusRing: '#1E2A2F',
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
+    onBrandBandMuted: 'rgba(243,244,240,0.8)',
+    brandBandEdge: 'rgba(243,244,240,0.12)',
     tonal: '#D3DCD9',
     tonalEdge: '#6F7B80',
     red: '#B3392F',
     onRed: '#FFFFFF',
     hairline: '#E3E7E3',
     outline: '#6F7B80',
-    handle: '#6F7B80',
     magnetInk: '#151B1E',
     magnetRing: 'rgba(21,27,30,0.35)',
+    magnetHighlight: 'rgba(255,255,255,0.28)',
     magnet: {
       teal: '#579488',
       leaf: '#6E9A4E',
@@ -121,15 +127,17 @@ export const palettes: Record<Scheme, Palette> = {
     focusRing: '#ECEFEA',
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
+    onBrandBandMuted: 'rgba(243,244,240,0.8)',
+    brandBandEdge: 'rgba(243,244,240,0.12)',
     tonal: '#34444B',
     tonalEdge: '#34444B',
     red: '#F08A80',
     onRed: '#151B1E',
     hairline: '#2C383E',
     outline: '#7F8B90',
-    handle: '#7F8B90',
     magnetInk: '#151B1E',
     magnetRing: 'transparent',
+    magnetHighlight: 'rgba(255,255,255,0.35)',
     magnet: {
       teal: '#8FC3BA',
       leaf: '#A5C98A',
@@ -154,13 +162,14 @@ export const noteEdges: Record<Scheme, NoteEdge> = {
   dark: { borderWidth: 1, borderColor: palettes.dark.hairline },
 };
 
-export const radii = { day: 12, note: 14, door: 30, pill: 999 } as const;
+export const radii = { note: 14, door: 30, pill: 999 } as const;
 
-export const magnetSizes = { lg: 50, md: 38, sm: 26 } as const;
+/** `tab` is the pósit under the active tab's icon. */
+export const magnetSizes = { lg: 50, tab: 40, md: 38, sm: 26 } as const;
 export type MagnetSize = keyof typeof magnetSizes;
 
 /** Initial size inside each magnet. */
-export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, md: 16, sm: 12 };
+export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, tab: 17, md: 16, sm: 12 };
 
 /** Loaded in app/_layout.tsx; used only for screen titles, day numbers and magnet initials. */
 export const displayFont = 'MPLUSRounded1c_800ExtraBold';
@@ -197,14 +206,25 @@ export type Shadow = {
 };
 
 /** Depth exists only on magnets and notes. Shadows are tinted with the slate ink, never grey. */
-export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow; primary: Shadow }> = {
+export const shadows: Record<
+  Scheme,
+  { magnet: Shadow; magnetAmbient: Shadow; note: Shadow; primary: Shadow }
+> = {
   light: {
+    // A magnet is two stacked shadows: a short contact one and a wide faint ambient one.
     magnet: {
       shadowColor: '#1E2A2F',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.22,
-      shadowRadius: 5,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    magnetAmbient: {
+      shadowColor: '#1E2A2F',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 6,
     },
     note: {
       shadowColor: '#1E2A2F',
@@ -225,10 +245,17 @@ export const shadows: Record<Scheme, { magnet: Shadow; note: Shadow; primary: Sh
   dark: {
     magnet: {
       shadowColor: '#080C0E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.55,
-      shadowRadius: 6,
-      elevation: 5,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    magnetAmbient: {
+      shadowColor: '#080C0E',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 6,
     },
     note: {
       shadowColor: '#080C0E',

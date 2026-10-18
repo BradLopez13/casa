@@ -4,8 +4,9 @@ import { choiceOf, ruleForChoice, type RepeatChoice } from '@/domain/recurrence/
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { IsoWeekday, RecurrenceRule } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
-import { pressedOpacity } from '@/ui/buttonLook';
+import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
+import { repeatPillText } from './repeatPillText';
 import { MIN_TOUCH } from '@/ui/tokens';
 
 type Props = {
@@ -103,7 +104,6 @@ function WeekdayToggles({
             })}
           >
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 color: checked ? colors.onSelection : colors.ink,
                 fontSize: 15,
@@ -133,6 +133,8 @@ function StepButton({
   onPress: () => void;
 }) {
   const { colors, radii } = useTheme();
+  // At its limit the step waits dashed and outlined, never faded (§5.6).
+  const off = buttonLook('secondary', 'default', 'disabled', colors);
   return (
     <Pressable
       testID={testID}
@@ -148,12 +150,18 @@ function StepButton({
         justifyContent: 'center',
         borderRadius: radii.pill,
         borderWidth: 1.5,
-        borderColor: colors.outline,
-        backgroundColor: colors.note,
-        opacity: disabled ? 0.4 : pressedOpacity(pressed),
+        borderStyle: disabled ? off.borderStyle : 'solid',
+        borderColor: disabled ? off.border : colors.outline,
+        backgroundColor: disabled ? off.fill : colors.note,
+        opacity: pressedOpacity(pressed),
       })}
     >
-      <Ionicons name={icon} size={22} color={colors.cobalt} accessible={false} />
+      <Ionicons
+        name={icon}
+        size={22}
+        color={disabled ? off.foreground : colors.cobalt}
+        accessible={false}
+      />
     </Pressable>
   );
 }
@@ -202,7 +210,7 @@ export function RecurrencePicker({ value, dueOn, onChange }: Props) {
           <Pill
             key={option}
             testID={`task-form.repeat.${option}`}
-            label={t(`taskForm.repeat.${option}`)}
+            label={repeatPillText(option, value?.kind === 'interval' ? value.every : null)}
             selected={option === choice}
             onPress={() => {
               if (option !== choice) onChange(ruleForChoice(option, dueOn));

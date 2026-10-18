@@ -1,8 +1,17 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ShoppingItem } from '@/domain/shopping/list';
+import { isDirty } from '@/features/forms/isDirty';
+import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import { useMembership } from '@/features/households/queries';
 import { OfflineBand } from '@/features/shopping/components/OfflineBand';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
@@ -168,82 +177,107 @@ function EditForm({
   const { scroll, reveal } = useRevealFocusedField();
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
+  // What the form opened with: a refreshed item (realtime) must not count as an edit.
+  const [opened] = useState({ name: item.name, quantity: item.quantity ?? '' });
+  const { requestClose, dialog } = useDiscardGuard({
+    dirty: isDirty(opened, { name, quantity }),
+    onCancel,
+    busy,
+  });
 
   const parsedName = shoppingNameSchema.safeParse(name);
   const parsedQuantity = shoppingQuantitySchema.safeParse(quantity);
-  // An empty name only disables Save; a too-long one says why.
-  const nameInvalid = name.trim() !== '' && !parsedName.success;
+  const [triedSave, setTriedSave] = useState(false);
+  const nameRef = useRef<TextInput>(null);
+  // An empty name is explained on Save; a too-long one says why as it is typed.
+  const nameBlank = name.trim() === '';
+  const nameError = parsedName.success
+    ? undefined
+    : nameBlank
+      ? triedSave
+        ? t('shopping.nameRequired')
+        : undefined
+      : t('shopping.errors.INVALID_ITEM_NAME');
   const quantityInvalid = !parsedQuantity.success;
-  const canSave = parsedName.success && parsedQuantity.success && online && !busy;
+  const canSave = online && !busy;
   const save = () => {
-    if (parsedName.success && parsedQuantity.success) onSave(parsedName.data, parsedQuantity.data);
+    if (parsedName.success && parsedQuantity.success) {
+      onSave(parsedName.data, parsedQuantity.data);
+      return;
+    }
+    setTriedSave(true);
+    if (nameBlank) nameRef.current?.focus();
   };
 
   return (
-    <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
-      <ModalHeader
-        title={t('shopping.edit.title')}
-        step={density.headerStep}
-        cancel={{
-          testID: 'shopping.edit.cancel',
-          label: t('shopping.edit.cancel'),
-          onPress: onCancel,
-        }}
-        action={{
-          testID: 'shopping.edit.save',
-          label: t('shopping.edit.save'),
-          onPress: save,
-          disabled: !canSave,
-          busy,
-        }}
-      />
-      {online ? null : <OfflineBand />}
-      <KeyboardAvoidingView
-        enabled={avoidKeyboard}
-        style={fill}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          {...scroll}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            paddingHorizontal: space(5),
-            paddingTop: space(density.topStep),
-            paddingBottom: space(density.bottomStep),
-            gap: space(density.gapStep),
+    <>
+      <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
+        <ModalHeader
+          title={t('shopping.edit.title')}
+          step={density.headerStep}
+          cancel={{
+            testID: 'shopping.edit.cancel',
+            label: t('shopping.edit.cancel'),
+            onPress: requestClose,
           }}
+          action={{
+            testID: 'shopping.edit.save',
+            label: t('shopping.edit.save'),
+            onPress: save,
+            disabled: !canSave,
+            busy,
+          }}
+        />
+        {online ? null : <OfflineBand />}
+        <KeyboardAvoidingView
+          enabled={avoidKeyboard}
+          style={fill}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Every field asks for it on focus, as in CenteredCard. */}
-          <FocusRevealContext.Provider value={reveal}>
-            <TextField
-              testID="shopping.edit.name"
-              label={t('shopping.edit.name')}
-              value={name}
-              onChangeText={setName}
-              returnKeyType="done"
-              error={nameInvalid ? t('shopping.errors.INVALID_ITEM_NAME') : undefined}
-            />
-            <TextField
-              testID="shopping.edit.quantity"
-              label={t('shopping.edit.quantity')}
-              value={quantity}
-              onChangeText={setQuantity}
-              returnKeyType="done"
-              error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
-            />
-            {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
-            <Button
-              testID="shopping.edit.delete"
-              title={t('shopping.edit.delete')}
-              variant="tertiary"
-              tone="destructive"
-              icon={actionIcons.delete}
-              disabled={!online || busy}
-              onPress={onDelete}
-            />
-          </FocusRevealContext.Provider>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <ScrollView
+            {...scroll}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              paddingHorizontal: space(5),
+              paddingTop: space(density.topStep),
+              paddingBottom: space(density.bottomStep),
+              gap: space(density.gapStep),
+            }}
+          >
+            {/* Every field asks for it on focus, as in CenteredCard. */}
+            <FocusRevealContext.Provider value={reveal}>
+              <TextField
+                ref={nameRef}
+                testID="shopping.edit.name"
+                label={t('shopping.edit.name')}
+                value={name}
+                onChangeText={setName}
+                returnKeyType="done"
+                error={nameError}
+              />
+              <TextField
+                testID="shopping.edit.quantity"
+                label={t('shopping.edit.quantity')}
+                value={quantity}
+                onChangeText={setQuantity}
+                returnKeyType="done"
+                error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
+              />
+              {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
+              <Button
+                testID="shopping.edit.delete"
+                title={t('shopping.edit.delete')}
+                variant="tertiary"
+                tone="destructive"
+                icon={actionIcons.delete}
+                disabled={!online || busy}
+                onPress={onDelete}
+              />
+            </FocusRevealContext.Provider>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+      {dialog}
+    </>
   );
 }

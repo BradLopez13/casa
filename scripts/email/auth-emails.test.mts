@@ -32,8 +32,8 @@ describe('auth emails', () => {
     expect(authEmails()[name].html).not.toMatch(/<a[\s>]/i);
   });
 
-  it.each(['confirmation', 'recovery'] as const)('%s shows the code once', (name) => {
-    expect(count(authEmails()[name].html, '{{ .Token }}')).toBe(1);
+  it.each(['confirmation', 'recovery'] as const)('%s shows the code once per language', (name) => {
+    expect(count(authEmails()[name].html, '{{ .Token }}')).toBe(2);
   });
 
   it.each(['confirmation', 'recovery'] as const)('%s code pill has a slate border', (name) => {
@@ -48,13 +48,52 @@ describe('auth emails', () => {
     const html = authEmails()[name].html;
     expect(html).toContain('{{ if .Data.display_name }}Hola, {{ .Data.display_name }}.');
     expect(html).toContain('{{ else }}Hola.{{ end }}');
+    expect(html).toContain('{{ if .Data.display_name }}Hi, {{ .Data.display_name }}.');
+    expect(html).toContain('{{ else }}Hi.{{ end }}');
+  });
+
+  const headings = {
+    confirmation: ['Confirma tu correo', 'Confirm your email'],
+    recovery: ['Recupera tu contraseña', 'Reset your password'],
+    password_changed: ['Tu contraseña ha cambiado', 'Your password has changed'],
+  } as const;
+
+  it.each(names)('%s has the Spanish block first, a rule, then English', (name) => {
+    const html = authEmails()[name].html;
+    const [es, en] = headings[name];
+    const esAt = html.indexOf(`>${es}</h1>`);
+    const ruleAt = html.indexOf('height: 1px; background: #DADDD6');
+    const enAt = html.indexOf(`>${en}</h1>`);
+    expect(esAt).toBeGreaterThan(-1);
+    expect(ruleAt).toBeGreaterThan(esAt);
+    expect(enAt).toBeGreaterThan(ruleAt);
+    expect(html).toContain('lang="es"');
+    expect(html).toContain('lang="en"');
+    expect(html.indexOf('<div lang="es">')).toBeLessThan(html.indexOf('<div lang="en">'));
+  });
+
+  it.each(names)('%s copy has no dashes or opening exclamation marks', (name) => {
+    const banned = new RegExp(`[${String.fromCharCode(0xa1, 0x2013, 0x2014)}]`);
+    expect(authEmails()[name].html).not.toMatch(banned);
+    expect(authEmails()[name].subject).not.toMatch(banned);
+  });
+
+  it('the password notice names the app link and asks for a new password', () => {
+    const html = authEmails().password_changed.html;
+    expect(html).toContain('pulsa «¿Has olvidado tu contraseña?» y elige una nueva.');
+    expect(html).not.toContain('Olvidaste');
+    expect(html).toContain('tap “Forgot your password?” and choose a new one.');
   });
 
   it('subjects follow the brand voice', () => {
     const emails = authEmails();
-    expect(emails.confirmation.subject).toBe('Tu código de Nido');
-    expect(emails.recovery.subject).toBe('Recupera tu contraseña de Nido');
-    expect(emails.password_changed.subject).toBe('Tu contraseña de Nido ha cambiado');
+    expect(emails.confirmation.subject).toBe('Tu código de Nido / Your Nido code');
+    expect(emails.recovery.subject).toBe(
+      'Recupera tu contraseña de Nido / Reset your Nido password',
+    );
+    expect(emails.password_changed.subject).toBe(
+      'Tu contraseña de Nido ha cambiado / Your Nido password has changed',
+    );
   });
 
   it.each(names)('supabase/config.toml uses the %s subject and file', (name) => {

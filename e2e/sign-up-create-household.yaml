@@ -67,15 +67,32 @@ appId: com.bradlopez13.casa
 - hideKeyboard
 - tapOn:
     id: onboarding.create
+# Every room starts chosen: continue with all of them. On a small screen the seven rooms push
+# the button below the fold: wait for the first room, then scroll to the button.
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Zoe
+      id: onboarding.room.kitchen
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: onboarding.rooms.continue
+- tapOn:
+    id: onboarding.rooms.continue
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# The household name lives on the Ajustes door, under your name.
+- tapOn:
+    id: tab.settings
+- extendedWaitUntil:
+    visible:
+      id: settings.household-name
+      text: Hogar Piso Zoe
     timeout: 20000
 
 # Settings -> members -> copy link -> pending invite -> revoke
-- tapOn:
-    id: tab.settings
 - tapOn:
     id: settings.members
 - extendedWaitUntil:

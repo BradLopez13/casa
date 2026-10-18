@@ -10,7 +10,13 @@ export type ButtonTone = 'default' | 'destructive';
 /** busy: waiting for the server, with a spinner in place of the label. */
 export type ButtonState = 'enabled' | 'disabled' | 'busy';
 
-export type ButtonLook = { fill: string; border: string; foreground: string };
+export type ButtonLook = {
+  fill: string;
+  border: string;
+  foreground: string;
+  /** A disabled pill is dashed: it waits by shape, never by fading. */
+  borderStyle: 'solid' | 'dashed';
+};
 
 /**
  * The colours of a button. A disabled primary or secondary is an empty pill with an `outline`
@@ -31,21 +37,33 @@ export function buttonLook(
     return {
       fill: 'transparent',
       border: variant === 'tertiary' ? 'transparent' : colors.outline,
+      borderStyle: variant === 'tertiary' ? 'solid' : 'dashed',
       foreground: colors.muted,
     };
   }
   if (variant === 'primary') {
     return tone === 'destructive'
-      ? { fill: colors.red, border: colors.red, foreground: colors.onRed }
-      : { fill: colors.accent, border: colors.accent, foreground: colors.onAccent };
+      ? { fill: colors.red, border: colors.red, foreground: colors.onRed, borderStyle: 'solid' }
+      : {
+          fill: colors.accent,
+          border: colors.accent,
+          foreground: colors.onAccent,
+          borderStyle: 'solid',
+        };
   }
   if (variant === 'secondary') {
-    return { fill: colors.tonal, border: colors.tonalEdge, foreground: colors.cobalt };
+    return {
+      fill: colors.tonal,
+      border: colors.tonalEdge,
+      foreground: colors.cobalt,
+      borderStyle: 'solid',
+    };
   }
   return {
     fill: 'transparent',
     border: 'transparent',
     foreground: tone === 'destructive' ? colors.red : colors.cobalt,
+    borderStyle: 'solid',
   };
 }
 

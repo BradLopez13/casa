@@ -37,7 +37,6 @@ export function ModeSwitch({ value, onChange }: Props) {
             }}
           >
             <Text
-              maxFontSizeMultiplier={1.3}
               style={{
                 color: selected ? colors.onSelection : colors.ink,
                 fontSize: 15,

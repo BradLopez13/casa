@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, SectionList, Text, View } from 'react-native';
+import { addDays } from '@/domain/tasks/dates';
+import { dayInSentence } from '@/domain/tasks/labels';
 import { weekStrip, type StripDay } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
+import { weekLine } from '@/domain/tasks/weekLine';
 import { DayList } from '@/features/tasks/components/DayList';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
-import {
-  NewTaskButton,
-  useNewTaskLane,
-  useNewTaskListStyle,
-} from '@/features/tasks/components/NewTaskButton';
+import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
@@ -23,8 +23,11 @@ import {
   type TaskListSection,
 } from '@/features/tasks/sections';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
+import { weekLineText } from '@/features/tasks/weekLineText';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { Button } from '@/ui/components/Button';
 import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -32,6 +35,66 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
+
+/** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
+function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
+  const { today, userId, membership } = screen;
+  const placeholder =
+    day === today
+      ? t('today.quickAdd')
+      : day === addDays(today, 1)
+        ? t('tasks.quickAddTomorrow')
+        : t('tasks.quickAddDay', { day: dayInSentence(day, today) });
+  return (
+    <QuickAdd
+      testID="tasks.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={day}
+      placeholder={placeholder}
+    />
+  );
+}
+
+/**
+ * A chosen day with nothing on it says so by name, and offers the full form for that day. Hoy and
+ * Mañana keep the plain line: «Nada el hoy» would not read.
+ */
+function EmptyDay({ day, today }: { day: string; today: string }) {
+  const { colors, space } = useTheme();
+  const router = useRouter();
+  const named = day !== today && day !== addDays(today, 1);
+  return (
+    <View style={{ gap: space(1), alignItems: 'flex-start' }}>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {named ? t('tasks.dayEmptyNamed', { day: dayInSentence(day, today) }) : t('tasks.dayEmpty')}
+      </Text>
+      <Button
+        testID="tasks.add-for-day"
+        title={t('tasks.addForDay')}
+        variant="tertiary"
+        width="hug"
+        onPress={() => router.push({ pathname: '/task/new', params: { due: day } })}
+      />
+    </View>
+  );
+}
+
+/** Todas offers the catalogue of typical chores the household does not have yet. */
+function IdeasButton() {
+  const router = useRouter();
+  return (
+    <Button
+      testID="tasks.ideas"
+      title={t('tasks.ideas')}
+      icon={actionIcons.templates}
+      variant="tertiary"
+      width="hug"
+      onPress={() => router.push('/templates')}
+    />
+  );
+}
 
 /** Wait for the rows near the target to render before trying the scroll again. */
 const SCROLL_RETRY_MS = 100;
@@ -49,13 +112,15 @@ type TasksParts = {
   day: string;
   chooseDay: (date: string) => void;
   empty: ReactNode;
+  /** The door's line under its headline: what is yours (or the household's) this week. */
+  doorLine: string;
 };
 
 export default function TasksScreen() {
   const { colors } = useTheme();
   const layout = useLayout();
   const screen = useTaskScreen();
-  const { today, members, assigneeId, filtered } = screen;
+  const { today, members, filtered, userId, assigneeId, tasksQuery } = screen;
   const [mode, setMode] = useState<TasksMode>('week');
   // The screen owns the chosen day, not either layout, so turning the tablet keeps it.
   const [chosen, setChosen] = useState<string | null>(null);
@@ -70,6 +135,15 @@ export default function TasksScreen() {
         members.map((m) => m.userId),
       ),
     [filtered, today, members],
+  );
+
+  // The door counts the whole household, like Hoy's, so it can say what is left for everyone.
+  const tasks = tasksQuery.data;
+  const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
+  const doorLine = useMemo(
+    () =>
+      weekLineText(weekLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName })),
+    [tasks, today, userId, assigneeId, filterName],
   );
 
   const sections = useMemo(
@@ -93,21 +167,30 @@ export default function TasksScreen() {
     day: chosenDay(strip, chosen, today),
     chooseDay: setChosen,
     empty,
+    doorLine,
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TasksSplit {...parts} /> : <TasksStack {...parts} />}
-      <NewTaskButton testID="tasks.new-task" assigneeId={assigneeId} />
     </View>
   );
 }
 
 /** One column (phones, small tablets): the door with the day strip, and one list under it. */
-function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }: TasksParts) {
+function TasksStack({
+  screen,
+  mode,
+  setMode,
+  strip,
+  sections,
+  day,
+  chooseDay,
+  empty,
+  doorLine,
+}: TasksParts) {
   const { space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
-  const column = useOneColumn(useNewTaskLane());
+  const listStyle = { paddingBottom: useListEndPadding() };
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
@@ -153,11 +236,19 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
     // The strip is its own row under the title and the controls; in a compact door it runs the
     // full width as one line of days, so the door stays within its 40 % of the window.
     <DoorHeader
-      title={t('tasks.title')}
-      titleSize="medium"
+      eyebrow={t('tasks.title')}
+      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+      secondary={doorLine}
       below={
         mode === 'week' ? (
-          <DayStrip days={strip} today={today} marks={marks} onSelect={scrollToDay} />
+          <DayStrip
+            days={strip}
+            today={today}
+            chosen={day}
+            marks={marks}
+            names={screen.names}
+            onSelect={scrollToDay}
+          />
         ) : null
       }
     >
@@ -167,7 +258,7 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
           marks={marks}
           userId={userId}
           selected={assigneeId}
-          onToggle={screen.toggleFilter}
+          onSelect={screen.selectFilter}
         />
         <ModeSwitch value={mode} onChange={setMode} />
       </DoorControls>
@@ -177,11 +268,31 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
+        keyboardShouldPersistTaps="handled"
         ref={listRef}
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
-        ListHeaderComponent={door}
+        ListHeaderComponent={
+          <>
+            {door}
+            {mode === 'week' ? (
+              <View style={[column, { paddingTop: space(4) }]}>
+                <DayQuickAdd screen={screen} day={day} />
+                {sections.length > 0 && weekDayPane(sections, day, today).day.count === 0 ? (
+                  <View style={{ paddingTop: space(4) }}>
+                    <EmptyDay day={day} today={today} />
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <View style={[column, { paddingTop: space(4), gap: space(2) }]}>
+                <DayQuickAdd screen={screen} day={today} />
+                <IdeasButton />
+              </View>
+            )}
+          </>
+        }
         ListEmptyComponent={
           <View style={[column, { paddingTop: space(6) }]}>
             <TaskListStates query={tasksQuery} empty={empty} />
@@ -240,14 +351,18 @@ function TasksStack({ screen, mode, setMode, strip, sections, chooseDay, empty }
 function TasksSplit(parts: TasksParts) {
   const { screen, mode, setMode } = parts;
   const door = (
-    <DoorHeader title={t('tasks.title')} titleSize="medium">
+    <DoorHeader
+      eyebrow={t('tasks.title')}
+      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+      secondary={parts.doorLine}
+    >
       <DoorControls>
         <MemberFilter
           members={screen.members}
           marks={screen.marks}
           userId={screen.userId}
           selected={screen.assigneeId}
-          onToggle={screen.toggleFilter}
+          onSelect={screen.selectFilter}
         />
         <ModeSwitch value={mode} onChange={setMode} />
       </DoorControls>
@@ -273,14 +388,14 @@ const rowProps = (screen: Screen) => ({
 
 /** Semana on two panes: the seven days to choose from, and what the chosen one holds. */
 function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: SplitProps) {
-  const { colors, space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  const lane = useNewTaskLane();
+  const { space } = useTheme();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const pane = weekDayPane(sections, day, screen.today);
 
   return (
     <TwoPane
+      keyboardShouldPersistTaps="handled"
       header={door}
       leftTestID="tasks.pane.days"
       rightTestID="tasks.pane.day"
@@ -288,7 +403,6 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
       wide="right"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
-      rightLane={lane}
       left={
         // Level with the first heading on the right.
         <View style={{ paddingTop: space(6) }}>
@@ -298,25 +412,27 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
             onSelect={chooseDay}
             today={screen.today}
             marks={screen.marks}
+            names={screen.names}
           />
         </View>
       }
       right={
-        sections.length > 0 ? (
-          <>
-            <TaskSections
-              sections={pane.overdue ? [pane.overdue, pane.day] : [pane.day]}
-              {...rowProps(screen)}
-            />
-            {pane.day.count === 0 ? (
-              <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.dayEmpty')}</Text>
-            ) : null}
-          </>
-        ) : (
-          <View style={{ paddingTop: space(6) }}>
-            <TaskListStates query={screen.tasksQuery} empty={empty} />
-          </View>
-        )
+        <>
+          <DayQuickAdd screen={screen} day={day} />
+          {sections.length > 0 ? (
+            <>
+              <TaskSections
+                sections={pane.overdue ? [pane.overdue, pane.day] : [pane.day]}
+                {...rowProps(screen)}
+              />
+              {pane.day.count === 0 ? <EmptyDay day={day} today={screen.today} /> : null}
+            </>
+          ) : (
+            <View style={{ paddingTop: space(6) }}>
+              <TaskListStates query={screen.tasksQuery} empty={empty} />
+            </View>
+          )}
+        </>
       }
     />
   );
@@ -328,8 +444,8 @@ function WeekPanes({ screen, strip, sections, day, chooseDay, empty, door }: Spl
  */
 function AllColumn({ screen, sections, empty, door }: SplitProps) {
   const { space } = useTheme();
-  const column = useOneColumn(useNewTaskLane());
-  const listStyle = useNewTaskListStyle();
+  const column = useOneColumn();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
 
   return (
@@ -341,6 +457,10 @@ function AllColumn({ screen, sections, empty, door }: SplitProps) {
         contentContainerStyle={listStyle}
       >
         <View style={column}>
+          <View style={{ paddingTop: space(4), gap: space(2) }}>
+            <DayQuickAdd screen={screen} day={screen.today} />
+            <IdeasButton />
+          </View>
           {sections.length > 0 ? (
             <TaskSections sections={sections} {...rowProps(screen)} />
           ) : (

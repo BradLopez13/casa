@@ -8,11 +8,12 @@ describe('shoppingErrorMessage', () => {
     expect(shoppingErrorMessage(new AppError('INVALID_ITEM_NAME'))).toBe(
       'Escribe un nombre de hasta 60 caracteres.',
     );
+    expect(shoppingErrorMessage(new AppError('INVALID_CATEGORY'))).toBe('Esa categoría no existe.');
   });
   it('falls back to UNKNOWN for other codes and errors', () => {
     expect(shoppingErrorMessage(new AppError('NOT_OWNER'))).toBe(
-      'Algo ha fallado. Inténtalo de nuevo.',
+      'Algo ha ido mal. Inténtalo de nuevo.',
     );
-    expect(shoppingErrorMessage(new Error('x'))).toBe('Algo ha fallado. Inténtalo de nuevo.');
+    expect(shoppingErrorMessage(new Error('x'))).toBe('Algo ha ido mal. Inténtalo de nuevo.');
   });
 });

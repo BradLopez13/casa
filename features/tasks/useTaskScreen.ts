@@ -55,7 +55,7 @@ export function useTaskScreen() {
     members,
     tasksQuery,
     assigneeId,
-    toggleFilter: filter.toggle,
+    selectFilter: filter.select,
     filtered,
     marks,
     names,

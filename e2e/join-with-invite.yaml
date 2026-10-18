@@ -76,8 +76,7 @@ appId: com.bradlopez13.casa
     id: invite.accept
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Casa E2E
+      id: today.door-line
     timeout: 20000
 
 # Members: Ana and Bob, and no owner actions for Bob
@@ -90,7 +89,7 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - assertVisible: Bob
 - assertNotVisible: Quitar del hogar
-- assertNotVisible: Hacer propietario
+- assertNotVisible: Pasar el hogar
 
 # Leave the household
 - scrollUntilVisible:

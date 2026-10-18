@@ -14,6 +14,11 @@ type Props = Omit<TextInputProps, 'style'> & {
   /** Sits inside the input's box, on the right (e.g. a show/hide eye). */
   trailing?: ReactNode;
   ref?: Ref<TextInput>;
+  /**
+   * No visible label and no box: the label is only read by screen readers, and a 2 dp bottom line
+   * (`focusRing` while focused, `hairline` otherwise) is the whole field. For the task title.
+   */
+  bare?: boolean;
 };
 
 export function TextField({
@@ -23,6 +28,7 @@ export function TextField({
   inputStyle,
   trailing,
   ref,
+  bare = false,
   onFocus,
   onBlur,
   ...inputProps
@@ -33,7 +39,9 @@ export function TextField({
   const reveal = useFocusReveal();
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+      {bare ? null : (
+        <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+      )}
       <View style={{ position: 'relative', justifyContent: 'center' }}>
         <TextInput
           ref={ref}
@@ -55,20 +63,45 @@ export function TextField({
           style={{
             minHeight: CONTROL_HEIGHT,
             // An error thickens the border by one point; the padding gives that point back, so
-            // the text never shifts. Focus keeps the normal width, so the two never look alike
-            // even where cobalt and ink are the same colour.
+            // the text never shifts. Focus keeps the normal width and adds the outer ring below.
             paddingHorizontal: space(4) - (error ? 1 : 0),
             paddingVertical: space(3) - (error ? 1 : 0),
             borderRadius: radii.note,
             borderWidth: error ? 3 : 2,
-            borderColor: focused ? colors.cobalt : error ? colors.ink : colors.outline,
+            borderColor: focused ? colors.focusRing : error ? colors.ink : colors.outline,
             backgroundColor: colors.note,
             color: colors.ink,
             fontSize: 17,
             ...(trailing ? { paddingRight: 52 - (error ? 1 : 0) } : null),
+            ...(bare
+              ? {
+                  paddingHorizontal: 0,
+                  borderRadius: 0,
+                  borderWidth: 0,
+                  borderBottomWidth: 2,
+                  borderColor: focused ? colors.focusRing : colors.hairline,
+                  backgroundColor: 'transparent',
+                }
+              : null),
             ...inputStyle,
           }}
         />
+        {focused && !bare ? (
+          // The focus ring: a 2 dp line in focusRing, 2 dp outside the field's own border.
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: -4,
+              left: -4,
+              right: -4,
+              bottom: -4,
+              borderWidth: 2,
+              borderColor: colors.focusRing,
+              borderRadius: radii.note + 4, // decorativo: anillo de foco concéntrico con el campo
+            }}
+          />
+        ) : null}
         {trailing ? (
           <View
             style={{

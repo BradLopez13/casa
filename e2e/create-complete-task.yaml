@@ -19,23 +19,16 @@ appId: com.bradlopez13.casa
       EMAIL: leo@e2e.dev
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Leo
+      id: today.door-line
     timeout: 20000
 
-# Create a task from the modal form (the modal closes with router.back() after saving)
+# Create a task from the quick add under the door: a plain title goes to today, for me
 - tapOn:
-    id: today.new-task
-- extendedWaitUntil:
-    visible:
-      id: task-form.title
-    timeout: 20000
-- tapOn:
-    id: task-form.title
+    id: today.quick-add
 - inputText: Regar las plantas
-- hideKeyboard
 - tapOn:
-    id: task-form.save
+    id: today.quick-add.submit
+- hideKeyboard
 - extendedWaitUntil:
     visible: Regar las plantas
     timeout: 20000

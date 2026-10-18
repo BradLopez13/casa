@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  TAB_BAR_BESIDE_HEIGHT,
   TAB_BAR_HEIGHT,
+  TAB_BAR_PAD,
   TAB_LABEL_GAP,
   TAB_LABEL_LINE,
   TAB_LABEL_MAX_SCALE,
-  TAB_PILL_HEIGHT,
+  TAB_MAGNET,
+  tabBarClearance,
   tabBarHeight,
   tabLabelsBeside,
-  tabPillWidth,
 } from './tabBar';
 
 describe('tabLabelsBeside', () => {
@@ -24,9 +26,9 @@ describe('tabLabelsBeside', () => {
 describe('tabBarHeight', () => {
   const portrait = { width: 412, height: 915, bottomInset: 24 };
 
-  it('fits the 32 dp pill plus the label line at the default text size', () => {
-    expect(TAB_PILL_HEIGHT).toBe(32);
-    expect(TAB_BAR_HEIGHT).toBeGreaterThanOrEqual(TAB_PILL_HEIGHT + TAB_LABEL_LINE);
+  it('fits the 40 dp pósit plus the label line at the default text size', () => {
+    expect(TAB_MAGNET).toBe(40);
+    expect(TAB_BAR_HEIGHT).toBe(TAB_BAR_PAD + TAB_MAGNET + TAB_LABEL_LINE + TAB_BAR_PAD);
     expect(tabBarHeight({ ...portrait, fontScale: 1 })).toBe(TAB_BAR_HEIGHT + 24);
     expect(tabBarHeight({ ...portrait, fontScale: 0.85, bottomInset: 0 })).toBe(TAB_BAR_HEIGHT);
   });
@@ -45,20 +47,40 @@ describe('tabBarHeight', () => {
     expect(tabBarHeight({ ...portrait, fontScale: 1.6, bottomInset: 0 })).toBe(TAB_BAR_HEIGHT + 10);
   });
 
-  it('leaves the bar alone when the labels sit beside the icons, where the row has room', () => {
+  it('is one pósit tall with the labels beside the icons, where even the largest label fits', () => {
+    expect(TAB_LABEL_LINE * TAB_LABEL_MAX_SCALE).toBeLessThanOrEqual(TAB_MAGNET);
     expect(tabBarHeight({ width: 915, height: 412, bottomInset: 0, fontScale: 1.45 })).toBe(
-      undefined,
+      TAB_BAR_BESIDE_HEIGHT,
     );
+    expect(tabBarHeight({ width: 915, height: 412, bottomInset: 20, fontScale: 1 })).toBe(
+      TAB_BAR_BESIDE_HEIGHT + 20,
+    );
+  });
+
+  it('leaves at least 8 dp between the pósit and a label beside it', () => {
+    expect(TAB_LABEL_GAP).toBeGreaterThanOrEqual(8);
   });
 });
 
-describe('tabPillWidth', () => {
-  it('hugs the icon when the label sits beside it, and is wider under it', () => {
-    expect(tabPillWidth(true)).toBeLessThan(tabPillWidth(false));
-    expect(tabPillWidth(true)).toBeGreaterThanOrEqual(TAB_PILL_HEIGHT);
+describe('tabBarClearance', () => {
+  it('is the bar with the inset when the bar is at the bottom', () => {
+    expect(
+      tabBarClearance({ width: 412, height: 915, fontScale: 1, bottomInset: 24, rail: false }),
+    ).toBe(TAB_BAR_HEIGHT + 24);
+    expect(
+      tabBarClearance({ width: 412, height: 915, fontScale: 1.6, bottomInset: 0, rail: false }),
+    ).toBe(TAB_BAR_HEIGHT + 10);
   });
 
-  it('leaves at least 8 dp between the pill and a label beside it', () => {
-    expect(TAB_LABEL_GAP).toBeGreaterThanOrEqual(8);
+  it('is the one-row bar when the labels sit beside the icons', () => {
+    expect(
+      tabBarClearance({ width: 800, height: 600, fontScale: 1, bottomInset: 0, rail: false }),
+    ).toBe(TAB_BAR_BESIDE_HEIGHT);
+  });
+
+  it('is only the inset beside the rail', () => {
+    expect(
+      tabBarClearance({ width: 1000, height: 700, fontScale: 1, bottomInset: 12, rail: true }),
+    ).toBe(12);
   });
 });

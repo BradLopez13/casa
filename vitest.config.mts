@@ -4,9 +4,11 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['**/*.test.ts', 'scripts/**/*.test.mts'],
+    setupFiles: ['./vitest.setup.ts'],
     exclude: [
       'node_modules',
       'e2e',
+      '.claude/**',
       'supabase/migrations',
       'supabase/tests',
       'supabase/functions/send-push',

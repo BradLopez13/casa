@@ -2,7 +2,9 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { Platform, Pressable, Text, View } from 'react-native';
 import { addDays, localDateIso, toLocalDate } from '@/domain/tasks/dates';
 import { isQuickDay, quickDays } from '@/domain/tasks/day-cells';
+import { weekdayDay } from '@/domain/tasks/labels';
 import { locale, t } from '@/i18n';
+import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 
@@ -12,6 +14,11 @@ type Props = {
   onChange: (value: string | null) => void;
   /** Phase 4 hides "Sin fecha" for tasks that must have a date. */
   noneDisabled?: boolean;
+  /**
+   * The past date the task was due on when the form opened, if any. It goes first, as «dom 11
+   * (pasada)», and stays selectable after another day is chosen.
+   */
+  past?: string | null;
 };
 
 type CellProps = {
@@ -20,39 +27,52 @@ type CellProps = {
   selected: boolean;
   disabled?: boolean;
   onPress: () => void;
+  /** The day number, drawn large over the label. */
   top?: string;
-  topIsDisplay?: boolean;
+  /** Drawn in `muted` while not chosen (the past date). */
+  quiet?: boolean;
 };
 
-function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }: CellProps) {
+function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }: CellProps) {
   const { colors, radii, space } = useTheme();
+  // A cell that cannot be chosen waits dashed and outlined, never faded (§5.6).
+  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const labelColor = disabled
+    ? off.foreground
+    : selected
+      ? colors.onSelection
+      : top || quiet
+        ? colors.muted
+        : colors.ink;
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled: !!disabled }}
+      accessibilityState={{ checked: selected, disabled }}
       accessibilityLabel={top ? `${top} ${label}` : label}
-      style={{
+      style={({ pressed }) => ({
         minWidth: MIN_TOUCH + space(3),
-        minHeight: MIN_TOUCH + space(2),
-        paddingHorizontal: space(2),
+        minHeight: top ? MIN_TOUCH + space(3) : MIN_TOUCH,
+        paddingHorizontal: space(4),
+        paddingVertical: top ? space(1) : 0,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: radii.day,
-        // The chosen day is filled, so it reads by shape and not by the label's colour alone.
-        backgroundColor: selected ? colors.selection : colors.door,
-        borderWidth: 2,
-        borderColor: selected ? colors.selection : 'transparent',
-        opacity: disabled ? 0.4 : 1,
-      }}
+        borderRadius: radii.pill,
+        // One selected style (§14.1): chosen is filled with `selection`, the rest outlined on
+        // the note, so it reads by shape and not by the label's colour alone.
+        borderWidth: 1.5,
+        borderStyle: disabled ? off.borderStyle : 'solid',
+        borderColor: disabled ? off.border : selected ? colors.selection : colors.outline,
+        backgroundColor: disabled ? off.fill : selected ? colors.selection : colors.note,
+        opacity: pressedOpacity(pressed),
+      })}
     >
       {top ? (
         <Text
-          maxFontSizeMultiplier={1.3}
           style={{
-            fontFamily: topIsDisplay ? displayFont : undefined,
+            fontFamily: displayFont,
             fontSize: 20,
             color: selected ? colors.onSelection : colors.ink,
             fontVariant: ['tabular-nums'],
@@ -62,10 +82,10 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
         </Text>
       ) : null}
       <Text
-        maxFontSizeMultiplier={1.3}
         style={{
-          fontSize: 13,
-          color: selected ? colors.onSelection : colors.muted,
+          fontSize: top ? 13 : 15,
+          fontWeight: top ? undefined : '600',
+          color: labelColor,
           fontVariant: ['tabular-nums'],
         }}
       >
@@ -75,17 +95,23 @@ function Cell({ testID, label, selected, disabled, onPress, top, topIsDisplay }:
   );
 }
 
-/** The due-date field: four quick days, "Otro día" (native picker) and "Sin fecha". */
-export function DayCells({ value, today, onChange, noneDisabled }: Props) {
+function shortDate(iso: string): string {
+  return weekdayDay(iso, 'short');
+}
+
+/**
+ * The due-date field: a past date first when the task had one, four quick days as two-line pills,
+ * then "Otro día" (native picker) and "Sin fecha" on a row of their own.
+ */
+export function DayCells({ value, today, onChange, noneDisabled, past = null }: Props) {
   const { space } = useTheme();
-  const otherValue = value !== null && !isQuickDay(value, today) ? value : null;
+  const pastDay = past !== null && past < today ? past : null;
+  const otherValue =
+    value !== null && !isQuickDay(value, today) && value !== pastDay ? value : null;
   const other = otherValue !== null;
   const showIosPicker = Platform.OS === 'ios' && otherValue !== null;
 
-  const otherLabel =
-    otherValue !== null
-      ? toLocalDate(otherValue).toLocaleDateString(locale, { weekday: 'short', day: 'numeric' })
-      : t('taskForm.dueOther');
+  const otherLabel = otherValue !== null ? shortDate(otherValue) : t('taskForm.dueOther');
 
   const openOther = () => {
     if (Platform.OS === 'android') {
@@ -104,40 +130,53 @@ export function DayCells({ value, today, onChange, noneDisabled }: Props) {
     // Web has no native picker: leave the value unchanged.
   };
 
+  const row = { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) } as const;
+
   return (
-    <View>
-      <View
-        accessibilityRole="radiogroup"
-        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}
-      >
-        {quickDays(today).map((day, i) => (
+    <View style={{ gap: space(2) }}>
+      <View accessibilityRole="radiogroup" style={{ gap: space(2) }}>
+        {pastDay !== null ? (
+          <View style={row}>
+            <Cell
+              testID={`task-form.due.${pastDay}`}
+              label={t('taskForm.pastDate', { date: shortDate(pastDay) })}
+              selected={value === pastDay}
+              quiet
+              onPress={() => onChange(pastDay)}
+            />
+          </View>
+        ) : null}
+        <View style={row}>
+          {quickDays(today).map((day, i) => (
+            <Cell
+              key={day}
+              testID={`task-form.due.${day}`}
+              top={String(toLocalDate(day).getDate())}
+              label={
+                i === 0
+                  ? t('tasks.due.today')
+                  : toLocalDate(day).toLocaleDateString(locale, { weekday: 'short' })
+              }
+              selected={value === day}
+              onPress={() => onChange(day)}
+            />
+          ))}
+        </View>
+        <View style={row}>
           <Cell
-            key={day}
-            testID={`task-form.due.${day}`}
-            top={String(toLocalDate(day).getDate())}
-            topIsDisplay
-            label={
-              i === 0
-                ? t('tasks.due.today')
-                : toLocalDate(day).toLocaleDateString(locale, { weekday: 'short' })
-            }
-            selected={value === day}
-            onPress={() => onChange(day)}
+            testID="task-form.due.other"
+            label={otherLabel}
+            selected={other}
+            onPress={openOther}
           />
-        ))}
-        <Cell
-          testID="task-form.due.other"
-          label={otherLabel}
-          selected={other}
-          onPress={openOther}
-        />
-        <Cell
-          testID="task-form.due.none"
-          label={t('tasks.due.none')}
-          selected={value === null}
-          disabled={noneDisabled}
-          onPress={() => onChange(null)}
-        />
+          <Cell
+            testID="task-form.due.none"
+            label={t('tasks.due.none')}
+            selected={value === null}
+            disabled={noneDisabled}
+            onPress={() => onChange(null)}
+          />
+        </View>
       </View>
       {showIosPicker ? (
         <DateTimePicker

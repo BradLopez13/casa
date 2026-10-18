@@ -14,6 +14,7 @@ import {
   revokeInvite,
   transferOwnership,
 } from '@/features/households/api';
+import { inviteExpiresText } from '@/features/households/inviteText';
 import { buildInviteUrl } from '@/features/households/invite-link';
 import { MemberRow } from '@/features/households/MemberRow';
 import {
@@ -25,7 +26,7 @@ import {
 import { forgetHouseholdData } from '@/data/query/persist';
 import { toAppError } from '@/data/supabase/errors';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
-import { locale, t, type MessageKey } from '@/i18n';
+import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
@@ -83,10 +84,6 @@ function errorText(e: unknown, selfDirected = false): string {
   const code = toAppError(e).code;
   if (selfDirected && code === 'NOT_A_MEMBER') return t('members.errors.SELF_NOT_A_MEMBER');
   return t(ERROR_KEYS[code] ?? 'members.errors.UNKNOWN');
-}
-
-function formatExpiry(expiresAt: string): string {
-  return new Date(expiresAt).toLocaleDateString(locale, { day: 'numeric', month: 'long' });
 }
 
 export default function MembersScreen() {
@@ -275,6 +272,19 @@ export default function MembersScreen() {
     </View>
   );
 
+  const hasInvite = (invites.data?.length ?? 0) > 0;
+  const copyLink = (
+    <Button
+      testID="members.copy-link"
+      title={t('members.copyLink')}
+      variant="secondary"
+      icon={actionIcons.copyLink}
+      width="hug"
+      loading={action === 'copy'}
+      onPress={() => void onCopyLink()}
+    />
+  );
+
   // Right pane: bringing people in, and leaving. In one column it follows the people, a step
   // below them like every other item.
   const household = (
@@ -288,15 +298,8 @@ export default function MembersScreen() {
           loading={action === 'share'}
           onPress={() => void onInvite()}
         />
-        <Button
-          testID="members.copy-link"
-          title={t('members.copyLink')}
-          variant="secondary"
-          icon={actionIcons.copyLink}
-          width="hug"
-          loading={action === 'copy'}
-          onPress={() => void onCopyLink()}
-        />
+        {/* With a pending invite the link is copied from its card; without one, from here. */}
+        {hasInvite ? null : copyLink}
       </View>
       {copied ? (
         <Text testID="members.copied" style={{ color: colors.muted, fontSize: 14 }}>
@@ -323,7 +326,7 @@ export default function MembersScreen() {
         invites.data.length === 0 ? (
           <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.pendingEmpty')}</Text>
         ) : (
-          invites.data.map((inv) => (
+          invites.data.map((inv, index) => (
             <View
               key={inv.id}
               testID={`members.invite-row.${inv.id}`}
@@ -338,19 +341,22 @@ export default function MembersScreen() {
               }}
             >
               <Text style={{ color: colors.ink, fontSize: 16 }}>
-                {t('members.expires', { date: formatExpiry(inv.expiresAt) })}
+                {inviteExpiresText(inv.expiresAt)}
               </Text>
-              {isOwner || inv.createdBy === userId ? (
-                <Button
-                  testID={`members.revoke.${inv.id}`}
-                  title={t('members.revoke')}
-                  variant="tertiary"
-                  icon={actionIcons.revoke}
-                  width="hug"
-                  loading={revoke.isPending && revoke.variables === inv.id}
-                  onPress={() => onRevoke(inv.id)}
-                />
-              ) : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(3) }}>
+                {index === 0 ? copyLink : null}
+                {isOwner || inv.createdBy === userId ? (
+                  <Button
+                    testID={`members.revoke.${inv.id}`}
+                    title={t('members.revoke')}
+                    variant="tertiary"
+                    icon={actionIcons.revoke}
+                    width="hug"
+                    loading={revoke.isPending && revoke.variables === inv.id}
+                    onPress={() => onRevoke(inv.id)}
+                  />
+                ) : null}
+              </View>
             </View>
           ))
         )
@@ -432,6 +438,7 @@ export default function MembersScreen() {
                 pending?.kind === 'leave' && onlyMember
                   ? 'members.confirm.leaveLastMessage'
                   : dialog.message,
+                { name: targetName },
               )
             : ''
         }

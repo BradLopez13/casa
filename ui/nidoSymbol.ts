@@ -1,16 +1,23 @@
 import { palettes, type Scheme } from './tokens';
 
-/** Geometry of assets/brand/symbol.svg (viewBox 0 0 512 512). */
+/**
+ * Geometry of assets/brand/symbol.svg (viewBox 0 0 512 512). `monoPath` is the body from
+ * symbol-mono.svg: in one ink the bases stop either side of a 24-unit seam so the people stay apart.
+ */
 export const NIDO_SYMBOL_VIEWBOX = '0 0 512 512';
 
 export const NIDO_SYMBOL_PATHS = {
   left: {
-    circle: { cx: 130, cy: 95.5, r: 68 },
-    path: 'M0 254.5A80 80 0 0 1 80 174.5H178A42 42 0 0 1 220 216.5V276.5H149A13 13 0 0 0 136 289.5V369.5A13 13 0 0 0 149 382.5H220V484.5H114A114 114 0 0 1 0 370.5Z',
+    circle: { cx: 128, cy: 96, r: 72 },
+    path: 'M8 280A88 88 0 0 1 96 192L192 192A30 30 0 0 1 222 222L222 278.54A118 60 0 0 0 264 395.86L264 488L156 488A148 148 0 0 1 8 340Z',
+    monoPath:
+      'M8 280A88 88 0 0 1 96 192L192 192A30 30 0 0 1 222 222L222 278.54A118 60 0 0 0 244 395.69L244 478A10 10 0 0 1 234 488L156 488A148 148 0 0 1 8 340Z',
   },
   right: {
-    circle: { cx: 382, cy: 95.5, r: 68 },
-    path: 'M512 254.5V370.5A114 114 0 0 1 398 484.5H220A30 30 0 0 1 190 454.5V412.5A30 30 0 0 1 220 382.5H363A13 13 0 0 0 376 369.5V289.5A13 13 0 0 0 363 276.5H292V216.5A42 42 0 0 1 334 174.5H432A80 80 0 0 1 512 254.5Z',
+    circle: { cx: 384, cy: 96, r: 72 },
+    path: 'M504 280A88 88 0 0 0 416 192L320 192A30 30 0 0 0 290 222L290 278.54A118 60 0 0 1 256 396L256 488L356 488A148 148 0 0 0 504 340Z',
+    monoPath:
+      'M504 280A88 88 0 0 0 416 192L320 192A30 30 0 0 0 290 222L290 278.54A118 60 0 0 1 268 395.69L268 478A10 10 0 0 0 278 488L356 488A148 148 0 0 0 504 340Z',
   },
 } as const;
 

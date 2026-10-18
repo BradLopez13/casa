@@ -56,6 +56,7 @@ export function HeaderAction({
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
                 borderWidth: PRIMARY_EDGE,
+                borderStyle: look.borderStyle,
                 borderColor: look.border,
                 backgroundColor: look.fill,
                 ...(disabled ? null : shadows.primary),
@@ -64,7 +65,6 @@ export function HeaderAction({
         }
       >
         <Text
-          maxFontSizeMultiplier={1.3}
           style={{
             color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
             fontSize: strong ? 16 : 15,
@@ -86,6 +86,8 @@ type Action = {
   onPress: () => void;
   disabled?: boolean;
   busy?: boolean;
+  /** Drawn as plain text instead of the pósit pill (another primary owns the screen). */
+  quiet?: boolean;
 };
 
 const TITLE_SIZE = 20;
@@ -104,8 +106,8 @@ export function ModalHeader({
 }: {
   title: string;
   cancel: Action;
-  /** The main action, drawn as a pill. */
-  action: Action;
+  /** The main action, drawn as a pill. Left out when the form keeps its primary at the foot. */
+  action?: Action;
   /** Padding above and below the bar, in `space()` steps. */
   step: number;
 }) {
@@ -119,7 +121,7 @@ export function ModalHeader({
     row,
     gap,
     cancel: cancelWidth,
-    save: saveWidth,
+    save: action ? saveWidth : cancelWidth,
     title: titleWidth,
   });
   const width = (set: (w: number) => void) => (e: LayoutChangeEvent) =>
@@ -136,7 +138,6 @@ export function ModalHeader({
     <Text
       accessibilityRole="header"
       numberOfLines={inline ? 1 : undefined}
-      maxFontSizeMultiplier={1.3}
       style={
         inline
           ? { ...titleStyle, flex: 1, textAlign: 'center' }
@@ -163,12 +164,7 @@ export function ModalHeader({
         importantForAccessibility="no-hide-descendants"
         style={{ position: 'absolute', left: 0, top: 0, opacity: 0, flexDirection: 'row' }}
       >
-        <Text
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
-          style={titleStyle}
-          onLayout={width(setTitleWidth)}
-        >
+        <Text numberOfLines={1} style={titleStyle} onLayout={width(setTitleWidth)}>
           {title}
         </Text>
       </View>
@@ -177,9 +173,14 @@ export function ModalHeader({
           <HeaderAction {...cancel} />
         </View>
         {inline ? heading : <View style={{ flex: 1 }} />}
-        <View onLayout={width(setSaveWidth)}>
-          <HeaderAction {...action} strong />
-        </View>
+        {action ? (
+          <View onLayout={width(setSaveWidth)}>
+            <HeaderAction {...action} strong={!action.quiet} />
+          </View>
+        ) : (
+          // No main action: an empty slot as wide as Cancel keeps the title centred.
+          <View style={{ width: cancelWidth }} />
+        )}
       </View>
       {inline ? null : heading}
     </View>

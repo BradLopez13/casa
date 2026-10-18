@@ -7,7 +7,12 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
   const p = palettes[scheme];
 
   it('draws a primary button as the pósit with no visible edge', () => {
-    const expected = { fill: p.accent, border: p.accent, foreground: p.onAccent };
+    const expected = {
+      fill: p.accent,
+      border: p.accent,
+      foreground: p.onAccent,
+      borderStyle: 'solid',
+    };
     expect(buttonLook('primary', 'default', 'enabled', p)).toEqual(expected);
     expect(buttonLook('primary', 'default', 'busy', p)).toEqual(expected);
   });
@@ -17,6 +22,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: p.red,
       border: p.red,
       foreground: p.onRed,
+      borderStyle: 'solid',
     });
   });
 
@@ -25,6 +31,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: p.tonal,
       border: p.tonalEdge,
       foreground: p.cobalt,
+      borderStyle: 'solid',
     });
   });
 
@@ -33,11 +40,13 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: 'transparent',
       border: 'transparent',
       foreground: p.cobalt,
+      borderStyle: 'solid',
     });
     expect(buttonLook('tertiary', 'destructive', 'enabled', p)).toEqual({
       fill: 'transparent',
       border: 'transparent',
       foreground: p.red,
+      borderStyle: 'solid',
     });
   });
 
@@ -48,6 +57,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
         fill: 'transparent',
         border: p.outline,
         foreground: p.muted,
+        borderStyle: 'dashed',
       });
     },
   );
@@ -57,6 +67,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: 'transparent',
       border: 'transparent',
       foreground: p.muted,
+      borderStyle: 'solid',
     });
   });
 

@@ -1,9 +1,10 @@
 import type { PaneMode } from '@/ui/panes';
 
-export type SettingsGroup = 'profile' | 'members' | 'reminders' | 'notices' | 'account';
+/** The notes under the door; who you are lives on the door itself. */
+export type SettingsGroup = 'members' | 'shopping' | 'reminders' | 'notices' | 'account';
 
 /** The single-column order, as Ajustes has always read. */
-const ORDER: readonly SettingsGroup[] = ['profile', 'members', 'reminders', 'notices', 'account'];
+const ORDER: readonly SettingsGroup[] = ['members', 'shopping', 'reminders', 'notices', 'account'];
 
 /** What the phone does on its own: reminders and household notices. */
 const PHONE: ReadonlySet<SettingsGroup> = new Set(['reminders', 'notices']);
@@ -11,9 +12,10 @@ const PHONE: ReadonlySet<SettingsGroup> = new Set(['reminders', 'notices']);
 export type SettingsPanes = { left: SettingsGroup[]; right: SettingsGroup[] };
 
 /**
- * Ajustes on two panes: who you are and your household (profile, members, sign out, delete
- * account) on the left, what the phone tells you (reminders, household notices) on the right. In
- * one column everything stays in its usual order, the account actions last.
+ * Ajustes on two panes: your household and account (members, the shopping order, sign out,
+ * delete account) on the
+ * left, what the phone tells you (reminders, household notices) on the right. In one column
+ * everything stays in its usual order, the account last.
  */
 export function settingsPanes(mode: PaneMode): SettingsPanes {
   if (mode === 'stack') return { left: [...ORDER], right: [] };
@@ -21,12 +23,4 @@ export function settingsPanes(mode: PaneMode): SettingsPanes {
     left: ORDER.filter((group) => !PHONE.has(group)),
     right: ORDER.filter((group) => PHONE.has(group)),
   };
-}
-
-/**
- * Whether a group opens a new block, with more space above it than inside it. The members button
- * belongs with the profile above it; the first group of a pane needs no extra space.
- */
-export function startsBlock(groups: readonly SettingsGroup[], index: number): boolean {
-  return index > 0 && groups[index] !== 'members';
 }

@@ -1,8 +1,11 @@
 import type { QueryKey } from '@tanstack/react-query';
+// From keys, which features/households/queries re-exports: the batcher needs no React.
+import { membershipKey } from '@/features/households/keys';
 
 const TASKS: QueryKey = ['tasks'];
 const SHOPPING: QueryKey = ['shopping'];
 const SHOPPING_HISTORY: QueryKey = ['shopping-history'];
+const SHOPPING_CATEGORIES: QueryKey = ['shopping-categories'];
 
 /**
  * Query prefixes to refresh when the server broadcasts a change to `table`. They are
@@ -12,6 +15,13 @@ export function invalidationsFor(table: string): QueryKey[] {
   switch (table) {
     case 'shopping_items':
       return [SHOPPING, SHOPPING_HISTORY];
+    // A correction to an item's aisle.
+    case 'household_item_categories':
+      return [SHOPPING_CATEGORIES];
+    // The aisle order (set_category_order broadcasts it as 'households'), or the household
+    // itself: its name and owner live in the membership.
+    case 'households':
+      return [SHOPPING_CATEGORIES, membershipKey];
     case 'task_series':
     case 'task_occurrences':
       return [TASKS];
@@ -76,7 +86,7 @@ export function createInvalidationBatcher(opts: InvalidationBatcherOptions): Inv
       if (disposed) return;
       cancelTimer();
       pending.clear();
-      invalidateAll([TASKS, SHOPPING, SHOPPING_HISTORY]);
+      invalidateAll([TASKS, SHOPPING, SHOPPING_HISTORY, SHOPPING_CATEGORIES]);
     },
     dispose() {
       disposed = true;

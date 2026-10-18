@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Text, View, type TextInput } from 'react-native';
 import { signIn } from '@/features/auth/api';
 import { toAuthFailure } from '@/features/auth/errors';
 import { authErrorKey, fieldErrors } from '@/features/auth/form-errors';
@@ -28,12 +28,18 @@ export default function SignInScreen() {
   const [errors, setErrors] = useState<Record<string, MessageKey>>({});
   const [formError, setFormError] = useState<MessageKey | null>(null);
   const [loading, setLoading] = useState(false);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   async function submit() {
     setFormError(null);
     const parsed = signInSchema.safeParse({ email: email.trim(), password });
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error, { form: 'signIn' }));
+      const found = fieldErrors(parsed.error, { form: 'signIn' });
+      setErrors(found);
+      const first: TextInput | null =
+        (found.email ? emailRef.current : null) ?? (found.password ? passwordRef.current : null);
+      first?.focus();
       return;
     }
     setErrors({});
@@ -72,6 +78,7 @@ export default function SignInScreen() {
         </Text>
       ) : null}
       <TextField
+        ref={emailRef}
         testID="sign-in.email"
         label={t('auth.fields.email')}
         value={email}
@@ -82,8 +89,11 @@ export default function SignInScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
       <PasswordField
+        ref={passwordRef}
         testID="sign-in.password"
         label={t('auth.fields.password')}
         value={password}
@@ -91,6 +101,10 @@ export default function SignInScreen() {
         error={fieldError('password')}
         textContentType="password"
         autoComplete="current-password"
+        returnKeyType="done"
+        onSubmitEditing={() => {
+          if (!loading) void submit();
+        }}
       />
       <View style={{ alignSelf: 'flex-end' }}>
         <Button
@@ -127,7 +141,7 @@ export default function SignInScreen() {
           title={t('auth.signIn.goSignUp')}
           variant="tertiary"
           width="hug"
-          onPress={() => router.replace('/sign-up')}
+          onPress={() => router.push('/sign-up')}
         />
       </View>
     </CenteredCard>

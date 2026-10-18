@@ -1,9 +1,17 @@
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
+import { ROOMS, type Room } from '@/domain/tasks/rooms';
+import type { Locale } from '@/i18n';
 
 export type Role = 'owner' | 'member';
 
-export type Membership = { householdId: string; householdName: string; role: Role };
+export type Membership = {
+  householdId: string;
+  householdName: string;
+  role: Role;
+  /** The rooms the home has, in the usual order. A membership persisted before rooms existed lacks it. */
+  rooms: Room[];
+};
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
 
@@ -42,7 +50,7 @@ export async function getMyMembership(): Promise<Membership | null> {
   const data = await unwrapMaybe(
     supabase
       .from('household_members')
-      .select('household_id, role, households(name)')
+      .select('household_id, role, households(name, rooms)')
       .eq('user_id', userId)
       .is('left_at', null)
       .maybeSingle(),
@@ -52,7 +60,14 @@ export async function getMyMembership(): Promise<Membership | null> {
     householdId: data.household_id,
     householdName: data.households?.name ?? '',
     role: data.role as Role,
+    rooms: toRooms(data.households?.rooms),
   };
+}
+
+/** Known rooms only, in the usual order; none known falls back to every room. */
+function toRooms(rooms: readonly string[] | undefined): Room[] {
+  const known = ROOMS.filter((room) => rooms?.includes(room));
+  return known.length > 0 ? known : [...ROOMS];
 }
 
 export async function listMembers(householdId: string): Promise<Member[]> {
@@ -94,6 +109,11 @@ export async function createHousehold(name: string): Promise<string> {
   return unwrap(supabase.rpc('create_household', { p_name: name }));
 }
 
+/** Replaces the rooms of the caller's household (at least one, known rooms only). */
+export async function setHouseholdRooms(rooms: readonly Room[]): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_household_rooms', { p_rooms: [...rooms] }));
+}
+
 export async function createInvite(
   householdId: string,
 ): Promise<{ token: string; expiresAt: string }> {
@@ -129,4 +149,14 @@ export async function transferOwnership(householdId: string, userId: string): Pr
 
 export async function deleteHousehold(householdId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('delete_household', { p_household_id: householdId }));
+}
+
+/** Replaces the signed-in person's visible name (1 to 40 characters once trimmed). */
+export async function setDisplayName(name: string): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_display_name', { p_name: name }));
+}
+
+/** Stores the phone's language in the signed-in person's profile, so pushes reach them in it. */
+export async function setLocale(locale: Locale): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_locale', { p_locale: locale }));
 }

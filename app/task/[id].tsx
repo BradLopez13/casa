@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
-import { dayHeading } from '@/domain/tasks/labels';
+import { skippedNotice } from '@/domain/tasks/labels';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -11,7 +11,7 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
-import { useSkipTask, useTaskMutation, useTasks } from '@/features/tasks/queries';
+import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -55,7 +55,14 @@ function EditTaskScreen() {
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const remove = useTaskMutation<void, void>(() => deleteTask(id));
   const skip = useSkipTask(householdId);
+  const toggler = useToggleTask(householdId, userId);
   const close = useCloseModal('/today');
+  // Completing or reopening from the form closes it, but only after a render that marks the form
+  // busy: closing in the same tick let the discard guard ask over a task already toggled.
+  const [toggled, setToggled] = useState(false);
+  useEffect(() => {
+    if (toggled) close();
+  }, [toggled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (task === undefined) {
     const loading = tasksQuery.data === undefined && !tasksQuery.isError;
@@ -86,6 +93,8 @@ function EditTaskScreen() {
   }
 
   const canDelete = task.createdBy === userId || membership?.role === 'owner';
+  const done = task.completedAt !== null;
+  const toggling = toggler.isBusy(task.id) && !isProvisional(task);
   const failure = skip.error ?? remove.error ?? save.error;
   // Saving, deleting or skipping locks the other two, and a success keeps them locked while closing.
   const busy =
@@ -94,7 +103,9 @@ function EditTaskScreen() {
     remove.isPending ||
     remove.isSuccess ||
     skip.isPending ||
-    skip.isSuccess;
+    skip.isSuccess ||
+    toggling ||
+    toggled;
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&
@@ -111,10 +122,18 @@ function EditTaskScreen() {
       {
         onSuccess: () => {
           close();
-          notify(t('tasks.skipped', { date: dayHeading(next, today).toLowerCase() }));
+          notify(skippedNotice(next, today));
         },
       },
     );
+  };
+  const toggleDone = () => {
+    if (isProvisional(task)) return;
+    save.reset();
+    remove.reset();
+    skip.reset();
+    toggler.toggle({ id: task.id, done: !done });
+    setToggled(true);
   };
   const initial: TaskInput = {
     title: task.title,
@@ -128,6 +147,7 @@ function EditTaskScreen() {
     <>
       <TaskForm
         title={t('taskForm.editTitle')}
+        isNew={false}
         initial={initial}
         members={members ?? []}
         marks={marks}
@@ -143,38 +163,50 @@ function EditTaskScreen() {
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}
+        // Save is the foot's one pósit: completing and reopening are secondary next to it.
         footer={
-          canSkip || canDelete ? (
-            <View style={{ gap: space(3) }}>
-              {canSkip ? (
-                <Button
-                  testID="task-form.skip"
-                  title={t('taskForm.skip')}
-                  icon={actionIcons.skip}
-                  variant="secondary"
-                  disabled={busy}
-                  onPress={skipOnce}
-                />
-              ) : null}
-              {canDelete ? (
-                <Button
-                  testID="task-form.delete"
-                  title={t('taskForm.delete')}
-                  variant="tertiary"
-                  tone="destructive"
-                  icon={actionIcons.delete}
-                  // A saved edit or skip is already closing the modal: no confirm dialog on top.
-                  disabled={
-                    save.isPending ||
-                    save.isSuccess ||
-                    remove.isSuccess ||
-                    skip.isPending ||
-                    skip.isSuccess
-                  }
-                  onPress={() => setConfirming(true)}
-                />
-              ) : null}
-            </View>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(3) }}
+          >
+            <Button
+              testID={done ? 'task-form.reopen' : 'task-form.complete'}
+              title={t(done ? 'taskForm.reopen' : 'taskForm.complete')}
+              icon={done ? undefined : actionIcons.confirm}
+              variant="secondary"
+              disabled={busy || isProvisional(task)}
+              onPress={toggleDone}
+            />
+            {canSkip ? (
+              <Button
+                testID="task-form.skip"
+                title={t('taskForm.skip')}
+                icon={actionIcons.skip}
+                variant="tertiary"
+                disabled={busy}
+                onPress={skipOnce}
+              />
+            ) : null}
+          </View>
+        }
+        // Deleting stays apart from the foot, at the end of the note's scroll.
+        dangerZone={
+          canDelete ? (
+            <Button
+              testID="task-form.delete"
+              title={t('taskForm.delete')}
+              variant="tertiary"
+              tone="destructive"
+              icon={actionIcons.delete}
+              // A saved edit or skip is already closing the modal: no confirm dialog on top.
+              disabled={
+                save.isPending ||
+                save.isSuccess ||
+                remove.isSuccess ||
+                skip.isPending ||
+                skip.isSuccess
+              }
+              onPress={() => setConfirming(true)}
+            />
           ) : null
         }
       />

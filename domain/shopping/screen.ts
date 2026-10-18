@@ -1,9 +1,15 @@
 import { t } from '@/i18n';
 import { findPending, type ShoppingItem } from './list';
 
-/** The door's subtitle: how many items are still to buy. */
-export function countLabel(pendingCount: number): string {
-  return pendingCount === 0 ? t('shopping.countNone') : t('shopping.count', { n: pendingCount });
+/** The door's headline: how many things are missing, and the count to draw larger (§14.4). */
+export function doorLine(pendingCount: number): { text: string; number: string | null } {
+  if (pendingCount === 0) return { text: t('shopping.lineNone'), number: null };
+  return {
+    text: t(pendingCount === 1 ? 'shopping.lineOne' : 'shopping.lineOther', {
+      count: pendingCount,
+    }),
+    number: String(pendingCount),
+  };
 }
 
 export type AddPlan = { kind: 'add'; name: string } | { kind: 'listed'; id: string };

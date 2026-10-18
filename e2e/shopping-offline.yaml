@@ -22,15 +22,14 @@ onFlowComplete:
       EMAIL: olga@e2e.dev
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Olga
+      id: today.door-line
     timeout: 20000
 
 # Open the list, then lose the connection
 - tapOn:
     id: tab.shopping
 - extendedWaitUntil:
-    visible: Nada por comprar
+    visible: No falta nada.
     timeout: 20000
 - setAirplaneMode: enabled
 - extendedWaitUntil:

@@ -1,47 +1,46 @@
 import { Text, View } from 'react-native';
 import type { TodayLine } from '@/domain/tasks/todayLine';
+import { DayDone } from '@/features/tasks/components/DayDone';
 import { todayLineText } from '@/features/tasks/todayLineText';
-import { useDoorCompact } from '@/ui/components/DoorHeader';
+import { t } from '@/i18n';
+import { Button } from '@/ui/components/Button';
+import { DoorHeadline, useDoorType } from '@/ui/components/DoorHeader';
 import { useTheme } from '@/ui/theme';
-import { displayFont, displayFontBold } from '@/ui/tokens';
-
-const LINE_SIZE = 17;
-const NUMBER_SIZE = 20;
 
 /**
- * The door line of Hoy: what is yours today (or the household's, or a member's), in Rounded 700
- * with the number in Rounded 800 a little larger and the same colour, and under it what is left
- * for the household. In a compact door (a phone on its side) only the first phrase shows.
+ * The headline of Hoy's door (§2.4b): what is yours today (or the household's, or a member's) in
+ * Rounded 800 at the door's headline size, the number a point larger in the same colour, and
+ * under it, muted, what is left for the household. The end of the day is the brand's figures.
  */
-export function TallyView({ line }: { line: TodayLine }) {
-  const { colors } = useTheme();
-  const compact = useDoorCompact();
+export function TallyView({ line, onSeeAll }: { line: TodayLine; onSeeAll?: () => void }) {
+  const { colors, space } = useTheme();
+  const type = useDoorType();
   const { first, number, second } = todayLineText(line);
-  const label = second === null || compact ? first : `${first} ${second}`;
+  const label = second === null ? first : `${first} ${second}`;
 
-  // The count is the last number in the sentence (a name could hold digits, never the count's tail).
-  const at = number === null ? -1 : first.lastIndexOf(number);
-  const head = at < 0 ? first : first.slice(0, at);
-  const tail = at < 0 ? '' : first.slice(at + (number?.length ?? 0));
-
+  const seeAll = line.kind === 'nothingMine' && line.unassigned > 0 && onSeeAll;
   return (
-    <View accessible accessibilityLabel={label} style={{ gap: 2 }}>
-      <Text
-        style={{
-          color: colors.ink,
-          fontFamily: displayFontBold,
-          fontSize: LINE_SIZE,
-          fontVariant: ['tabular-nums'],
-        }}
+    <View>
+      <View
+        testID="today.door-line"
+        accessible
+        accessibilityLabel={label}
+        accessibilityLiveRegion="polite"
       >
-        {head}
-        {number !== null ? (
-          <Text style={{ fontFamily: displayFont, fontSize: NUMBER_SIZE }}>{number}</Text>
+        {line.kind === 'allDone' ? <DayDone /> : <DoorHeadline text={first} number={number} />}
+        {second !== null ? (
+          <Text style={{ marginTop: space(1), color: colors.muted, fontSize: type.secondary }}>
+            {second}
+          </Text>
         ) : null}
-        {tail}
-      </Text>
-      {second !== null && !compact ? (
-        <Text style={{ color: colors.muted, fontSize: 15 }}>{second}</Text>
+      </View>
+      {seeAll ? (
+        <Button
+          testID="today.see-all"
+          title={t('today.seeAll')}
+          variant="tertiary"
+          onPress={onSeeAll}
+        />
       ) : null}
     </View>
   );

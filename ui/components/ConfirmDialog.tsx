@@ -9,6 +9,8 @@ type Props = {
   title: string;
   message: string;
   confirmLabel: string;
+  /** Defaults to «Cancelar». */
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
   destructive?: boolean;
@@ -21,6 +23,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel = t('members.cancel'),
   onConfirm,
   onCancel,
   destructive = false,
@@ -63,7 +66,7 @@ export function ConfirmDialog({
             alignSelf: 'center',
             gap: space(2),
             padding: space(6),
-            borderRadius: radii.door,
+            borderRadius: radii.note,
             backgroundColor: colors.note,
           }}
         >
@@ -87,8 +90,8 @@ export function ConfirmDialog({
             />
             <Button
               testID="members.cancel"
-              title={t('members.cancel')}
-              variant="tertiary"
+              title={cancelLabel}
+              variant="secondary"
               width="full"
               disabled={loading}
               onPress={onCancel}

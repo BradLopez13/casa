@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { sectionA11yLabel } from '@/features/tasks/components/sectionText';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold } from '@/ui/tokens';
 
@@ -18,6 +19,9 @@ export function SectionHeader({
   const { colors, space } = useTheme();
   return (
     <View
+      accessible
+      accessibilityRole="header"
+      accessibilityLabel={sectionA11yLabel(title, count)}
       style={{
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -28,12 +32,15 @@ export function SectionHeader({
       }}
     >
       <Text
-        accessibilityRole="header"
+        importantForAccessibility="no-hide-descendants"
         style={{ flexShrink: 1, color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
       >
         {title}
       </Text>
-      <Text style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}>
+      <Text
+        importantForAccessibility="no-hide-descendants"
+        style={{ color: colors.muted, fontSize: 15, fontVariant: ['tabular-nums'] }}
+      >
         {count}
       </Text>
     </View>

@@ -246,11 +246,11 @@ otp_expiry = 900
 # sender_name = "Nido"
 
 [auth.email.template.confirmation]
-subject = "Tu código de Nido"
+subject = "Tu código de Nido / Your Nido code"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Recupera tu contraseña de Nido"
+subject = "Recupera tu contraseña de Nido / Reset your Nido password"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template
@@ -261,7 +261,7 @@ content_path = "./supabase/templates/recovery.html"
 # Security notice when a password changes (template built by `pnpm emails:build`).
 [auth.email.notification.password_changed]
 enabled = true
-subject = "Tu contraseña de Nido ha cambiado"
+subject = "Tu contraseña de Nido ha cambiado / Your Nido password has changed"
 content_path = "./supabase/templates/password_changed.html"
 
 [auth.sms]

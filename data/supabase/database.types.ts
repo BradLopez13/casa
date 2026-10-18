@@ -24,6 +24,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"household_item_categories": {
+                  Row: {
+                    "category": string,"household_id": string,"normalized_name": string
+                  }
+                  Insert: {
+                    "category": string,"household_id": string,"normalized_name": string
+                  }
+                  Update: {
+                    "category"?: string,"household_id"?: string,"normalized_name"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "household_item_categories_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"household_members": {
                   Row: {
                     "household_id": string,"id": string,"joined_at": string,"left_at": string | null,"role": string,"user_id": string
@@ -51,13 +70,13 @@ isOneToOne: false
                   ]
                 },"households": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"deleted_at": string | null,"id": string,"name": string
+                    "category_order": (string)[] | null,"created_at": string,"created_by": string | null,"deleted_at": string | null,"id": string,"name": string,"rooms": (string)[]
                   }
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name": string
+                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name": string,"rooms"?: (string)[]
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name"?: string
+                    "category_order"?: (string)[] | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"id"?: string,"name"?: string,"rooms"?: (string)[]
                   }
                   Relationships: [
                     
@@ -115,13 +134,13 @@ isOneToOne: false
                   ]
                 },"shopping_items": {
                   Row: {
-                    "bought_at": string | null,"bought_by": string | null,"cleared_at": string | null,"created_at": string,"created_by": string | null,"household_id": string,"id": string,"name": string,"normalized_name": string | null,"quantity": string | null
+                    "bought_at": string | null,"bought_by": string | null,"category": string | null,"cleared_at": string | null,"created_at": string,"created_by": string | null,"household_id": string,"id": string,"name": string,"normalized_name": string | null,"quantity": string | null
                   }
                   Insert: {
-                    "bought_at"?: string | null,"bought_by"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id": string,"id": string,"name": string,"normalized_name"?: never,"quantity"?: string | null
+                    "bought_at"?: string | null,"bought_by"?: string | null,"category"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id": string,"id": string,"name": string,"normalized_name"?: never,"quantity"?: string | null
                   }
                   Update: {
-                    "bought_at"?: string | null,"bought_by"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id"?: string,"id"?: string,"name"?: string,"normalized_name"?: never,"quantity"?: string | null
+                    "bought_at"?: string | null,"bought_by"?: string | null,"category"?: string | null,"cleared_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"household_id"?: string,"id"?: string,"name"?: string,"normalized_name"?: never,"quantity"?: string | null
                   }
                   Relationships: [
                     {
@@ -252,8 +271,23 @@ isOneToOne: false
 "revoke_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
                            },
+"set_category_order":
+{ Args: { "p_order": (string)[] }; Returns: undefined
+                           },
+"set_display_name":
+{ Args: { "p_name": string }; Returns: undefined
+                           },
+"set_household_rooms":
+{ Args: { "p_rooms": (string)[] }; Returns: undefined
+                           },
 "set_item_bought":
 { Args: { "p_bought": boolean,"p_id": string }; Returns: undefined
+                           },
+"set_item_category":
+{ Args: { "p_category": string,"p_id": string }; Returns: undefined
+                           },
+"set_locale":
+{ Args: { "p_locale": string }; Returns: undefined
                            },
 "set_notification_prefs":
 { Args: { "p_member_joined": boolean,"p_task_assigned": boolean }; Returns: undefined
@@ -266,7 +300,7 @@ isOneToOne: false
                            },
 "shopping_history":
 { Args: { "p_household_id": string }; Returns: {
-              "last_used_at": string,"name": string,"normalized_name": string,"uses": number
+              "category": string,"last_used_at": string,"name": string,"normalized_name": string,"uses": number
             }[]
                            },
 "skip_task":

@@ -1,4 +1,4 @@
-import type { MutationOptions, QueryClient } from '@tanstack/react-query';
+import { MutationObserver, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { membershipKey } from '@/features/households/keys';
 import { localDateIso } from '@/domain/tasks/dates';
@@ -7,11 +7,12 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
+import { markFresh } from './freshIds';
 
 export type ToggleVars = { id: string; done: boolean };
 type Context = { previous: TaskItem | undefined; successor: TaskItem | undefined };
 
-const TOGGLE_KEY = ['tasks', 'toggle'] as const;
+export const TOGGLE_KEY = ['tasks', 'toggle'] as const;
 
 /**
  * Our view of the household is stale (task gone, we left, or the assignee left): refetch
@@ -83,4 +84,37 @@ export function buildToggleOptions(
       }
     },
   };
+}
+
+/** Toggles of one task share a scope, so they reach the server one after another. */
+export const toggleScope = (id: string) => ({ id: 'task-toggle-' + id });
+
+/** The toggles of this task still pending, oldest first. */
+function pendingFor(queryClient: QueryClient, id: string): ToggleVars[] {
+  return queryClient
+    .getMutationCache()
+    .findAll({ mutationKey: TOGGLE_KEY, status: 'pending' })
+    .map((m) => m.state.variables as ToggleVars | undefined)
+    .filter((vars): vars is ToggleVars => vars?.id === id);
+}
+
+/**
+ * Runs one toggle. A tap that repeats what is already on its way for this task (a double tap) is
+ * dropped; the opposite one, such as «Deshacer» while the complete is still pending, is not: its
+ * optimistic update applies at once and its request waits in the task's scope until the earlier
+ * one settles. Each toggle keeps its own rollback, as before.
+ */
+export function runToggle(
+  queryClient: QueryClient,
+  options: MutationOptions<void, AppError, ToggleVars, Context>,
+  vars: ToggleVars,
+): void {
+  const last = pendingFor(queryClient, vars.id).at(-1);
+  if (last !== undefined && last.done === vars.done) return;
+  // Completed here: its note lands in the tray with the pin choreography.
+  if (vars.done) markFresh(vars.id, 'done');
+  // The notice already carries the error (onError): nothing else waits on this promise.
+  new MutationObserver(queryClient, { ...options, scope: toggleScope(vars.id) })
+    .mutate(vars)
+    .catch(() => undefined);
 }

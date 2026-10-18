@@ -19,8 +19,7 @@ appId: com.bradlopez13.casa
       EMAIL: ines@e2e.dev
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Ines
+      id: today.door-line
     timeout: 20000
 
 # Settings -> delete the account -> back to sign in

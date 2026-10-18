@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { DEFAULT_ORDER, type Category } from '@/domain/shopping/categories';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
-import { countLabel } from '@/domain/shopping/screen';
-import type { HistoryEntry } from '@/domain/shopping/suggest';
+import { doorLine, pendingNames } from '@/domain/shopping/screen';
+import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { newShoppingItemId } from '@/features/shopping/api';
@@ -15,6 +16,7 @@ import {
 import { OfflineBand } from '@/features/shopping/components/OfflineBand';
 import {
   BoughtTitle,
+  EmptyList,
   ShoppingSheet,
   type Flash,
 } from '@/features/shopping/components/ShoppingSheet';
@@ -23,8 +25,10 @@ import {
   useAddItem,
   useClearBought,
   useIsOnline,
+  useItemCategories,
   usePendingItemIds,
   useSetBought,
+  useSetCategory,
   useShoppingHistory,
   useShoppingItems,
 } from '@/features/shopping/queries';
@@ -80,8 +84,10 @@ export default function ShoppingScreen() {
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
+  const categories = useItemCategories(householdId);
   const addItem = useAddItem();
   const setBought = useSetBought();
+  const setCategory = useSetCategory();
   const clearBought = useClearBought();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
@@ -94,6 +100,10 @@ export default function ShoppingScreen() {
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
   const { pending, bought } = useMemo(() => sortList(items), [items]);
+  const grouping = useMemo(
+    () => ({ order: categories.order ?? DEFAULT_ORDER, overrides: categories.overrides }),
+    [categories.order, categories.overrides],
+  );
 
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
@@ -114,6 +124,11 @@ export default function ShoppingScreen() {
     setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
   };
 
+  const changeCategory = (item: ShoppingItem, category: Category) => {
+    if (householdId === undefined) return;
+    setCategory.mutate({ id: item.id, householdId, category });
+  };
+
   const clear = () => {
     if (householdId === undefined) return;
     clearBought.mutate(
@@ -131,17 +146,26 @@ export default function ShoppingScreen() {
     if (!online) return;
     setPulling(true);
     try {
-      await Promise.all([itemsQuery.refetch(), historyQuery.refetch(), membersQuery.refetch()]);
+      await Promise.all([
+        itemsQuery.refetch(),
+        historyQuery.refetch(),
+        membersQuery.refetch(),
+        categories.query.refetch(),
+      ]);
     } finally {
       setPulling(false);
     }
   };
 
+  // Until the list loads the door has no count to say: a blank headline keeps its line height.
+  const line = itemsQuery.data ? doorLine(pending.length) : null;
   const door = (children: ReactNode) => (
     <DoorHeader
-      title={t('shopping.title')}
-      titleSize="medium"
-      subtitle={itemsQuery.data ? countLabel(pending.length) : undefined}
+      eyebrow={t('shopping.title')}
+      heading={line?.text ?? ' '}
+      headingNumber={line?.number}
+      headingTestID="shopping.door-line"
+      secondary={t('shopping.doorHint')}
     >
       {children}
     </DoorHeader>
@@ -174,7 +198,9 @@ export default function ShoppingScreen() {
       </View>
     );
   } else if (state === 'empty') {
-    stateView = <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>;
+    stateView = (
+      <EmptyList usual={usual(history, pendingNames(items))} onAdd={(name) => entry.submit(name)} />
+    );
   }
 
   const parts: ShoppingParts = {
@@ -193,6 +219,8 @@ export default function ShoppingScreen() {
       onToggle: toggle,
       onOpen: open,
       onClear: clear,
+      grouping,
+      onCategory: changeCategory,
     },
     online,
     door,
@@ -207,11 +235,15 @@ export default function ShoppingScreen() {
   );
 }
 
-/** One column (phones, small tablets): the field on the door, then one sheet, pulled by the door. */
+/**
+ * One column (phones, small tablets): the virtualised sheet is the screen's scroller, pulled by the
+ * door; the door, the field, the offline band and the state line are its header.
+ */
 function ShoppingStack({
   entry,
   pending,
   bought,
+  state,
   stateView,
   sheet,
   online,
@@ -221,19 +253,25 @@ function ShoppingStack({
 }: ShoppingParts) {
   const { space } = useTheme();
   const column = useOneColumn();
+  const header = (
+    <>
+      {door(<AddItemField entry={entry} />)}
+      {online ? null : <OfflineBand />}
+      {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
+      <View style={[column, { paddingTop: space(listTopStep(online)) }]}>{stateView}</View>
+    </>
+  );
   return (
     <FridgeRefresh refreshing={pulling} onRefresh={refresh}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
+      <ShoppingSheet
+        flush
+        header={header}
+        column={column}
+        pending={state === 'list' ? pending : NO_ITEMS}
+        bought={state === 'list' ? bought : NO_ITEMS}
         contentContainerStyle={{ paddingBottom: space(10) }}
-      >
-        {door(<AddItemField entry={entry} />)}
-        {online ? null : <OfflineBand />}
-        {/* The door runs edge to edge; the sheet keeps to the column. */}
-        <View style={[column, { paddingTop: space(listTopStep(online)) }]}>
-          {stateView ?? <ShoppingSheet flush pending={pending} bought={bought} {...sheet} />}
-        </View>
-      </ScrollView>
+        {...sheet}
+      />
     </FridgeRefresh>
   );
 }

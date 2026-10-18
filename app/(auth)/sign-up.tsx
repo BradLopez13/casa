@@ -125,6 +125,8 @@ export default function SignUpScreen() {
         textContentType="name"
         autoComplete="name"
         autoCapitalize="words"
+        returnKeyType="next"
+        onSubmitEditing={() => emailRef.current?.focus()}
       />
       <TextField
         ref={emailRef}
@@ -138,6 +140,8 @@ export default function SignUpScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
       <View style={{ gap: space(2) }}>
         <PasswordField
@@ -150,6 +154,8 @@ export default function SignUpScreen() {
           error={pairError('password')}
           textContentType="newPassword"
           autoComplete="new-password"
+          returnKeyType="next"
+          onSubmitEditing={() => confirmRef.current?.focus()}
         />
         {shownPair.password ? null : (
           <Text style={{ color: colors.muted, fontSize: 14 }}>{t('auth.hints.passwordRule')}</Text>
@@ -166,6 +172,10 @@ export default function SignUpScreen() {
         textContentType="newPassword"
         autoComplete="new-password"
         confirmedLabel={matches ? t('auth.hints.passwordMatch') : undefined}
+        returnKeyType="done"
+        onSubmitEditing={() => {
+          if (!loading) void submit();
+        }}
       />
       {formError ? <ErrorText>{t(formError)}</ErrorText> : null}
       <Button
@@ -191,7 +201,7 @@ export default function SignUpScreen() {
           title={t('auth.signUp.goSignIn')}
           variant="tertiary"
           width="hug"
-          onPress={() => router.replace('/sign-in')}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/sign-in'))}
         />
       </View>
     </CenteredCard>

@@ -1,0 +1,41 @@
+# The app in English. Run by CI inside `bash scripts/e2e-locale.sh en maestro test e2e/locale/english.yaml`,
+# which sets the emulator language before this flow launches the app and restores es-ES after it
+# (adb root; setprop persist.sys.locale en-US; setprop ctl.restart zygote). The app reads the phone
+# language once at JS start, so a flow on a Spanish emulator fails here: it is not part of the
+# plain shard run (scripts/e2e-shard.sh english prints it apart) nor of `pnpm e2e` (it lives in e2e/locale/).
+appId: com.bradlopez13.casa
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Rita is a fixture user who already owns "Piso Rita"
+- runFlow:
+    file: ../subflows/sign-in.yaml
+    env:
+      EMAIL: rita@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# The Today tab and the quick add speak English
+- assertVisible: Today
+- assertVisible: Add a task for today…
+
+- tapOn:
+    id: today.quick-add
+- inputText: Take out the trash
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Take out the trash
+    timeout: 20000

@@ -1,24 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
-  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
+import type { Category } from '@/domain/shopping/categories';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { pressedOpacity } from '@/ui/buttonLook';
+import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
-const BOX = 24;
 const FLASH_IN_MS = 150;
 const FLASH_OUT_MS = 450;
 
@@ -36,6 +36,10 @@ type Props = {
   onToggle: () => void;
   /** Only pending items can be edited, so only theirs is given; a bought name is plain text. */
   onOpen: (() => void) | undefined;
+  /** The category it is listed under; only pending rows show it. */
+  category?: Category;
+  /** Opens the category picker; given with `category`. */
+  onCategory?: () => void;
 };
 
 /** One item on the sheet: a round checkbox, the name (opens a pending one) and its quantity. */
@@ -48,6 +52,8 @@ export function ShoppingRow({
   flash,
   onToggle,
   onOpen,
+  category,
+  onCategory,
 }: Props) {
   const { colors, space } = useTheme();
   const reduceMotion = useReduceMotion();
@@ -67,7 +73,8 @@ export function ShoppingRow({
   }, [flash, glow]);
 
   const toggle = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Into the bag is a thing done; taking it back out is just a press.
+    void haptic(bought ? 'light' : 'success');
     onToggle();
   };
 
@@ -112,9 +119,9 @@ export function ShoppingRow({
 
   return (
     <Animated.View
-      layout={reduceMotion ? undefined : LinearTransition}
-      entering={FadeIn}
-      exiting={FadeOut}
+      // The list moves the rows (itemLayoutAnimation): the row only fades in and out.
+      entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -144,20 +151,15 @@ export function ShoppingRow({
           justifyContent: 'center',
         }}
       >
-        <View
-          style={{
-            width: BOX,
-            height: BOX,
-            borderRadius: BOX / 2,
-            borderWidth: 2,
-            borderColor: bought ? colors.selection : colors.outline,
-            backgroundColor: bought ? colors.selection : 'transparent',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {bought ? <Ionicons name="checkmark" size={16} color={colors.onSelection} /> : null}
-        </View>
+        <Magnet
+          size="sm"
+          decorative
+          variant="empty"
+          check={bought ? 'filled' : 'faint'}
+          color="teal"
+          initial=""
+          accessibilityLabel={item.name}
+        />
       </Pressable>
       {onOpen ? (
         <Pressable
@@ -175,6 +177,30 @@ export function ShoppingRow({
           {name}
         </View>
       )}
+      {category && onCategory ? (
+        <Pressable
+          testID={`shopping.item.${item.id}.category`}
+          onPress={onCategory}
+          accessibilityRole="button"
+          accessibilityLabel={t('shopping.changeCategory')}
+          accessibilityValue={{ text: t(`shopping.category.${category}`) }}
+          hitSlop={{ top: space(2), bottom: space(2) }}
+          style={({ pressed }) => ({
+            flexShrink: 1,
+            maxWidth: '35%',
+            minWidth: MIN_TOUCH,
+            minHeight: MIN_TOUCH,
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            marginLeft: space(2),
+            opacity: pressedOpacity(pressed),
+          })}
+        >
+          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12 }}>
+            {t(`shopping.category.${category}`)}
+          </Text>
+        </Pressable>
+      ) : null}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}

@@ -1,24 +1,35 @@
 import type { Layout } from './layout';
 
-export type DoorTitleSize = 'large' | 'medium';
+/** The sizes of the door's hierarchy (§14.4): eyebrow, headline (its number larger), line. */
+export type DoorType = {
+  eyebrow: number;
+  heading: number;
+  lineHeight: number;
+  /** The count inside a headline («Te tocan 2.», «Faltan 4 cosas.»), a point larger. */
+  number: number;
+  secondary: number;
+};
+
+export const DOOR_TYPE = {
+  full: { eyebrow: 13, heading: 32, lineHeight: 38, number: 36, secondary: 16 },
+  compact: { eyebrow: 12, heading: 24, lineHeight: 29, number: 27, secondary: 14 },
+} as const satisfies Record<'full' | 'compact', DoorType>;
 
 export type Door = {
-  /** A short window (landscape phone): title and controls share one row, no handle. */
+  /** A short window (landscape phone): headline and controls share one row, no handle. */
   compact: boolean;
-  titleSize: number;
+  type: DoorType;
   handle: boolean;
   /** Tallest the door may be, in dp; `null` when it may grow with its content. */
   maxHeight: number | null;
 };
 
-const TITLE_SIZES: Record<DoorTitleSize, number> = { large: 44, medium: 38 };
-const COMPACT_TITLE = 28;
 /** Share of the window height a compact door may take, so the list keeps most of it. */
 const COMPACT_MAX_SHARE = 0.4;
 /**
  * About how tall the full door is at the default text size, status bar included (Hoy, the
- * tallest: title, date and household, magnets with names and counts). Its text grows with the
- * system's, so the estimate does too.
+ * tallest: eyebrow and date, headline, its second line, magnets with names). Its text grows with
+ * the system's, so the estimate does too.
  */
 const FULL_DOOR_HEIGHT = 300;
 
@@ -33,17 +44,16 @@ const FULL_DOOR_HEIGHT = 300;
 export function doorFor(
   layout: Pick<Layout, 'shortHeight' | 'twoPane'>,
   windowHeight: number,
-  titleSize: DoorTitleSize,
   fontScale = 1,
 ): Door {
   const fullDoor = FULL_DOOR_HEIGHT * Math.max(1, fontScale);
   const crowdsPanes = layout.twoPane && fullDoor > windowHeight * COMPACT_MAX_SHARE;
   if (!layout.shortHeight && !crowdsPanes) {
-    return { compact: false, titleSize: TITLE_SIZES[titleSize], handle: true, maxHeight: null };
+    return { compact: false, type: DOOR_TYPE.full, handle: true, maxHeight: null };
   }
   return {
     compact: true,
-    titleSize: COMPACT_TITLE,
+    type: DOOR_TYPE.compact,
     handle: false,
     maxHeight: Math.floor(windowHeight * COMPACT_MAX_SHARE),
   };

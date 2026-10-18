@@ -1,0 +1,50 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Sign in as Rosa, a fixture user who already owns "Piso Rosa", so Hoy has its quick add
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: rosa@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+- setOrientation: LANDSCAPE_LEFT
+- assertVisible: { id: 'tab.today' }
+- assertNotVisible: 'Render Error'
+- setOrientation: PORTRAIT
+# The quick add is Hoy's way in: it is still there after the turn, and the task it creates
+# opens the form, which must survive a turn too.
+- assertVisible: { id: 'today.quick-add' }
+- tapOn: { id: 'today.quick-add' }
+- inputText: Girar la pantalla
+- tapOn: { id: 'today.quick-add.submit' }
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Girar la pantalla
+    timeout: 20000
+# A note still on its way to the server does not open: tap again until the form shows.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Girar la pantalla
+      - extendedWaitUntil:
+          visible: { id: 'task-form.title' }
+          timeout: 5000
+- setOrientation: LANDSCAPE_LEFT
+- assertVisible: { id: 'task-form.title' }
+- tapOn: { id: 'task-form.cancel' }
+- setOrientation: PORTRAIT
+- assertVisible: { id: 'tab.today' }

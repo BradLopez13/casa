@@ -1,17 +1,18 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { nextFilter } from './filterState';
 
-type TaskFilter = { assigneeId: string | null; toggle: (userId: string) => void };
+type TaskFilter = { assigneeId: string | null; select: (userId: string | null) => void };
 
 const TaskFilterContext = createContext<TaskFilter | null>(null);
 
 /** The member filter shared by Hoy and Tareas. It lives in memory and is not persisted. */
 export function TaskFilterProvider({ children }: { children: ReactNode }) {
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const toggle = useCallback(
-    (userId: string) => setAssigneeId((current) => (current === userId ? null : userId)),
+  const select = useCallback(
+    (userId: string | null) => setAssigneeId((current) => nextFilter(current, userId)),
     [],
   );
-  const value = useMemo(() => ({ assigneeId, toggle }), [assigneeId, toggle]);
+  const value = useMemo(() => ({ assigneeId, select }), [assigneeId, select]);
   return <TaskFilterContext.Provider value={value}>{children}</TaskFilterContext.Provider>;
 }
 

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { t } from '@/i18n';
+import { FADE_MS } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
 
 /** A thin band under the door while the phone has no connection. */
@@ -12,7 +13,7 @@ export function OfflineBand() {
     AccessibilityInfo.announceForAccessibility(t('shopping.offline'));
   }, []);
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut}>
+    <Animated.View entering={FadeIn.duration(FADE_MS)} exiting={FadeOut.duration(FADE_MS)}>
       <View
         testID="shopping.offline"
         accessible

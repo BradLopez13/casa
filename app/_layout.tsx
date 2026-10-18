@@ -10,12 +10,13 @@ import {
 } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
 import { forgetEndedHousehold, persister } from '@/data/query/persist';
@@ -31,7 +32,7 @@ import { displayFont, displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
-import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
+import { useSyncDevice } from '@/features/auth/useSyncDevice';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
 import { routeForNotification } from '@/features/push/routes';
@@ -42,6 +43,7 @@ import {
   addKey,
   boughtKey,
   buildShoppingMutationDefaults,
+  categoryKey,
   persistBuster,
   persistDehydrateOptions,
   resumeShoppingQueue,
@@ -88,6 +90,7 @@ function PersistedQueries({ children }: { children: ReactNode }) {
     const defaults = buildShoppingMutationDefaults(queryClient, notify);
     queryClient.setMutationDefaults(addKey, defaults.add);
     queryClient.setMutationDefaults(boughtKey, defaults.bought);
+    queryClient.setMutationDefaults(categoryKey, defaults.category);
     return null;
   });
   if (status === 'loading') return null;
@@ -123,6 +126,14 @@ function MembershipError({
   onRetry: () => void;
 }) {
   const { colors } = useTheme();
+  const notify = useNotice();
+  const [signingOut, setSigningOut] = useState(false);
+  const leave = () => {
+    setSigningOut(true);
+    signOut()
+      .catch(() => notify(t('auth.signOutFailed')))
+      .finally(() => setSigningOut(false));
+  };
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.page }]}>
       <Screen>
@@ -142,7 +153,8 @@ function MembershipError({
           title={t('auth.signOut')}
           variant="tertiary"
           icon={actionIcons.signOut}
-          onPress={() => void signOut().catch(() => undefined)}
+          loading={signingOut}
+          onPress={leave}
         />
       </Screen>
     </View>
@@ -181,17 +193,39 @@ function useForgetEndedHousehold(membership: { householdId: string } | null | un
   }, [client, membership]);
 }
 
+/**
+ * Runs `run` once the navigation container is ready: now if it already is, otherwise on the
+ * first state change that finds it ready. Returns the cancel function.
+ */
+function whenNavReady(navRef: ReturnType<typeof useNavigationContainerRef>, run: () => void) {
+  if (navRef.isReady()) {
+    run();
+    return () => undefined;
+  }
+  const unsubscribe = navRef.addListener('state', () => {
+    if (!navRef.isReady()) return;
+    unsubscribe();
+    run();
+  });
+  return unsubscribe;
+}
+
 function Guard() {
   const router = useRouter();
   const modalFrame = modalFrameFor(useLayout());
   const segments = useSegments();
+  // Android recreates the activity on a rotation or a font-scale change, and a redirect can then
+  // fire before the navigation container is mounted: expo-router's store.assertIsReady() throws
+  // "Attempted to navigate before mounting the Root Layout" unless navigationRef.isReady().
+  // So navigation waits for that same signal (see `whenNavReady`).
+  const navRef = useNavigationContainerRef();
   const session = useSession();
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
   useForgetEndedHousehold(membershipQuery.data);
 
   const signedIn = session.status === 'signed-in';
-  useSyncTimeZone(signedIn ? session.userId : null);
+  useSyncDevice(signedIn ? session.userId : null);
   usePushRegistration(signedIn ? session.userId : null);
   useReminders();
   const hasData = membershipQuery.data !== undefined;
@@ -211,8 +245,9 @@ function Guard() {
   });
 
   useEffect(() => {
-    if (target) router.replace(target);
-  }, [target, router]);
+    if (!target) return;
+    return whenNavReady(navRef, () => router.replace(target));
+  }, [navRef, target, router]);
 
   const ready =
     !pending.isLoading &&
@@ -229,8 +264,15 @@ function Guard() {
   const inHousehold = ready && membership === 'member';
   useEffect(() => {
     if (!inHousehold) return;
-    return onNotificationTapped((data) => router.push(routeForNotification(data)));
-  }, [inHousehold, router]);
+    let unsubscribeTaps: (() => void) | undefined;
+    const cancel = whenNavReady(navRef, () => {
+      unsubscribeTaps = onNotificationTapped((data) => router.push(routeForNotification(data)));
+    });
+    return () => {
+      cancel();
+      unsubscribeTaps?.();
+    };
+  }, [navRef, inHousehold, router]);
 
   // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
   // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
@@ -284,13 +326,15 @@ export default function RootLayout() {
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemedStatusBar />
-      <NoticeProvider>
-        <SessionProvider>
-          <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-        </SessionProvider>
-      </NoticeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemedStatusBar />
+        <NoticeProvider>
+          <SessionProvider>
+            <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+          </SessionProvider>
+        </NoticeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

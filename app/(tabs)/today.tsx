@@ -4,12 +4,8 @@ import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { todayLine } from '@/domain/tasks/todayLine';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
-import {
-  NewTaskButton,
-  useNewTaskLane,
-  useNewTaskListStyle,
-} from '@/features/tasks/components/NewTaskButton';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
+import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
@@ -27,6 +23,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { useLayout } from '@/ui/useLayout';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
 import { actionIcons } from '@/ui/actionIcons';
 
 type Screen = ReturnType<typeof useTaskScreen>;
@@ -35,6 +32,7 @@ type Screen = ReturnType<typeof useTaskScreen>;
 type TodayParts = {
   screen: Screen;
   door: ReactElement;
+  quickAdd: ReactElement;
   sections: TaskListSection[];
   cards: TodayCards;
   invite: ReactNode;
@@ -48,9 +46,9 @@ export default function TodayScreen() {
   const screen = useTaskScreen();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
-  const subtitleStyle: TextStyle = {
+  const dateStyle: TextStyle = {
     color: colors.muted,
-    fontSize: 15,
+    fontSize: 14,
     fontVariant: ['tabular-nums'],
   };
 
@@ -77,7 +75,8 @@ export default function TodayScreen() {
       <Button
         testID="today.invite"
         title={t('today.empty.cta')}
-        variant="primary"
+        // The quick add is this screen's pósit: inviting stays secondary.
+        variant="secondary"
         icon={actionIcons.invite}
         onPress={() => router.push('/household/members')}
       />
@@ -95,32 +94,33 @@ export default function TodayScreen() {
 
   const door = (
     <DoorHeader
-      title={t('today.title')}
-      subtitle={
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          <Text style={subtitleStyle}>{`${longDateLabel(today)} · `}</Text>
-          <Text testID="today.household-name" style={subtitleStyle}>
-            {membership?.householdName ?? ''}
-          </Text>
-        </View>
-      }
-      status={<TallyView line={line} />}
+      eyebrow={t('today.title')}
+      trailing={<Text style={dateStyle}>{longDateLabel(today)}</Text>}
+      heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
     >
       <MemberFilter
         members={members}
         marks={screen.marks}
         userId={userId}
         selected={assigneeId}
-        onToggle={screen.toggleFilter}
+        onSelect={screen.selectFilter}
       />
     </DoorHeader>
   );
+  const quickAdd = (
+    <QuickAdd
+      testID="today.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={today}
+      placeholder={t('today.quickAdd')}
+    />
+  );
 
-  const parts: TodayParts = { screen, door, sections, cards, invite, nothing };
+  const parts: TodayParts = { screen, door, quickAdd, sections, cards, invite, nothing };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TodaySplit {...parts} /> : <TodayStack {...parts} />}
-      <NewTaskButton testID="today.new-task" assigneeId={assigneeId} />
     </View>
   );
 }
@@ -130,19 +130,24 @@ export default function TodayScreen() {
  * runs edge to edge; every row, heading and empty state keeps to the column (`useOneColumn`), as
  * the door is the list's header and the list's own padding would take it in too.
  */
-function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  // The round "+" of a short window keeps a lane of its own, clear of every row and count.
-  const column = useOneColumn(useNewTaskLane());
+  const listStyle = { paddingBottom: useListEndPadding() };
+  const column = useOneColumn();
   const { today, userId, members, tasksQuery } = screen;
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
+        keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
-        ListHeaderComponent={door}
+        ListHeaderComponent={
+          <>
+            {door}
+            <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
+          </>
+        }
         ListEmptyComponent={
           <View style={[column, { paddingTop: space(6), gap: space(6) }]}>
             {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
@@ -181,10 +186,9 @@ function TodayStack({ screen, door, sections, cards, invite, nothing }: TodayPar
  * household's cards on the right, under a fixed door. The door is outside any scroll, so the
  * left pane takes the pull-to-refresh.
  */
-function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayParts) {
+function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { colors, space } = useTheme();
-  const listStyle = useNewTaskListStyle();
-  const lane = useNewTaskLane();
+  const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const { left, right } = todayPanes(sections);
   const rows = {
@@ -204,20 +208,23 @@ function TodaySplit({ screen, door, sections, cards, invite, nothing }: TodayPar
 
   return (
     <TwoPane
+      keyboardShouldPersistTaps="handled"
       header={door}
       leftTestID="today.pane.pending"
       rightTestID="today.pane.done"
       refreshControl={refreshControl}
       contentContainerStyle={listStyle}
-      rightLane={lane}
       left={
-        left.length > 0 ? (
-          <TaskSections sections={left} {...rows} />
-        ) : (
-          <View style={{ paddingTop: space(6) }}>
-            <TaskListStates query={screen.tasksQuery} empty={nothing} />
-          </View>
-        )
+        <>
+          {quickAdd}
+          {left.length > 0 ? (
+            <TaskSections sections={left} {...rows} />
+          ) : (
+            <View style={{ paddingTop: space(6) }}>
+              <TaskListStates query={screen.tasksQuery} empty={nothing} />
+            </View>
+          )}
+        </>
       }
       right={
         <>

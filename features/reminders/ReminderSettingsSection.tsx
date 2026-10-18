@@ -9,6 +9,7 @@ import { Button } from '@/ui/components/Button';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
+import { switchState } from '@/features/push/permissionState';
 import { getPermission, requestPermission } from './notifications';
 import type { NotificationPermission } from './plan';
 import { useReminderSettings, useSaveReminderSettings } from './useReminders';
@@ -144,13 +145,12 @@ export function ReminderSettingsSection() {
   const save = useSaveReminderSettings(userId);
   const [permission, setPermission] = usePermission();
   const [asking, setAsking] = useState(false);
-  // The phone said no to this user's own request (not shown before they ever try).
-  const [refused, setRefused] = useState(false);
 
   if (!settings || permission === null) return null;
 
   const on = settings.enabled && permission === 'granted';
-  const denied = permission === 'denied' && (settings.enabled || refused);
+  const denied = permission === 'denied';
+  const state = switchState(settings.enabled, permission);
   const update = (patch: Partial<ReminderSettings>) => save({ ...settings, ...patch });
 
   const toggle = (value: boolean) => {
@@ -166,13 +166,11 @@ export function ReminderSettingsSection() {
     requestPermission()
       .then((granted) => {
         setPermission(granted ? 'granted' : 'denied');
-        setRefused(!granted);
         // Denied: the switch goes back to off and nothing is saved.
         if (granted) update({ enabled: true });
       })
       .catch(() => {
         setPermission('denied');
-        setRefused(true);
       })
       .finally(() => setAsking(false));
   };
@@ -185,6 +183,27 @@ export function ReminderSettingsSection() {
       >
         {t('settings.reminders')}
       </Text>
+      {denied ? (
+        <>
+          <Text
+            testID="settings.reminders.denied"
+            accessibilityLiveRegion="polite"
+            style={{ color: colors.ink, fontSize: 14 }}
+          >
+            {t('settings.notificationsOff')}
+          </Text>
+          <Button
+            testID="settings.reminders.open-settings"
+            title={t('settings.openPhoneSettings')}
+            variant="tertiary"
+            icon={actionIcons.openPhoneSettings}
+            width="hug"
+            onPress={() => {
+              Linking.openSettings().catch(() => undefined);
+            }}
+          />
+        </>
+      ) : null}
       <View
         style={{
           minHeight: MIN_TOUCH,
@@ -200,30 +219,13 @@ export function ReminderSettingsSection() {
         <Toggle
           testID="settings.reminders.toggle"
           accessibilityLabel={t('settings.remindersToggle')}
-          value={on || asking}
-          disabled={asking}
+          value={state.disabled ? state.value : on || asking}
+          disabled={asking || state.disabled}
           onValueChange={toggle}
         />
       </View>
-      {denied ? (
-        <>
-          <Text
-            testID="settings.reminders.denied"
-            accessibilityLiveRegion="polite"
-            style={{ color: colors.ink, fontSize: 14 }}
-          >
-            {t('settings.remindersDenied')}
-          </Text>
-          <Button
-            title={t('settings.remindersOpenSettings')}
-            variant="secondary"
-            icon={actionIcons.openPhoneSettings}
-            width="hug"
-            onPress={() => {
-              Linking.openSettings().catch(() => undefined);
-            }}
-          />
-        </>
+      {state.caption ? (
+        <Text style={{ color: colors.muted, fontSize: 13 }}>{state.caption}</Text>
       ) : null}
       {on ? (
         <>

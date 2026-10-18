@@ -3,6 +3,8 @@ import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
 import type { ToggleVars } from '@/features/tasks/toggle';
+import { completeWithUndo } from '@/features/tasks/undo';
+import { useNotice } from '@/ui/components/Notice';
 import { space } from '@/ui/theme';
 import { DoneTray } from './DoneTray';
 import { TaskNote } from './TaskNote';
@@ -31,6 +33,7 @@ export function TaskRow({
   flush = false,
 }: Props) {
   const router = useRouter();
+  const notify = useNotice();
   const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   return (
     <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
@@ -41,7 +44,13 @@ export function TaskRow({
           mark={row.task.assigneeId ? marks.get(row.task.assigneeId) : undefined}
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
           busy={isBusy(row.task.id)}
-          onToggle={() => toggle({ id: row.task.id, done: true })}
+          // Tapping the magnet or swiping completes the same way: both offer «Deshacer».
+          onToggle={() =>
+            row.task.completedAt === null
+              ? completeWithUndo({ toggle, notify, task: row.task })
+              : toggle({ id: row.task.id, done: false })
+          }
+          onComplete={() => completeWithUndo({ toggle, notify, task: row.task })}
           onOpen={() => openTask(row.task.id)}
         />
       ) : (

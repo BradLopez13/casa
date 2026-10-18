@@ -4,6 +4,7 @@ import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { Magnet } from '@/ui/components/Magnet';
+import { NidoSymbol } from '@/ui/components/NidoSymbol';
 import { useTheme } from '@/ui/theme';
 
 type Props = {
@@ -11,18 +12,20 @@ type Props = {
   marks: Map<string, MemberMark>;
   userId: string | null;
   selected: string | null;
-  onToggle: (userId: string) => void;
+  onSelect: (userId: string | null) => void;
 };
 
 /**
- * A straight row of magnets, one per person; tapping one filters by them, tapping again clears.
+ * A radio row of magnets: "Todos" first (the Nido symbol on slate, chosen by default), then one per
+ * person. Tapping one filters by them; tapping the chosen one keeps it, "Todos" clears.
  * In a compact door (a phone on its side) the magnets are the medium size, ring included still a
  * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
  * keeps its initial and colour on screen and the name for screen readers.
  */
-export function MemberFilter({ members, marks, userId, selected, onToggle }: Props) {
+export function MemberFilter({ members, marks, userId, selected, onSelect }: Props) {
   const { colors, space } = useTheme();
   const compact = useDoorCompact();
+  const allName = t('tasks.filterAll');
   return (
     <ScrollView
       horizontal
@@ -31,6 +34,29 @@ export function MemberFilter({ members, marks, userId, selected, onToggle }: Pro
       accessibilityLabel={t('tasks.filterLabel')}
       contentContainerStyle={{ gap: space(3), paddingVertical: compact ? 0 : space(1) }}
     >
+      <View style={{ alignItems: 'center', gap: space(1) }}>
+        <Magnet
+          initial=""
+          color="teal"
+          size={compact ? 'md' : 'lg'}
+          selected={selected === null}
+          glyph={{ node: <NidoSymbol size={24} onSlate />, fill: colors.brandBand }}
+          accessibilityRole="radio"
+          accessibilityLabel={allName}
+          testID="member-filter.all"
+          onPress={() => onSelect(null)}
+        />
+        {compact ? null : (
+          <Text
+            numberOfLines={2}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}
+          >
+            {allName}
+          </Text>
+        )}
+      </View>
       {members.map((member) => {
         const mark = marks.get(member.userId);
         if (!mark) return null;
@@ -45,16 +71,15 @@ export function MemberFilter({ members, marks, userId, selected, onToggle }: Pro
               accessibilityRole="radio"
               accessibilityLabel={name}
               testID={`member-filter.${member.userId}`}
-              onPress={() => onToggle(member.userId)}
+              onPress={() => onSelect(member.userId)}
             />
             {/* The magnet already carries the name for screen readers. */}
             {compact ? null : (
               <Text
-                numberOfLines={1}
-                maxFontSizeMultiplier={1.3}
+                numberOfLines={2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-                style={{ color: colors.muted, fontSize: 13 }}
+                style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}
               >
                 {name}
               </Text>

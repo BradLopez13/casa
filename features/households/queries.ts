@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
-import { getMyMembership, listActiveInvites, listMembers } from './api';
+import { getMyMembership, listActiveInvites, listMembers, setDisplayName } from './api';
 import { invitesKey, membersKey, membershipKey } from './keys';
 
 export { invitesKey, membersKey, membershipKey };
@@ -52,4 +52,9 @@ export function useHouseholdMutation<TArgs, TResult>(fn: (args: TArgs) => Promis
       if (code === 'NOT_A_MEMBER' || code === 'NOT_OWNER') await refresh();
     },
   });
+}
+
+/** Saves your visible name; refreshes membership and members so every list shows it. */
+export function useSetDisplayName() {
+  return useHouseholdMutation(setDisplayName);
 }
