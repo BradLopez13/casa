@@ -161,7 +161,8 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       'ui/components/SymbolPlate.tsx',
     ];
     const found = sources.filter(
-      (f) => /from '[^']*\/(NidoSymbol|SymbolPlate)'/.test(read(f)) && !allowed.includes(f),
+      (f) =>
+        /['"][^'"]*\/(NidoSymbol|SymbolPlate)(\.tsx)?['"]/.test(read(f)) && !allowed.includes(f),
     );
     expect(found).toEqual([]);
   });

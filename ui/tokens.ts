@@ -98,7 +98,7 @@ export const palettes: Record<Scheme, Palette> = {
     onTabBar: '#1E2A2F',
     onTabBarMuted: '#505C63',
     tabBarEdge: 'rgba(30,42,47,0.12)',
-    tonal: '#D3DCD9',
+    tonal: '#C3CDCA',
     tonalEdge: '#69757A',
     red: '#A8342A',
     onRed: '#FFFFFF',
