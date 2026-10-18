@@ -219,8 +219,7 @@ export function ShoppingSheet({
                   <Button
                     testID="shopping.clear"
                     title={t('shopping.clear')}
-                    variant="tertiary"
-                    tone="destructive"
+                    variant="secondary"
                     icon={actionIcons.delete}
                     disabled={!online}
                     loading={clearing}

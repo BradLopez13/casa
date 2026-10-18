@@ -150,6 +150,15 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect([...found, ...tints]).toEqual([]);
   });
 
+  // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is secondary,
+  // or the red primary when it destroys.
+  it('the confirm dialog never draws the pósit', () => {
+    const text = read('ui/components/ConfirmDialog.tsx');
+    expect(text).not.toMatch(/variant="primary"/);
+    expect(text).toMatch(/variant=\{content\.destructive \? 'primary' : 'secondary'\}/);
+    expect(text).toMatch(/tone=\{content\.destructive \? 'destructive' : 'default'\}/);
+  });
+
   // «Discontinuo es en pausa»: a dashed edge says paused (a switch the phone turned off). The
   // other files still dashed belong to the task note's checkbox, which phase 1 redraws.
   const DASHED: Record<string, string> = {
