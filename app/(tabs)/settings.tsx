@@ -22,6 +22,7 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader, useDoorCompact, useDoorType } from '@/ui/components/DoorHeader';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
@@ -363,7 +364,12 @@ function NameHeading({
           opacity: pressedOpacity(pressed),
         })}
       >
-        <Text style={[titleStyle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+        <Text
+          style={[titleStyle, { flexShrink: 1 }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          maxFontSizeMultiplier={DOOR_MAX_SCALE}
+        >
           {name}
         </Text>
         <Ionicons

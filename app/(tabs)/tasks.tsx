@@ -28,7 +28,7 @@ import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
+import { DoorControls, DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -192,6 +192,9 @@ function TasksStack({
   const { space } = useTheme();
   const listStyle = { paddingBottom: useListEndPadding() };
   const column = useOneColumn();
+  // A full door stacks the filter over the mode, so five people fit without a cut; a compact one
+  // (a phone on its side) has the width for both in one row, and holds the quick add.
+  const { compact, holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // The day a strip tap is aiming for, kept for one retry if the first scroll fails.
@@ -253,8 +256,9 @@ function TasksStack({
             />
           ) : null
         }
+        quickAdd={<DayQuickAdd screen={screen} day={mode === 'week' ? day : today} />}
       >
-        <DoorControls row>
+        <DoorControls row={compact}>
           <MemberFilter
             dense
             members={members}
@@ -285,16 +289,16 @@ function TasksStack({
             {door}
             {mode === 'week' ? (
               <View style={[column, { paddingTop: space(4) }]}>
-                <DayQuickAdd screen={screen} day={day} />
+                {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={day} />}
                 {sections.length > 0 && weekDayPane(sections, day, today).day.count === 0 ? (
-                  <View style={{ paddingTop: space(4) }}>
+                  <View style={{ paddingTop: holdsQuickAdd ? 0 : space(4) }}>
                     <EmptyDay day={day} today={today} />
                   </View>
                 ) : null}
               </View>
             ) : (
               <View style={[column, { paddingTop: space(4), gap: space(2) }]}>
-                <DayQuickAdd screen={screen} day={today} />
+                {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={today} />}
                 <IdeasButton />
               </View>
             )}
