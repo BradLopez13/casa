@@ -17,10 +17,10 @@ describe('t', () => {
 });
 
 /** The i18n module as a phone whose first language is `languageCode` loads it. */
-async function loadWithPhone(languageCode: string | null) {
+async function loadWithPhone(languageCode: string | null, languageTag?: string) {
   vi.resetModules();
   vi.doMock('expo-localization', () => ({
-    getLocales: () => (languageCode === null ? [] : [{ languageCode }]),
+    getLocales: () => (languageCode === null ? [] : [{ languageCode, languageTag }]),
   }));
   return import('./index');
 }
@@ -55,5 +55,27 @@ describe('language from the phone', () => {
   it('falls back to Spanish when the phone reports no language', async () => {
     const i18n = await loadWithPhone(null);
     expect(i18n.locale).toBe('es-ES');
+  });
+});
+
+describe('locale from the phone', () => {
+  afterEach(() => {
+    vi.doUnmock('expo-localization');
+    vi.resetModules();
+  });
+
+  it('keeps the phone region when it speaks the app language', async () => {
+    expect((await loadWithPhone('es', 'es-MX')).locale).toBe('es-MX');
+    expect((await loadWithPhone('en', 'en-GB')).locale).toBe('en-GB');
+    expect((await loadWithPhone('es', 'es-419')).locale).toBe('es-419');
+  });
+
+  it('uses Spanish from Spain when the phone speaks another language', async () => {
+    expect((await loadWithPhone('fr', 'fr-FR')).locale).toBe('es-ES');
+  });
+
+  it('falls back to the default locale for a tag Intl does not accept', async () => {
+    expect((await loadWithPhone('es', 'not a tag')).locale).toBe('es-ES');
+    expect((await loadWithPhone('en', '')).locale).toBe('en-US');
   });
 });
