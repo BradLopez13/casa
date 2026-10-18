@@ -409,7 +409,7 @@ export default function MembersScreen() {
       {/* Outside the tabs: no rail beside it, so the panes keep clear of a side notch. */}
       <TwoPane
         besideRail={false}
-        contentContainerStyle={{ paddingBottom: space(8) }}
+        contentContainerStyle={{ paddingTop: space(5), paddingBottom: space(8) }}
         left={people}
         right={household}
       />
