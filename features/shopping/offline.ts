@@ -70,17 +70,34 @@ export const persistDehydrateOptions: DehydrateOptions = {
 /**
  * Resumes the restored queue, in order (the scope serializes it). `resumePausedMutations` alone
  * would skip the mutations that were in flight when the app closed: they restore unpaused.
+ *
+ * A restored shopping mutation this build no longer queues (an older build's category change)
+ * has no function to run and nothing would ever settle it: left in the scope it would block
+ * every later add, bought and clear. It is dropped.
  */
 export function resumeShoppingQueue(queryClient: QueryClient): Promise<unknown> {
-  const queued = queryClient
-    .getMutationCache()
-    .findAll({ status: 'pending', predicate: (m) => shouldPersistMutation(m.options.mutationKey) });
+  const cache = queryClient.getMutationCache();
+  const stale = cache.findAll({
+    predicate: (m) =>
+      m.options.mutationKey?.[0] === 'shopping' && !shouldPersistMutation(m.options.mutationKey),
+  });
+  for (const mutation of stale) cache.remove(mutation);
+  const queued = cache.findAll({
+    status: 'pending',
+    predicate: (m) => shouldPersistMutation(m.options.mutationKey),
+  });
   return Promise.all(queued.map((m) => m.continue().catch(() => undefined)));
 }
 
-/** A persisted cache from another app version or another user is discarded. */
+/**
+ * Bumped when what the cache holds changes shape (v2: shopping without categories), so a cache
+ * an older build wrote under the same app version is discarded too.
+ */
+const CACHE_SCHEMA = 'v2';
+
+/** A persisted cache from another app version, another schema or another user is discarded. */
 export function persistBuster(appVersion: string, userId: string | null): string {
-  return `${appVersion}:${userId ?? 'anon'}`;
+  return `${appVersion}:${userId ?? 'anon'}:${CACHE_SCHEMA}`;
 }
 
 const listKey = (householdId: string) => ['shopping', householdId];

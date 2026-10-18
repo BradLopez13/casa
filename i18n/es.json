@@ -261,7 +261,6 @@
   "shopping.errors.ITEM_NOT_FOUND": "Ese producto ya no está en la lista.",
   "shopping.errors.ITEM_ALREADY_LISTED": "Ya está en la lista.",
   "shopping.errors.NOT_A_MEMBER": "Ya no estás en este hogar.",
-  "shopping.errors.INVALID_CATEGORY": "Esa categoría no existe.",
   "shopping.errors.NETWORK": "Sin conexión. Inténtalo de nuevo cuando vuelva.",
   "shopping.errors.UNKNOWN": "Algo ha ido mal. Inténtalo de nuevo.",
   "shopping.syncFailed": "No se pudo guardar «{name}»",

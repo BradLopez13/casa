@@ -104,9 +104,14 @@ describe('shouldPersistMutation', () => {
 });
 
 describe('persistBuster', () => {
-  it('ties the cache to the app version and the user', () => {
-    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1');
-    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon');
+  it('ties the cache to the app version, the cache schema and the user', () => {
+    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1:v2');
+    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon:v2');
+  });
+
+  it('discards a cache written before shopping lost its categories', () => {
+    // The previous release built its buster as `${appVersion}:${userId}`.
+    expect(persistBuster('1.0.0', 'u1')).not.toBe('1.0.0:u1');
   });
 });
 
@@ -342,6 +347,42 @@ describe('restart', () => {
 
     expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
     expect(list(after.queryClient)?.map((i) => i.id)).toEqual(['x']);
+  });
+
+  it('drops a restored category mutation from an older build, so the queue keeps moving', async () => {
+    // What an older build left on the device: a category change in flight, in the shopping scope.
+    const saved: DehydratedState = {
+      queries: [],
+      mutations: [
+        {
+          mutationKey: ['shopping', 'category'],
+          scope: { id: 'shopping' },
+          state: {
+            context: undefined,
+            data: undefined,
+            error: null,
+            failureCount: 0,
+            failureReason: null,
+            isPaused: false,
+            status: 'pending',
+            variables: { id: 'x', householdId: 'h', category: 'dairy' },
+            submittedAt: 1,
+          },
+        },
+      ],
+    };
+    const after = setup();
+    after.queryClient.setQueryData(key, []);
+    hydrate(after.queryClient, saved);
+    expect(after.queryClient.isMutating({ mutationKey: ['shopping'] })).toBe(1);
+
+    await resumeShoppingQueue(after.queryClient);
+    vi.mocked(addShoppingItem).mockResolvedValue('a');
+    await after.add(milk);
+
+    expect(addShoppingItem).toHaveBeenCalledWith('a', 'h', 'Leche', null);
+    expect(after.queryClient.isMutating({ mutationKey: ['shopping'] })).toBe(0);
+    expect(after.queryClient.getMutationCache().getAll()).toHaveLength(1);
   });
 
   it('keeps a restored queue paused while still offline', async () => {

@@ -129,6 +129,7 @@ function EditShoppingItemScreen() {
         item={item}
         online={online}
         busy={busy}
+        saving={edit.isPending || edit.isSuccess}
         error={failure ? shoppingErrorMessage(failure) : null}
         onCancel={close}
         onSave={(name, quantity) => {
@@ -159,6 +160,7 @@ function EditForm({
   item,
   online,
   busy,
+  saving,
   error,
   onCancel,
   onSave,
@@ -166,7 +168,10 @@ function EditForm({
 }: {
   item: ShoppingItem;
   online: boolean;
+  /** Saving or deleting: either locks the form. */
   busy: boolean;
+  /** Only the save's own progress spins the Save button. */
+  saving: boolean;
   error: string | null;
   onCancel: () => void;
   onSave: (name: string, quantity: string | null) => void;
@@ -300,7 +305,7 @@ function EditForm({
               testID="shopping.edit.save"
               title={t('shopping.edit.save')}
               width="full"
-              loading={busy}
+              loading={saving}
               disabled={!canSave}
               onPress={save}
             />

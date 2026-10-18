@@ -121,14 +121,14 @@ export default function ShoppingScreen() {
     if (householdId === undefined) return;
     setConfirmingClear(true);
   };
+  // The dialog closes on confirm: the clear is scoped behind the queue and can pause offline, so
+  // a dialog waiting on it could stay stuck. The «Vaciar bolsa» button shows it pending.
   const confirmClear = () => {
+    setConfirmingClear(false);
     if (householdId === undefined) return;
     clearBought.mutate(
       { householdId },
-      {
-        onError: (error) => notify(shoppingErrorMessage(error)),
-        onSettled: () => setConfirmingClear(false),
-      },
+      { onError: (error) => notify(shoppingErrorMessage(error)) },
     );
   };
 
@@ -229,7 +229,6 @@ export default function ShoppingScreen() {
         }
         confirmLabel={t('shopping.clearAction')}
         destructive
-        loading={clearBought.isPending}
         onCancel={() => setConfirmingClear(false)}
         onConfirm={confirmClear}
       />

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  highlightRuns,
   parsedFormValues,
   quickAddInput,
   quickLocale,
@@ -62,26 +61,6 @@ describe('quickAddInput', () => {
     expect(
       quickAddInput('Regar mañana', 'u1', '2026-10-17', { ...ctx, disabled: new Set(['due']) }),
     ).toMatchObject({ title: 'Regar mañana', dueOn: '2026-10-17' });
-  });
-});
-
-describe('highlightRuns', () => {
-  it('cuts the text into plain and recognised runs', () => {
-    expect(
-      highlightRuns('Regar mañana el baño', [
-        { start: 6, end: 12, kind: 'due' },
-        { start: 13, end: 20, kind: 'room' },
-      ]),
-    ).toEqual([
-      { text: 'Regar ', kind: null },
-      { text: 'mañana', kind: 'due' },
-      { text: ' ', kind: null },
-      { text: 'el baño', kind: 'room' },
-    ]);
-  });
-
-  it('is one plain run without spans', () => {
-    expect(highlightRuns('Regar', [])).toEqual([{ text: 'Regar', kind: null }]);
   });
 });
 

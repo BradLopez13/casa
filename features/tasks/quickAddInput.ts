@@ -1,11 +1,6 @@
 import { syncMonthly } from '@/domain/recurrence/form';
 import type { TaskInput } from '@/domain/tasks/input';
-import {
-  quickParse,
-  type QuickParseContext,
-  type QuickSpan,
-  type QuickSpanKind,
-} from '@/domain/tasks/quick-parse';
+import { quickParse, type QuickParseContext, type QuickSpanKind } from '@/domain/tasks/quick-parse';
 
 export type QuickAddContext = QuickParseContext;
 
@@ -38,22 +33,6 @@ export function quickAddInput(
 /** The parser's language, from the app's one locale. */
 export function quickLocale(appLocale: string): QuickParseContext['locale'] {
   return appLocale.toLowerCase().startsWith('en') ? 'en' : 'es';
-}
-
-/** The text cut into plain runs and recognised ones, in order, for drawing it highlighted. */
-export function highlightRuns(
-  text: string,
-  spans: readonly QuickSpan[],
-): { text: string; kind: QuickSpanKind | null }[] {
-  const runs: { text: string; kind: QuickSpanKind | null }[] = [];
-  let at = 0;
-  for (const span of [...spans].sort((a, b) => a.start - b.start)) {
-    if (span.start > at) runs.push({ text: text.slice(at, span.start), kind: null });
-    runs.push({ text: text.slice(span.start, span.end), kind: span.kind });
-    at = span.end;
-  }
-  if (at < text.length) runs.push({ text: text.slice(at), kind: null });
-  return runs;
 }
 
 /**

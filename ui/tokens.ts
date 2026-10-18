@@ -38,8 +38,6 @@ export type Palette = {
   onBrandBand: string;
   /** Inactive tab icons and labels on the brand band: `onBrandBand` at 80 %. */
   onBrandBandMuted: string;
-  /** The hairline along the door's bottom edge: `onBrandBand` at 12 %. */
-  brandBandEdge: string;
   /** The tab bar, the fridge's plinth: the door's enamel in light, the slate band in dark. */
   tabBar: string;
   /** Active tab label on the tab bar. */
@@ -96,7 +94,6 @@ export const palettes: Record<Scheme, Palette> = {
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
     onBrandBandMuted: 'rgba(243,244,240,0.8)',
-    brandBandEdge: 'rgba(243,244,240,0.12)',
     tabBar: '#DCE3E1',
     onTabBar: '#1E2A2F',
     onTabBarMuted: '#56636A',
@@ -140,7 +137,6 @@ export const palettes: Record<Scheme, Palette> = {
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
     onBrandBandMuted: 'rgba(243,244,240,0.8)',
-    brandBandEdge: 'rgba(243,244,240,0.12)',
     tabBar: '#2E3B41',
     onTabBar: '#F3F4F0',
     onTabBarMuted: 'rgba(243,244,240,0.8)',
