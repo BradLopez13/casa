@@ -67,7 +67,7 @@ export function buttonLook(
       fill: 'transparent',
       border: colors.selection,
       foreground: colors.ink,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     };
   }
   if (variant === 'secondary') {

@@ -56,7 +56,7 @@ export type Palette = {
   onRed: string;
   /** Quiet separators that carry no meaning on their own. */
   hairline: string;
-  /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
+  /** Field borders and the empty magnet's ring: at least 3:1 on every ground. */
   outline: string;
   /** The filled track of a switch that is on: at least 3:1 on page and note, and under the thumb. */
   toggleOn: string;

@@ -31,7 +31,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: 'transparent',
       border: p.selection,
       foreground: p.ink,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     };
     expect(buttonLook('outlined', 'default', 'enabled', p)).toEqual(expected);
     expect(buttonLook('outlined', 'default', 'busy', p)).toEqual(expected);

@@ -17,13 +17,8 @@ type Props = {
   initial: string;
   color: MagnetColor;
   size: MagnetSize;
-  /** 'empty' is the bare ring: an unassigned task, or an unticked box. */
+  /** 'empty' is the bare solid ring: an unassigned task, or an unticked box (dashed is paused). */
   variant?: 'filled' | 'empty';
-  /**
-   * Empty magnet only. 'solid' is an unticked box (shopping, templates); 'dashed' stays for the
-   * task note's checkbox until phase 1 redraws it. Dashed otherwise means paused.
-   */
-  edge?: 'dashed' | 'solid';
   /** Pass a boolean when the magnet can be selected; true draws the selection ring. */
   selected?: boolean;
   accessibilityLabel: string;
@@ -33,8 +28,6 @@ type Props = {
   accessibilityRole?: 'button' | 'radio';
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
-  /** Empty magnet only: draw the dashed ring in the pósit, 2 dp, in dark mode (the checkbox of a task note). */
-  posit?: boolean;
   /** faint: an open check (corner badge, or centred when empty). filled: the magnet fills with the accent and shows the check. */
   check?: MagnetCheck;
   /** Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member colour. */
@@ -49,14 +42,12 @@ export function Magnet({
   color,
   size,
   variant = 'filled',
-  edge = 'dashed',
   selected,
   accessibilityLabel,
   testID,
   onPress,
   accessibilityRole = 'button',
   decorative = false,
-  posit = false,
   check,
   glyph,
 }: Props) {
@@ -64,7 +55,6 @@ export function Magnet({
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
   const { scheme } = useTheme();
-  const positRing = empty && posit && scheme === 'dark';
   // The chip-sized magnet sits inside a pill and stays flat.
   const look = check ? magnetCheckStyle(check, colors, scheme) : null;
   const filledCheck = look?.fill != null;
@@ -83,11 +73,7 @@ export function Magnet({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: fill,
-        ...(empty && !filledCheck
-          ? positRing
-            ? { borderWidth: 2, borderStyle: edge, borderColor: colors.selection }
-            : { borderWidth: 1.5, borderStyle: edge, borderColor: colors.outline }
-          : {}),
+        ...(empty && !filledCheck ? { borderWidth: 1.5, borderColor: colors.outline } : {}),
         // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
         ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
