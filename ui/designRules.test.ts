@@ -140,6 +140,37 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(importedPrimaries("import { TaskForm, type X } from 'f';")).toEqual(['TaskForm']);
   });
 
+  // «Discontinuo es en pausa»: a dashed edge says paused (a switch the phone turned off). The
+  // other files still dashed belong to the task note's checkbox, which phase 1 redraws.
+  const DASHED: Record<string, string> = {
+    'ui/components/Toggle.tsx': 'a switch in pausa',
+    'ui/components/Magnet.tsx': "the empty magnet of a task note (edge='dashed', phase 1)",
+    'features/tasks/components/DayStrip.tsx': 'the unassigned dot of a day (phase 1)',
+  };
+  it('dashed only where it means paused', () => {
+    const found = offenders(
+      sources.filter((f) => !(f in DASHED)),
+      (line) => /'dashed'/.test(line) && !/^\s*(\/\/|\*)/.test(line),
+    );
+    expect(found).toEqual([]);
+  });
+
+  // An unticked box is a solid ring: every empty magnet passes `edge="solid"`, but the task note's
+  // own checkbox (phase 1).
+  const DASHED_MAGNETS = [
+    'features/tasks/components/TaskNote.tsx',
+    'features/tasks/components/DoneNote.tsx',
+  ];
+  it('empty magnets draw a solid edge outside the task note', () => {
+    const found = offenders(
+      sources.filter((f) => !DASHED_MAGNETS.includes(f)),
+      (line, lines, i) =>
+        /variant=(?:"empty"|\{[^}]*'empty')/.test(line) &&
+        !/edge="solid"/.test(lines.slice(Math.max(0, i - 6), i + 7).join('\n')),
+    );
+    expect(found).toEqual([]);
+  });
+
   // §2.4b, §14.4: the tabs share one door; the display titles stay on auth and onboarding.
   it('tabs use the door hierarchy, never a display title', () => {
     const found = tabs.filter((f) => /\bScreenTitle\b|\btitleSize=/.test(read(f)));

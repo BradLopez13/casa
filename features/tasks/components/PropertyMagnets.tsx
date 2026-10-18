@@ -47,7 +47,7 @@ function Chip({
 }) {
   const { colors, radii, space } = useTheme();
   // One selected style (§14.1): `selection` means chosen, so the open magnet is not filled with it; it
-  // takes a heavier `ink` border on the note. A magnet that cannot open waits dashed, never faded.
+  // takes a heavier `ink` border on the note. A magnet that cannot open fades its label: dashed is paused.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
   return (
     <Pressable
@@ -67,7 +67,6 @@ function Chip({
         paddingHorizontal: space(4) - (open ? 1 : 0),
         borderRadius: radii.pill,
         borderWidth: open ? 2.5 : 1.5,
-        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : open ? colors.ink : colors.outline,
         backgroundColor: disabled ? off.fill : colors.note,
         opacity: pressedOpacity(pressed),
@@ -77,6 +76,7 @@ function Chip({
       <Text
         style={{
           color: disabled ? off.foreground : colors.ink,
+          opacity: disabled ? off.labelOpacity : 1,
           fontSize: 15,
           // One weight in both states, so opening does not change the text's width.
           fontWeight: '600',

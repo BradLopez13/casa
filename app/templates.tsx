@@ -68,6 +68,7 @@ function TemplateRow({
         size="sm"
         decorative
         variant="empty"
+        edge="solid"
         check={checked ? 'filled' : 'faint'}
         color="teal"
         initial=""

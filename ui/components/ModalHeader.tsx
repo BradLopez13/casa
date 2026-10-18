@@ -21,8 +21,8 @@ export function HeaderAction({
   strong?: boolean;
 }) {
   const { colors, radii, space, shadows } = useTheme();
-  // A disabled main action waits as an empty outlined pill, like a disabled Button; a plain action
-  // turns muted. Neither is faded, so the label stays readable.
+  // A disabled main action waits as an empty outlined pill with a faded label, like a disabled
+  // Button; a plain action fades its label too.
   const look = buttonLook('primary', 'default', disabled ? 'disabled' : 'enabled', colors);
   return (
     <Pressable
@@ -56,7 +56,6 @@ export function HeaderAction({
                 paddingHorizontal: space(4),
                 borderRadius: radii.pill,
                 borderWidth: PRIMARY_EDGE,
-                borderStyle: look.borderStyle,
                 borderColor: look.border,
                 backgroundColor: look.fill,
                 ...(disabled ? null : shadows.primary),
@@ -66,7 +65,8 @@ export function HeaderAction({
       >
         <Text
           style={{
-            color: strong ? look.foreground : disabled ? colors.muted : colors.cobalt,
+            color: strong || disabled ? look.foreground : colors.cobalt,
+            opacity: look.labelOpacity,
             fontSize: strong ? 16 : 15,
             fontWeight: '600',
             // A plain action ("Cancelar") is a tertiary action, underlined like every other one.

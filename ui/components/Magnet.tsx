@@ -17,8 +17,13 @@ type Props = {
   initial: string;
   color: MagnetColor;
   size: MagnetSize;
-  /** 'empty' is the dashed circle used for an unassigned task. */
+  /** 'empty' is the bare ring: an unassigned task, or an unticked box. */
   variant?: 'filled' | 'empty';
+  /**
+   * Empty magnet only. 'solid' is an unticked box (shopping, templates); 'dashed' stays for the
+   * task note's checkbox until phase 1 redraws it. Dashed otherwise means paused.
+   */
+  edge?: 'dashed' | 'solid';
   /** Pass a boolean when the magnet can be selected; true draws the selection ring. */
   selected?: boolean;
   accessibilityLabel: string;
@@ -44,6 +49,7 @@ export function Magnet({
   color,
   size,
   variant = 'filled',
+  edge = 'dashed',
   selected,
   accessibilityLabel,
   testID,
@@ -79,8 +85,8 @@ export function Magnet({
         backgroundColor: fill,
         ...(empty && !filledCheck
           ? positRing
-            ? { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.selection }
-            : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.outline }
+            ? { borderWidth: 2, borderStyle: edge, borderColor: colors.selection }
+            : { borderWidth: 1.5, borderStyle: edge, borderColor: colors.outline }
           : {}),
         // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
         ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'

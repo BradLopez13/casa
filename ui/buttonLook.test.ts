@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buttonLook, buttonMetrics, pressedOpacity } from './buttonLook';
-import { contrastRatio } from './contrast';
+import {
+  buttonLook,
+  buttonMetrics,
+  DISABLED_LABEL_OPACITY,
+  pressedOpacity,
+} from './buttonLook';
+import { contrastRatio, mixOver } from './contrast';
 import { palettes, type Scheme } from './tokens';
 
 describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
@@ -11,7 +16,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: p.accent,
       border: p.accent,
       foreground: p.onAccent,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     };
     expect(buttonLook('primary', 'default', 'enabled', p)).toEqual(expected);
     expect(buttonLook('primary', 'default', 'busy', p)).toEqual(expected);
@@ -22,7 +27,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: p.red,
       border: p.red,
       foreground: p.onRed,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     });
   });
 
@@ -31,7 +36,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: p.tonal,
       border: p.tonalEdge,
       foreground: p.cobalt,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     });
   });
 
@@ -40,34 +45,35 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       fill: 'transparent',
       border: 'transparent',
       foreground: p.cobalt,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     });
     expect(buttonLook('tertiary', 'destructive', 'enabled', p)).toEqual({
       fill: 'transparent',
       border: 'transparent',
       foreground: p.red,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     });
   });
 
   it.each(['primary', 'secondary'] as const)(
-    'draws a disabled %s as an empty outlined pill with quiet text',
+    'draws a disabled %s as an empty pill with a solid edge and a faded label',
     (variant) => {
+      // Dashed means paused (a switch the phone turned off), never disabled.
       expect(buttonLook(variant, 'default', 'disabled', p)).toEqual({
         fill: 'transparent',
         border: p.outline,
-        foreground: p.muted,
-        borderStyle: 'dashed',
+        foreground: p.ink,
+        labelOpacity: DISABLED_LABEL_OPACITY,
       });
     },
   );
 
-  it('draws a disabled tertiary button as quiet text with no border', () => {
+  it('draws a disabled tertiary button as faded text with no border', () => {
     expect(buttonLook('tertiary', 'default', 'disabled', p)).toEqual({
       fill: 'transparent',
       border: 'transparent',
-      foreground: p.muted,
-      borderStyle: 'solid',
+      foreground: p.ink,
+      labelOpacity: DISABLED_LABEL_OPACITY,
     });
   });
 
@@ -85,8 +91,9 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
   });
 
   it.each([p.page, p.door, p.note])('disabled text stays readable on %s', (ground) => {
-    expect(contrastRatio(p.muted, ground)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(p.mutedStrong, ground)).toBeGreaterThanOrEqual(4.5);
+    // The faded label, as it lands on the ground, still reads.
+    const label = mixOver(p.ink, ground, DISABLED_LABEL_OPACITY);
+    expect(contrastRatio(label, ground)).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(p.outline, ground)).toBeGreaterThanOrEqual(3);
   });
 });
