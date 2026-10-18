@@ -1,3 +1,4 @@
+import * as SplashScreen from 'expo-splash-screen';
 import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { captureError } from '@/data/telemetry/sentry';
 import { FatalScreen } from './FatalScreen';
@@ -17,6 +18,8 @@ export class RootErrorBoundary extends Component<{ children: ReactNode }, State>
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    // A crash before the app is ready would leave the splash over the fatal screen for good.
+    void SplashScreen.hideAsync();
     captureError(error, { componentStack: info.componentStack });
   }
 

@@ -12,6 +12,8 @@ const complete = {
   EXPO_PUBLIC_SENTRY_DSN: 'https://d@o1.ingest.de.sentry.io/1',
   GOOGLE_SERVICES_JSON: '/tmp/google-services.json',
   SENTRY_AUTH_TOKEN: 'sntrys_x',
+  // Set on the EAS builder only.
+  EAS_BUILD: 'true',
 };
 
 describe('assertBuildEnv', () => {
@@ -38,6 +40,21 @@ describe('assertBuildEnv', () => {
     expect(() => assertBuildEnv(env)).toThrow(/production/);
     expect(() => assertBuildEnv(env)).toThrow(/EXPO_PUBLIC_SENTRY_DSN/);
     expect(() => assertBuildEnv(env)).toThrow(/SENTRY_AUTH_TOKEN/);
+  });
+
+  it('checks only the public variables when eas build reads the config on the computer', () => {
+    // Secret EAS variables are not sent to that first, local read of app.config.js.
+    const local = {
+      ...complete,
+      EAS_BUILD: undefined,
+      SENTRY_AUTH_TOKEN: undefined,
+      GOOGLE_SERVICES_JSON: undefined,
+      EAS_BUILD_PROFILE: 'preview',
+    };
+    expect(() => assertBuildEnv(local)).not.toThrow();
+    expect(() => assertBuildEnv({ ...local, EXPO_PUBLIC_SENTRY_DSN: '' })).toThrow(
+      /EXPO_PUBLIC_SENTRY_DSN/,
+    );
   });
 
   it('counts an empty value as missing', () => {
