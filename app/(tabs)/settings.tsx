@@ -21,7 +21,7 @@ import { pressedOpacity } from '@/ui/buttonLook';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
-import { DoorHeader, useDoorType } from '@/ui/components/DoorHeader';
+import { DoorHeader, useDoorCompact, useDoorType } from '@/ui/components/DoorHeader';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
@@ -244,6 +244,9 @@ function NameHeading({
 }) {
   const { colors, space } = useTheme();
   const type = useDoorType();
+  // A compact door is at most 40 % of a short window: under the lg magnet the household line
+  // was cut at its edge, so there the magnet is md like the door's other magnets.
+  const compact = useDoorCompact();
   const save = useSetDisplayName();
   const [draft, setDraft] = useState(name);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -287,7 +290,7 @@ function NameHeading({
     <Magnet
       initial={mark.initial}
       color={mark.color}
-      size="lg"
+      size={compact ? 'md' : 'lg'}
       accessibilityLabel={name}
       decorative
     />
