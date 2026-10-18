@@ -339,7 +339,9 @@ function NameHeading({
           opacity: pressedOpacity(pressed),
         })}
       >
-        <Text style={[titleStyle, { flexShrink: 1 }]}>{name}</Text>
+        <Text style={[titleStyle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+          {name}
+        </Text>
         <Ionicons
           name="create-outline"
           size={20}

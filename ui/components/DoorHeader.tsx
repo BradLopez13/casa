@@ -290,7 +290,11 @@ export function DoorHeader({
                   rowGap: space(2),
                 }}
               >
-                <View style={{ flexShrink: 1, maxWidth: '50%' }}>{hierarchy}</View>
+                <View
+                  style={{ flexShrink: 1, ...(children ? { maxWidth: '50%' } : { flexGrow: 1 }) }}
+                >
+                  {hierarchy}
+                </View>
                 {children ? (
                   <View
                     style={{
