@@ -140,6 +140,16 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(importedPrimaries("import { TaskForm, type X } from 'f';")).toEqual(['TaskForm']);
   });
 
+  // §14.5: the active tab and the shopping note's magnet are chosen and chrome, not doing: slate.
+  it('no magnet drawn in the pósit (the active tab and the shopping magnet are slate)', () => {
+    const found = offenders(sources, (line) => /glyph=\{\{[^}]*fill:\s*colors\.accent\b/.test(line));
+    const tints = offenders(
+      ['features/navigation/FridgeTabBar.tsx', 'features/navigation/NavigationRail.tsx'],
+      (line) => /focused\s*\?\s*colors\.onAccent\b/.test(line),
+    );
+    expect([...found, ...tints]).toEqual([]);
+  });
+
   // «Discontinuo es en pausa»: a dashed edge says paused (a switch the phone turned off). The
   // other files still dashed belong to the task note's checkbox, which phase 1 redraws.
   const DASHED: Record<string, string> = {

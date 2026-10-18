@@ -32,8 +32,8 @@ export type Flash = { id: string; count: number };
 const HANG = 30;
 
 /**
- * The pósit magnet that holds the note, hanging over its top-left corner. Decorative chrome: the
- * «+» of the field stays the screen's one primary.
+ * The slate magnet that holds the note, hanging over its top-left corner. Decorative chrome in
+ * `selection`, so the «+» of the field stays the screen's one pósit.
  */
 function HangingMagnet({ left }: { left: number }) {
   const { colors } = useTheme();
@@ -45,7 +45,7 @@ function HangingMagnet({ left }: { left: number }) {
         initial=""
         color="teal"
         accessibilityLabel=""
-        glyph={{ node: null, fill: colors.accent }}
+        glyph={{ node: null, fill: colors.selection }}
       />
     </View>
   );

@@ -11,7 +11,7 @@ const ICON_SIZE = 24;
 /**
  * The tab bar for wide windows: a column at the left edge, 88 dp plus the left safe-area inset (a
  * notch in landscape). Same screens, icons, names and testIDs as the bottom bar; the selected tab
- * holds its icon on the same pósit magnet (`TabMagnet`), so the state shows as shape as well as
+ * holds its icon on the same selection magnet (`TabMagnet`), so the state shows as shape as well as
  * colour.
  */
 export function NavigationRail({ state, descriptors, navigation, insets }: BottomTabBarProps) {
@@ -37,7 +37,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
         const { options } = descriptor;
         const focused = index === state.index;
         const title = options.title ?? route.name;
-        const tint = focused ? colors.onAccent : colors.muted;
+        const tint = focused ? colors.onSelection : colors.muted;
         return (
           <Pressable
             key={route.key}
