@@ -9,12 +9,9 @@ export type Reminder = {
   kind: 'morning' | 'evening';
   /** YYYY-MM-DD the reminder is about. */
   date: string;
+  /** Tasks due that day when it was scheduled; only decides whether it fires. */
   count: number;
-  overdue: number;
-  titles: string[];
 };
-
-const MAX_TITLES = 3;
 
 /**
  * Adds the future occurrences of each recurring series that the cache does not hold yet,
@@ -67,7 +64,7 @@ export function scheduleReminders(input: {
   );
 
   const reminders: Reminder[] = [];
-  const add = (kind: Reminder['kind'], date: string, items: TaskItem[], overdue: number) => {
+  const add = (kind: Reminder['kind'], date: string, items: TaskItem[]) => {
     if (items.length === 0) return;
     const at = fireAt(date, kind === 'morning' ? settings.morning : settings.evening);
     if (at.getTime() <= now.getTime()) return;
@@ -77,8 +74,6 @@ export function scheduleReminders(input: {
       kind,
       date,
       count: items.length,
-      overdue,
-      titles: items.slice(0, MAX_TITLES).map((t) => t.title),
     });
   };
 
@@ -87,8 +82,8 @@ export function scheduleReminders(input: {
     // Same grouping and order as the Hoy view for that date.
     const view = selectToday(mine, date);
     const overdue = i === 0 ? view.overdue : [];
-    add('morning', date, [...overdue, ...view.dueToday], overdue.length);
-    add('evening', date, view.dueToday, 0);
+    add('morning', date, [...overdue, ...view.dueToday]);
+    add('evening', date, view.dueToday);
   }
   return reminders;
 }

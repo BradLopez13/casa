@@ -43,8 +43,6 @@ const reminder = (over: Partial<Reminder>): Reminder => ({
   kind: 'morning',
   date: '2026-10-12',
   count: 1,
-  overdue: 0,
-  titles: ['Fregar'],
   ...over,
 });
 
@@ -54,28 +52,21 @@ describe('reminderText', () => {
     expect(reminderText(r)).toMatchObject({ id: r.id, fireAt: r.fireAt });
   });
 
-  it('morning with one task', () => {
-    expect(reminderText(reminder({})).title).toBe('Hoy tienes 1 tarea');
+  it('morning: never counts nor names tasks, so it cannot go stale', () => {
+    for (const count of [1, 4]) {
+      expect(reminderText(reminder({ count }))).toMatchObject({
+        title: 'Tus tareas de hoy',
+        body: 'Mira lo que te toca.',
+      });
+    }
   });
 
-  it('morning with several tasks and overdue ones', () => {
-    const r = reminder({ count: 4, overdue: 2, titles: ['A', 'B', 'C'] });
-    expect(reminderText(r)).toMatchObject({
-      title: 'Hoy tienes 4 tareas (2 atrasadas)',
-      body: 'A, B, C',
-    });
-  });
-
-  it('morning with exactly one overdue task', () => {
-    expect(reminderText(reminder({ count: 2, overdue: 1 })).title).toBe(
-      'Hoy tienes 2 tareas (1 atrasada)',
-    );
-  });
-
-  it('evening with one and several tasks', () => {
-    expect(reminderText(reminder({ kind: 'evening' })).title).toBe('Te queda 1 tarea de hoy');
-    expect(reminderText(reminder({ kind: 'evening', count: 3 })).title).toBe(
-      'Te quedan 3 tareas de hoy',
-    );
+  it('evening: same text whatever is left', () => {
+    for (const count of [1, 3]) {
+      expect(reminderText(reminder({ kind: 'evening', count }))).toMatchObject({
+        title: 'Antes de cerrar el día',
+        body: 'Mira si te queda algo de hoy.',
+      });
+    }
   });
 });
