@@ -83,4 +83,27 @@ describe('tabBarClearance', () => {
       tabBarClearance({ width: 1000, height: 700, fontScale: 1, bottomInset: 12, rail: true }),
     ).toBe(12);
   });
+
+  it('uses the bar’s measured height once it has one', () => {
+    expect(
+      tabBarClearance({
+        width: 412,
+        height: 915,
+        fontScale: 2,
+        bottomInset: 24,
+        rail: false,
+        measured: 97,
+      }),
+    ).toBe(97);
+    expect(
+      tabBarClearance({
+        width: 1000,
+        height: 700,
+        fontScale: 1,
+        bottomInset: 12,
+        rail: true,
+        measured: 97,
+      }),
+    ).toBe(12);
+  });
 });

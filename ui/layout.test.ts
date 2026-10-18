@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { layoutFor, paneGap, RAIL_WIDTH, SHEET_WIDTH } from './layout';
+import { authBeside, layoutFor, paneGap, RAIL_WIDTH, SHEET_WIDTH } from './layout';
 
 describe('layoutFor', () => {
   it('classifies compact below 600', () => {
@@ -44,10 +44,25 @@ describe('layoutFor', () => {
     expect(layoutFor(800, 500).shortHeight).toBe(false);
   });
 
+  it('puts the rail beside a phone on its side, where height is what runs out', () => {
+    expect(layoutFor(817, 375)).toMatchObject({ size: 'medium', rail: true, twoPane: false });
+    expect(layoutFor(375, 817).rail).toBe(false);
+    expect(layoutFor(600, 900).rail).toBe(false);
+    expect(layoutFor(839, 600).rail).toBe(false);
+  });
+
   it('exposes fixed measures', () => {
     expect(RAIL_WIDTH).toBe(88);
     expect(SHEET_WIDTH).toBe(560);
     expect(paneGap('expanded')).toBe(32);
     expect(paneGap('large')).toBe(48);
+  });
+});
+
+describe('authBeside', () => {
+  it('sets the sign-in screens in two columns only on a phone on its side', () => {
+    expect(authBeside(layoutFor(817, 375))).toBe(true);
+    expect(authBeside(layoutFor(375, 817))).toBe(false);
+    expect(authBeside(layoutFor(1024, 768))).toBe(false);
   });
 });
