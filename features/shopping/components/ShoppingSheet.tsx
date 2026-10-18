@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { MemberMark } from '@/domain/members/marks';
-import { categorize, type Category } from '@/domain/shopping/categories';
+import { iconFor } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
@@ -21,22 +22,12 @@ import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
-import {
-  isBoughtHeader,
-  isCategoryHeader,
-  isItemRow,
-  sheetRows,
-  type SheetGrouping,
-  type SheetRow,
-} from '../sheetRows';
-import { CategoryPicker } from './CategoryPicker';
-import { ShoppingRow } from './ShoppingRow';
+import { isBoughtHeader, isItemRow, sheetRows, type SheetRow } from '../sheetRows';
+import { ShoppingRow, type Glyph } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
 
-/** Height of a ruled row: the pósit's lines fall every `ROW_H` dp. */
-const ROW_H = 52;
 /** Room above the note for the magnet that holds it, so the first row stays clear of it. */
 const HANG = 30;
 
@@ -60,8 +51,7 @@ function HangingMagnet({ left }: { left: number }) {
   );
 }
 
-const isPendingRow = (row: SheetRow) =>
-  isCategoryHeader(row) || (isItemRow(row) && row.boughtAt === null);
+const isPendingRow = (row: SheetRow) => isItemRow(row) && row.boughtAt === null;
 
 type Props = {
   pending: ShoppingItem[];
@@ -77,10 +67,6 @@ type Props = {
   onToggle: (item: ShoppingItem) => void;
   onOpen: (id: string) => void;
   onClear: () => void;
-  /** Groups what is left to buy by category, in the household order, under a quiet heading. */
-  grouping?: SheetGrouping;
-  /** Moves a pending item to another category (for the whole household). */
-  onCategory?: (item: ShoppingItem, category: Category) => void;
   /** No side margin of its own: inside a TwoPane pane, which already keeps the gutter. */
   flush?: boolean;
   /**
@@ -133,8 +119,6 @@ export function ShoppingSheet({
   onToggle,
   onOpen,
   onClear,
-  grouping,
-  onCategory,
   flush = false,
   header,
   column,
@@ -145,14 +129,7 @@ export function ShoppingSheet({
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const [boughtCollapsed, setBoughtCollapsed] = useState(false);
-  const [picking, setPicking] = useState<{
-    item: ShoppingItem;
-    name: string;
-    category: Category;
-  } | null>(null);
-  const rows = sheetRows(pending, bought, boughtCollapsed, grouping);
-  const categoryOf = (item: ShoppingItem) =>
-    item.category ?? categorize(item.normalizedName, grouping?.overrides);
+  const rows = sheetRows(pending, bought, boughtCollapsed);
   // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
   const hasEdge = noteEdge.borderWidth > 0;
   const edge = hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth;
@@ -202,23 +179,7 @@ export function ShoppingSheet({
           <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
             {index === 0 && pendingCount > 0 ? <HangingMagnet left={margin + space(3)} /> : null}
             <View style={cell(index)}>
-              {isCategoryHeader(row) ? (
-                <Text
-                  testID={`shopping.${row.id}`}
-                  accessibilityRole="header"
-                  style={{
-                    color: colors.muted,
-                    fontFamily: displayFontBold,
-                    fontSize: 12,
-                    minHeight: ROW_H,
-                    textAlignVertical: 'bottom',
-                    paddingHorizontal: space(4),
-                    paddingBottom: space(2),
-                  }}
-                >
-                  {t(`shopping.category.${row.category}`)}
-                </Text>
-              ) : isBoughtHeader(row) ? (
+              {isBoughtHeader(row) ? (
                 <Animated.View
                   entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
                   exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
@@ -269,31 +230,20 @@ export function ShoppingSheet({
               ) : (
                 <ShoppingRow
                   item={row}
-                  first={index < pendingCount || isCategoryHeader(rows[index - 1] as SheetRow)}
+                  icon={iconFor(row.normalizedName)}
+                  // The ruled cells draw the lines between pending rows, so none of them adds its own.
+                  first={index < pendingCount || isBoughtHeader(rows[index - 1] as SheetRow)}
                   unsent={unsentIds.has(row.id)}
                   buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
                   buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
                   flash={flash?.id === row.id ? flash.count : 0}
                   onToggle={() => onToggle(row)}
                   onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
-                  category={row.boughtAt === null && onCategory ? categoryOf(row) : undefined}
-                  onCategory={() =>
-                    setPicking({ item: row, name: row.name, category: categoryOf(row) })
-                  }
                 />
               )}
             </View>
           </View>
         )}
-      />
-      <CategoryPicker
-        target={picking}
-        onCancel={() => setPicking(null)}
-        onPick={(category) => {
-          const item = picking?.item;
-          setPicking(null);
-          if (item && category !== picking?.category) onCategory?.(item, category);
-        }}
       />
     </>
   );
@@ -339,7 +289,9 @@ export function EmptyList({
                   accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
                   style={({ pressed }) => ({
                     minHeight: MIN_TOUCH,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: space(2),
                     paddingHorizontal: space(4),
                     borderRadius: radii.pill,
                     borderWidth: 1,
@@ -347,6 +299,13 @@ export function EmptyList({
                     opacity: pressedOpacity(pressed),
                   })}
                 >
+                  <MaterialCommunityIcons
+                    name={iconFor(entry.normalizedName) as Glyph}
+                    size={18}
+                    color={colors.muted}
+                    accessible={false}
+                    importantForAccessibility="no"
+                  />
                   <Text style={{ color: colors.ink, fontSize: 15 }}>{entry.name}</Text>
                 </Pressable>
               ))}
