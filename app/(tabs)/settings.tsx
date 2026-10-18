@@ -19,7 +19,7 @@ import { t, type MessageKey } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { DoorHeader, useDoorCompact } from '@/ui/components/DoorHeader';
+import { DoorHeader, useDoorType } from '@/ui/components/DoorHeader';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
@@ -139,7 +139,6 @@ export default function SettingsScreen() {
 
   const door = (
     <DoorHeader
-      title={displayName}
       eyebrow={t('settings.title')}
       heading={
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(3) }}>
@@ -154,7 +153,8 @@ export default function SettingsScreen() {
           <BrandPlate />
         </View>
       }
-      subtitle={membership ? householdLine(membership.householdName, others) : undefined}
+      secondary={membership ? householdLine(membership.householdName, others) : undefined}
+      secondaryTestID="settings.household-name"
     />
   );
 
@@ -171,6 +171,8 @@ export default function SettingsScreen() {
   );
 }
 
+const PLATE = 32;
+
 /** The symbol on a small brand-band disc at the door's right: decorative, the only place in Ajustes. */
 function BrandPlate() {
   const { colors } = useTheme();
@@ -179,9 +181,9 @@ function BrandPlate() {
       accessible={false}
       importantForAccessibility="no-hide-descendants"
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: PLATE,
+        height: PLATE,
+        borderRadius: PLATE / 2,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.brandBand,
@@ -227,17 +229,16 @@ function NameHeading({
   onEditingChange: (editing: boolean) => void;
 }) {
   const { colors, space } = useTheme();
-  const compact = useDoorCompact();
+  const type = useDoorType();
   const save = useSetDisplayName();
   const [draft, setDraft] = useState(name);
   const [error, setError] = useState<string | undefined>(undefined);
-  const size = compact ? 28 : 32;
   const titleStyle = {
     color: colors.ink,
     fontFamily: displayFont,
-    fontSize: size,
-    lineHeight: Math.round(size * 1.19),
-    letterSpacing: -size * 0.025,
+    fontSize: type.heading,
+    lineHeight: type.lineHeight,
+    letterSpacing: -type.heading * 0.02,
     ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
   };
 

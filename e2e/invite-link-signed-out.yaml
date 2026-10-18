@@ -83,6 +83,5 @@ appId: com.bradlopez13.casa
     id: invite.accept
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Casa E2E
+      id: today.door-line
     timeout: 20000

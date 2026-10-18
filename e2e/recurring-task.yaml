@@ -19,8 +19,7 @@ appId: com.bradlopez13.casa
       EMAIL: rita@e2e.dev
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Rita
+      id: today.door-line
     timeout: 20000
 
 # Create the task from the quick add, then make it daily in its form

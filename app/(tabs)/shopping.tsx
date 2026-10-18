@@ -3,7 +3,7 @@ import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNo
 import { ActivityIndicator, Text, View } from 'react-native';
 import { DEFAULT_ORDER, type Category } from '@/domain/shopping/categories';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
-import { countLabel, pendingNames } from '@/domain/shopping/screen';
+import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
@@ -157,11 +157,15 @@ export default function ShoppingScreen() {
     }
   };
 
+  // Until the list loads the door has no count to say, so the headline waits empty.
+  const line = itemsQuery.data ? doorLine(pending.length) : null;
   const door = (children: ReactNode) => (
     <DoorHeader
-      title={t('shopping.title')}
-      titleSize="medium"
-      subtitle={itemsQuery.data ? countLabel(pending.length) : undefined}
+      eyebrow={t('shopping.title')}
+      heading={line?.text ?? ''}
+      headingNumber={line?.number}
+      headingTestID="shopping.door-line"
+      secondary={t('shopping.doorHint')}
     >
       {children}
     </DoorHeader>

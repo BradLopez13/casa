@@ -76,13 +76,19 @@ appId: com.bradlopez13.casa
     id: onboarding.rooms.continue
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Zoe
+      id: today.door-line
+    timeout: 20000
+
+# The household name lives on the Ajustes door, under your name.
+- tapOn:
+    id: tab.settings
+- extendedWaitUntil:
+    visible:
+      id: settings.household-name
+      text: Hogar Piso Zoe
     timeout: 20000
 
 # Settings -> members -> copy link -> pending invite -> revoke
-- tapOn:
-    id: tab.settings
 - tapOn:
     id: settings.members
 - extendedWaitUntil:

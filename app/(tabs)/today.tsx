@@ -46,9 +46,9 @@ export default function TodayScreen() {
   const screen = useTaskScreen();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
-  const subtitleStyle: TextStyle = {
+  const dateStyle: TextStyle = {
     color: colors.muted,
-    fontSize: 15,
+    fontSize: 14,
     fontVariant: ['tabular-nums'],
   };
 
@@ -93,16 +93,9 @@ export default function TodayScreen() {
 
   const door = (
     <DoorHeader
-      title={t('today.title')}
-      subtitle={
-        <View>
-          <Text style={subtitleStyle}>{longDateLabel(today)}</Text>
-          <Text testID="today.household-name" style={subtitleStyle}>
-            {membership?.householdName ?? ''}
-          </Text>
-        </View>
-      }
-      status={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
+      eyebrow={t('today.title')}
+      trailing={<Text style={dateStyle}>{longDateLabel(today)}</Text>}
+      heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
     >
       <MemberFilter
         members={members}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ShoppingItem } from './list';
 import { normalizeItemName } from './normalize';
-import { countLabel, pendingNames, planAdd } from './screen';
+import { doorLine, pendingNames, planAdd } from './screen';
 
 const make = (id: string, name: string, over: Partial<ShoppingItem> = {}): ShoppingItem => ({
   id,
@@ -18,14 +18,14 @@ const make = (id: string, name: string, over: Partial<ShoppingItem> = {}): Shopp
 
 const bought = { boughtAt: '2026-10-02T10:00:00.000Z', boughtBy: 'u1' };
 
-describe('countLabel', () => {
-  it('says there is nothing to buy at zero', () => {
-    expect(countLabel(0)).toBe('Nada por comprar');
+describe('doorLine', () => {
+  it('says nothing is missing at zero, with no number', () => {
+    expect(doorLine(0)).toEqual({ text: 'No falta nada.', number: null });
   });
 
-  it('counts what is left to buy', () => {
-    expect(countLabel(1)).toBe('1 por comprar');
-    expect(countLabel(12)).toBe('12 por comprar');
+  it('counts what is missing, singular and plural, with the number to draw larger', () => {
+    expect(doorLine(1)).toEqual({ text: 'Falta 1 cosa.', number: '1' });
+    expect(doorLine(12)).toEqual({ text: 'Faltan 12 cosas.', number: '12' });
   });
 });
 

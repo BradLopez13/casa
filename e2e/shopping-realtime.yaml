@@ -29,8 +29,7 @@ appId: com.bradlopez13.casa
     id: sign-in.submit
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Casa E2E
+      id: today.door-line
     timeout: 20000
 
 # Open the list and let it load: the household channel is subscribed by then
@@ -41,7 +40,7 @@ appId: com.bradlopez13.casa
       id: shopping.input
     timeout: 20000
 - extendedWaitUntil:
-    visible: Nada por comprar
+    visible: No falta nada.
     timeout: 20000
 # A fixed 5 s for the channel to be SUBSCRIBED (the UI shows no signal for it): wait for an
 # id that never exists, and `optional` turns the timeout into a warning.

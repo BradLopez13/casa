@@ -19,15 +19,14 @@ appId: com.bradlopez13.casa
       EMAIL: sara@e2e.dev
 - extendedWaitUntil:
     visible:
-      id: today.household-name
-      text: Piso Sara
+      id: today.door-line
     timeout: 20000
 
 # Add "Leche" from the field on the door
 - tapOn:
     id: tab.shopping
 - extendedWaitUntil:
-    visible: Nada por comprar
+    visible: No falta nada.
     timeout: 20000
 - tapOn:
     id: shopping.input

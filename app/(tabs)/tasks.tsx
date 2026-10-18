@@ -5,6 +5,7 @@ import { addDays } from '@/domain/tasks/dates';
 import { dayHeading } from '@/domain/tasks/labels';
 import { weekStrip, type StripDay } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
+import { weekLine } from '@/domain/tasks/weekLine';
 import { DayList } from '@/features/tasks/components/DayList';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
@@ -22,6 +23,7 @@ import {
   type TaskListSection,
 } from '@/features/tasks/sections';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
+import { weekLineText } from '@/features/tasks/weekLineText';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -113,13 +115,15 @@ type TasksParts = {
   day: string;
   chooseDay: (date: string) => void;
   empty: ReactNode;
+  /** The door's line under its headline: what is yours (or the household's) this week. */
+  doorLine: string;
 };
 
 export default function TasksScreen() {
   const { colors } = useTheme();
   const layout = useLayout();
   const screen = useTaskScreen();
-  const { today, members, filtered } = screen;
+  const { today, members, filtered, userId, assigneeId, tasksQuery } = screen;
   const [mode, setMode] = useState<TasksMode>('week');
   // The screen owns the chosen day, not either layout, so turning the tablet keeps it.
   const [chosen, setChosen] = useState<string | null>(null);
@@ -134,6 +138,15 @@ export default function TasksScreen() {
         members.map((m) => m.userId),
       ),
     [filtered, today, members],
+  );
+
+  // The door counts the whole household, like Hoy's, so it can say what is left for everyone.
+  const tasks = tasksQuery.data;
+  const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
+  const doorLine = useMemo(
+    () =>
+      weekLineText(weekLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName })),
+    [tasks, today, userId, assigneeId, filterName],
   );
 
   const sections = useMemo(
@@ -157,6 +170,7 @@ export default function TasksScreen() {
     day: chosenDay(strip, chosen, today),
     chooseDay: setChosen,
     empty,
+    doorLine,
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
@@ -166,7 +180,17 @@ export default function TasksScreen() {
 }
 
 /** One column (phones, small tablets): the door with the day strip, and one list under it. */
-function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, empty }: TasksParts) {
+function TasksStack({
+  screen,
+  mode,
+  setMode,
+  strip,
+  sections,
+  day,
+  chooseDay,
+  empty,
+  doorLine,
+}: TasksParts) {
   const { space } = useTheme();
   const listStyle = { paddingBottom: useListEndPadding() };
   const column = useOneColumn();
@@ -215,8 +239,9 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
     // The strip is its own row under the title and the controls; in a compact door it runs the
     // full width as one line of days, so the door stays within its 40 % of the window.
     <DoorHeader
-      title={t('tasks.title')}
-      titleSize="medium"
+      eyebrow={t('tasks.title')}
+      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+      secondary={doorLine}
       below={
         mode === 'week' ? (
           <DayStrip
@@ -329,7 +354,11 @@ function TasksStack({ screen, mode, setMode, strip, sections, day, chooseDay, em
 function TasksSplit(parts: TasksParts) {
   const { screen, mode, setMode } = parts;
   const door = (
-    <DoorHeader title={t('tasks.title')} titleSize="medium">
+    <DoorHeader
+      eyebrow={t('tasks.title')}
+      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+      secondary={parts.doorLine}
+    >
       <DoorControls>
         <MemberFilter
           members={screen.members}
