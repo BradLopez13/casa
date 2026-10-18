@@ -25,6 +25,7 @@ import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
+import { RootErrorBoundary } from '@/ui/components/RootErrorBoundary';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
@@ -328,15 +329,17 @@ export default withTelemetry(function RootLayout() {
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ThemedStatusBar />
-        <NoticeProvider>
-          <SessionProvider>
-            <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-          </SessionProvider>
-        </NoticeProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <RootErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <ThemedStatusBar />
+          <NoticeProvider>
+            <SessionProvider>
+              <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+            </SessionProvider>
+          </NoticeProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </RootErrorBoundary>
   );
 });
