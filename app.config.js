@@ -1,5 +1,6 @@
 // Dynamic layer over app.json (Expo passes it in as `config`).
 const { existsSync } = require('node:fs');
+const { assertBuildEnv } = require('./scripts/build-env');
 
 // google-services.json (FCM) is never committed: EAS provides it as a file secret through
 // GOOGLE_SERVICES_JSON; locally it is used when present; CI builds without it.
@@ -10,6 +11,7 @@ function googleServicesFile() {
 
 /** @param {{ config: import('expo/config').ExpoConfig }} ctx */
 module.exports = ({ config }) => {
+  assertBuildEnv(process.env);
   const file = googleServicesFile();
   return {
     ...config,

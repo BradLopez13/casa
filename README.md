@@ -122,6 +122,25 @@ pnpm expo start
 
 En `.env` solo van la URL y la clave publishable; nunca la `service_role`.
 
+### Builds de EAS
+
+Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):
+
+| Variable                                               | Tipo en EAS                                     |
+| ------------------------------------------------------ | ----------------------------------------------- |
+| `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY` | texto plano                                     |
+| `EXPO_PUBLIC_SENTRY_DSN`                               | texto plano (el DSN es público)                 |
+| `SENTRY_AUTH_TOKEN`                                    | secreta; sube los source maps a Sentry          |
+| `GOOGLE_SERVICES_JSON`                                 | archivo secreto (`google-services.json` de FCM) |
+
+```bash
+eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment preview --environment production --visibility plaintext
+eas env:create --name SENTRY_AUTH_TOKEN --value <token> --environment preview --environment production --visibility secret
+eas env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --environment preview --environment production --visibility secret
+```
+
+Sentry solo informa desde builds de release con DSN: sin datos personales, sin grabación de sesión y con trazas en el 20 % de las sesiones. En CI la subida de source maps está apagada (`SENTRY_DISABLE_AUTO_UPLOAD`).
+
 Con Expo Go, el móvil y el ordenador deben estar en la misma red Wi-Fi. Los enlaces de invitación en Expo Go son de tipo `exp://`; si el sistema no los abre en la app, la pantalla de onboarding tiene un campo para pegar el enlace. En una build propia el esquema es `casa://invite?token=…`.
 
 ## Flujo de Git
