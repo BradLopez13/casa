@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { toAppError } from '@/data/supabase/errors';
 import type { MemberMark } from '@/domain/members/marks';
@@ -12,7 +12,9 @@ import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection
 import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
 import { useMembers, useMembership, useSetDisplayName } from '@/features/households/queries';
 import { householdLine } from '@/features/settings/householdLine';
+import { NotificationsOffBand } from '@/features/settings/NotificationsOffBand';
 import { settingsPanes, type SettingsGroup } from '@/features/settings/settingsPanes';
+import { useNotificationPermission } from '@/features/settings/useNotificationPermission';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t, type MessageKey } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
@@ -65,6 +67,7 @@ export default function SettingsScreen() {
   const { left, right } = settingsPanes(paneMode(useLayout()));
   // While the name is open, its Guardar is the screen's one pósit; Invitar steps back.
   const [editing, setEditing] = useState(false);
+  const notificationsOff = useNotificationPermission() === 'denied';
 
   const group = (key: SettingsGroup) => {
     switch (key) {
@@ -129,7 +132,12 @@ export default function SettingsScreen() {
   const pane = (groups: SettingsGroup[]) => (
     <View style={{ gap: space(4), paddingTop: space(5) }}>
       {groups.map((key) => (
-        <View key={key}>{group(key)}</View>
+        <Fragment key={key}>
+          {/* One notice for both phone notes: before Recordatorios, which also heads the right
+              pane in two columns. */}
+          {key === 'reminders' ? <NotificationsOffBand denied={notificationsOff} /> : null}
+          <View>{group(key)}</View>
+        </Fragment>
       ))}
     </View>
   );

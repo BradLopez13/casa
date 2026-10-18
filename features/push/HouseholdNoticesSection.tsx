@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { AppState, Linking, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Text, View } from 'react-native';
 import { toAppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
-import { getPermission, requestPermission } from '@/features/reminders/notifications';
-import type { NotificationPermission } from '@/features/reminders/plan';
+import { requestPermission } from '@/features/reminders/notifications';
+import { usePhonePermission } from '@/features/settings/useNotificationPermission';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
@@ -15,30 +15,6 @@ import { permissionView } from './permissionView';
 import { switchState } from './permissionState';
 import { useNotificationPrefs, useSetNotificationPrefs } from './queries';
 
-/** The phone's notification permission, read again each time the app comes back. */
-function usePermission(): [NotificationPermission | null, (p: NotificationPermission) => void] {
-  const [permission, setPermission] = useState<NotificationPermission | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const check = () => {
-      getPermission()
-        .then((p) => {
-          if (alive) setPermission(p);
-        })
-        .catch(() => undefined);
-    };
-    check();
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') check();
-    });
-    return () => {
-      alive = false;
-      subscription.remove();
-    };
-  }, []);
-  return [permission, setPermission];
-}
-
 /**
  * "Avisos del hogar" in Settings. The switches are always there, with or without permission.
  * The permission is asked only by the "Activar notificaciones" button.
@@ -48,7 +24,7 @@ export function HouseholdNoticesSection() {
   const { userId } = useSession();
   const prefsQuery = useNotificationPrefs(userId);
   const save = useSetNotificationPrefs();
-  const [permission, setPermission] = usePermission();
+  const [permission, setPermission] = usePhonePermission();
   const [asking, setAsking] = useState(false);
 
   const prefs = prefsQuery.data;
@@ -85,27 +61,6 @@ export function HouseholdNoticesSection() {
       >
         {t('settings.push')}
       </Text>
-      {view === 'denied' ? (
-        <>
-          <Text
-            testID="settings.push.denied"
-            accessibilityLiveRegion="polite"
-            style={{ color: colors.ink, fontSize: 14 }}
-          >
-            {t('settings.notificationsOff')}
-          </Text>
-          <Button
-            testID="settings.push.open-settings"
-            title={t('settings.openPhoneSettings')}
-            variant="tertiary"
-            icon={actionIcons.openPhoneSettings}
-            width="hug"
-            onPress={() => {
-              Linking.openSettings().catch(() => undefined);
-            }}
-          />
-        </>
-      ) : null}
       <View style={row}>
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushTaskAssigned')}
