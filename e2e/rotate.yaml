@@ -1,7 +1,26 @@
 appId: com.bradlopez13.casa
 ---
-- runFlow: subflows/sign-in.yaml
-- assertVisible: { id: 'tab.today' }
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Sign in as Leo, a fixture user who already owns "Piso Leo", so Hoy has its quick add
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: leo@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
 - setOrientation: LANDSCAPE_LEFT
 - assertVisible: { id: 'tab.today' }
 - assertNotVisible: 'Render Error'

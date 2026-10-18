@@ -75,7 +75,8 @@ export default function TodayScreen() {
       <Button
         testID="today.invite"
         title={t('today.empty.cta')}
-        variant="primary"
+        // The quick add is this screen's pósit: inviting stays secondary.
+        variant="secondary"
         icon={actionIcons.invite}
         onPress={() => router.push('/household/members')}
       />
