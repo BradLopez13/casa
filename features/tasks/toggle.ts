@@ -31,10 +31,14 @@ export async function invalidateIfStale(queryClient: QueryClient, error: unknown
 
 const EXPLAINED_CODES: ReadonlySet<string> = new Set(['ALREADY_ADVANCED', 'INVALID_TODAY']);
 
-function explainToggleError(error: unknown): string {
-  return EXPLAINED_CODES.has(toAppError(error).code)
-    ? taskErrorMessage(error)
-    : t('tasks.toggleFailed');
+/** Says which action failed (marking done or reopening) and, without connection, why. */
+function explainToggleError(error: unknown, done: boolean): string {
+  const code = toAppError(error).code;
+  if (EXPLAINED_CODES.has(code)) return taskErrorMessage(error);
+  if (code === 'NETWORK') {
+    return t(done ? 'tasks.completeFailedOffline' : 'tasks.reopenFailedOffline');
+  }
+  return t(done ? 'tasks.completeFailed' : 'tasks.reopenFailed');
 }
 
 export function buildToggleOptions(
@@ -62,7 +66,7 @@ export function buildToggleOptions(
       return { previous, successor };
     },
     // Roll back only this task and its next occurrence: other toggles in flight keep theirs.
-    onError: async (error, { id }, context) => {
+    onError: async (error, { id, done }, context) => {
       const previous = context?.previous;
       const successor = context?.successor;
       if (previous) {
@@ -74,7 +78,7 @@ export function buildToggleOptions(
           return successor ? [...restored, successor] : restored;
         });
       }
-      notify(explainToggleError(error));
+      notify(explainToggleError(error, done));
       await invalidateIfStale(queryClient, error);
     },
     // Several toggles can be in flight: refetch once, after the last one settles.

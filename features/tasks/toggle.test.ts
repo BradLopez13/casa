@@ -69,10 +69,42 @@ describe('buildToggleOptions', () => {
   it('restores the cache and notifies when the server fails', async () => {
     const { queryClient, notify, run } = setup();
     queryClient.setQueryData(key, [a]);
-    vi.mocked(completeTask).mockRejectedValue(new AppError('NETWORK'));
+    vi.mocked(completeTask).mockRejectedValue(new AppError('UNKNOWN'));
     await run({ id: 'a', done: true }).catch(() => undefined);
     expect(queryClient.getQueryData(key)).toEqual([a]);
-    expect(notify).toHaveBeenCalledWith('No se pudo completar. Inténtalo de nuevo.');
+    expect(notify).toHaveBeenCalledWith('No se pudo marcar como hecha. Inténtalo de nuevo.');
+  });
+
+  describe('says which action failed and why', () => {
+    const doneA: TaskItem = { ...a, completedAt: '2026-10-09T10:00:00.000Z', completedBy: 'me' };
+
+    it('completing without connection', async () => {
+      const { queryClient, notify, run } = setup();
+      queryClient.setQueryData(key, [a]);
+      vi.mocked(completeTask).mockRejectedValue(new Error('Network request failed'));
+      await run({ id: 'a', done: true }).catch(() => undefined);
+      expect(notify).toHaveBeenCalledWith(
+        'No se pudo marcar como hecha: sin conexión. Inténtalo cuando vuelva.',
+      );
+    });
+
+    it('reopening for an unknown reason', async () => {
+      const { queryClient, notify, run } = setup();
+      queryClient.setQueryData(key, [doneA]);
+      vi.mocked(reopenTask).mockRejectedValue(new AppError('UNKNOWN'));
+      await run({ id: 'a', done: false }).catch(() => undefined);
+      expect(notify).toHaveBeenCalledWith('No se pudo reabrir. Inténtalo de nuevo.');
+    });
+
+    it('reopening without connection', async () => {
+      const { queryClient, notify, run } = setup();
+      queryClient.setQueryData(key, [doneA]);
+      vi.mocked(reopenTask).mockRejectedValue(new AppError('NETWORK'));
+      await run({ id: 'a', done: false }).catch(() => undefined);
+      expect(notify).toHaveBeenCalledWith(
+        'No se pudo reabrir: sin conexión. Inténtalo cuando vuelva.',
+      );
+    });
   });
 
   it('reopens through reopenTask', async () => {
