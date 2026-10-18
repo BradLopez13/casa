@@ -41,12 +41,12 @@ export function useDoorType(): DoorType {
  * side in one row in a compact one. In that row each control keeps its natural width and a
  * control that does not fit beside the one before moves onto a line of its own, where it may
  * shrink (a counter wraps its text, a long filter scrolls). Nothing is squeezed to make room for
- * a neighbour, so enlarged text never runs over a magnet.
+ * a neighbour, so enlarged text never runs over a magnet. `row` forces that layout in a full door.
  */
-export function DoorControls({ children }: { children: ReactNode }) {
+export function DoorControls({ children, row = false }: { children: ReactNode; row?: boolean }) {
   const { space } = useTheme();
   const compact = useDoorCompact();
-  if (!compact) return <View style={{ gap: space(4) }}>{children}</View>;
+  if (!compact && !row) return <View style={{ gap: space(4) }}>{children}</View>;
   return (
     <View
       style={{

@@ -13,6 +13,8 @@ type Props = {
   userId: string | null;
   selected: string | null;
   onSelect: (userId: string | null) => void;
+  /** Medium magnets without names, as in a compact door, even in a full one. */
+  dense?: boolean;
 };
 
 /**
@@ -22,9 +24,9 @@ type Props = {
  * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
  * keeps its initial and colour on screen and the name for screen readers.
  */
-export function MemberFilter({ members, marks, userId, selected, onSelect }: Props) {
+export function MemberFilter({ members, marks, userId, selected, onSelect, dense = false }: Props) {
   const { colors, space } = useTheme();
-  const compact = useDoorCompact();
+  const compact = useDoorCompact() || dense;
   const allName = t('tasks.filterAll');
   return (
     <ScrollView
