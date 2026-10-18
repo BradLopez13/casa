@@ -89,7 +89,7 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - assertVisible: Bob
 - assertNotVisible: Quitar del hogar
-- assertNotVisible: Hacer dueño del hogar
+- assertNotVisible: Pasar el hogar
 
 # Leave the household
 - scrollUntilVisible:
