@@ -62,7 +62,9 @@ export function Button({
         accessibilityState={{ disabled: inactive, busy: loading }}
         disabled={inactive}
         onPress={onPress}
-        hitSlop={variant === 'secondary' ? { top: 2, bottom: 2 } : undefined}
+        hitSlop={
+          variant === 'secondary' || variant === 'outlined' ? { top: 2, bottom: 2 } : undefined
+        }
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({

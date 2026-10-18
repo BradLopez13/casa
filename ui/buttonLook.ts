@@ -1,8 +1,12 @@
 // Pure: no react-native import, so Vitest can check it.
 import type { Palette } from './tokens';
 
-/** primary: the one main action. secondary: a tonal pill. tertiary: bare text. */
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
+/**
+ * primary: the one main action. secondary: a tonal pill. outlined: an empty pill with a slate (or
+ * chalk) edge, for a secondary action that sits on a note, where the tonal pill reads as disabled.
+ * tertiary: bare text.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'tertiary';
 
 /** destructive swaps cobalt for red; only primary and tertiary may be destructive. */
 export type ButtonTone = 'default' | 'destructive';
@@ -37,8 +41,8 @@ export function buttonLook(
   state: ButtonState,
   colors: Palette,
 ): ButtonLook {
-  if (variant === 'secondary' && tone === 'destructive') {
-    throw new Error('A secondary button cannot be destructive');
+  if ((variant === 'secondary' || variant === 'outlined') && tone === 'destructive') {
+    throw new Error(`A ${variant} button cannot be destructive`);
   }
   if (state === 'disabled') {
     return {
@@ -57,6 +61,14 @@ export function buttonLook(
           foreground: colors.onAccent,
           labelOpacity: 1,
         };
+  }
+  if (variant === 'outlined') {
+    return {
+      fill: 'transparent',
+      border: colors.selection,
+      foreground: colors.ink,
+      borderStyle: 'solid',
+    };
   }
   if (variant === 'secondary') {
     return {
@@ -94,6 +106,14 @@ const metrics: Record<ButtonVariant, ButtonMetrics> = {
     underline: false,
   },
   secondary: {
+    minHeight: 44,
+    fontSize: 15,
+    paddingV: 10,
+    paddingH: 20,
+    iconSize: 20,
+    underline: false,
+  },
+  outlined: {
     minHeight: 44,
     fontSize: 15,
     paddingV: 10,

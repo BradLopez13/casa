@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
-import { getMyMembership, listActiveInvites, listMembers, setDisplayName } from './api';
+import {
+  getMyMembership,
+  listActiveInvites,
+  listMembers,
+  previewInvite,
+  setDisplayName,
+} from './api';
 import { invitesKey, membersKey, membershipKey } from './keys';
 
 export { invitesKey, membersKey, membershipKey };
@@ -12,6 +18,21 @@ export function useMembership() {
     queryKey: membershipKey,
     queryFn: getMyMembership,
     enabled: status === 'signed-in',
+  });
+}
+
+const TERMINAL_INVITE = new Set(['INVITE_INVALID', 'INVITE_EXPIRED', 'NOT_AUTHENTICATED']);
+
+/** The invite's household, inviter and size; a dead invite is not retried. */
+export function useInvitePreview(token: string | null) {
+  const { status } = useSession();
+  return useQuery({
+    queryKey: ['invitePreview', token],
+    queryFn: () => previewInvite(token as string),
+    enabled: status === 'signed-in' && token !== null,
+    retry: (failures, error) => !TERMINAL_INVITE.has(toAppError(error).code) && failures < 2,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

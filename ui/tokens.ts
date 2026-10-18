@@ -200,6 +200,9 @@ export const displayFontRegular = 'MPLUSRounded1c_400Regular';
 
 export const MIN_TOUCH = 44;
 
+/** Side of the box that completes a task, at the right edge of its note. */
+export const COMPLETE_BOX = 30;
+
 /**
  * Least height of a text field, a Button and the New task pill: a touch target and a little air.
  * A minimum, never a fixed height, so the control grows with the system text size.
