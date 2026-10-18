@@ -73,6 +73,7 @@ export async function shoppingHistory(householdId: string): Promise<HistoryEntry
     normalizedName: row.normalized_name,
     uses: row.uses,
     lastUsedAt: toIso(row.last_used_at),
+    category: toCategory(row.category),
   }));
 }
 

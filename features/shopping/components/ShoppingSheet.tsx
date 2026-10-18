@@ -8,7 +8,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MemberMark } from '@/domain/members/marks';
 import { categorize, type Category } from '@/domain/shopping/categories';
@@ -16,6 +16,7 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { FADE_MS, layoutTransition } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
@@ -192,7 +193,7 @@ export function ShoppingSheet({
         keyExtractor={(row) => row.id}
         scrollEnabled={header !== undefined}
         keyboardShouldPersistTaps="handled"
-        itemLayoutAnimation={reduceMotion ? undefined : LinearTransition}
+        itemLayoutAnimation={layoutTransition(reduceMotion)}
         ListHeaderComponent={header}
         refreshControl={refreshControl}
         contentContainerStyle={contentContainerStyle}
@@ -219,8 +220,8 @@ export function ShoppingSheet({
                 </Text>
               ) : isBoughtHeader(row) ? (
                 <Animated.View
-                  entering={reduceMotion ? undefined : FadeIn}
-                  exiting={reduceMotion ? undefined : FadeOut}
+                  entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
+                  exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',

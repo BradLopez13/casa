@@ -14,7 +14,7 @@ describe('invalidationsFor', () => {
 
   it('maps the corrections and the household order to the shopping categories', () => {
     expect(invalidationsFor('household_item_categories')).toEqual([['shopping-categories']]);
-    expect(invalidationsFor('households')).toEqual([['shopping-categories']]);
+    expect(invalidationsFor('households')).toEqual([['shopping-categories'], ['membership']]);
   });
 
   it('ignores any other table', () => {

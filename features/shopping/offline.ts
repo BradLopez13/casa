@@ -103,9 +103,11 @@ const listKey = (householdId: string) => ['shopping', householdId];
 /** Several shopping mutations can be in flight: refetch once, after the last one settles. */
 export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Promise<void> {
   if (queryClient.isMutating({ mutationKey: ['shopping'] }) === 1) {
+    // The categories too: a write made offline may have skipped the realtime echo of a correction.
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['shopping'] }),
       queryClient.invalidateQueries({ queryKey: ['shopping-history'] }),
+      queryClient.invalidateQueries({ queryKey: ['shopping-categories'] }),
     ]);
   }
 }
@@ -279,12 +281,8 @@ export function buildShoppingMutationDefaults(
       const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
       if (item) syncFailed(item.name);
     },
-    onSettled: async () => {
-      if (queryClient.isMutating({ mutationKey: ['shopping'] }) === 1) {
-        await queryClient.invalidateQueries({ queryKey: ['shopping-categories'] });
-      }
-      await invalidateShoppingWhenIdle(queryClient);
-    },
+    // invalidateShoppingWhenIdle refreshes the categories along with the list.
+    onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
 
   return { add, bought, category };

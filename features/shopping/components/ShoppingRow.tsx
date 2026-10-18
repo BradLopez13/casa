@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
-  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -16,7 +15,7 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
 import { pressedOpacity } from '@/ui/buttonLook';
-import { haptic } from '@/ui/motion';
+import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -120,9 +119,9 @@ export function ShoppingRow({
 
   return (
     <Animated.View
-      layout={reduceMotion ? undefined : LinearTransition}
-      entering={reduceMotion ? undefined : FadeIn}
-      exiting={reduceMotion ? undefined : FadeOut}
+      // The list moves the rows (itemLayoutAnimation): the row only fades in and out.
+      entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

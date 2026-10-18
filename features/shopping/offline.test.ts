@@ -244,7 +244,7 @@ describe('buildShoppingMutationDefaults', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('refreshes the list and history only after the last shopping mutation settles', async () => {
+  it('refreshes the list, history and categories only after the last shopping mutation settles', async () => {
     const { queryClient, add, bought } = setup();
     queryClient.setQueryData(key, []);
     const spy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -255,7 +255,7 @@ describe('buildShoppingMutationDefaults', () => {
       bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' }),
     ]);
     const keys = spy.mock.calls.map((c) => c[0]?.queryKey);
-    expect(keys).toEqual([['shopping'], ['shopping-history']]);
+    expect(keys).toEqual([['shopping'], ['shopping-history'], ['shopping-categories']]);
   });
 });
 
