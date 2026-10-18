@@ -7,7 +7,6 @@ const entry = (name: string): HistoryEntry => ({
   normalizedName: normalizeItemName(name),
   uses: 1,
   lastUsedAt: '2026-10-01T10:00:00.000Z',
-  category: null,
 });
 
 const history = ['Leche', 'Lechuga', 'Pan de leche', 'Pan'].map(entry);

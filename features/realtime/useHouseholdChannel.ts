@@ -50,8 +50,7 @@ export function useHouseholdChannel(householdId: string | undefined): void {
     const isBusy = (key: QueryKey) => {
       if (key[0] === 'tasks')
         return queryClient.isMutating({ mutationKey: ['tasks', 'toggle'] }) > 0;
-      // The categories move with the shopping queue (a queued category change rewrites them).
-      if (key[0] === 'shopping' || key[0] === 'shopping-categories')
+      if (key[0] === 'shopping')
         return queryClient.isMutating({ mutationKey: ['shopping'] }) > 0;
       return false;
     };

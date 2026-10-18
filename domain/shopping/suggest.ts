@@ -1,5 +1,4 @@
 import { locale } from '@/i18n';
-import type { Category } from './categories';
 import { normalizeItemName } from './normalize';
 
 export type HistoryEntry = {
@@ -7,8 +6,6 @@ export type HistoryEntry = {
   normalizedName: string;
   uses: number;
   lastUsedAt: string;
-  /** The aisle it was last filed under, when the server knows one. */
-  category: Category | null;
 };
 
 const MAX_SUGGESTIONS = 5;

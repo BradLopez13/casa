@@ -12,9 +12,9 @@ describe('invalidationsFor', () => {
     expect(invalidationsFor('task_occurrences')).toEqual([['tasks']]);
   });
 
-  it('maps the corrections and the household order to the shopping categories', () => {
-    expect(invalidationsFor('household_item_categories')).toEqual([['shopping-categories']]);
-    expect(invalidationsFor('households')).toEqual([['shopping-categories'], ['membership']]);
+  it('maps the household to its membership and ignores the dropped categories table', () => {
+    expect(invalidationsFor('household_item_categories')).toEqual([]);
+    expect(invalidationsFor('households')).toEqual([['membership']]);
   });
 
   it('ignores any other table', () => {
@@ -94,18 +94,17 @@ describe('createInvalidationBatcher', () => {
     expect(invalidate).not.toHaveBeenCalled();
   });
 
-  it('flushAll invalidates the four keys at once and drops the pending window', () => {
+  it('flushAll invalidates the three keys at once and drops the pending window', () => {
     const { batcher, invalidate } = setup();
     batcher.push('task_series');
     batcher.flushAll();
-    expect(invalidate).toHaveBeenCalledTimes(4);
+    expect(invalidate).toHaveBeenCalledTimes(3);
     expect(invalidate).toHaveBeenCalledWith(['tasks']);
     expect(invalidate).toHaveBeenCalledWith(['shopping']);
     expect(invalidate).toHaveBeenCalledWith(['shopping-history']);
-    expect(invalidate).toHaveBeenCalledWith(['shopping-categories']);
 
     vi.advanceTimersByTime(300);
-    expect(invalidate).toHaveBeenCalledTimes(4);
+    expect(invalidate).toHaveBeenCalledTimes(3);
   });
 
   it('flushAll also leaves a busy key to its mutation', () => {
@@ -114,7 +113,6 @@ describe('createInvalidationBatcher', () => {
     expect(invalidate.mock.calls).toEqual([
       [['tasks']],
       [['shopping-history']],
-      [['shopping-categories']],
     ]);
   });
 });
