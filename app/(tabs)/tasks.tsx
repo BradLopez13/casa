@@ -252,8 +252,9 @@ function TasksStack({
         ) : null
       }
     >
-      <DoorControls>
+      <DoorControls row>
         <MemberFilter
+          dense
           members={members}
           marks={marks}
           userId={userId}
@@ -356,8 +357,9 @@ function TasksSplit(parts: TasksParts) {
       heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
       secondary={parts.doorLine}
     >
-      <DoorControls>
+      <DoorControls row>
         <MemberFilter
+          dense
           members={screen.members}
           marks={screen.marks}
           userId={screen.userId}

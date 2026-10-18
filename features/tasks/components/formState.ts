@@ -5,9 +5,9 @@ import type { TaskInput } from '../api';
 export type FormField = 'room' | 'assignee' | 'due' | 'repeat';
 
 /**
- * The picker open when the form appears. A new task starts on the day, the one choice almost
- * every task makes; an existing one opens closed, showing only its values.
+ * The picker open when the form appears: none, new task or existing. The form opens closed,
+ * showing only its values; each magnet opens its picker on a tap.
  */
-export function openFieldFor(_initial: TaskInput, isNew: boolean): 'due' | null {
-  return isNew ? 'due' : null;
+export function openFieldFor(_initial: TaskInput, _isNew: boolean): null {
+  return null;
 }

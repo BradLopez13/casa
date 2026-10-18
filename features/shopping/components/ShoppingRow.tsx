@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect } from 'react';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useEffect, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -10,14 +11,16 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
-import type { Category } from '@/domain/shopping/categories';
+import type { ProductIcon } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
-import { pressedOpacity } from '@/ui/buttonLook';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
+
+/** A glyph name of the icon set; `iconFor` only returns names its test finds in the set. */
+export type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 const FLASH_IN_MS = 150;
 const FLASH_OUT_MS = 450;
@@ -36,13 +39,14 @@ type Props = {
   onToggle: () => void;
   /** Only pending items can be edited, so only theirs is given; a bought name is plain text. */
   onOpen: (() => void) | undefined;
-  /** The category it is listed under; only pending rows show it. */
-  category?: Category;
-  /** Opens the category picker; given with `category`. */
-  onCategory?: () => void;
+  /** The product's glyph, deduced from its name; decorative, the name carries the meaning. */
+  icon: ProductIcon;
 };
 
-/** One item on the sheet: a round checkbox, the name (opens a pending one) and its quantity. */
+/**
+ * One item on the sheet: a round checkbox, the product icon, the name (opens a pending one) and
+ * its quantity.
+ */
 export function ShoppingRow({
   item,
   first,
@@ -52,8 +56,7 @@ export function ShoppingRow({
   flash,
   onToggle,
   onOpen,
-  category,
-  onCategory,
+  icon,
 }: Props) {
   const { colors, space } = useTheme();
   const reduceMotion = useReduceMotion();
@@ -90,6 +93,14 @@ export function ShoppingRow({
   } as const;
   const name = (
     <>
+      <MaterialCommunityIcons
+        name={icon as Glyph}
+        size={22}
+        color={colors.muted}
+        accessible={false}
+        importantForAccessibility="no"
+        style={{ marginRight: space(2) }}
+      />
       <Text
         style={{
           flex: 1,
@@ -177,30 +188,6 @@ export function ShoppingRow({
           {name}
         </View>
       )}
-      {category && onCategory ? (
-        <Pressable
-          testID={`shopping.item.${item.id}.category`}
-          onPress={onCategory}
-          accessibilityRole="button"
-          accessibilityLabel={t('shopping.changeCategory')}
-          accessibilityValue={{ text: t(`shopping.category.${category}`) }}
-          hitSlop={{ top: space(2), bottom: space(2) }}
-          style={({ pressed }) => ({
-            flexShrink: 1,
-            maxWidth: '35%',
-            minWidth: MIN_TOUCH,
-            minHeight: MIN_TOUCH,
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            marginLeft: space(2),
-            opacity: pressedOpacity(pressed),
-          })}
-        >
-          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12 }}>
-            {t(`shopping.category.${category}`)}
-          </Text>
-        </Pressable>
-      ) : null}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}

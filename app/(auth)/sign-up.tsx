@@ -140,6 +140,7 @@ export default function SignUpScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        spellCheck={false}
         returnKeyType="next"
         onSubmitEditing={() => passwordRef.current?.focus()}
       />

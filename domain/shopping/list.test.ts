@@ -7,7 +7,6 @@ const make = (id: string, name: string, over: Partial<ShoppingItem> = {}): Shopp
   name,
   normalizedName: normalizeItemName(name),
   quantity: null,
-  category: null,
   createdAt: '2026-10-01T10:00:00.000Z',
   createdBy: 'u1',
   boughtAt: null,

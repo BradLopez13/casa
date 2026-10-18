@@ -97,7 +97,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
         paddingBottom: insets.bottom + TAB_BAR_PAD,
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        backgroundColor: colors.brandBand,
+        backgroundColor: colors.tabBar,
       }}
     >
       {/* Drawn over the band rather than as a border, so it takes nothing from the 64 dp row. */}
@@ -109,7 +109,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
           left: 0,
           right: 0,
           height: StyleSheet.hairlineWidth,
-          backgroundColor: colors.brandBandEdge,
+          backgroundColor: colors.tabBarEdge,
         }}
       />
       {state.routes.map((route, index) => {
@@ -118,7 +118,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
         const { options } = descriptor;
         const focused = index === state.index;
         const title = options.title ?? route.name;
-        const tint = focused ? colors.onAccent : colors.onBrandBandMuted;
+        const tint = focused ? colors.onAccent : colors.onTabBarMuted;
         return (
           <Pressable
             key={route.key}
@@ -146,7 +146,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
               numberOfLines={1}
               maxFontSizeMultiplier={TAB_LABEL_MAX_SCALE}
               style={{
-                color: focused ? colors.onBrandBand : colors.onBrandBandMuted,
+                color: focused ? colors.onTabBar : colors.onTabBarMuted,
                 fontSize: 12,
                 lineHeight: TAB_LABEL_LINE,
                 fontWeight: focused ? '700' : '600',

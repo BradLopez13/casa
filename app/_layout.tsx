@@ -43,7 +43,6 @@ import {
   addKey,
   boughtKey,
   buildShoppingMutationDefaults,
-  categoryKey,
   persistBuster,
   persistDehydrateOptions,
   resumeShoppingQueue,
@@ -90,7 +89,6 @@ function PersistedQueries({ children }: { children: ReactNode }) {
     const defaults = buildShoppingMutationDefaults(queryClient, notify);
     queryClient.setMutationDefaults(addKey, defaults.add);
     queryClient.setMutationDefaults(boughtKey, defaults.bought);
-    queryClient.setMutationDefaults(categoryKey, defaults.category);
     return null;
   });
   if (status === 'loading') return null;

@@ -8,7 +8,6 @@ describe('shoppingErrorMessage', () => {
     expect(shoppingErrorMessage(new AppError('INVALID_ITEM_NAME'))).toBe(
       'Escribe un nombre de hasta 60 caracteres.',
     );
-    expect(shoppingErrorMessage(new AppError('INVALID_CATEGORY'))).toBe('Esa categoría no existe.');
   });
   it('falls back to UNKNOWN for other codes and errors', () => {
     expect(shoppingErrorMessage(new AppError('NOT_OWNER'))).toBe(

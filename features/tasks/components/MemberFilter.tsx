@@ -13,6 +13,8 @@ type Props = {
   userId: string | null;
   selected: string | null;
   onSelect: (userId: string | null) => void;
+  /** Medium magnets without names, as in a compact door, even in a full one. */
+  dense?: boolean;
 };
 
 /**
@@ -20,11 +22,12 @@ type Props = {
  * person. Tapping one filters by them; tapping the chosen one keeps it, "Todos" clears.
  * In a compact door (a phone on its side) the magnets are the medium size, ring included still a
  * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
- * keeps its initial and colour on screen and the name for screen readers.
+ * keeps its initial and colour on screen and the name for screen readers. `dense` forces that
+ * layout in a full door.
  */
-export function MemberFilter({ members, marks, userId, selected, onSelect }: Props) {
+export function MemberFilter({ members, marks, userId, selected, onSelect, dense = false }: Props) {
   const { colors, space } = useTheme();
-  const compact = useDoorCompact();
+  const compact = useDoorCompact() || dense;
   const allName = t('tasks.filterAll');
   return (
     <ScrollView

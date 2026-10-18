@@ -42,11 +42,32 @@ export function useDoorType(): DoorType {
  * control that does not fit beside the one before moves onto a line of its own, where it may
  * shrink (a counter wraps its text, a long filter scrolls). Nothing is squeezed to make room for
  * a neighbour, so enlarged text never runs over a magnet.
+ *
+ * `row` (Tareas: filter and mode) is one line that never wraps, in a full door or a compact one:
+ * the first controls shrink (the filter scrolls) and the last keeps its width. A horizontal
+ * ScrollView has no intrinsic width on Android, so in a wrapping row it took the whole line, the
+ * switch wrapped under it and the row did not grow for that second line, painting the switch over
+ * the day strip below.
  */
-export function DoorControls({ children }: { children: ReactNode }) {
+export function DoorControls({ children, row = false }: { children: ReactNode; row?: boolean }) {
   const { space } = useTheme();
   const compact = useDoorCompact();
-  if (!compact) return <View style={{ gap: space(4) }}>{children}</View>;
+  if (!compact && !row) return <View style={{ gap: space(4) }}>{children}</View>;
+  if (row) {
+    const items = Children.toArray(children);
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: space(5) }}>
+        {items.map((child, i) => (
+          <View
+            key={i}
+            style={i === items.length - 1 ? { flexShrink: 0 } : { flexShrink: 1, minWidth: 0 }}
+          >
+            {child}
+          </View>
+        ))}
+      </View>
+    );
+  }
   return (
     <View
       style={{
@@ -258,17 +279,25 @@ export function DoorHeader({
   const column = { width: '100%', maxWidth: contentMax, alignSelf: 'center' } as const;
 
   if (door.compact) {
+    const paddingTop = top + space(2);
+    const paddingBottom = space(3);
+    // The scroll's own cap: with only the outer maxHeight, Yoga laid the ScrollView out at its
+    // content's height and the door clipped it instead of letting it scroll (Ajustes' line).
+    const scrollMax =
+      door.maxHeight === null
+        ? undefined
+        : Math.max(0, door.maxHeight - paddingTop - paddingBottom);
     return (
       <View
         style={{
           ...frame,
           maxHeight: door.maxHeight ?? undefined,
-          paddingTop: top + space(2),
-          paddingBottom: space(3),
+          paddingTop,
+          paddingBottom,
         }}
       >
         <ScrollView
-          style={{ flexGrow: 0, flexShrink: 1 }}
+          style={{ flexGrow: 0, flexShrink: 1, maxHeight: scrollMax }}
           scrollEnabled={overflows}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={overflows}
@@ -290,7 +319,11 @@ export function DoorHeader({
                   rowGap: space(2),
                 }}
               >
-                <View style={{ flexShrink: 1, maxWidth: '50%' }}>{hierarchy}</View>
+                <View
+                  style={{ flexShrink: 1, ...(children ? { maxWidth: '50%' } : { flexGrow: 1 }) }}
+                >
+                  {hierarchy}
+                </View>
                 {children ? (
                   <View
                     style={{

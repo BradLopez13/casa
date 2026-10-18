@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { toAppError } from '@/data/supabase/errors';
 import type { MemberMark } from '@/domain/members/marks';
@@ -12,14 +12,16 @@ import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection
 import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
 import { useMembers, useMembership, useSetDisplayName } from '@/features/households/queries';
 import { householdLine } from '@/features/settings/householdLine';
+import { NotificationsOffBand } from '@/features/settings/NotificationsOffBand';
 import { settingsPanes, type SettingsGroup } from '@/features/settings/settingsPanes';
-import { ShoppingOrderSection } from '@/features/settings/ShoppingOrderSection';
+import { useNotificationPermission } from '@/features/settings/useNotificationPermission';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t, type MessageKey } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { DoorHeader, useDoorType } from '@/ui/components/DoorHeader';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { DoorHeader, useDoorCompact, useDoorType } from '@/ui/components/DoorHeader';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
@@ -44,11 +46,15 @@ export default function SettingsScreen() {
   const router = useRouter();
   const notify = useNotice();
   const [signingOut, setSigningOut] = useState(false);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const leave = () => {
     setSigningOut(true);
     signOut()
       .catch(() => notify(t('auth.signOutFailed')))
-      .finally(() => setSigningOut(false));
+      .finally(() => {
+        setSigningOut(false);
+        setConfirmingSignOut(false);
+      });
   };
   const { userId } = useSession();
   const membership = useMembership().data;
@@ -61,6 +67,7 @@ export default function SettingsScreen() {
   const { left, right } = settingsPanes(paneMode(useLayout()));
   // While the name is open, its Guardar is the screen's one pósit; Invitar steps back.
   const [editing, setEditing] = useState(false);
+  const notificationsOff = useNotificationPermission() === 'denied';
 
   const group = (key: SettingsGroup) => {
     switch (key) {
@@ -80,12 +87,6 @@ export default function SettingsScreen() {
               variant={editing ? 'secondary' : 'primary'}
               onPress={() => router.push('/household/members')}
             />
-          </Note>
-        );
-      case 'shopping':
-        return (
-          <Note>
-            <ShoppingOrderSection />
           </Note>
         );
       case 'reminders':
@@ -112,11 +113,10 @@ export default function SettingsScreen() {
             <Button
               testID="settings.sign-out"
               title={t('auth.signOut')}
-              variant="secondary"
+              variant="tertiary"
               icon={actionIcons.signOut}
-              width="full"
-              loading={signingOut}
-              onPress={leave}
+              width="hug"
+              onPress={() => setConfirmingSignOut(true)}
             />
             <DeleteAccountButton
               testID="settings.delete-account"
@@ -132,7 +132,12 @@ export default function SettingsScreen() {
   const pane = (groups: SettingsGroup[]) => (
     <View style={{ gap: space(4), paddingTop: space(5) }}>
       {groups.map((key) => (
-        <View key={key}>{group(key)}</View>
+        <Fragment key={key}>
+          {/* One notice for both phone notes: before Recordatorios, which also heads the right
+              pane in two columns. */}
+          {key === 'reminders' ? <NotificationsOffBand denied={notificationsOff} /> : null}
+          <View>{group(key)}</View>
+        </Fragment>
       ))}
     </View>
   );
@@ -160,6 +165,15 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
+      <ConfirmDialog
+        visible={confirmingSignOut}
+        title={t('auth.signOutTitle')}
+        message={t('auth.signOutMessage')}
+        confirmLabel={t('auth.signOutAction')}
+        loading={signingOut}
+        onCancel={() => setConfirmingSignOut(false)}
+        onConfirm={leave}
+      />
       <TwoPane
         header={door}
         left={pane(left)}
@@ -230,6 +244,9 @@ function NameHeading({
 }) {
   const { colors, space } = useTheme();
   const type = useDoorType();
+  // A compact door is at most 40 % of a short window: under the lg magnet the household line
+  // was cut at its edge, so there the magnet is md like the door's other magnets.
+  const compact = useDoorCompact();
   const save = useSetDisplayName();
   const [draft, setDraft] = useState(name);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -273,7 +290,7 @@ function NameHeading({
     <Magnet
       initial={mark.initial}
       color={mark.color}
-      size="lg"
+      size={compact ? 'md' : 'lg'}
       accessibilityLabel={name}
       decorative
     />
@@ -346,7 +363,9 @@ function NameHeading({
           opacity: pressedOpacity(pressed),
         })}
       >
-        <Text style={[titleStyle, { flexShrink: 1 }]}>{name}</Text>
+        <Text style={[titleStyle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+          {name}
+        </Text>
         <Ionicons
           name="create-outline"
           size={20}

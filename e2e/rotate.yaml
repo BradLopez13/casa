@@ -22,6 +22,11 @@ appId: com.bradlopez13.casa
       id: today.door-line
     timeout: 20000
 - setOrientation: LANDSCAPE_LEFT
+# Ajustes' compact door keeps the whole name on one line and the household line visible.
+- tapOn: { id: 'tab.settings' }
+- assertVisible: 'Rosa'
+- assertVisible: { id: 'settings.household-name' }
+- tapOn: { id: 'tab.today' }
 - assertVisible: { id: 'tab.today' }
 - assertNotVisible: 'Render Error'
 - setOrientation: PORTRAIT

@@ -1,17 +1,15 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useEffect, useState } from 'react';
-import { AppState, Linking, Platform, Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, Text, View } from 'react-native';
 import type { ReminderSettings } from '@/domain/reminders/settings';
 import { useSession } from '@/features/auth/SessionProvider';
 import { t } from '@/i18n';
-import { actionIcons } from '@/ui/actionIcons';
-import { Button } from '@/ui/components/Button';
 import { Toggle } from '@/ui/components/Toggle';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { switchState } from '@/features/push/permissionState';
-import { getPermission, requestPermission } from './notifications';
-import type { NotificationPermission } from './plan';
+import { usePhonePermission } from '@/features/settings/useNotificationPermission';
+import { requestPermission } from './notifications';
 import { useReminderSettings, useSaveReminderSettings } from './useReminders';
 
 const toDate = (time: string): Date => {
@@ -21,30 +19,6 @@ const toDate = (time: string): Date => {
 
 const toTime = (date: Date): string =>
   `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-
-/** The phone's notification permission, checked again each time the app comes back. */
-function usePermission(): [NotificationPermission | null, (p: NotificationPermission) => void] {
-  const [permission, setPermission] = useState<NotificationPermission | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const check = () => {
-      getPermission()
-        .then((p) => {
-          if (alive) setPermission(p);
-        })
-        .catch(() => undefined);
-    };
-    check();
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') check();
-    });
-    return () => {
-      alive = false;
-      subscription.remove();
-    };
-  }, []);
-  return [permission, setPermission];
-}
 
 function TimeRow({
   testID,
@@ -135,21 +109,21 @@ function TimeRow({
 
 /**
  * "Recordatorios" in Settings. The permission is asked only when the switch is turned on; if
- * the phone says no, the switch stays off and a link to the system settings appears. A
- * permission removed from the system shows the switch off; the app never asks again by itself.
+ * the phone says no, the switch stays off and the screen's one notice (NotificationsOffBand)
+ * links to the system settings. A permission removed from the system shows the switch off; the
+ * app never asks again by itself.
  */
 export function ReminderSettingsSection() {
   const { colors, space } = useTheme();
   const { userId } = useSession();
   const settings = useReminderSettings(userId).data;
   const save = useSaveReminderSettings(userId);
-  const [permission, setPermission] = usePermission();
+  const [permission, setPermission] = usePhonePermission();
   const [asking, setAsking] = useState(false);
 
   if (!settings || permission === null) return null;
 
   const on = settings.enabled && permission === 'granted';
-  const denied = permission === 'denied';
   const state = switchState(settings.enabled, permission);
   const update = (patch: Partial<ReminderSettings>) => save({ ...settings, ...patch });
 
@@ -183,27 +157,6 @@ export function ReminderSettingsSection() {
       >
         {t('settings.reminders')}
       </Text>
-      {denied ? (
-        <>
-          <Text
-            testID="settings.reminders.denied"
-            accessibilityLiveRegion="polite"
-            style={{ color: colors.ink, fontSize: 14 }}
-          >
-            {t('settings.notificationsOff')}
-          </Text>
-          <Button
-            testID="settings.reminders.open-settings"
-            title={t('settings.openPhoneSettings')}
-            variant="tertiary"
-            icon={actionIcons.openPhoneSettings}
-            width="hug"
-            onPress={() => {
-              Linking.openSettings().catch(() => undefined);
-            }}
-          />
-        </>
-      ) : null}
       <View
         style={{
           minHeight: MIN_TOUCH,

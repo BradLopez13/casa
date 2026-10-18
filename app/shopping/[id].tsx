@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
   TextInput,
   View,
 } from 'react-native';
@@ -128,6 +129,7 @@ function EditShoppingItemScreen() {
         item={item}
         online={online}
         busy={busy}
+        saving={edit.isPending || edit.isSuccess}
         error={failure ? shoppingErrorMessage(failure) : null}
         onCancel={close}
         onSave={(name, quantity) => {
@@ -158,6 +160,7 @@ function EditForm({
   item,
   online,
   busy,
+  saving,
   error,
   onCancel,
   onSave,
@@ -165,13 +168,16 @@ function EditForm({
 }: {
   item: ShoppingItem;
   online: boolean;
+  /** Saving or deleting: either locks the form. */
   busy: boolean;
+  /** Only the save's own progress spins the Save button. */
+  saving: boolean;
   error: string | null;
   onCancel: () => void;
   onSave: (name: string, quantity: string | null) => void;
   onDelete: () => void;
 }) {
-  const { colors, space } = useTheme();
+  const { colors, radii, noteEdge, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
@@ -208,6 +214,8 @@ function EditForm({
     setTriedSave(true);
     if (nameBlank) nameRef.current?.focus();
   };
+  // Dark has its 1 dp edge; light has none, so a hairline stands in, as on the task sheet.
+  const hasEdge = noteEdge.borderWidth > 0;
 
   return (
     <>
@@ -220,13 +228,6 @@ function EditForm({
             label: t('shopping.edit.cancel'),
             onPress: requestClose,
           }}
-          action={{
-            testID: 'shopping.edit.save',
-            label: t('shopping.edit.save'),
-            onPress: save,
-            disabled: !canSave,
-            busy,
-          }}
         />
         {online ? null : <OfflineBand />}
         <KeyboardAvoidingView
@@ -236,6 +237,7 @@ function EditForm({
         >
           <ScrollView
             {...scroll}
+            style={fill}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               paddingHorizontal: space(5),
@@ -246,24 +248,36 @@ function EditForm({
           >
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
-              <TextField
-                ref={nameRef}
-                testID="shopping.edit.name"
-                label={t('shopping.edit.name')}
-                value={name}
-                onChangeText={setName}
-                returnKeyType="done"
-                error={nameError}
-              />
-              <TextField
-                testID="shopping.edit.quantity"
-                label={t('shopping.edit.quantity')}
-                value={quantity}
-                onChangeText={setQuantity}
-                returnKeyType="done"
-                error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
-              />
-              {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
+              <View
+                style={{
+                  padding: space(4),
+                  gap: space(4),
+                  borderRadius: radii.note,
+                  backgroundColor: colors.note,
+                  borderWidth: hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth,
+                  borderColor: hasEdge ? noteEdge.borderColor : colors.hairline,
+                }}
+              >
+                <TextField
+                  ref={nameRef}
+                  testID="shopping.edit.name"
+                  label={t('shopping.edit.name')}
+                  value={name}
+                  onChangeText={setName}
+                  returnKeyType="done"
+                  error={nameError}
+                />
+                <TextField
+                  testID="shopping.edit.quantity"
+                  label={t('shopping.edit.quantity')}
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  returnKeyType="done"
+                  error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
+                />
+                {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
+              </View>
+              {/* Kept apart from the note, as the task sheet keeps «Borrar tarea». */}
               <Button
                 testID="shopping.edit.delete"
                 title={t('shopping.edit.delete')}
@@ -275,6 +289,27 @@ function EditForm({
               />
             </FocusRevealContext.Provider>
           </ScrollView>
+          {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, as on the task
+              sheet. */}
+          <View
+            style={{
+              paddingHorizontal: space(5),
+              paddingTop: space(3),
+              paddingBottom: space(density.headerStep + 1),
+              borderTopWidth: 1,
+              borderTopColor: colors.hairline,
+              backgroundColor: colors.page,
+            }}
+          >
+            <Button
+              testID="shopping.edit.save"
+              title={t('shopping.edit.save')}
+              width="full"
+              loading={saving}
+              disabled={!canSave}
+              onPress={save}
+            />
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
       {dialog}

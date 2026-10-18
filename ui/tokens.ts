@@ -26,7 +26,7 @@ export type Palette = {
   onAccent: string;
   /** Edge of the accent pill. Equals `accent` (no visible edge): the pill is told apart by its shadow in light mode. */
   accentEdge: string;
-  /** Fill of a chosen option or an "on" track: slate in light, the pósit in dark. At least 3:1 on page, note and door. */
+  /** Fill of a chosen option or an "on" track: slate in light, chalk in dark (never the pósit, which is for doing). At least 3:1 on page, note and door. */
   selection: string;
   /** Text and icons on a selection fill. */
   onSelection: string;
@@ -38,8 +38,14 @@ export type Palette = {
   onBrandBand: string;
   /** Inactive tab icons and labels on the brand band: `onBrandBand` at 80 %. */
   onBrandBandMuted: string;
-  /** The hairline along the top of the tab bar, the door's bottom edge: `onBrandBand` at 12 %. */
-  brandBandEdge: string;
+  /** The tab bar, the fridge's plinth: the door's enamel in light, the slate band in dark. */
+  tabBar: string;
+  /** Active tab label on the tab bar. */
+  onTabBar: string;
+  /** Inactive tab icons and labels on the tab bar, at least 4.5:1 on it. */
+  onTabBarMuted: string;
+  /** The hairline along the top of the tab bar, the door's bottom edge. */
+  tabBarEdge: string;
   /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
   tonal: string;
   /** Edge of the secondary pill, for when its fill alone does not show against the ground. */
@@ -88,7 +94,10 @@ export const palettes: Record<Scheme, Palette> = {
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
     onBrandBandMuted: 'rgba(243,244,240,0.8)',
-    brandBandEdge: 'rgba(243,244,240,0.12)',
+    tabBar: '#DCE3E1',
+    onTabBar: '#1E2A2F',
+    onTabBarMuted: '#56636A',
+    tabBarEdge: 'rgba(30,42,47,0.12)',
     tonal: '#D3DCD9',
     tonalEdge: '#6F7B80',
     red: '#B3392F',
@@ -116,19 +125,22 @@ export const palettes: Record<Scheme, Palette> = {
     ink: '#ECEFEA',
     muted: '#A7B2B5',
     mutedStrong: '#CBD3D5',
-    // Chalk: the pósit is kept for what is chosen and the main action.
+    // Chalk: the pósit is kept for the main action; what is chosen is chalk too.
     cobalt: '#ECEFEA',
     textSelection: 'rgba(236,239,234,0.3)',
     accent: '#F2D04B',
     onAccent: '#151B1E',
     accentEdge: '#F2D04B',
-    selection: '#F2D04B',
+    selection: '#ECEFEA',
     onSelection: '#151B1E',
     focusRing: '#ECEFEA',
     brandBand: '#2E3B41',
     onBrandBand: '#F3F4F0',
     onBrandBandMuted: 'rgba(243,244,240,0.8)',
-    brandBandEdge: 'rgba(243,244,240,0.12)',
+    tabBar: '#2E3B41',
+    onTabBar: '#F3F4F0',
+    onTabBarMuted: 'rgba(243,244,240,0.8)',
+    tabBarEdge: 'rgba(243,244,240,0.12)',
     tonal: '#34444B',
     tonalEdge: '#34444B',
     red: '#F08A80',

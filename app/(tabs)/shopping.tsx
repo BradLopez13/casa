@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { DEFAULT_ORDER, type Category } from '@/domain/shopping/categories';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
@@ -25,10 +24,8 @@ import {
   useAddItem,
   useClearBought,
   useIsOnline,
-  useItemCategories,
   usePendingItemIds,
   useSetBought,
-  useSetCategory,
   useShoppingHistory,
   useShoppingItems,
 } from '@/features/shopping/queries';
@@ -41,6 +38,7 @@ import {
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
@@ -84,10 +82,8 @@ export default function ShoppingScreen() {
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
-  const categories = useItemCategories(householdId);
   const addItem = useAddItem();
   const setBought = useSetBought();
-  const setCategory = useSetCategory();
   const clearBought = useClearBought();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
@@ -100,10 +96,6 @@ export default function ShoppingScreen() {
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
   const { pending, bought } = useMemo(() => sortList(items), [items]);
-  const grouping = useMemo(
-    () => ({ order: categories.order ?? DEFAULT_ORDER, overrides: categories.overrides }),
-    [categories.order, categories.overrides],
-  );
 
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
@@ -124,12 +116,15 @@ export default function ShoppingScreen() {
     setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
   };
 
-  const changeCategory = (item: ShoppingItem, category: Category) => {
-    if (householdId === undefined) return;
-    setCategory.mutate({ id: item.id, householdId, category });
-  };
-
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const clear = () => {
+    if (householdId === undefined) return;
+    setConfirmingClear(true);
+  };
+  // The dialog closes on confirm: the clear is scoped behind the queue and can pause offline, so
+  // a dialog waiting on it could stay stuck. The «Vaciar bolsa» button shows it pending.
+  const confirmClear = () => {
+    setConfirmingClear(false);
     if (householdId === undefined) return;
     clearBought.mutate(
       { householdId },
@@ -146,12 +141,7 @@ export default function ShoppingScreen() {
     if (!online) return;
     setPulling(true);
     try {
-      await Promise.all([
-        itemsQuery.refetch(),
-        historyQuery.refetch(),
-        membersQuery.refetch(),
-        categories.query.refetch(),
-      ]);
+      await Promise.all([itemsQuery.refetch(), historyQuery.refetch(), membersQuery.refetch()]);
     } finally {
       setPulling(false);
     }
@@ -219,8 +209,6 @@ export default function ShoppingScreen() {
       onToggle: toggle,
       onOpen: open,
       onClear: clear,
-      grouping,
-      onCategory: changeCategory,
     },
     online,
     door,
@@ -231,6 +219,19 @@ export default function ShoppingScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <ShoppingSplit {...parts} /> : <ShoppingStack {...parts} />}
+      <ConfirmDialog
+        visible={confirmingClear}
+        title={t('shopping.clearTitle')}
+        message={
+          bought.length === 1
+            ? t('shopping.clearMessageOne')
+            : t('shopping.clearMessageOther', { count: bought.length })
+        }
+        confirmLabel={t('shopping.clearAction')}
+        destructive
+        onCancel={() => setConfirmingClear(false)}
+        onConfirm={confirmClear}
+      />
     </View>
   );
 }

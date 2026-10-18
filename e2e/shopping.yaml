@@ -57,6 +57,7 @@ appId: com.bradlopez13.casa
 # Clear the bought ones: the section goes away (it fades out after the server answers)
 - tapOn:
     id: shopping.clear
+- tapOn: 'Vaciar'
 - extendedWaitUntil:
     notVisible: En la bolsa.*
     timeout: 20000
