@@ -120,7 +120,7 @@ function RoomsStep() {
   };
 
   return (
-    <CenteredCard header={<BrandHeader />}>
+    <CenteredCard header={<BrandHeader variant="hero" />}>
       <ScreenTitle subtitle={t('onboarding.roomsHint')}>{t('onboarding.roomsTitle')}</ScreenTitle>
       <View style={{ gap: space(1) }}>
         {ROOMS.map((room) => (
@@ -206,7 +206,7 @@ function CreateStep({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <CenteredCard header={<BrandHeader />}>
+    <CenteredCard header={<BrandHeader variant="hero" />}>
       <ScreenTitle subtitle={t('brand.tagline')}>{t('onboarding.title')}</ScreenTitle>
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('onboarding.welcome')}</Text>
       <TextField
