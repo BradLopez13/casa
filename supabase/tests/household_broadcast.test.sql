@@ -1,9 +1,10 @@
 begin;
-select plan(23);
+select plan(27);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
 select tests.create_user('carla@test.dev', 'Carla') as carla \gset
+select tests.create_user('dani@test.dev', 'Dani') as dani \gset
 
 -- Ana owns Casa (Bob is a member); Carla owns Otra.
 insert into public.households (id, name, created_by)
@@ -145,6 +146,43 @@ select public.add_shopping_item(
   '00000000-0000-0000-0000-0000000000d3', '00000000-0000-0000-0000-0000000000a2', 'Sal', null
 );
 select tests.clear_auth();
+
+-- Membership: joining, a role change and leaving each reach the household topic.
+select pg_temp.casa_messages('household_members') as members_before \gset
+insert into public.household_members (household_id, user_id, role)
+values ('00000000-0000-0000-0000-0000000000a1', :'dani', 'member');
+select is(
+  pg_temp.casa_messages('household_members') - :members_before,
+  1::bigint,
+  'a new member sends one household_members message'
+);
+
+select pg_temp.casa_messages('household_members') as members_before \gset
+update public.household_members set role = 'member'
+where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'dani';
+select is(
+  pg_temp.casa_messages('household_members') - :members_before,
+  1::bigint,
+  'a role change sends one household_members message'
+);
+
+select pg_temp.casa_messages('household_members') as members_before \gset
+delete from public.household_members
+where household_id = '00000000-0000-0000-0000-0000000000a1' and user_id = :'dani';
+select is(
+  pg_temp.casa_messages('household_members') - :members_before,
+  1::bigint,
+  'a member leaving sends one household_members message, on the old row''s household'
+);
+
+select pg_temp.casa_messages('household_members') as members_before \gset
+update public.household_members set role = 'owner'
+where household_id = '00000000-0000-0000-0000-0000000000a2' and user_id = :'carla';
+select is(
+  pg_temp.casa_messages('household_members') - :members_before,
+  0::bigint,
+  'a change in another household sends nothing on this topic'
+);
 
 -- 2. Topic parsing ------------------------------------------------------------
 
