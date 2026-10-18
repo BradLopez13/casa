@@ -11,8 +11,8 @@ const input: TaskInput = {
 };
 
 describe('openFieldFor', () => {
-  it('opens the day picker on a new task', () => {
-    expect(openFieldFor(input, true)).toBe('due');
+  it('opens no picker on a new task either', () => {
+    expect(openFieldFor(input, true)).toBeNull();
   });
   it('opens nothing when editing a task', () => {
     expect(openFieldFor({ ...input, title: 'Regar' }, false)).toBeNull();

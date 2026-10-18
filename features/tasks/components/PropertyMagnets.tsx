@@ -46,8 +46,8 @@ function Chip({
   spoken?: string;
 }) {
   const { colors, radii, space } = useTheme();
-  // One selected style (§14.1): the open magnet is filled with `selection`, the rest are outlined
-  // on the note. A magnet that cannot open waits dashed, never faded.
+  // One selected style (§14.1): `selection` means chosen, so the open magnet is not filled with it; it
+  // takes a heavier `ink` border on the note. A magnet that cannot open waits dashed, never faded.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
   return (
     <Pressable
@@ -65,17 +65,17 @@ function Chip({
         gap: space(2),
         paddingHorizontal: space(4),
         borderRadius: radii.pill,
-        borderWidth: 1.5,
+        borderWidth: open ? 2.5 : 1.5,
         borderStyle: disabled ? off.borderStyle : 'solid',
-        borderColor: disabled ? off.border : open ? colors.selection : colors.outline,
-        backgroundColor: disabled ? off.fill : open ? colors.selection : colors.note,
+        borderColor: disabled ? off.border : open ? colors.ink : colors.outline,
+        backgroundColor: disabled ? off.fill : colors.note,
         opacity: pressedOpacity(pressed),
       })}
     >
       {children}
       <Text
         style={{
-          color: disabled ? off.foreground : open ? colors.onSelection : colors.ink,
+          color: disabled ? off.foreground : colors.ink,
           fontSize: 15,
           // One weight in both states, so opening never changes the pill's width.
           fontWeight: '600',

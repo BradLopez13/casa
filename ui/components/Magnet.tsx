@@ -60,7 +60,7 @@ export function Magnet({
   const { scheme } = useTheme();
   const positRing = empty && posit && scheme === 'dark';
   // The chip-sized magnet sits inside a pill and stays flat.
-  const look = check ? magnetCheckStyle(check, colors) : null;
+  const look = check ? magnetCheckStyle(check, colors, scheme) : null;
   const filledCheck = look?.fill != null;
   const raised = !empty && size !== 'sm';
   const fill = look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]);
