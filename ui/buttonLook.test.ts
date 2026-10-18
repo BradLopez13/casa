@@ -26,6 +26,30 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
     });
   });
 
+  it('draws an outlined button as an empty pill with a slate or chalk edge', () => {
+    const expected = {
+      fill: 'transparent',
+      border: p.selection,
+      foreground: p.ink,
+      borderStyle: 'solid',
+    };
+    expect(buttonLook('outlined', 'default', 'enabled', p)).toEqual(expected);
+    expect(buttonLook('outlined', 'default', 'busy', p)).toEqual(expected);
+    // On a task note its edge must read as a control, never as a disabled pill (3:1).
+    expect(contrastRatio(p.selection, p.taskNote)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(p.ink, p.taskNote)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('disables an outlined button like a secondary one', () => {
+    expect(buttonLook('outlined', 'default', 'disabled', p)).toEqual(
+      buttonLook('secondary', 'default', 'disabled', p),
+    );
+  });
+
+  it('never makes an outlined button destructive', () => {
+    expect(() => buttonLook('outlined', 'destructive', 'enabled', p)).toThrow();
+  });
+
   it('draws a secondary button as a tonal pill with its edge', () => {
     expect(buttonLook('secondary', 'default', 'enabled', p)).toEqual({
       fill: p.tonal,

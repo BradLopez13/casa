@@ -163,7 +163,7 @@ function EditTaskScreen() {
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}
-        // Save is the foot's one pósit: completing and reopening are secondary next to it.
+        // Save is the foot's one pósit: completing and reopening are outlined next to it, never grey.
         footer={
           <View
             style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(3) }}
@@ -172,7 +172,7 @@ function EditTaskScreen() {
               testID={done ? 'task-form.reopen' : 'task-form.complete'}
               title={t(done ? 'taskForm.reopen' : 'taskForm.complete')}
               icon={done ? undefined : actionIcons.confirm}
-              variant="secondary"
+              variant="outlined"
               disabled={busy || isProvisional(task)}
               onPress={toggleDone}
             />
