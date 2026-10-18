@@ -15,7 +15,11 @@ describe.each<Scheme>(['light', 'dark'])('completeBoxLook (%s)', (scheme) => {
   });
 
   it('fills a done task with the pósit and its check', () => {
-    expect(completeBoxLook(true, p)).toEqual({ fill: p.accent, border: p.accent, check: p.onAccent });
+    expect(completeBoxLook(true, p)).toEqual({
+      fill: p.accent,
+      border: p.accentEdge,
+      check: p.onAccent,
+    });
   });
 
   it('keeps the empty edge visible on the note (3:1)', () => {

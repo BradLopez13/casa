@@ -6,8 +6,8 @@ import type { Palette } from './tokens';
  */
 export function completeBoxLook(
   checked: boolean,
-  colors: Pick<Palette, 'selection' | 'accent' | 'onAccent'>,
+  colors: Pick<Palette, 'selection' | 'accent' | 'accentEdge' | 'onAccent'>,
 ): { fill: string; border: string; check: string | null } {
-  if (checked) return { fill: colors.accent, border: colors.accent, check: colors.onAccent };
+  if (checked) return { fill: colors.accent, border: colors.accentEdge, check: colors.onAccent };
   return { fill: 'transparent', border: colors.selection, check: null };
 }
