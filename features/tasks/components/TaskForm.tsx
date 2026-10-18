@@ -315,9 +315,10 @@ export function TaskForm({
             </FocusRevealContext.Provider>
           </ScrollView>
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
-              actions on the task right above it. */}
+              actions on the task right above it, or beside it on a short window. */}
           <View
             style={{
+              ...(density.footRow ? { flexDirection: 'row', alignItems: 'center' } : null),
               paddingHorizontal: space(5),
               paddingTop: space(3),
               paddingBottom: space(density.headerStep + 1),
@@ -327,13 +328,13 @@ export function TaskForm({
               backgroundColor: colors.page,
             }}
           >
-            {footer}
+            {density.footRow ? <View style={{ flex: 1 }}>{footer}</View> : footer}
             <Button
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
               loading={saving}
-              width="full"
+              width={density.footRow ? 'hug' : 'full'}
             />
           </View>
         </KeyboardAvoidingView>
