@@ -8,9 +8,9 @@
 set -euo pipefail
 
 shards=(
-  "forgot-password recurring-task delete-account-onboarding password-toggle auth-back"
-  "sign-up-create-household invite-link-signed-out create-complete-task shopping-realtime rotate"
-  "join-with-invite shopping delete-account shopping-offline"
+  "forgot-password recurring-task delete-account-onboarding password-toggle auth-back members-remove"
+  "sign-up-create-household invite-link-signed-out create-complete-task shopping-realtime rotate task-edit-skip-delete"
+  "join-with-invite shopping delete-account shopping-offline members-transfer notification-settings"
 )
 
 if [ "${1:-}" = "english" ]; then
