@@ -38,6 +38,7 @@ import {
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
@@ -115,11 +116,19 @@ export default function ShoppingScreen() {
     setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
   };
 
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const clear = () => {
+    if (householdId === undefined) return;
+    setConfirmingClear(true);
+  };
+  const confirmClear = () => {
     if (householdId === undefined) return;
     clearBought.mutate(
       { householdId },
-      { onError: (error) => notify(shoppingErrorMessage(error)) },
+      {
+        onError: (error) => notify(shoppingErrorMessage(error)),
+        onSettled: () => setConfirmingClear(false),
+      },
     );
   };
 
@@ -210,6 +219,20 @@ export default function ShoppingScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <ShoppingSplit {...parts} /> : <ShoppingStack {...parts} />}
+      <ConfirmDialog
+        visible={confirmingClear}
+        title={t('shopping.clearTitle')}
+        message={
+          bought.length === 1
+            ? t('shopping.clearMessageOne')
+            : t('shopping.clearMessageOther', { count: bought.length })
+        }
+        confirmLabel={t('shopping.clearAction')}
+        destructive
+        loading={clearBought.isPending}
+        onCancel={() => setConfirmingClear(false)}
+        onConfirm={confirmClear}
+      />
     </View>
   );
 }

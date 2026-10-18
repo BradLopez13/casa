@@ -18,6 +18,7 @@ import { t, type MessageKey } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader, useDoorType } from '@/ui/components/DoorHeader';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
@@ -43,11 +44,15 @@ export default function SettingsScreen() {
   const router = useRouter();
   const notify = useNotice();
   const [signingOut, setSigningOut] = useState(false);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const leave = () => {
     setSigningOut(true);
     signOut()
       .catch(() => notify(t('auth.signOutFailed')))
-      .finally(() => setSigningOut(false));
+      .finally(() => {
+        setSigningOut(false);
+        setConfirmingSignOut(false);
+      });
   };
   const { userId } = useSession();
   const membership = useMembership().data;
@@ -105,11 +110,10 @@ export default function SettingsScreen() {
             <Button
               testID="settings.sign-out"
               title={t('auth.signOut')}
-              variant="secondary"
+              variant="tertiary"
               icon={actionIcons.signOut}
-              width="full"
-              loading={signingOut}
-              onPress={leave}
+              width="hug"
+              onPress={() => setConfirmingSignOut(true)}
             />
             <DeleteAccountButton
               testID="settings.delete-account"
@@ -153,6 +157,15 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
+      <ConfirmDialog
+        visible={confirmingSignOut}
+        title={t('auth.signOutTitle')}
+        message={t('auth.signOutMessage')}
+        confirmLabel={t('auth.signOutAction')}
+        loading={signingOut}
+        onCancel={() => setConfirmingSignOut(false)}
+        onConfirm={leave}
+      />
       <TwoPane
         header={door}
         left={pane(left)}
