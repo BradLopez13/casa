@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
@@ -8,6 +8,7 @@ import { dueLabel } from '@/domain/tasks/labels';
 import type { Room } from '@/domain/tasks/rooms';
 import { t } from '@/i18n';
 import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
+import { glyphSize } from '@/ui/glyphSize';
 import { Magnet } from '@/ui/components/Magnet';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
@@ -59,6 +60,8 @@ function Chip({
   // One selected style (§14.1): `selection` means chosen, so the open magnet is not filled with it; it
   // takes a heavier `ink` border on the note. A magnet that cannot open fades its label: dashed is paused.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
+  // The glyph grows with the label beside it.
+  const { fontScale } = useWindowDimensions();
   return (
     <Pressable
       testID={`task-form.prop.${field}`}
@@ -85,7 +88,7 @@ function Chip({
       {children ?? (
         <Ionicons
           name={GLYPHS[field]}
-          size={GLYPH_SIZE}
+          size={glyphSize(GLYPH_SIZE, fontScale)}
           color={disabled ? off.foreground : colors.muted}
           style={{ opacity: disabled ? off.labelOpacity : 1 }}
           accessible={false}

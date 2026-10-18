@@ -162,11 +162,12 @@ export default function ShoppingScreen() {
     </DoorHeader>
   );
 
-  // Loading, a load error with nothing cached, empty, or the sheet.
+  // Loading, a load error with nothing cached, empty, or the sheet. It counts what is on screen:
+  // while «Vaciar bolsa» waits for its undo, an emptied list already says it is empty.
   const state = shoppingState({
     loaded: itemsQuery.data !== undefined,
     failed: itemsQuery.isError,
-    itemCount: items.length,
+    itemCount: pending.length + bought.length,
   });
   let stateView: ReactNode = null;
   if (state === 'error') {
