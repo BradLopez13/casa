@@ -1,3 +1,5 @@
+import { lang as appLang, type Locale } from '@/i18n';
+import { CATEGORY_WORDS_EN } from './categoryWords.en';
 import { CATEGORY_WORDS } from './categoryWords.es';
 
 export const CATEGORIES = [
@@ -19,9 +21,17 @@ export const DEFAULT_ORDER: typeof CATEGORIES = CATEGORIES;
 
 // Insertion order is category order; Array.prototype.sort is stable (ES2019), and
 // categorize relies on that for deterministic ties.
-const ENTRIES: readonly (readonly [string, Category])[] = (
-  Object.entries(CATEGORY_WORDS) as [Category, readonly string[]][]
-).flatMap(([category, words]) => words.map((word) => [word, category] as const));
+type Entries = readonly (readonly [string, Category])[];
+
+const entriesOf = (dictionary: Record<Category, readonly string[]>): Entries =>
+  (Object.entries(dictionary) as [Category, readonly string[]][]).flatMap(([category, words]) =>
+    words.map((word) => [word, category] as const),
+  );
+
+const ENTRIES: Record<Locale, Entries> = {
+  es: entriesOf(CATEGORY_WORDS),
+  en: entriesOf(CATEGORY_WORDS_EN),
+};
 
 /** Index of the first whole-word occurrence of phrase in text, or -1. */
 function wholeWordIndex(text: string, phrase: string): number {
@@ -36,22 +46,30 @@ function wholeWordIndex(text: string, phrase: string): number {
   return -1;
 }
 
-// The head noun comes first in Spanish: earliest match wins, then the longest phrase.
+/**
+ * The category a product name falls in, from the dictionary of the app's language. The head noun
+ * comes first in Spanish («zumo de naranja») and last in English («orange juice»): the match
+ * nearest that end wins, then the longest phrase.
+ */
 export function categorize(
   normalizedName: string,
   overrides?: ReadonlyMap<string, Category>,
+  lang: Locale = appLang,
 ): Category {
   const override = overrides?.get(normalizedName);
   if (override) return override;
+  const headLast = lang === 'en';
   let best: Category = 'other';
-  let bestIndex = Infinity;
+  let bestRank = -Infinity;
   let bestLength = 0;
-  for (const [word, category] of ENTRIES) {
+  for (const [word, category] of ENTRIES[lang]) {
     const index = wholeWordIndex(normalizedName, word);
     if (index === -1) continue;
-    if (index < bestIndex || (index === bestIndex && word.length > bestLength)) {
+    // Higher is nearer the head: the end of the match in English, the start in Spanish.
+    const rank = headLast ? index + word.length : -index;
+    if (rank > bestRank || (rank === bestRank && word.length > bestLength)) {
       best = category;
-      bestIndex = index;
+      bestRank = rank;
       bestLength = word.length;
     }
   }

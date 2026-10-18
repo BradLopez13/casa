@@ -388,3 +388,139 @@ describe('quickParse: English', () => {
     expect(result.room).toBe('kitchen');
   });
 });
+
+describe('quickParse: English, same coverage as Spanish', () => {
+  const en = (text: string, extra: Partial<QuickParseContext> = {}) =>
+    parse(text, { locale: 'en', ...extra });
+
+  it.each<[string, string]>([
+    ['Sweep today', '2026-10-17'],
+    ['Sweep tomorrow', '2026-10-18'],
+    ['Sweep the day after tomorrow', '2026-10-19'],
+    ['Sweep day after tomorrow', '2026-10-19'],
+    ['Sweep for tomorrow', '2026-10-18'],
+    ['Sweep TOMORROW', '2026-10-18'],
+  ])('%s → %s', (text, due) => {
+    const result = en(text);
+    expect(result.dueOn).toBe(due);
+    expect(result.title).toBe(text.includes('the day') ? 'Sweep the' : 'Sweep');
+  });
+
+  it('reads «on monday» as the next Monday', () => {
+    const result = en('Sweep on monday');
+    expect(result.dueOn).toBe('2026-10-19');
+    expect(result.title).toBe('Sweep');
+  });
+
+  it('reads «on Saturday» as today when today is Saturday', () => {
+    expect(en('Sweep on Saturday').dueOn).toBe('2026-10-17');
+  });
+
+  it.each<[string, string]>([
+    ['Pay on the 23rd', '2026-10-23'],
+    ['Pay on 23', '2026-10-23'],
+    ['Pay on the 5th', '2026-11-05'],
+    ['Call the plumber on october 23', '2026-10-23'],
+    ['Call the plumber on the 23rd of october', '2026-10-23'],
+    ['Call the plumber on 23 october', '2026-10-23'],
+    ['Call the plumber October 23rd', '2026-10-23'],
+    ['Pay on oct 3', '2027-10-03'],
+  ])('%s → %s', (text, due) => {
+    const result = en(text);
+    expect(result.dueOn).toBe(due);
+    expect(result.title).toBe(text.startsWith('Pay') ? 'Pay' : 'Call the plumber');
+  });
+
+  it('ignores «on february 31»', () => {
+    const result = en('Pay on february 31');
+    expect(result.dueOn).toBeNull();
+    expect(result.title).toBe('Pay on february 31');
+  });
+
+  it.each([
+    'Walk the dog in the morning',
+    'Watch the world of tomorrow',
+    "Make tomorrow's lunch",
+    'Water every morning',
+  ])('«%s» has no date', (text) => {
+    const result = en(text);
+    expect(result.dueOn).toBeNull();
+    expect(result.title).toBe(text);
+  });
+
+  it('does not apply a date that would leave the title empty', () => {
+    expect(en('tomorrow').title).toBe('tomorrow');
+    expect(en('tomorrow').dueOn).toBeNull();
+  });
+
+  it('does not read a date word inside a longer word', () => {
+    expect(en('Read todays paper').dueOn).toBeNull();
+  });
+
+  it.each<[string, { kind: string; every?: number; days?: number[]; day?: number }]>([
+    ['Water every day', { kind: 'interval', every: 1 }],
+    ['Water daily', { kind: 'interval', every: 1 }],
+    ['Water every 3 days', { kind: 'interval', every: 3 }],
+    ['Water every monday', { kind: 'weekly', days: [1] }],
+    ['Water every thursday and monday', { kind: 'weekly', days: [1, 4] }],
+    ['Water every monday, wednesday and friday', { kind: 'weekly', days: [1, 3, 5] }],
+    ['Water every monday, wednesday, and friday', { kind: 'weekly', days: [1, 3, 5] }],
+    ['Water every month', { kind: 'monthly', day: 17 }],
+  ])('%s', (text, recurrence) => {
+    const result = en(text);
+    expect(result.title).toBe('Water');
+    expect(result.recurrence).toEqual(recurrence);
+  });
+
+  it('reads «every month» on the due day when there is one', () => {
+    const result = en('Pay every month on the 23rd');
+    expect(result.dueOn).toBe('2026-10-23');
+    expect(result.recurrence).toEqual({ kind: 'monthly', day: 23 });
+    expect(result.title).toBe('Pay');
+  });
+
+  it('reads «every week» on the due weekday', () => {
+    expect(en('Sweep every week on monday').recurrence).toEqual({ kind: 'weekly', days: [1] });
+  });
+
+  it.each(['Water every 0 days', 'Water every 400 days'])('rejects «%s»', (text) => {
+    expect(en(text).recurrence).toBeNull();
+  });
+
+  it('reads «for Segundo» and «@seg»', () => {
+    expect(en('Clean for Segundo').assigneeId).toBe('m-segundo');
+    expect(en('Clean @seg').assigneeId).toBe('m-segundo');
+    expect(en('Clean for Ana María').title).toBe('Clean');
+  });
+
+  it.each(['Buy food for the dog', 'Save a seat for me', 'Buy a gift for Lucy'])(
+    '«%s» has no assignee and keeps its title',
+    (text) => {
+      const result = en(text);
+      expect(result.assigneeId).toBeNull();
+      expect(result.title).toBe(text);
+    },
+  );
+
+  it.each<[string, string, string]>([
+    ['Mop in the kitchen', 'kitchen', 'Mop'],
+    ['Clean bathroom', 'bathroom', 'Clean'],
+    ['Tidy the living room', 'living_room', 'Tidy'],
+    ['Tidy in the bedroom', 'bedroom', 'Tidy'],
+    ['Sweep the terrace', 'outdoor', 'Sweep'],
+    ['Water in the garden', 'outdoor', 'Water'],
+    ['Clean the mirror in the bathroom', 'bathroom', 'Clean the mirror'],
+    ['Clean bathroom tomorrow', 'bathroom', 'Clean'],
+  ])('%s → %s', (text, room, title) => {
+    const result = en(text);
+    expect(result.room).toBe(room);
+    expect(result.title).toBe(title);
+  });
+
+  it.each(['Kitchen scales', 'Do the laundry', 'Clean the toilet', 'Do another'])(
+    '«%s» has no room',
+    (text) => {
+      expect(en(text).room).toBeNull();
+    },
+  );
+});

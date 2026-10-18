@@ -38,7 +38,10 @@ export type QuickRules = {
   relativeGuards: readonly string[];
   /** Group `day`: a key of `weekdays`. */
   weekday: RegExp;
-  /** Group `day`: digits; optional group `month`: a key of `months`. */
+  /**
+   * Group `day`: digits; optional group `month`: a key of `months`. A language that also writes
+   * the month first («october 23») uses `dayAlt` and `monthAlt` for that order.
+   */
   dayOfMonth: RegExp;
   everyDay: RegExp;
   /** Group `days`: weekday names joined by `weekdayListSeparator`. */
@@ -182,9 +185,10 @@ function dueCandidates(folded: string, rules: QuickRules, today: string): Candid
     out.push({ start, end, apply: (d) => (d.dueOn = dueOn) });
   }
   for (const { start, end, groups } of matches(rules.dayOfMonth, folded)) {
-    const day = Number(groups.day);
+    const day = Number(groups.day ?? groups.dayAlt);
     if (!(day >= 1 && day <= 31)) continue;
-    const month = groups.month === undefined ? undefined : rules.months[groups.month];
+    const monthName = groups.month ?? groups.monthAlt;
+    const month = monthName === undefined ? undefined : rules.months[monthName];
     const dueOn =
       month === undefined ? nextDayOfMonth(today, day) : nextDayOfYear(today, month, day);
     if (dueOn === null) continue;

@@ -13,7 +13,7 @@ import type { MemberMark } from '@/domain/members/marks';
 import { syncMonthly } from '@/domain/recurrence/form';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
-import { dayHeading } from '@/domain/tasks/labels';
+import { dayInSentence } from '@/domain/tasks/labels';
 import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import type { Member } from '@/features/households/api';
@@ -171,10 +171,7 @@ export function TaskForm({
   // max(dueOn, today).
   const nextDate =
     values.recurrence !== null && values.dueOn !== null
-      ? dayHeading(
-          calculateNextOccurrence(values.recurrence, values.dueOn, today),
-          today,
-        ).toLowerCase()
+      ? dayInSentence(calculateNextOccurrence(values.recurrence, values.dueOn, today), today)
       : null;
 
   const assigneeMember = members.find((m) => m.userId === values.assigneeId);

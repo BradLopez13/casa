@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode
 import { useRouter } from 'expo-router';
 import { ScrollView, SectionList, Text, View } from 'react-native';
 import { addDays } from '@/domain/tasks/dates';
-import { dayHeading } from '@/domain/tasks/labels';
+import { dayInSentence } from '@/domain/tasks/labels';
 import { weekStrip, type StripDay } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
 import { weekLine } from '@/domain/tasks/weekLine';
@@ -40,13 +40,12 @@ import { useListEndPadding } from '@/ui/useTabBarClearance';
 /** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
 function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
   const { today, userId, membership } = screen;
-  const heading = dayHeading(day, today);
   const placeholder =
     day === today
       ? t('today.quickAdd')
       : day === addDays(today, 1)
         ? t('tasks.quickAddTomorrow')
-        : t('tasks.quickAddDay', { day: heading.toLowerCase() });
+        : t('tasks.quickAddDay', { day: dayInSentence(day, today) });
   return (
     <QuickAdd
       testID="tasks.quick-add"
@@ -69,9 +68,7 @@ function EmptyDay({ day, today }: { day: string; today: string }) {
   return (
     <View style={{ gap: space(1), alignItems: 'flex-start' }}>
       <Text style={{ color: colors.muted, fontSize: 16 }}>
-        {named
-          ? t('tasks.dayEmptyNamed', { day: dayHeading(day, today).toLowerCase() })
-          : t('tasks.dayEmpty')}
+        {named ? t('tasks.dayEmptyNamed', { day: dayInSentence(day, today) }) : t('tasks.dayEmpty')}
       </Text>
       <Button
         testID="tasks.add-for-day"

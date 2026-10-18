@@ -27,6 +27,30 @@ describe('categorize', () => {
   });
 });
 
+describe('categorize in English', () => {
+  it('uses the English dictionary', () => {
+    expect(categorize('milk', undefined, 'en')).toBe('dairy_eggs');
+    expect(categorize('apples', undefined, 'en')).toBe('produce');
+    expect(categorize('toilet paper', undefined, 'en')).toBe('hygiene');
+    expect(categorize('dish soap', undefined, 'en')).toBe('cleaning');
+    expect(categorize('whole wheat bread', undefined, 'en')).toBe('bakery');
+  });
+  it('reads the head noun at the end', () => {
+    expect(categorize('orange juice', undefined, 'en')).toBe('drinks');
+    expect(categorize('tomato sauce', undefined, 'en')).toBe('pantry');
+    expect(categorize('oat milk', undefined, 'en')).toBe('dairy_eggs');
+    expect(categorize('strawberry yogurt', undefined, 'en')).toBe('dairy_eggs');
+    expect(categorize('ice cream', undefined, 'en')).toBe('frozen');
+  });
+  it('does not match inside words and falls back to other', () => {
+    expect(categorize('breadboard', undefined, 'en')).toBe('other');
+    expect(categorize('leche', undefined, 'en')).toBe('other');
+  });
+  it('takes Spanish words only with the Spanish dictionary', () => {
+    expect(categorize('milk', undefined, 'es')).toBe('other');
+  });
+});
+
 describe('groupByCategory', () => {
   const items = [
     { id: 1, normalizedName: 'pan' },

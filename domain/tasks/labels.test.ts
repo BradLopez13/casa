@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   dayHeading,
+  dayInSentence,
   dayName,
   dueLabel,
   longDateLabel,
@@ -62,5 +63,49 @@ describe('skippedNotice', () => {
   it('says when the task comes back', () => {
     expect(skippedNotice('2026-10-10', today)).toBe('Saltada. Vuelve mañana.');
     expect(skippedNotice('2026-10-11', today)).toBe('Saltada. Vuelve el domingo 11.');
+  });
+  it('writes the day in lower case inside a sentence', () => {
+    expect(dayInSentence('2026-10-10', today)).toBe('mañana');
+    expect(dayInSentence('2026-10-11', today)).toBe('domingo 11');
+  });
+});
+
+describe('labels on an English phone', () => {
+  const today = '2026-10-09';
+  let en: typeof import('./labels');
+
+  beforeAll(async () => {
+    vi.resetModules();
+    vi.doMock('expo-localization', () => ({ getLocales: () => [{ languageCode: 'en' }] }));
+    en = await import('./labels');
+  });
+  afterAll(() => {
+    vi.doUnmock('expo-localization');
+    vi.resetModules();
+  });
+
+  it('labels relative days in English', () => {
+    expect(en.dueLabel('2026-10-09', today)).toBe('Today');
+    expect(en.dueLabel('2026-10-10', today)).toBe('Tomorrow');
+    expect(en.dueLabel(null, today)).toBe('No date');
+  });
+  it('writes month and weekday names from Intl in English', () => {
+    expect(en.longDateLabel('2026-10-09')).toBe('Friday, October 9');
+    expect(en.dueLabel('2026-12-24', today)).toContain('December');
+  });
+  it('puts the weekday before the day number', () => {
+    expect(en.dayHeading('2026-10-11', today)).toBe('Sunday 11');
+    expect(en.weekdayDay('2026-10-11', 'short')).toBe('Sun 11');
+    expect(en.dayName('2026-10-11', today)).toBe('Sunday');
+  });
+  it('says why a task is late', () => {
+    expect(en.overdueLabel('2026-10-08', today)).toBe('Pending since yesterday');
+    expect(en.overdueLabel('2026-10-05', today)).toBe('Pending since Monday 5');
+    expect(en.overdueLabel('2026-10-02', today)).toBe('Pending since October 2');
+  });
+  it('keeps weekday capitals inside a sentence', () => {
+    expect(en.dayInSentence('2026-10-10', today)).toBe('tomorrow');
+    expect(en.skippedNotice('2026-10-10', today)).toBe('Skipped. Back tomorrow.');
+    expect(en.skippedNotice('2026-10-11', today)).toBe('Skipped. Back on Sunday 11.');
   });
 });

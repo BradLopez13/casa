@@ -1,3 +1,4 @@
+import { locale } from '@/i18n';
 import { normalizeItemName } from './normalize';
 
 export type HistoryEntry = {
@@ -37,6 +38,6 @@ export function usual(
 ): HistoryEntry[] {
   return history
     .filter((e) => !pendingNormalized.has(e.normalizedName))
-    .sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, 'es'))
+    .sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, locale))
     .slice(0, n);
 }

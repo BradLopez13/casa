@@ -2,6 +2,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { Platform, Pressable, Text, View } from 'react-native';
 import { addDays, localDateIso, toLocalDate } from '@/domain/tasks/dates';
 import { isQuickDay, quickDays } from '@/domain/tasks/day-cells';
+import { weekdayDay } from '@/domain/tasks/labels';
 import { locale, t } from '@/i18n';
 import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
@@ -95,7 +96,7 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
 }
 
 function shortDate(iso: string): string {
-  return toLocalDate(iso).toLocaleDateString(locale, { weekday: 'short', day: 'numeric' });
+  return weekdayDay(iso, 'short');
 }
 
 /**

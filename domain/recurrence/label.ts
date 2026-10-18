@@ -1,3 +1,4 @@
+import { joinNames } from '@/domain/members/names';
 import { t, type MessageKey } from '@/i18n';
 import type { IsoWeekday, RecurrenceRule } from './rule';
 
@@ -19,9 +20,23 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function joinNames(names: string[]): string {
-  const last = names[names.length - 1] ?? '';
-  return names.length === 1 ? last : `${names.slice(0, -1).join(', ')} y ${last}`;
+/**
+ * A day of the month as the language counts it: "15" in Spanish, "15th" in English. The four
+ * forms follow the English ordinal rule; Spanish writes all four the same.
+ */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  const key: MessageKey =
+    tens >= 11 && tens <= 13
+      ? 'ordinal.other'
+      : n % 10 === 1
+        ? 'ordinal.one'
+        : n % 10 === 2
+          ? 'ordinal.two'
+          : n % 10 === 3
+            ? 'ordinal.few'
+            : 'ordinal.other';
+  return t(key, { n });
 }
 
 export function recurrenceLabel(rule: RecurrenceRule): string {
@@ -31,12 +46,18 @@ export function recurrenceLabel(rule: RecurrenceRule): string {
     case 'monthly':
       return rule.day === 31
         ? t('recurrence.monthlyLast')
-        : t('recurrence.monthly', { day: rule.day });
+        : t('recurrence.monthly', { day: ordinal(rule.day) });
     case 'weekly': {
       if (sameDays(rule.days, [1, 2, 3, 4, 5, 6, 7])) return t('recurrence.allDays');
       if (sameDays(rule.days, [1, 2, 3, 4, 5])) return t('recurrence.weekdays');
       if (sameDays(rule.days, [6, 7])) return t('recurrence.weekends');
-      return capitalize(joinNames(rule.days.map((d) => t(weekdayKeys[d]))));
+      const names = rule.days.map((d) => t(weekdayKeys[d]));
+      const [only] = names;
+      return capitalize(
+        names.length === 1 && only !== undefined
+          ? t('recurrence.weeklyOne', { day: only })
+          : joinNames(names),
+      );
     }
   }
 }
