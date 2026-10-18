@@ -201,7 +201,7 @@
   "taskForm.titleRequired": "Escribe qué hay que hacer",
   "taskForm.roomLabel": "Estancia",
   "taskForm.assigneeLabel": "Quién",
-  "taskForm.nobody": "Nadie",
+  "taskForm.nobody": "Sin asignar",
   "taskForm.dueLabel": "Cuándo",
   "taskForm.delete": "Borrar tarea",
   "taskForm.deleteTitle": "¿Borrar esta tarea?",

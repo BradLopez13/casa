@@ -38,36 +38,53 @@ export function useRevealFocusedField() {
   // The block last passed for a field, kept while that same field has the focus.
   const group = useRef<{ field: unknown; block: Measurable } | null>(null);
 
-  const reveal = useCallback<Reveal>((block) => {
-    // The browser already scrolls a focused field into view, and there is no soft keyboard.
-    if (Platform.OS === 'web') return;
-    if (block) group.current = { field: TextInput.State.currentlyFocusedInput(), block };
-    // Measured after the frame, once the keyboard avoidance has laid the form out again.
-    requestAnimationFrame(() => {
-      const scroll = ref.current;
-      const field = TextInput.State.currentlyFocusedInput();
-      if (scroll === null || field === null || field === undefined) return;
-      const viewport = scroll.getNativeScrollRef();
-      if (viewport === null) return;
-      const pinned = group.current;
-      const target: Measurable = pinned !== null && pinned.field === field ? pinned.block : field;
-      const keyboard = Keyboard.isVisible() ? Keyboard.metrics() : undefined;
-      viewport.measureInWindow((_x, viewportTop, _width, viewportHeight) => {
-        target.measureInWindow((_fx, fieldTop, _fwidth, fieldHeight) => {
-          const to = revealOffset({
-            fieldTop,
-            fieldHeight,
-            viewportTop,
-            viewportHeight,
-            offset: offset.current,
-            margin: space(4),
-            keyboardTop: keyboard?.screenY,
-          });
-          if (to !== null) scroll.scrollTo({ y: to, animated: true });
+  /** Scrolls just enough to show `target`, the keyboard's top taken into account. */
+  const bring = useCallback((target: Measurable) => {
+    const scroll = ref.current;
+    if (scroll === null) return;
+    const viewport = scroll.getNativeScrollRef();
+    if (viewport === null) return;
+    const keyboard = Keyboard.isVisible() ? Keyboard.metrics() : undefined;
+    viewport.measureInWindow((_x, viewportTop, _width, viewportHeight) => {
+      target.measureInWindow((_fx, fieldTop, _fwidth, fieldHeight) => {
+        const to = revealOffset({
+          fieldTop,
+          fieldHeight,
+          viewportTop,
+          viewportHeight,
+          offset: offset.current,
+          margin: space(4),
+          keyboardTop: keyboard?.screenY,
         });
+        if (to !== null) scroll.scrollTo({ y: to, animated: true });
       });
     });
   }, []);
+
+  /** Brings a block into view with no field focused (a picker that just opened). */
+  const show = useCallback(
+    (block: Measurable | null) => {
+      if (Platform.OS === 'web' || block === null) return;
+      requestAnimationFrame(() => bring(block));
+    },
+    [bring],
+  );
+
+  const reveal = useCallback<Reveal>(
+    (block) => {
+      // The browser already scrolls a focused field into view, and there is no soft keyboard.
+      if (Platform.OS === 'web') return;
+      if (block) group.current = { field: TextInput.State.currentlyFocusedInput(), block };
+      // Measured after the frame, once the keyboard avoidance has laid the form out again.
+      requestAnimationFrame(() => {
+        const field = TextInput.State.currentlyFocusedInput();
+        if (field === null || field === undefined) return;
+        const pinned = group.current;
+        bring(pinned !== null && pinned.field === field ? pinned.block : field);
+      });
+    },
+    [bring],
+  );
 
   useEffect(() => {
     const subscription = Keyboard.addListener('keyboardDidShow', () => reveal());
@@ -82,5 +99,5 @@ export function useRevealFocusedField() {
     },
     onLayout: (_event: LayoutChangeEvent) => reveal(),
   };
-  return { scroll, reveal };
+  return { scroll, reveal, show };
 }

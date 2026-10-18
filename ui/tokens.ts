@@ -195,6 +195,8 @@ export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, tab: 17,
 export const displayFont = 'MPLUSRounded1c_800ExtraBold';
 /** Same family, bold weight: loaded next to the 800 in app/_layout.tsx. */
 export const displayFontBold = 'MPLUSRounded1c_700Bold';
+/** Same family, regular weight: an empty title's placeholder, so the example never reads as typed. */
+export const displayFontRegular = 'MPLUSRounded1c_400Regular';
 
 export const MIN_TOUCH = 44;
 

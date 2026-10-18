@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { recurrenceLabel } from '@/domain/recurrence/label';
@@ -24,6 +25,15 @@ type Props = {
   /** False on a completed or skipped occurrence: the repeat magnet shows its rule but waits. */
   repeatEditable: boolean;
 };
+
+/** One glyph per property, so each magnet says what it holds before its value is read. */
+const GLYPHS: Record<FormField, ComponentProps<typeof Ionicons>['name']> = {
+  room: 'home-outline',
+  assignee: 'person-outline',
+  due: 'calendar-outline',
+  repeat: 'repeat-outline',
+};
+const GLYPH_SIZE = 16;
 
 function Chip({
   field,
@@ -72,7 +82,16 @@ function Chip({
         opacity: pressedOpacity(pressed),
       })}
     >
-      {children}
+      {children ?? (
+        <Ionicons
+          name={GLYPHS[field]}
+          size={GLYPH_SIZE}
+          color={disabled ? off.foreground : colors.muted}
+          style={{ opacity: disabled ? off.labelOpacity : 1 }}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      )}
       <Text
         style={{
           color: disabled ? off.foreground : colors.ink,
@@ -89,8 +108,9 @@ function Chip({
 }
 
 /**
- * The row of property magnets under the title of the task form: each shows its field's current
- * value («Cocina», «Tú», «Hoy», «No se repite») and opens that field's picker, one at a time.
+ * The row of property magnets under the title of the task form: each shows its glyph and its
+ * field's current value («Cocina», «Tú», «Hoy», «No se repite») and opens that field's picker,
+ * one at a time. Whoever does it shows their magnet in place of the person glyph.
  */
 export function PropertyMagnets({
   room,

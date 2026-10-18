@@ -37,7 +37,7 @@ function Choice({ name, children }: { name: string; children: ReactNode }) {
 
 const NOBODY_SLOP = Math.max(0, Math.ceil((MIN_TOUCH - magnetSizes.md) / 2));
 
-/** The "Nadie" choice: a plain circle with a person outline, not the dashed empty magnet of a task. */
+/** The «Sin asignar» choice: a plain circle with a person outline, not the dashed empty magnet of a task. */
 function NobodyChoice({ selected, onPress }: { selected: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return (
