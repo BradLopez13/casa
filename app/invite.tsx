@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native';
 import { toAppError, type AppErrorCode } from '@/data/supabase/errors';
+import { AccountMenu } from '@/features/auth/AccountMenu';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
 import { acceptInvite, getMyMembership } from '@/features/households/api';
@@ -214,9 +215,12 @@ export default function InviteScreen() {
 
   if (session.status !== 'signed-in' || pending.isLoading || phase === 'busy') return null;
 
+  // Signed in: signing out (or deleting the account) waits behind «⋯» on the band.
+  const band = <BrandHeader trailing={<AccountMenu onSignOut={() => void onSignOut()} />} />;
+
   if (phase === 'failed') {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         <ErrorText testID="invite.error">
           {refreshNetwork ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </ErrorText>
@@ -227,14 +231,6 @@ export default function InviteScreen() {
           icon={actionIcons.retry}
           width="hug"
           onPress={() => void refreshMembershipAndLeave()}
-        />
-        <Button
-          testID="invite.sign-out"
-          title={t('auth.signOut')}
-          variant="tertiary"
-          icon={actionIcons.signOut}
-          width="hug"
-          onPress={() => void onSignOut()}
         />
       </CenteredCard>
     );
@@ -247,7 +243,7 @@ export default function InviteScreen() {
 
   if (dead) {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         {title}
         <ErrorText testID="invite.error">{t(errorKey(dead))}</ErrorText>
         <Button
@@ -263,7 +259,7 @@ export default function InviteScreen() {
 
   if (!token) {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         {title}
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button
@@ -282,7 +278,7 @@ export default function InviteScreen() {
   if (preview.isPending) return null;
 
   return (
-    <CenteredCard header={<BrandHeader />}>
+    <CenteredCard header={band}>
       {title}
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('invite.body')}</Text>
       {failure ? <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText> : null}
@@ -301,14 +297,6 @@ export default function InviteScreen() {
         variant="tertiary"
         width="hug"
         onPress={() => void dismiss()}
-      />
-      <Button
-        testID="invite.sign-out"
-        title={t('auth.signOut')}
-        variant="tertiary"
-        icon={actionIcons.signOut}
-        width="hug"
-        onPress={() => void onSignOut()}
       />
     </CenteredCard>
   );

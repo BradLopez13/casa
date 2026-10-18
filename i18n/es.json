@@ -58,6 +58,8 @@
   "auth.forgot.submit": "Guardar y entrar",
   "auth.pendingInvite": "Tienes una invitación pendiente: inicia sesión o crea una cuenta para unirte.",
   "auth.signOut": "Cerrar sesión",
+  "account.menu": "Cuenta",
+  "account.close": "Cerrar",
   "auth.signOutTitle": "¿Cerrar sesión?",
   "auth.signOutMessage": "Tendrás que volver a entrar con tu correo o con Google.",
   "auth.signOutAction": "Cerrar sesión",

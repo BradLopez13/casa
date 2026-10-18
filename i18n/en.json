@@ -58,6 +58,8 @@
   "auth.forgot.submit": "Save and sign in",
   "auth.pendingInvite": "You have a pending invitation: sign in or create an account to join.",
   "auth.signOut": "Sign out",
+  "account.menu": "Account",
+  "account.close": "Close",
   "auth.signOutTitle": "Sign out?",
   "auth.signOutMessage": "You will have to sign in again with your email or with Google.",
   "auth.signOutAction": "Sign out",
