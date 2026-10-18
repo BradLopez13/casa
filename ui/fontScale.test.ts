@@ -9,10 +9,8 @@ const DIRS = ['features', 'ui/components', 'app'];
 // Only display titles, the nav rail, tab labels and the fixed-circle magnet may cap scaling.
 const ALLOWED = [
   'ui/components/ScreenTitle.tsx',
-  'ui/components/DoorHeader.tsx',
   'ui/components/Magnet.tsx',
   'ui/components/FridgeRefresh.tsx',
-  'app/(tabs)/settings.tsx',
   'features/navigation/NavigationRail.tsx',
   'features/navigation/FridgeTabBar.tsx',
 ];

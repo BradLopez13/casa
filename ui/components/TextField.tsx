@@ -98,7 +98,7 @@ export function TextField({
               bottom: -4,
               borderWidth: 2,
               borderColor: colors.focusRing,
-              borderRadius: radii.note + 4,
+              borderRadius: radii.note + 4, // decorativo: anillo de foco concéntrico con el campo
             }}
           />
         ) : null}

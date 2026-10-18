@@ -104,7 +104,7 @@ const COMPACT_CHILDREN_MIN = 240;
 
 /**
  * A door headline in the display face (Rounded 800, 32 on 38; 24 in a compact door), with its
- * count a point larger in the same colour. It grows with the phone's text size, capped at 1.3x.
+ * count a point larger in the same colour. It grows with the phone's text size, uncapped (§5.2).
  */
 export function DoorHeadline({
   text,
@@ -124,7 +124,6 @@ export function DoorHeadline({
   return (
     <Text
       testID={testID}
-      maxFontSizeMultiplier={1.3}
       style={{
         color: colors.ink,
         fontFamily: displayFont,

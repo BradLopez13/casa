@@ -157,12 +157,12 @@ export default function ShoppingScreen() {
     }
   };
 
-  // Until the list loads the door has no count to say, so the headline waits empty.
+  // Until the list loads the door has no count to say: a blank headline keeps its line height.
   const line = itemsQuery.data ? doorLine(pending.length) : null;
   const door = (children: ReactNode) => (
     <DoorHeader
       eyebrow={t('shopping.title')}
-      heading={line?.text ?? ''}
+      heading={line?.text ?? ' '}
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
       secondary={t('shopping.doorHint')}

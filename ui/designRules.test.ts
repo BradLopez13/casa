@@ -51,7 +51,9 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   it('no numeric radius literal outside circles and documented decorative pieces', () => {
     const found = offenders(sources, (line) => {
       const value = /\b\w*[rR]adius:\s*(\d+(?:\.\d+)?)/.exec(line)?.[1];
-      if (value === undefined || Number(value) === 0) return false;
+      // A token nudged by a number (`radii.note + 4`) is a radius of its own too.
+      const nudged = /\b\w*[rR]adius:\s*[^,]*[+-]\s*\d/.test(line);
+      if (!nudged && (value === undefined || Number(value) === 0)) return false;
       if (/\/\s*2\b/.test(line)) return false;
       return !line.includes('// decorativo');
     });
@@ -76,9 +78,37 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   });
 
   // §14.5: one pósit per screen.
+  // A `Button` with no `variant` is primary, so the count takes those too, plus `'primary'` inside
+  // a `variant={…}` and any `buttonLook('primary'`.
+  const primaries = (text: string) => {
+    const defaults = [...text.matchAll(/<Button\b[\s\S]*?\/?>/g)].filter(
+      ([opening]) => !/\bvariant=/.test(opening),
+    ).length;
+    const literal = (text.match(/variant="primary"/g) ?? []).length;
+    const ternary = (text.match(/variant=\{[^}]*'primary'[^}]*\}/g) ?? []).length;
+    const looks = (text.match(/buttonLook\(\s*'primary'/g) ?? []).length;
+    return defaults + literal + ternary + looks;
+  };
+  /** Screens with two primaries in the code that are never on screen together. */
+  const NEVER_TOGETHER: Record<string, string> = {
+    // «Invitar» turns secondary while the name is open, and «Guardar» only exists then.
+    'app/(tabs)/settings.tsx': 'Invitar | Guardar el nombre',
+  };
+
   it('at most one primary button per screen', () => {
-    const found = screens.filter((f) => (read(f).match(/variant="primary"/g) ?? []).length > 1);
+    const found = screens
+      .filter((f) => primaries(read(f)) > (NEVER_TOGETHER[f] ? 2 : 1))
+      .map((f) => `${f}: ${primaries(read(f))}`);
     expect(found).toEqual([]);
+  });
+
+  it('counts the default and conditional primaries', () => {
+    expect(primaries('<Button title="a" />\n<Button title="b" variant="tertiary" />')).toBe(1);
+    expect(primaries("<Button\n  title=\"a\"\n  variant={x ? 'secondary' : 'primary'}\n/>")).toBe(
+      1,
+    );
+    expect(primaries('<Button title="a" />\n<Button title="b" variant="primary" />')).toBe(2);
+    expect(primaries("buttonLook('primary', 'default', 'idle', colors)")).toBe(1);
   });
 
   // §2.4b, §14.4: the tabs share one door; the display titles stay on auth and onboarding.

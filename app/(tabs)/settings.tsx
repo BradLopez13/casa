@@ -346,9 +346,7 @@ function NameHeading({
           opacity: pressedOpacity(pressed),
         })}
       >
-        <Text maxFontSizeMultiplier={1.3} style={[titleStyle, { flexShrink: 1 }]}>
-          {name}
-        </Text>
+        <Text style={[titleStyle, { flexShrink: 1 }]}>{name}</Text>
         <Ionicons
           name="create-outline"
           size={20}
