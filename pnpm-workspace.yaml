@@ -6,3 +6,4 @@ nodeLinker: hoisted
 allowBuilds:
   unrs-resolver: false
   supabase: true
+  '@sentry/cli': true

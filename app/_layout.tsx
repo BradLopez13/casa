@@ -48,6 +48,9 @@ import {
   resumeShoppingQueue,
 } from '@/features/shopping/offline';
 import { actionIcons } from '@/ui/actionIcons';
+import { initTelemetry, trackNavigation, withTelemetry } from '@/data/telemetry/sentry';
+
+initTelemetry();
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -221,6 +224,7 @@ function Guard() {
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
   useForgetEndedHousehold(membershipQuery.data);
+  useEffect(() => trackNavigation(navRef), [navRef]);
 
   const signedIn = session.status === 'signed-in';
   useSyncDevice(signedIn ? session.userId : null);
@@ -315,7 +319,7 @@ function ThemedStatusBar() {
   return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
 }
 
-export default function RootLayout() {
+export default withTelemetry(function RootLayout() {
   // Nothing navigates or renders until the display fonts are registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
   const [fontsLoaded, fontError] = useFonts({
@@ -335,4 +339,4 @@ export default function RootLayout() {
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
-}
+});
