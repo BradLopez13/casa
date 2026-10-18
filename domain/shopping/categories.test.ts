@@ -41,6 +41,11 @@ describe('categorize in English', () => {
     expect(categorize('oat milk', undefined, 'en')).toBe('dairy_eggs');
     expect(categorize('strawberry yogurt', undefined, 'en')).toBe('dairy_eggs');
     expect(categorize('ice cream', undefined, 'en')).toBe('frozen');
+    expect(categorize('peanut butter', undefined, 'en')).toBe('pantry');
+    expect(categorize('black pepper', undefined, 'en')).toBe('pantry');
+    expect(categorize('chicken stock', undefined, 'en')).toBe('pantry');
+    expect(categorize('frozen peas', undefined, 'en')).toBe('frozen');
+    expect(categorize('blueberry muffins', undefined, 'en')).toBe('bakery');
   });
   it('does not match inside words and falls back to other', () => {
     expect(categorize('breadboard', undefined, 'en')).toBe('other');

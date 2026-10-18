@@ -403,7 +403,7 @@ describe('quickParse: English, same coverage as Spanish', () => {
   ])('%s → %s', (text, due) => {
     const result = en(text);
     expect(result.dueOn).toBe(due);
-    expect(result.title).toBe(text.includes('the day') ? 'Sweep the' : 'Sweep');
+    expect(result.title).toBe('Sweep');
   });
 
   it('reads «on monday» as the next Monday', () => {
@@ -441,6 +441,7 @@ describe('quickParse: English, same coverage as Spanish', () => {
     'Walk the dog in the morning',
     'Watch the world of tomorrow',
     "Make tomorrow's lunch",
+    'Make tomorrow’s lunch',
     'Water every morning',
   ])('«%s» has no date', (text) => {
     const result = en(text);

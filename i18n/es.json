@@ -371,7 +371,7 @@
   "recurrence.weekends": "Fines de semana",
   "recurrence.monthly": "El día {day} de cada mes",
   "recurrence.monthlyLast": "El último día de cada mes",
-  "recurrence.weeklyOne": "{day}",
+  "recurrence.weeklyDays": "{days}",
   "ordinal.one": "{n}",
   "ordinal.two": "{n}",
   "ordinal.few": "{n}",

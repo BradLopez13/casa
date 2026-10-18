@@ -51,13 +51,8 @@ export function recurrenceLabel(rule: RecurrenceRule): string {
       if (sameDays(rule.days, [1, 2, 3, 4, 5, 6, 7])) return t('recurrence.allDays');
       if (sameDays(rule.days, [1, 2, 3, 4, 5])) return t('recurrence.weekdays');
       if (sameDays(rule.days, [6, 7])) return t('recurrence.weekends');
-      const names = rule.days.map((d) => t(weekdayKeys[d]));
-      const [only] = names;
-      return capitalize(
-        names.length === 1 && only !== undefined
-          ? t('recurrence.weeklyOne', { day: only })
-          : joinNames(names),
-      );
+      const days = joinNames(rule.days.map((d) => t(weekdayKeys[d])));
+      return capitalize(t('recurrence.weeklyDays', { days }));
     }
   }
 }

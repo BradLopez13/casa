@@ -71,8 +71,8 @@ const room = alt(ROOMS);
 const suffix = '(?:st|nd|rd|th)?';
 
 export const RULES_EN: QuickRules = {
-  // «tomorrow's lunch» is a noun phrase, not a date.
-  relative: new RegExp(`(?:for )?(?<rel>${alt(RELATIVE)})(?!'s)`, 'g'),
+  // «tomorrow's lunch» (straight or curly apostrophe, as iOS types it) is a noun phrase.
+  relative: new RegExp(`(?:for )?(?:the )?(?<rel>${alt(RELATIVE)})(?!['’]s)`, 'g'),
   relativeOffsets: RELATIVE,
   // «the world of tomorrow» is not a date.
   relativeGuards: ['of'],
