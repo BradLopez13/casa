@@ -12,7 +12,8 @@ import {
   usePendingInvite,
   useSetPendingInvite,
 } from '@/features/households/pending-invite';
-import { membershipKey } from '@/features/households/queries';
+import { invitePreviewText } from '@/features/households/inviteText';
+import { membershipKey, useInvitePreview } from '@/features/households/queries';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { BrandHeader } from '@/ui/components/BrandHeader';
@@ -67,6 +68,17 @@ export default function InviteScreen() {
   const [persistFailed, setPersistFailed] = useState(false);
   const signedOut = session.status === 'signed-out';
   const stored = useRef(false);
+  // Before accepting: which household, who invites and how many live there.
+  const preview = useInvitePreview(session.status === 'signed-in' ? token : null);
+  const previewCode = preview.error ? toAppError(preview.error).code : null;
+  const previewDead = previewCode !== null && TERMINAL.has(previewCode);
+
+  // A dead invite is forgotten, so the guard does not bring the user back to it.
+  useEffect(() => {
+    if (previewDead) clearPending.mutate();
+    // clearPending is a new object each render; only the outcome matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewDead]);
 
   // Signed out: remember the invite, then sign in; the guard brings the user back here.
   useEffect(() => {
@@ -228,13 +240,16 @@ export default function InviteScreen() {
     );
   }
 
-  const title = <ScreenTitle subtitle={t('brand.tagline')}>{t('invite.title')}</ScreenTitle>;
+  // Without a preview (still loading, offline, or a dead invite) the plain title stays.
+  const text = invitePreviewText(preview.data ?? null);
+  const title = <ScreenTitle subtitle={text.from ?? undefined}>{text.title}</ScreenTitle>;
+  const dead = failure?.terminal ? failure.code : previewDead ? previewCode : null;
 
-  if (failure?.terminal) {
+  if (dead) {
     return (
       <CenteredCard header={<BrandHeader />}>
         {title}
-        <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText>
+        <ErrorText testID="invite.error">{t(errorKey(dead))}</ErrorText>
         <Button
           testID="invite.continue"
           title={t('invite.continue')}
@@ -262,6 +277,9 @@ export default function InviteScreen() {
       </CenteredCard>
     );
   }
+
+  // A blank moment beats a title that changes under the reader's eyes.
+  if (preview.isPending) return null;
 
   return (
     <CenteredCard header={<BrandHeader />}>
