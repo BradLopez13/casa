@@ -12,11 +12,11 @@ appId: com.bradlopez13.casa
             id: sign-in.email
           timeout: 30000
 
-# Sign in as Leo, a fixture user who already owns "Piso Leo", so Hoy has its quick add
+# Sign in as Rosa, a fixture user who already owns "Piso Rosa", so Hoy has its quick add
 - runFlow:
     file: subflows/sign-in.yaml
     env:
-      EMAIL: leo@e2e.dev
+      EMAIL: rosa@e2e.dev
 - extendedWaitUntil:
     visible:
       id: today.door-line

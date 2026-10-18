@@ -318,10 +318,8 @@ export function DoorHeader({
       style={{
         ...frame,
         paddingTop: top + space(3),
-        paddingBottom: space(6),
-        // The handle hangs half below the edge: the door stays above what follows it, so that
-        // half is drawn and touched over the list header's top padding.
-        zIndex: handle ? 1 : undefined,
+        // With a handle the bottom padding is its 44 dp touch box, so the box is inside the door.
+        paddingBottom: handle ? MIN_TOUCH : space(6),
       }}
     >
       {/* The handle only exists where it works: a door outside a refreshing pane has none. */}
@@ -332,9 +330,9 @@ export function DoorHeader({
             position: 'absolute',
             left: 0,
             right: 0,
-            // A 44 x 44 touch target centred on the door's bottom edge, inside its own box: Android
-            // drops a hitSlop that reaches past the parent.
-            bottom: -MIN_TOUCH / 2,
+            // A 44 x 44 touch target inside the door's bottom padding: Android drops taps that
+            // reach past the parent, so only 2 dp of the bar overflow.
+            bottom: 0,
             height: MIN_TOUCH,
             alignItems: 'center',
           }}
@@ -347,14 +345,15 @@ export function DoorHeader({
               width: MIN_TOUCH,
               height: MIN_TOUCH,
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'flex-end',
             }}
           >
-            {/* 36 x 4 drawn. */}
+            {/* 36 x 4 drawn, sitting on the door's edge. */}
             <View
               style={{
                 width: 36,
                 height: 4,
+                marginBottom: -2,
                 borderRadius: radii.pill,
                 backgroundColor: colors.outline,
               }}

@@ -276,9 +276,8 @@ function TasksStack({
         ListHeaderComponent={
           <>
             {door}
-            {/* space(6) clears the lower half of the door's handle (22 dp) above the quick add. */}
             {mode === 'week' ? (
-              <View style={[column, { paddingTop: space(6) }]}>
+              <View style={[column, { paddingTop: space(4) }]}>
                 <DayQuickAdd screen={screen} day={day} />
                 {sections.length > 0 && weekDayPane(sections, day, today).day.count === 0 ? (
                   <View style={{ paddingTop: space(4) }}>
@@ -287,7 +286,7 @@ function TasksStack({
                 ) : null}
               </View>
             ) : (
-              <View style={[column, { paddingTop: space(6), gap: space(2) }]}>
+              <View style={[column, { paddingTop: space(4), gap: space(2) }]}>
                 <DayQuickAdd screen={screen} day={today} />
                 <IdeasButton />
               </View>
