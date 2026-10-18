@@ -190,6 +190,7 @@ jobs:
             pnpm e2e:env
             cmp .env.e2e e2e-apk/.env.e2e || { echo "The APK was built for another Supabase key"; exit 1; }
             adb install e2e-apk/android/app/build/outputs/apk/release/app-release.apk
+            bash scripts/e2e-locale.sh es true
             set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh ${{ matrix.shard }}) --format junit --output e2e-report.xml
             if [ "${{ matrix.shard }}" = 1 ]; then set -a; . ./.env.e2e; set +a; bash scripts/e2e-locale.sh en maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh english) --format junit --output e2e-report-english.xml; fi
 

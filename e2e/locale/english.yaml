@@ -1,8 +1,8 @@
-# The app in English. Run by CI inside `bash scripts/e2e-locale.sh en maestro test e2e/english.yaml`,
+# The app in English. Run by CI inside `bash scripts/e2e-locale.sh en maestro test e2e/locale/english.yaml`,
 # which sets the emulator language before this flow launches the app and restores es-ES after it
 # (adb root; setprop persist.sys.locale en-US; setprop ctl.restart zygote). The app reads the phone
 # language once at JS start, so a flow on a Spanish emulator fails here: it is not part of the
-# plain shard run (scripts/e2e-shard.sh english prints it apart).
+# plain shard run (scripts/e2e-shard.sh english prints it apart) nor of `pnpm e2e` (it lives in e2e/locale/).
 appId: com.bradlopez13.casa
 ---
 - clearState
@@ -18,7 +18,7 @@ appId: com.bradlopez13.casa
 
 # Rita is a fixture user who already owns "Piso Rita"
 - runFlow:
-    file: subflows/sign-in.yaml
+    file: ../subflows/sign-in.yaml
     env:
       EMAIL: rita@e2e.dev
 - extendedWaitUntil:

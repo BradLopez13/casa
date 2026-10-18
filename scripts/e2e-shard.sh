@@ -14,11 +14,11 @@ shards=(
 )
 
 if [ "${1:-}" = "english" ]; then
-  echo e2e/english.yaml
+  echo e2e/locale/english.yaml
   exit 0
 fi
 
-expected="$(find e2e -maxdepth 1 -name '*.yaml' ! -name config.yaml ! -name english.yaml -exec basename {} .yaml \; | sort)"
+expected="$(find e2e -maxdepth 1 -name '*.yaml' ! -name config.yaml -exec basename {} .yaml \; | sort)"
 actual="$(printf '%s\n' ${shards[*]} | sort)"
 if [ "$expected" != "$actual" ]; then
   echo "e2e-shard: the shards must list every flow in e2e/ exactly once:" >&2
