@@ -193,7 +193,10 @@ export function QuantityPill({
       <Animated.View
         entering={fade}
         testID={`shopping.item.${itemId}.quantity.stepper`}
+        // Like the closed pill, it never takes more than half the row, so the name stays.
         style={{
+          flexShrink: 1,
+          maxWidth: '50%',
           flexDirection: 'row',
           alignItems: 'center',
           marginLeft: space(2),
@@ -206,7 +209,9 @@ export function QuantityPill({
         <Text
           accessibilityLiveRegion="polite"
           accessibilityLabel={label}
+          numberOfLines={1}
           style={{
+            flexShrink: 1,
             minWidth: space(5),
             textAlign: 'center',
             color: colors.ink,

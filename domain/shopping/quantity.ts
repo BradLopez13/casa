@@ -2,8 +2,9 @@
 const MAX_LENGTH = 20;
 const MAX_COUNT = 99;
 
-// A whole number from 1 to 99 at the start, then anything that is not a decimal part.
-const STEPPABLE = /^([1-9]\d?)(?![\d.,]\d|\d)(.*)$/s;
+// A whole number from 1 to 99 at the start, then anything that is not a decimal, a fraction
+// («1/2») or a range («2-3»).
+const STEPPABLE = /^([1-9]\d?)(?![\d.,/-]\d|\d)(.*)$/s;
 
 /**
  * The number a quantity starts with and the unit after it («2 kg» → 2, « kg»), or null when it

@@ -6,7 +6,7 @@ describe('quantityStep', () => {
   it('keeps the unit after the number', () =>
     expect(quantityStep('2 kg')).toEqual({ count: 2, unit: ' kg' }));
   it('reads a bare number', () => expect(quantityStep('6')).toEqual({ count: 6, unit: '' }));
-  it.each(['1,5 kg', '0.5 l', 'un poco', '0', '100', ''])('cannot step %j', (q) =>
+  it.each(['1,5 kg', '0.5 l', 'un poco', '0', '100', '', '1/2 kg', '2-3'])('cannot step %j', (q) =>
     expect(quantityStep(q)).toBeNull(),
   );
 });

@@ -43,6 +43,7 @@ import { useReminders } from '@/features/reminders/useReminders';
 import {
   addKey,
   boughtKey,
+  quantityKey,
   buildShoppingMutationDefaults,
   persistBuster,
   persistDehydrateOptions,
@@ -100,6 +101,7 @@ function PersistedQueries({ children }: { children: ReactNode }) {
     const defaults = buildShoppingMutationDefaults(queryClient, notify);
     queryClient.setMutationDefaults(addKey, defaults.add);
     queryClient.setMutationDefaults(boughtKey, defaults.bought);
+    queryClient.setMutationDefaults(quantityKey, defaults.quantity);
     return null;
   });
   if (status === 'loading') return null;

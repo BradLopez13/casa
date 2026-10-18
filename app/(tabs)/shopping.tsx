@@ -120,10 +120,8 @@ export default function ShoppingScreen() {
 
   const changeQuantity = (item: ShoppingItem, quantity: string | null) => {
     if (householdId === undefined || quantity === item.quantity) return;
-    setQuantity.mutate(
-      { id: item.id, householdId, name: item.name, quantity },
-      { onError: (error) => notify(shoppingErrorMessage(error)) },
-    );
+    // The registered default rolls back and explains a failure, even after this screen is gone.
+    setQuantity.mutate({ id: item.id, householdId, name: item.name, quantity });
   };
 
   const [confirmingClear, setConfirmingClear] = useState(false);
