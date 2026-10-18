@@ -40,9 +40,7 @@ export async function listShoppingItems(householdId: string): Promise<ShoppingIt
   const data = await unwrap(
     supabase
       .from('shopping_items')
-      .select(
-        'id, name, normalized_name, quantity, created_at, created_by, bought_at, bought_by',
-      )
+      .select('id, name, normalized_name, quantity, created_at, created_by, bought_at, bought_by')
       .eq('household_id', householdId)
       .is('cleared_at', null),
   );
@@ -110,4 +108,3 @@ export async function deleteShoppingItem(id: string): Promise<void> {
 export async function clearBoughtItems(householdId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('clear_bought_items', { p_household_id: householdId }));
 }
-
