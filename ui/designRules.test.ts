@@ -145,4 +145,11 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const found = tabs.filter((f) => /\bScreenTitle\b|\btitleSize=/.test(read(f)));
     expect(found).toEqual([]);
   });
+
+  // §36: the pósit's edge is a token of its own, so high contrast can turn it slate.
+  it('the pósit edge is always accentEdge', () => {
+    const accentBorder = /border(Color)?:\s*colors\.accent\b/;
+    expect(offenders(sources, (line) => accentBorder.test(line))).toEqual([]);
+    expect(read('ui/buttonLook.ts')).not.toMatch(accentBorder);
+  });
 });

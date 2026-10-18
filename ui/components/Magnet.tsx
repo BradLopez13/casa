@@ -4,6 +4,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
 import { pressedOpacity } from '../buttonLook';
 import { magnetCheckStyle, type MagnetCheck } from '../magnetCheck';
+import { positEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import {
   displayFont,
@@ -86,6 +87,8 @@ export function Magnet({
         ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
           : {}),
+        // A pósit magnet on paper with high contrast: the slate edge, over the ring.
+        ...positEdge(fill, colors),
         ...depth,
       }}
     >

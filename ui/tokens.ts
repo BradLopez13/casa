@@ -24,7 +24,7 @@ export type Palette = {
   accent: string;
   /** Text and icons on the accent fill. */
   onAccent: string;
-  /** Edge of the accent pill. Equals `accent` (no visible edge): the pill is told apart by its shadow in light mode. */
+  /** Edge of every pósit surface (the primary pill, a pósit magnet). Equals `accent` (no visible edge) except with the system high contrast in light, where it is slate (`highContrast`). */
   accentEdge: string;
   /** Fill of a chosen option or an "on" track: slate in light, chalk in dark (never the pósit, which is for doing). At least 3:1 on page, note and door. */
   selection: string;
@@ -160,6 +160,16 @@ export const palettes: Record<Scheme, Palette> = {
     light: { top: '#2B3A40', text: '#DCE3E1', shelf: 'rgba(242,208,75,0.40)' },
     scrim: 'rgba(8,12,14,0.65)',
   },
+};
+
+/**
+ * What the system's high contrast ("High contrast text" on Android, "Increase contrast" on iOS)
+ * changes: muted text takes its stronger tone, and in light the pósit, barely 1.4:1 on paper,
+ * gets a slate edge. In dark the pósit already stands out on slate.
+ */
+export const highContrast: Record<Scheme, Partial<Palette>> = {
+  light: { muted: palettes.light.mutedStrong, accentEdge: '#2E3B41' },
+  dark: { muted: palettes.dark.mutedStrong },
 };
 
 export type NoteEdge = { borderWidth: number; borderColor: string };

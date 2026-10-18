@@ -1,6 +1,7 @@
 import { useColorScheme } from 'react-native';
 import { useHighContrast } from './a11y';
 import {
+  highContrast,
   noteEdges,
   palettes,
   radii,
@@ -33,6 +34,6 @@ export function useTheme(): Theme {
   const scheme: Scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const strong = useHighContrast();
   const base = palettes[scheme];
-  const colors = strong ? { ...base, muted: base.mutedStrong } : base;
+  const colors = strong ? { ...base, ...highContrast[scheme] } : base;
   return { scheme, colors, shadows: shadows[scheme], noteEdge: noteEdges[scheme], radii, space };
 }

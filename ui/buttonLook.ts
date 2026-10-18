@@ -46,7 +46,7 @@ export function buttonLook(
       ? { fill: colors.red, border: colors.red, foreground: colors.onRed, borderStyle: 'solid' }
       : {
           fill: colors.accent,
-          border: colors.accent,
+          border: colors.accentEdge,
           foreground: colors.onAccent,
           borderStyle: 'solid',
         };

@@ -132,3 +132,17 @@ describe('pressedOpacity', () => {
     expect(pressedOpacity(false)).toBe(1);
   });
 });
+
+describe('buttonLook with high contrast', () => {
+  const colors = { ...palettes.light, accentEdge: '#2E3B41' };
+
+  it('edges the primary with accentEdge', () => {
+    expect(buttonLook('primary', 'default', 'enabled', colors).border).toBe('#2E3B41');
+    expect(buttonLook('primary', 'default', 'busy', colors).border).toBe('#2E3B41');
+  });
+
+  it('keeps the destructive and the disabled edges', () => {
+    expect(buttonLook('primary', 'destructive', 'enabled', colors).border).toBe(colors.red);
+    expect(buttonLook('primary', 'default', 'disabled', colors).border).toBe(colors.outline);
+  });
+});
