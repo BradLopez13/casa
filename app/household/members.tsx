@@ -438,6 +438,7 @@ export default function MembersScreen() {
                 pending?.kind === 'leave' && onlyMember
                   ? 'members.confirm.leaveLastMessage'
                   : dialog.message,
+                { name: targetName },
               )
             : ''
         }

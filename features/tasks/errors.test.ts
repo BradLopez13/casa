@@ -7,8 +7,8 @@ describe('taskErrorMessage', () => {
     expect(taskErrorMessage(new AppError('TASK_NOT_FOUND'))).toBe('Esta tarea ya no existe.'));
   it('falls back to UNKNOWN for other codes and errors', () => {
     expect(taskErrorMessage(new AppError('NOT_OWNER'))).toBe(
-      'Algo ha fallado. Inténtalo de nuevo.',
+      'Algo ha ido mal. Inténtalo de nuevo.',
     );
-    expect(taskErrorMessage(new Error('x'))).toBe('Algo ha fallado. Inténtalo de nuevo.');
+    expect(taskErrorMessage(new Error('x'))).toBe('Algo ha ido mal. Inténtalo de nuevo.');
   });
 });

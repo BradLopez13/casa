@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { dayHeading, dayName, dueLabel, longDateLabel, overdueLabel } from './labels';
+import {
+  dayHeading,
+  dayName,
+  dueLabel,
+  longDateLabel,
+  overdueLabel,
+  skippedNotice,
+} from './labels';
 
 describe('dueLabel', () => {
   const today = '2026-10-04';
@@ -48,4 +55,12 @@ describe('dayName', () => {
   });
   it('uses the weekday alone otherwise, capitalised like Hoy and Mañana', () =>
     expect(dayName('2026-10-11', today)).toBe('Domingo'));
+});
+
+describe('skippedNotice', () => {
+  const today = '2026-10-09';
+  it('says when the task comes back', () => {
+    expect(skippedNotice('2026-10-10', today)).toBe('Saltada. Vuelve mañana.');
+    expect(skippedNotice('2026-10-11', today)).toBe('Saltada. Vuelve el domingo 11.');
+  });
 });

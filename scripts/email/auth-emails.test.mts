@@ -50,6 +50,12 @@ describe('auth emails', () => {
     expect(html).toContain('{{ else }}Hola.{{ end }}');
   });
 
+  it('the password notice names the app link and asks for a new password', () => {
+    const html = authEmails().password_changed.html;
+    expect(html).toContain('pulsa «¿Has olvidado tu contraseña?» y elige una nueva.');
+    expect(html).not.toContain('Olvidaste');
+  });
+
   it('subjects follow the brand voice', () => {
     const emails = authEmails();
     expect(emails.confirmation.subject).toBe('Tu código de Nido');

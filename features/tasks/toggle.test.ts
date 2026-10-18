@@ -158,7 +158,7 @@ describe('buildToggleOptions', () => {
       const list = queryClient.getQueryData<TaskItem[]>(key);
       expect(list).toContainEqual(next);
       expect(list?.find((t) => t.id === 'r')).toEqual(doneDaily);
-      expect(notify).toHaveBeenCalledWith('La siguiente ya está hecha; no se puede reabrir esta.');
+      expect(notify).toHaveBeenCalledWith('No puedes reabrirla porque la siguiente ya está hecha.');
     });
 
     it('explains INVALID_TODAY', async () => {

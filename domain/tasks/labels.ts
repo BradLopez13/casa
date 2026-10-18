@@ -47,3 +47,11 @@ export function dayName(date: string, today: string): string {
   const weekday = toLocalDate(date).toLocaleDateString(locale, { weekday: 'long' });
   return weekday.charAt(0).toLocaleUpperCase(locale) + weekday.slice(1);
 }
+
+/** Notice after skipping a repeat: "Saltada. Vuelve mañana." or "Saltada. Vuelve el sábado 11." */
+export function skippedNotice(next: string, today: string): string {
+  const day = dayHeading(next, today).toLowerCase();
+  return next <= addDays(today, 1)
+    ? t('tasks.skippedSoon', { day })
+    : t('tasks.skipped', { date: day });
+}

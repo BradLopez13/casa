@@ -130,7 +130,7 @@ const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
         paragraph('Hola. La contraseña de tu cuenta de Nido ({{ .Email }}) acaba de cambiar.'),
         paragraph('Si has sido tú, no tienes que hacer nada.'),
         paragraph(
-          'Si no has sido tú, abre Nido, pulsa «¿Olvidaste la contraseña?» y elige otra cuanto antes.',
+          'Si no has sido tú, abre Nido, pulsa «¿Has olvidado tu contraseña?» y elige una nueva.',
         ),
       ].join('\n                '),
       footer: 'Este aviso se envía siempre que cambia la contraseña de tu cuenta.',

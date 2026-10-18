@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
-import { dayHeading } from '@/domain/tasks/labels';
+import { skippedNotice } from '@/domain/tasks/labels';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -115,7 +115,7 @@ function EditTaskScreen() {
       {
         onSuccess: () => {
           close();
-          notify(t('tasks.skipped', { date: dayHeading(next, today).toLowerCase() }));
+          notify(skippedNotice(next, today));
         },
       },
     );
