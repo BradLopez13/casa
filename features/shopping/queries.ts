@@ -7,31 +7,23 @@ import {
 } from '@tanstack/react-query';
 import { useMemo, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
-import type { Category } from '@/domain/shopping/categories';
 import {
   clearBoughtItems,
   deleteShoppingItem,
-  listItemCategories,
   listShoppingItems,
-  setCategoryOrder,
   shoppingHistory,
   updateShoppingItem,
-  type ItemCategories,
 } from './api';
 import {
   addKey,
   boughtKey,
-  categoryKey,
   invalidateShoppingWhenIdle,
-  itemCategoriesKey,
   SHOPPING_SCOPE,
   shoppingQueryOptions,
   type AddContext,
   type AddVars,
   type BoughtContext,
   type BoughtVars,
-  type CategoryContext,
-  type CategoryVars,
 } from './offline';
 
 export const shoppingKey = (householdId: string | undefined) => ['shopping', householdId] as const;
@@ -56,22 +48,6 @@ export function useShoppingHistory(householdId: string | undefined) {
   });
 }
 
-/**
- * The household's aisle order (null for the default) and its corrections, by normalized name.
- * Refreshed by the household broadcast (corrections and households) like the list.
- */
-export function useItemCategories(householdId: string | undefined) {
-  const query = useQuery({
-    queryKey: itemCategoriesKey(householdId),
-    queryFn: () => listItemCategories(householdId as string),
-    enabled: householdId !== undefined,
-    ...shoppingQueryOptions,
-  });
-  const data = query.data;
-  const overrides = useMemo(() => new Map(data?.overrides ?? []), [data]);
-  return { query, order: data?.order ?? null, overrides };
-}
-
 /** Adds an item, optimistically; queued while offline. Its options are the registered defaults. */
 export function useAddItem() {
   return useMutation<string, AppError, AddVars, AddContext>({ mutationKey: addKey });
@@ -80,32 +56,6 @@ export function useAddItem() {
 /** Marks an item bought or not, optimistically; queued while offline. */
 export function useSetBought() {
   return useMutation<void, AppError, BoughtVars, BoughtContext>({ mutationKey: boughtKey });
-}
-
-/** Changes an item's category for the household, optimistically; queued while offline. */
-export function useSetCategory() {
-  return useMutation<void, AppError, CategoryVars, CategoryContext>({ mutationKey: categoryKey });
-}
-
-/** Saves the household's aisle order; online only, like the other settings. */
-export function useSetCategoryOrder() {
-  const queryClient = useQueryClient();
-  return useMutation<void, AppError, { householdId: string; order: readonly Category[] }>({
-    mutationKey: ['shopping-categories', 'order'],
-    // Each call sends the whole order: quick taps must arrive in the order they were made.
-    scope: { id: 'category-order' },
-    networkMode: 'online',
-    mutationFn: ({ order }) => setCategoryOrder(order),
-    onMutate: async ({ householdId, order }) => {
-      const key = itemCategoriesKey(householdId);
-      await queryClient.cancelQueries({ queryKey: key });
-      queryClient.setQueryData<ItemCategories>(key, (current) =>
-        current ? { ...current, order: [...order] } : current,
-      );
-    },
-    onSettled: (_data, _error, { householdId }) =>
-      queryClient.invalidateQueries({ queryKey: itemCategoriesKey(householdId) }),
-  });
 }
 
 export type EditVars = { id: string; name: string; quantity: string | null };

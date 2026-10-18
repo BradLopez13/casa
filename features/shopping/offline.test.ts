@@ -10,13 +10,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
-import { addShoppingItem, setItemBought, setItemCategory, type ItemCategories } from './api';
+import { addShoppingItem, setItemBought } from './api';
 import {
   addKey,
   boughtKey,
   buildShoppingMutationDefaults,
-  categoryKey,
-  itemCategoriesKey,
   NETWORK_RETRIES,
   persistBuster,
   persistDehydrateOptions,
@@ -26,13 +24,11 @@ import {
   shouldPersistQuery,
   type AddVars,
   type BoughtVars,
-  type CategoryVars,
 } from './offline';
 
 vi.mock('./api', () => ({
   addShoppingItem: vi.fn(),
   setItemBought: vi.fn(),
-  setItemCategory: vi.fn(),
 }));
 
 const key = ['shopping', 'h'];
@@ -44,7 +40,6 @@ const existing: ShoppingItem = {
   name: 'Leche',
   normalizedName: 'leche',
   quantity: '2',
-  category: null,
   createdAt: '2026-10-01T00:00:00.000Z',
   createdBy: 'other',
   boughtAt: null,
@@ -57,7 +52,6 @@ function setup(queryClient = new QueryClient({ defaultOptions: appQueryDefaults 
   const defaults = buildShoppingMutationDefaults(queryClient, notify);
   queryClient.setMutationDefaults(addKey, defaults.add);
   queryClient.setMutationDefaults(boughtKey, defaults.bought);
-  queryClient.setMutationDefaults(categoryKey, defaults.category);
   const add = (vars: AddVars) =>
     new MutationObserver<string, AppError, AddVars>(queryClient, { mutationKey: addKey }).mutate(
       vars,
@@ -66,11 +60,7 @@ function setup(queryClient = new QueryClient({ defaultOptions: appQueryDefaults 
     new MutationObserver<void, AppError, BoughtVars>(queryClient, {
       mutationKey: boughtKey,
     }).mutate(vars);
-  const category = (vars: CategoryVars) =>
-    new MutationObserver<void, AppError, CategoryVars>(queryClient, {
-      mutationKey: categoryKey,
-    }).mutate(vars);
-  return { queryClient, notify, defaults, add, bought, category };
+  return { queryClient, notify, defaults, add, bought };
 }
 
 const list = (queryClient: QueryClient) => queryClient.getQueryData<ShoppingItem[]>(key);
@@ -78,7 +68,6 @@ const list = (queryClient: QueryClient) => queryClient.getQueryData<ShoppingItem
 beforeEach(() => {
   vi.mocked(addShoppingItem).mockReset();
   vi.mocked(setItemBought).mockReset();
-  vi.mocked(setItemCategory).mockReset();
 });
 
 afterEach(() => {
@@ -89,7 +78,6 @@ describe('shouldPersistQuery', () => {
   it('keeps the shopping list, its history, the membership and the members', () => {
     expect(shouldPersistQuery(['shopping', 'h'])).toBe(true);
     expect(shouldPersistQuery(['shopping-history', 'h'])).toBe(true);
-    expect(shouldPersistQuery(['shopping-categories', 'h'])).toBe(true);
     expect(shouldPersistQuery(['membership'])).toBe(true);
     expect(shouldPersistQuery(['members', 'h'])).toBe(true);
     expect(shouldPersistQuery(['tasks', 'h'])).toBe(false);
@@ -101,10 +89,17 @@ describe('shouldPersistMutation', () => {
   it('keeps only the queued shopping mutations, whose functions are registered at start', () => {
     expect(shouldPersistMutation(addKey)).toBe(true);
     expect(shouldPersistMutation(boughtKey)).toBe(true);
-    expect(shouldPersistMutation(categoryKey)).toBe(true);
     expect(shouldPersistMutation(['shopping', 'edit'])).toBe(false);
     expect(shouldPersistMutation(['tasks', 'toggle'])).toBe(false);
     expect(shouldPersistMutation(undefined)).toBe(false);
+  });
+
+  it('drops a persisted category mutation from an older build', () => {
+    const stale = {
+      state: { status: 'pending' },
+      options: { mutationKey: ['shopping', 'category'] },
+    };
+    expect(persistDehydrateOptions.shouldDehydrateMutation?.(stale as never)).toBe(false);
   });
 });
 
@@ -244,7 +239,7 @@ describe('buildShoppingMutationDefaults', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('refreshes the list, history and categories only after the last shopping mutation settles', async () => {
+  it('refreshes the list and history only after the last shopping mutation settles', async () => {
     const { queryClient, add, bought } = setup();
     queryClient.setQueryData(key, []);
     const spy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -255,56 +250,7 @@ describe('buildShoppingMutationDefaults', () => {
       bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' }),
     ]);
     const keys = spy.mock.calls.map((c) => c[0]?.queryKey);
-    expect(keys).toEqual([['shopping'], ['shopping-history'], ['shopping-categories']]);
-  });
-});
-
-describe('category', () => {
-  const categoriesKey = itemCategoriesKey('h');
-  const noCorrections: ItemCategories = { order: null, overrides: [] };
-  const toDrinks: CategoryVars = { id: 'x', householdId: 'h', category: 'drinks' };
-
-  it('moves the item and remembers the name at once, queued while offline', async () => {
-    const { queryClient, category } = setup();
-    queryClient.setQueryData(key, [existing]);
-    queryClient.setQueryData(categoriesKey, noCorrections);
-    onlineManager.setOnline(false);
-
-    const sent = category(toDrinks);
-    await vi.waitFor(() => expect(list(queryClient)?.[0]?.category).toBe('drinks'));
-    expect(queryClient.getQueryData<ItemCategories>(categoriesKey)?.overrides).toEqual([
-      ['leche', 'drinks'],
-    ]);
-    expect(queryClient.getMutationCache().getAll()[0]?.state.isPaused).toBe(true);
-    expect(setItemCategory).not.toHaveBeenCalled();
-
-    vi.mocked(setItemCategory).mockResolvedValue(undefined);
-    onlineManager.setOnline(true);
-    await queryClient.resumePausedMutations();
-    await sent;
-    expect(setItemCategory).toHaveBeenCalledWith('x', 'drinks');
-  });
-
-  it('puts back the item and the correction when the server rejects it', async () => {
-    const { queryClient, notify, category } = setup();
-    const corrected: ItemCategories = { order: null, overrides: [['leche', 'dairy_eggs']] };
-    queryClient.setQueryData(key, [existing]);
-    queryClient.setQueryData(categoriesKey, corrected);
-    vi.mocked(setItemCategory).mockRejectedValue(new AppError('ITEM_NOT_FOUND'));
-    await category(toDrinks).catch(() => undefined);
-    expect(list(queryClient)).toEqual([existing]);
-    expect(queryClient.getQueryData<ItemCategories>(categoriesKey)).toEqual(corrected);
-    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche»');
-  });
-
-  it('reaches the merged item when it follows a merged add', async () => {
-    const { queryClient, add, category } = setup();
-    queryClient.setQueryData(key, [existing]);
-    vi.mocked(addShoppingItem).mockResolvedValue('x');
-    vi.mocked(setItemCategory).mockResolvedValue(undefined);
-    await add(milk);
-    await category({ id: 'a', householdId: 'h', category: 'drinks' });
-    expect(setItemCategory).toHaveBeenCalledWith('x', 'drinks');
+    expect(keys).toEqual([['shopping'], ['shopping-history']]);
   });
 });
 
@@ -357,33 +303,6 @@ describe('restart', () => {
         .getAll()
         .map((m) => m.state.status),
     ).toEqual(['success', 'success']);
-  });
-
-  it('sends a category change queued offline after a restart, with its optimistic state', async () => {
-    const before = setup();
-    before.queryClient.setQueryData(key, [existing]);
-    before.queryClient.setQueryData(itemCategoriesKey('h'), { order: null, overrides: [] });
-    onlineManager.setOnline(false);
-    void before.category({ id: 'x', householdId: 'h', category: 'drinks' }).catch(() => undefined);
-    await vi.waitFor(() => expect(list(before.queryClient)?.[0]?.category).toBe('drinks'));
-
-    const after = restart(before.queryClient);
-    expect(list(after.queryClient)?.[0]?.category).toBe('drinks');
-    expect(
-      after.queryClient.getQueryData<ItemCategories>(itemCategoriesKey('h'))?.overrides,
-    ).toEqual([['leche', 'drinks']]);
-    expect(
-      after.queryClient
-        .getMutationCache()
-        .getAll()
-        .map((m) => m.state.variables),
-    ).toEqual([{ id: 'x', householdId: 'h', category: 'drinks' }]);
-
-    vi.mocked(setItemCategory).mockResolvedValue(undefined);
-    onlineManager.setOnline(true);
-    await resumeShoppingQueue(after.queryClient);
-    expect(setItemCategory).toHaveBeenCalledWith('x', 'drinks');
-    expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
   });
 
   it('resends an add that was in flight when the app closed', async () => {
