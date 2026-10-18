@@ -109,9 +109,18 @@ function startAtWord(pattern: RegExp): RegExp {
   return compiled;
 }
 
-/** Matches that start, and unless `openEnd` also end, on a word boundary. */
+/**
+ * Matches that start, and unless `openEnd` also end, on a word boundary. Walked with `exec`, not
+ * `matchAll`: on Hermes (the app's engine) the matches `matchAll` yields come without `groups`,
+ * and every rule reads its named groups.
+ */
 function* matches(pattern: RegExp, folded: string, openEnd = false) {
-  for (const match of folded.matchAll(startAtWord(pattern))) {
+  const re = startAtWord(pattern);
+  re.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(folded)) !== null) {
+    // An empty match would never move the cursor.
+    if (match[0] === '') re.lastIndex++;
     const start = match.index;
     const end = start + match[0].length;
     if (openEnd || bounded(folded, start, end)) yield { start, end, groups: match.groups ?? {} };
