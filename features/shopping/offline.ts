@@ -37,7 +37,7 @@ const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
 ]);
 
 /**
- * Kept on the device: the shopping list, and its history, plus the membership (an offline cold
+ * Kept on the device: the shopping list and its history, plus the membership (an offline cold
  * start gets past the route guard) and the members (the buyers' magnets).
  */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {

@@ -9,7 +9,7 @@ describe('permissionView', () => {
   it('offers the button when never asked', () => {
     expect(permissionView('undetermined')).toBe('enable');
   });
-  it('points to system settings when denied', () => {
-    expect(permissionView('denied')).toBe('denied');
+  it('shows nothing when denied (the band explains it)', () => {
+    expect(permissionView('denied')).toBe('none');
   });
 });

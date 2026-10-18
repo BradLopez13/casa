@@ -40,6 +40,7 @@ export default function ForgotPasswordScreen() {
     confirmTouched: false,
     submitted: false,
   });
+  const emailRef = useRef<TextInput>(null);
   const codeRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
@@ -72,6 +73,7 @@ export default function ForgotPasswordScreen() {
     const parsed = emailSchema.safeParse(email.trim());
     if (!parsed.success) {
       setErrors({ email: 'auth.errors.emailInvalid' });
+      emailRef.current?.focus();
       return;
     }
     setErrors({});
@@ -155,6 +157,7 @@ export default function ForgotPasswordScreen() {
       {step === 'email' ? (
         <>
           <TextField
+            ref={emailRef}
             testID="forgot-password.email"
             label={t('auth.fields.email')}
             value={email}
@@ -165,6 +168,7 @@ export default function ForgotPasswordScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            spellCheck={false}
             returnKeyType="done"
             onSubmitEditing={() => {
               if (!loading) void sendCode();

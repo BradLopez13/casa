@@ -63,7 +63,8 @@ function Chip({
         flexDirection: 'row',
         alignItems: 'center',
         gap: space(2),
-        paddingHorizontal: space(4),
+        // The open border is 1 dp thicker each side; the padding gives it back, so the pill keeps its width.
+        paddingHorizontal: space(4) - (open ? 1 : 0),
         borderRadius: radii.pill,
         borderWidth: open ? 2.5 : 1.5,
         borderStyle: disabled ? off.borderStyle : 'solid',
@@ -77,7 +78,7 @@ function Chip({
         style={{
           color: disabled ? off.foreground : colors.ink,
           fontSize: 15,
-          // One weight in both states, so opening never changes the pill's width.
+          // One weight in both states, so opening does not change the text's width.
           fontWeight: '600',
         }}
       >

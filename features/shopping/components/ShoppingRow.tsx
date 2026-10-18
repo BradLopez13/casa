@@ -93,6 +93,14 @@ export function ShoppingRow({
   } as const;
   const name = (
     <>
+      <MaterialCommunityIcons
+        name={icon as Glyph}
+        size={22}
+        color={colors.muted}
+        accessible={false}
+        importantForAccessibility="no"
+        style={{ marginRight: space(2) }}
+      />
       <Text
         style={{
           flex: 1,
@@ -164,14 +172,6 @@ export function ShoppingRow({
           accessibilityLabel={item.name}
         />
       </Pressable>
-      <MaterialCommunityIcons
-        name={icon as Glyph}
-        size={22}
-        color={colors.muted}
-        accessible={false}
-        importantForAccessibility="no"
-        style={{ marginRight: space(2) }}
-      />
       {onOpen ? (
         <Pressable
           testID={`shopping.item.${item.id}`}

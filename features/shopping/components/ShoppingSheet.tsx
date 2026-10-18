@@ -306,7 +306,12 @@ export function EmptyList({
                     accessible={false}
                     importantForAccessibility="no"
                   />
-                  <Text style={{ color: colors.ink, fontSize: 15 }}>{entry.name}</Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{ flexShrink: 1, color: colors.ink, fontSize: 15 }}
+                  >
+                    {entry.name}
+                  </Text>
                 </Pressable>
               ))}
             </View>

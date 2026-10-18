@@ -12,8 +12,7 @@ const PHONE: ReadonlySet<SettingsGroup> = new Set(['reminders', 'notices']);
 export type SettingsPanes = { left: SettingsGroup[]; right: SettingsGroup[] };
 
 /**
- * Ajustes on two panes: your household and account (members, sign out,
- * delete account) on the
+ * Ajustes on two panes: your household and account (members, sign out, delete account) on the
  * left, what the phone tells you (reminders, household notices) on the right. In one column
  * everything stays in its usual order, the account last.
  */

@@ -38,7 +38,7 @@ export type Palette = {
   onBrandBand: string;
   /** Inactive tab icons and labels on the brand band: `onBrandBand` at 80 %. */
   onBrandBandMuted: string;
-  /** The hairline along the top of the tab bar, the door's bottom edge: `onBrandBand` at 12 %. */
+  /** The hairline along the door's bottom edge: `onBrandBand` at 12 %. */
   brandBandEdge: string;
   /** The tab bar, the fridge's plinth: the door's enamel in light, the slate band in dark. */
   tabBar: string;

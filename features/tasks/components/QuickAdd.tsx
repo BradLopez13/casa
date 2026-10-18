@@ -21,15 +21,12 @@ import { MIN_TOUCH } from '@/ui/tokens';
 import { createTask, newTaskId } from '../api';
 import { taskErrorMessage } from '../errors';
 import { markFresh } from '../freshIds';
-import { highlightRuns, quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
+import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { useTaskMutation } from '../queries';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
 const CHIP_HEIGHT = 32;
-// Off until the overlay is checked on a device (the chips alone meet the spec); set to true to
-// draw the recognised words highlighted in the field again.
-const INLINE_HIGHLIGHT = false;
 
 const KIND_ICONS = {
   due: 'calendar-outline',
@@ -83,10 +80,6 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const [focused, setFocused] = useState(false);
   // Kinds dismissed for the text being typed; forgotten when the field empties.
   const [disabled, setDisabled] = useState<ReadonlySet<QuickSpanKind>>(() => new Set());
-  // The highlight is drawn under a transparent input. Once the text no longer fits on the line the
-  // input scrolls and the drawing could not follow, so the plain text comes back.
-  const [fieldWidth, setFieldWidth] = useState(0);
-  const [overflows, setOverflows] = useState(false);
   const input = useRef<TextInput>(null);
   // The text as of the last keystroke, read when a failed create puts its words back.
   const latest = useRef('');
@@ -159,8 +152,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     setDisabled((current) => new Set([...current, kind]));
   };
 
-  const highlighted = INLINE_HIGHLIGHT && parse.spans.length > 0 && !overflows;
-  // The input and the drawing under it share these, so their letters sit on top of each other.
+  // Text style of the input.
   const textStyle: TextStyle = {
     fontSize: 17,
     paddingHorizontal: 0,
@@ -183,48 +175,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
           backgroundColor: colors.note,
         }}
       >
-        <View
-          style={{ flex: 1, alignSelf: 'stretch', justifyContent: 'center' }}
-          onLayout={(e) => setFieldWidth(e.nativeEvent.layout.width)}
-        >
-          {INLINE_HIGHLIGHT && parse.spans.length > 0 ? (
-            <View
-              pointerEvents="none"
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
-              style={[
-                {
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  justifyContent: 'center',
-                },
-                // Kept laid out while hidden, so it can tell when the text fits again.
-                highlighted ? null : { opacity: 0 },
-              ]}
-            >
-              <Text
-                testID={`${testID}.highlight`}
-                onTextLayout={(e) => {
-                  const lines = e.nativeEvent.lines;
-                  // A little room is kept for the caret at the end of the line.
-                  setOverflows(lines.length > 1 || (lines[0]?.width ?? 0) > fieldWidth - space(2));
-                }}
-                style={[textStyle, { color: colors.ink }]}
-              >
-                {highlightRuns(text, parse.spans).map((run, i) => (
-                  <Text
-                    key={i}
-                    style={run.kind === null ? undefined : { backgroundColor: colors.tonal }}
-                  >
-                    {run.text}
-                  </Text>
-                ))}
-              </Text>
-            </View>
-          ) : null}
+        <View style={{ flex: 1, alignSelf: 'stretch', justifyContent: 'center' }}>
           <TextInput
             ref={input}
             testID={testID}
@@ -243,10 +194,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             cursorColor={colors.cobalt}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            style={[
-              textStyle,
-              { paddingVertical: space(2), color: highlighted ? 'transparent' : colors.ink },
-            ]}
+            style={[textStyle, { paddingVertical: space(2), color: colors.ink }]}
           />
         </View>
         <Pressable

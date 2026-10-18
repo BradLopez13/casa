@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { t } from '@/i18n';
-import { useTheme } from '../theme';
+import { useReduceMotion, useTheme } from '../theme';
 import { Button } from './Button';
 
 type Props = {
@@ -30,6 +30,7 @@ export function ConfirmDialog({
   loading = false,
 }: Props) {
   const { colors, radii, space } = useTheme();
+  const reduceMotion = useReduceMotion();
   // Keep the last content while the Modal fades out, so it doesn't blank or flash "¿Quitar a  del hogar?".
   const live = { title, message, confirmLabel, destructive };
   const [content, setContent] = useState(live);
@@ -46,7 +47,7 @@ export function ConfirmDialog({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? 'none' : 'fade'}
       onRequestClose={loading ? undefined : onCancel}
     >
       <View

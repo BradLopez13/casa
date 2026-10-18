@@ -32,7 +32,8 @@ describe('sheetRows', () => {
     expect(rows.filter(isItemRow).map((r) => r.id)).toEqual(['a', 'c']);
   });
 
-  it('takes no grouping', () => {
-    expect(sheetRows.length).toBe(2);
+  it('adds no header when collapsed with nothing bought', () => {
+    const a = item('a');
+    expect(sheetRows([a], [], true)).toEqual([a]);
   });
 });
