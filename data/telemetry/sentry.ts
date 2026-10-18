@@ -2,8 +2,12 @@ import * as Sentry from '@sentry/react-native';
 import type { Breadcrumb, ErrorEvent } from '@sentry/react-native';
 import { scrubUrl } from './scrub';
 
-// Read by its full name so Expo inlines it into the bundle.
-const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+// Read by their full names so Expo inlines them into the bundle; typed as unknown because CI has
+// no generated env types.
+const rawDsn: unknown = process.env.EXPO_PUBLIC_SENTRY_DSN;
+const rawAppEnv: unknown = process.env.EXPO_PUBLIC_APP_ENV;
+const dsn = typeof rawDsn === 'string' && rawDsn ? rawDsn : undefined;
+const environment = typeof rawAppEnv === 'string' && rawAppEnv ? rawAppEnv : 'production';
 
 const navigation = Sentry.reactNavigationIntegration();
 
@@ -32,7 +36,7 @@ export function initTelemetry(): void {
   Sentry.init({
     dsn,
     enabled: !__DEV__ && !!dsn,
-    environment: process.env.EXPO_PUBLIC_APP_ENV ?? 'production',
+    environment,
     sendDefaultPii: false,
     tracesSampleRate: 0.2,
     integrations: [navigation],

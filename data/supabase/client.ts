@@ -7,8 +7,11 @@ import { createChunkedStorage } from './chunked-storage';
 import { missingConfig } from './config';
 import type { Database } from './database.types';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const key = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+// Typed as unknown: CI has no generated env types, so these read as any there.
+const rawUrl: unknown = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const rawKey: unknown = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+const url = typeof rawUrl === 'string' ? rawUrl : undefined;
+const key = typeof rawKey === 'string' ? rawKey : undefined;
 
 /**
  * The variables this build lacks (copy .env.example to .env and fill them in). The root layout
