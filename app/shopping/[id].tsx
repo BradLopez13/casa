@@ -14,14 +14,10 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import { useMembership } from '@/features/households/queries';
-import { OfflineBand } from '@/features/shopping/components/OfflineBand';
+import { OfflineBand } from '@/ui/components/OfflineBand';
+import { useIsOnline } from '@/data/query/online';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
-import {
-  useDeleteItem,
-  useEditItem,
-  useIsOnline,
-  useShoppingItems,
-} from '@/features/shopping/queries';
+import { useDeleteItem, useEditItem, useShoppingItems } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';

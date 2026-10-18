@@ -17,6 +17,7 @@ import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeader } from '@/ui/components/DoorHeader';
+import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -93,19 +94,24 @@ export default function TodayScreen() {
   );
 
   const door = (
-    <DoorHeader
-      eyebrow={t('today.title')}
-      trailing={<Text style={dateStyle}>{longDateLabel(today)}</Text>}
-      heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
-    >
-      <MemberFilter
-        members={members}
-        marks={screen.marks}
-        userId={userId}
-        selected={assigneeId}
-        onSelect={screen.selectFilter}
-      />
-    </DoorHeader>
+    <>
+      <DoorHeader
+        eyebrow={t('today.title')}
+        trailing={<Text style={dateStyle}>{longDateLabel(today)}</Text>}
+        heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
+      >
+        <MemberFilter
+          members={members}
+          marks={screen.marks}
+          userId={userId}
+          selected={assigneeId}
+          onSelect={screen.selectFilter}
+        />
+      </DoorHeader>
+      {screen.showStaleBand ? (
+        <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
+      ) : null}
+    </>
   );
   const quickAdd = (
     <QuickAdd

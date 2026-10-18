@@ -1,9 +1,12 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { useIsOnline } from '@/data/query/online';
+import { toAppError } from '@/data/supabase/errors';
 import { filterByAssignee, type TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { useTaskFilter } from './filter';
+import { shouldShowStaleBand } from './staleBand';
 import { useTasks, useToggleTask } from './queries';
 import { useMemberLabels } from './useMemberLabels';
 import { useToday } from './useToday';
@@ -27,6 +30,16 @@ export function useTaskScreen() {
   const tasks = tasksQuery.data ?? NO_TASKS;
   // A filter on someone who has left the household falls back to the whole household.
   const assigneeId = members.some((m) => m.userId === filter.assigneeId) ? filter.assigneeId : null;
+
+  const online = useIsOnline();
+  const showStaleBand = shouldShowStaleBand(
+    {
+      hasData: tasksQuery.data !== undefined,
+      isRefetchError: tasksQuery.isRefetchError,
+      errorIsNetwork: toAppError(tasksQuery.error).code === 'NETWORK',
+    },
+    online,
+  );
 
   const { marks, names } = useMemberLabels(members, userId);
   const filtered = useMemo(() => filterByAssignee(tasks, assigneeId), [tasks, assigneeId]);
@@ -63,5 +76,6 @@ export function useTaskScreen() {
     isBusy,
     pulling,
     refresh,
+    showStaleBand,
   };
 }

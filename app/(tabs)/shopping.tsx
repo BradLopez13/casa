@@ -12,7 +12,8 @@ import {
   useItemEntry,
   type ItemEntry,
 } from '@/features/shopping/components/AddItemField';
-import { OfflineBand } from '@/features/shopping/components/OfflineBand';
+import { OfflineBand } from '@/ui/components/OfflineBand';
+import { useIsOnline } from '@/data/query/online';
 import {
   BoughtTitle,
   EmptyList,
@@ -23,7 +24,6 @@ import { shoppingErrorMessage } from '@/features/shopping/errors';
 import {
   useAddItem,
   useClearBought,
-  useIsOnline,
   usePendingItemIds,
   useSetBought,
   useShoppingHistory,

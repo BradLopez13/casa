@@ -291,6 +291,7 @@
   "shopping.clearMessageOther": "This removes {count} bought items.",
   "shopping.clearAction": "Empty",
   "shopping.offline": "No connection",
+  "offline.showingLast": "Offline, showing the latest",
   "form.discardTitle": "Discard changes?",
   "form.discardMessage": "What you wrote won't be saved.",
   "form.discard": "Discard",

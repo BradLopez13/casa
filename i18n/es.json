@@ -291,6 +291,7 @@
   "shopping.clearMessageOther": "Se quitan {count} productos comprados.",
   "shopping.clearAction": "Vaciar",
   "shopping.offline": "Sin conexión",
+  "offline.showingLast": "Sin conexión, mostrando lo último",
   "form.discardTitle": "¿Descartar los cambios?",
   "form.discardMessage": "Lo que has escrito no se guardará.",
   "form.discard": "Descartar",
