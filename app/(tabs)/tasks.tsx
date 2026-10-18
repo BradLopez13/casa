@@ -312,10 +312,11 @@ function TasksStack({
             <SectionHeader title={section.title} count={section.count} flush />
           </View>
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item, index, section }) => (
           <View style={column}>
             <TaskRow
               row={item}
+              first={index === 0 && section === sections[0]}
               today={today}
               marks={marks}
               names={screen.names}

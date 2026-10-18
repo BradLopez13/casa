@@ -145,4 +145,12 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const found = tabs.filter((f) => /\bScreenTitle\b|\btitleSize=/.test(read(f)));
     expect(found).toEqual([]);
   });
+  // Fase 1: the box at the right completes a task; the magnet only says whose it is.
+  it('a task note completes with the box, never the magnet', () => {
+    const note = read('features/tasks/components/TaskNote.tsx');
+    expect(note).toContain('<CompleteBox');
+    const magnet = note.slice(note.indexOf('<Magnet'), note.indexOf('/>', note.indexOf('<Magnet')));
+    expect(magnet).toContain('decorative');
+    expect(magnet).not.toMatch(/check=/);
+  });
 });
