@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buttonLook,
-  buttonMetrics,
-  DISABLED_LABEL_OPACITY,
-  pressedOpacity,
-} from './buttonLook';
+import { buttonLook, buttonMetrics, DISABLED_LABEL_OPACITY, pressedOpacity } from './buttonLook';
 import { contrastRatio, mixOver } from './contrast';
 import { palettes, type Scheme } from './tokens';
 

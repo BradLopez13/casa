@@ -142,7 +142,9 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
 
   // §14.5: the active tab and the shopping note's magnet are chosen and chrome, not doing: slate.
   it('no magnet drawn in the pósit (the active tab and the shopping magnet are slate)', () => {
-    const found = offenders(sources, (line) => /glyph=\{\{[^}]*fill:\s*colors\.accent\b/.test(line));
+    const found = offenders(sources, (line) =>
+      /glyph=\{\{[^}]*fill:\s*colors\.accent\b/.test(line),
+    );
     const tints = offenders(
       ['features/navigation/FridgeTabBar.tsx', 'features/navigation/NavigationRail.tsx'],
       (line) => /focused\s*\?\s*colors\.onAccent\b/.test(line),
