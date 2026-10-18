@@ -29,6 +29,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { DoorControls, DoorHeader } from '@/ui/components/DoorHeader';
+import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -235,35 +236,40 @@ function TasksStack({
   const door = (
     // The strip is its own row under the title and the controls; in a compact door it runs the
     // full width as one line of days, so the door stays within its 40 % of the window.
-    <DoorHeader
-      eyebrow={t('tasks.title')}
-      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
-      secondary={doorLine}
-      below={
-        mode === 'week' ? (
-          <DayStrip
-            days={strip}
-            today={today}
-            chosen={day}
+    <>
+      <DoorHeader
+        eyebrow={t('tasks.title')}
+        heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+        secondary={doorLine}
+        below={
+          mode === 'week' ? (
+            <DayStrip
+              days={strip}
+              today={today}
+              chosen={day}
+              marks={marks}
+              names={screen.names}
+              onSelect={scrollToDay}
+            />
+          ) : null
+        }
+      >
+        <DoorControls row>
+          <MemberFilter
+            dense
+            members={members}
             marks={marks}
-            names={screen.names}
-            onSelect={scrollToDay}
+            userId={userId}
+            selected={assigneeId}
+            onSelect={screen.selectFilter}
           />
-        ) : null
-      }
-    >
-      <DoorControls row>
-        <MemberFilter
-          dense
-          members={members}
-          marks={marks}
-          userId={userId}
-          selected={assigneeId}
-          onSelect={screen.selectFilter}
-        />
-        <ModeSwitch value={mode} onChange={setMode} />
-      </DoorControls>
-    </DoorHeader>
+          <ModeSwitch value={mode} onChange={setMode} />
+        </DoorControls>
+      </DoorHeader>
+      {screen.showStaleBand ? (
+        <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
+      ) : null}
+    </>
   );
 
   return (
@@ -352,23 +358,28 @@ function TasksStack({
 function TasksSplit(parts: TasksParts) {
   const { screen, mode, setMode } = parts;
   const door = (
-    <DoorHeader
-      eyebrow={t('tasks.title')}
-      heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
-      secondary={parts.doorLine}
-    >
-      <DoorControls row>
-        <MemberFilter
-          dense
-          members={screen.members}
-          marks={screen.marks}
-          userId={screen.userId}
-          selected={screen.assigneeId}
-          onSelect={screen.selectFilter}
-        />
-        <ModeSwitch value={mode} onChange={setMode} />
-      </DoorControls>
-    </DoorHeader>
+    <>
+      <DoorHeader
+        eyebrow={t('tasks.title')}
+        heading={t(mode === 'week' ? 'tasks.weekHeadline' : 'tasks.allHeadline')}
+        secondary={parts.doorLine}
+      >
+        <DoorControls row>
+          <MemberFilter
+            dense
+            members={screen.members}
+            marks={screen.marks}
+            userId={screen.userId}
+            selected={screen.assigneeId}
+            onSelect={screen.selectFilter}
+          />
+          <ModeSwitch value={mode} onChange={setMode} />
+        </DoorControls>
+      </DoorHeader>
+      {screen.showStaleBand ? (
+        <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
+      ) : null}
+    </>
   );
   return mode === 'week' ? (
     <WeekPanes {...parts} door={door} />

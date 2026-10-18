@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { forgetCachedData } from '@/data/query/persist';
 import { supabase } from '@/data/supabase/client';
+import { setTelemetryUser } from '@/data/telemetry/sentry';
 
 export type SessionState = {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -19,6 +20,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // The callback stays synchronous: no supabase calls inside it.
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const userId = session?.user.id ?? null;
+      setTelemetryUser(userId);
       setState((prev) => {
         const status = userId ? 'signed-in' : 'signed-out';
         return prev.status === status && prev.userId === userId ? prev : { status, userId };

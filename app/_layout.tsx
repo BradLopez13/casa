@@ -25,6 +25,7 @@ import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
+import { RootErrorBoundary } from '@/ui/components/RootErrorBoundary';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
@@ -48,6 +49,16 @@ import {
   resumeShoppingQueue,
 } from '@/features/shopping/offline';
 import { actionIcons } from '@/ui/actionIcons';
+import { configProblem } from '@/data/supabase/client';
+import {
+  captureError,
+  initTelemetry,
+  trackNavigation,
+  withTelemetry,
+} from '@/data/telemetry/sentry';
+import { FatalScreen } from '@/ui/components/FatalScreen';
+
+initTelemetry();
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -221,6 +232,7 @@ function Guard() {
   const membershipQuery = useMembership();
   const pending = usePendingInvite();
   useForgetEndedHousehold(membershipQuery.data);
+  useEffect(() => trackNavigation(navRef), [navRef]);
 
   const signedIn = session.status === 'signed-in';
   useSyncDevice(signedIn ? session.userId : null);
@@ -315,7 +327,20 @@ function ThemedStatusBar() {
   return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
 }
 
-export default function RootLayout() {
+/** A build without its Supabase settings: says so, reports it once and goes no further. */
+function ConfigMissing() {
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+    captureError(new Error('config missing'), { missing: configProblem });
+  }, []);
+  return <FatalScreen kind="config" detail={configProblem.join('\n')} />;
+}
+
+export default withTelemetry(function RootLayout() {
+  return configProblem.length > 0 ? <ConfigMissing /> : <App />;
+});
+
+function App() {
   // Nothing navigates or renders until the display fonts are registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
   const [fontsLoaded, fontError] = useFonts({
@@ -324,15 +349,17 @@ export default function RootLayout() {
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ThemedStatusBar />
-        <NoticeProvider>
-          <SessionProvider>
-            <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-          </SessionProvider>
-        </NoticeProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <RootErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <ThemedStatusBar />
+          <NoticeProvider>
+            <SessionProvider>
+              <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+            </SessionProvider>
+          </NoticeProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </RootErrorBoundary>
   );
 }

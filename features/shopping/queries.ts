@@ -1,11 +1,5 @@
-import {
-  onlineManager,
-  useMutation,
-  useMutationState,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import {
   clearBoughtItems,
@@ -103,11 +97,4 @@ export function usePendingItemIds(): Set<string> {
   });
   const key = ids.filter((id): id is string => id !== undefined).join('\n');
   return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
-}
-
-const subscribeOnline = (onChange: () => void) => onlineManager.subscribe(onChange);
-const isOnline = () => onlineManager.isOnline();
-
-export function useIsOnline(): boolean {
-  return useSyncExternalStore(subscribeOnline, isOnline);
 }

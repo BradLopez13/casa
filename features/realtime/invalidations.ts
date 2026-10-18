@@ -5,6 +5,8 @@ import { membershipKey } from '@/features/households/keys';
 const TASKS: QueryKey = ['tasks'];
 const SHOPPING: QueryKey = ['shopping'];
 const SHOPPING_HISTORY: QueryKey = ['shopping-history'];
+// Every household's member list (membersKey is ['members', householdId]).
+const MEMBERS: QueryKey = ['members'];
 
 /**
  * Query prefixes to refresh when the server broadcasts a change to `table`. They are
@@ -17,6 +19,9 @@ export function invalidationsFor(table: string): QueryKey[] {
     // The household itself: its name and owner live in the membership.
     case 'households':
       return [membershipKey];
+    // Who is in, who left, who owns it: the member lists and the role in the membership.
+    case 'household_members':
+      return [MEMBERS, membershipKey];
     case 'task_series':
     case 'task_occurrences':
       return [TASKS];
@@ -81,7 +86,7 @@ export function createInvalidationBatcher(opts: InvalidationBatcherOptions): Inv
       if (disposed) return;
       cancelTimer();
       pending.clear();
-      invalidateAll([TASKS, SHOPPING, SHOPPING_HISTORY]);
+      invalidateAll([TASKS, SHOPPING, SHOPPING_HISTORY, MEMBERS, membershipKey]);
     },
     dispose() {
       disposed = true;

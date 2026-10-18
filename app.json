@@ -50,6 +50,14 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#2E3B41"
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "casa",
+          "organization": "brad-lopez-io"
+        }
       ]
     ],
     "experiments": {
