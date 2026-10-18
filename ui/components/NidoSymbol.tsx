@@ -8,7 +8,7 @@ const TILE_INSET = 8;
 
 /**
  * The Nido symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for
- * use on the brand band; `mono` draws both figures in that one colour, with no tile.
+ * use on the brand band; `mono` draws both figures in that one colour, with no tile and the mono seam between the bases.
  */
 export function NidoSymbol({
   size,
@@ -36,11 +36,11 @@ export function NidoSymbol({
     >
       <G fill={c.left}>
         <Circle {...left.circle} />
-        <Path d={left.path} />
+        <Path d={mono === undefined ? left.path : left.monoPath} />
       </G>
       <G fill={c.right}>
         <Circle {...right.circle} />
-        <Path d={right.path} />
+        <Path d={mono === undefined ? right.path : right.monoPath} />
       </G>
     </Svg>
   );

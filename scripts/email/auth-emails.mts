@@ -7,7 +7,7 @@
 // rule, then the same block in English.
 
 export const SYMBOL_URL =
-  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol-v2.png';
+  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol-v3.png';
 
 const SLATE = '#2E3B41';
 const POSIT = '#F2D04B';

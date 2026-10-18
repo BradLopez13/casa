@@ -1,18 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Nido symbol master. Traced from the large symbol of the approved signature.
-       Two people of the same size: round heads at the same level and diameter over rounded
-       bodies that interlock around a shared central hollow. Full width, centred vertically. -->
+  <!-- Nido symbol master, variant B ("ganchos"), redrawn 18 October 2026.
+       Two people of the same size: round heads (r72) at the same level, 24 units clear of the bodies.
+       Each body is a hook (top bar, thick outer column and a base reaching the centre line), mirrored,
+       and together they wrap an elliptical hollow (centre 256,336; rx118 ry60) that opens upwards
+       through a 68-unit gap. Outer corners r88 top, r148 bottom. -->
   <g id="left" fill="#F3F4F0">
     <!-- left head -->
-    <circle cx="130" cy="95.5" r="68"/>
-    <!-- left body: top bar, outer column and base. The base runs on under the right figure's
-         tongue, which is drawn on top and covers it; only its rounded corners show slate behind -->
-    <path d="M0 254.5A80 80 0 0 1 80 174.5H178A42 42 0 0 1 220 216.5V276.5H149A13 13 0 0 0 136 289.5V369.5A13 13 0 0 0 149 382.5H220V484.5H114A114 114 0 0 1 0 370.5Z"/>
+    <circle cx="128" cy="96" r="72"/>
+    <!-- left body: its base runs on to x264 under the right figure's base, which is drawn on top -->
+    <path d="M8 280A88 88 0 0 1 96 192L192 192A30 30 0 0 1 222 222L222 278.54A118 60 0 0 0 264 395.86L264 488L156 488A148 148 0 0 1 8 340Z"/>
   </g>
   <g id="right" fill="#F2D04B">
     <!-- right head -->
-    <circle cx="382" cy="95.5" r="68"/>
-    <!-- right body: mirrored top bar and outer column; its base reaches left below the hollow -->
-    <path d="M512 254.5V370.5A114 114 0 0 1 398 484.5H220A30 30 0 0 1 190 454.5V412.5A30 30 0 0 1 220 382.5H363A13 13 0 0 0 376 369.5V289.5A13 13 0 0 0 363 276.5H292V216.5A42 42 0 0 1 334 174.5H432A80 80 0 0 1 512 254.5Z"/>
+    <circle cx="384" cy="96" r="72"/>
+    <!-- right body: mirrored hook; its base meets the left one at the centre line x256 -->
+    <path d="M504 280A88 88 0 0 0 416 192L320 192A30 30 0 0 0 290 222L290 278.54A118 60 0 0 1 256 396L256 488L356 488A148 148 0 0 0 504 340Z"/>
   </g>
 </svg>
