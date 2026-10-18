@@ -155,7 +155,8 @@ export default function ShoppingScreen() {
       heading={line?.text ?? ' '}
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
-      secondary={t('shopping.doorHint')}
+      // An empty list says one thing: the headline, without the hint under it.
+      secondary={state === 'empty' ? undefined : t('shopping.doorHint')}
     >
       {children}
     </DoorHeader>

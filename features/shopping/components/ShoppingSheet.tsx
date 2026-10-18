@@ -257,8 +257,9 @@ export function ShoppingSheet({
 }
 
 /**
- * The empty list: the invitation to add, and, when the history has names that are not on the list,
- * «¿Falta algo de lo de siempre?» with the most used ones as pills; a tap adds that name.
+ * The empty list: the door already says «No falta nada.», so the note only shows up when the
+ * history has names that are not on the list: «¿Falta algo de lo de siempre?» with the most used
+ * ones as pills; a tap adds that name.
  */
 export function EmptyList({
   usual,
@@ -268,6 +269,7 @@ export function EmptyList({
   onAdd: (name: string) => void;
 }) {
   const { colors, radii, noteEdge, shadows, space } = useTheme();
+  if (usual.length === 0) return null;
   return (
     <View style={{ paddingTop: HANG }}>
       <HangingMagnet left={space(3)} />
@@ -283,48 +285,40 @@ export function EmptyList({
           ...noteEdge,
         }}
       >
-        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>
-        {usual.length > 0 ? (
-          <>
-            <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-              {usual.map((entry) => (
-                <Pressable
-                  key={entry.normalizedName}
-                  testID={`shopping.usual.${entry.normalizedName}`}
-                  onPress={() => onAdd(entry.name)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
-                  style={({ pressed }) => ({
-                    minHeight: MIN_TOUCH,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: space(2),
-                    paddingHorizontal: space(4),
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    borderColor: colors.hairline,
-                    opacity: pressedOpacity(pressed),
-                  })}
-                >
-                  <MaterialCommunityIcons
-                    name={iconFor(entry.normalizedName) as Glyph}
-                    size={18}
-                    color={colors.muted}
-                    accessible={false}
-                    importantForAccessibility="no"
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={{ flexShrink: 1, color: colors.ink, fontSize: 15 }}
-                  >
-                    {entry.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : null}
+        <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+          {usual.map((entry) => (
+            <Pressable
+              key={entry.normalizedName}
+              testID={`shopping.usual.${entry.normalizedName}`}
+              onPress={() => onAdd(entry.name)}
+              accessibilityRole="button"
+              accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
+              style={({ pressed }) => ({
+                minHeight: MIN_TOUCH,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: space(2),
+                paddingHorizontal: space(4),
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                opacity: pressedOpacity(pressed),
+              })}
+            >
+              <MaterialCommunityIcons
+                name={iconFor(entry.normalizedName) as Glyph}
+                size={18}
+                color={colors.muted}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+              <Text numberOfLines={1} style={{ flexShrink: 1, color: colors.ink, fontSize: 15 }}>
+                {entry.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
     </View>
   );
