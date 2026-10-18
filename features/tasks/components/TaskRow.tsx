@@ -44,7 +44,12 @@ export function TaskRow({
           mark={row.task.assigneeId ? marks.get(row.task.assigneeId) : undefined}
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
           busy={isBusy(row.task.id)}
-          onToggle={() => toggle({ id: row.task.id, done: true })}
+          // Tapping the magnet or swiping completes the same way: both offer «Deshacer».
+          onToggle={() =>
+            row.task.completedAt === null
+              ? completeWithUndo({ toggle, notify, task: row.task })
+              : toggle({ id: row.task.id, done: false })
+          }
           onComplete={() => completeWithUndo({ toggle, notify, task: row.task })}
           onOpen={() => openTask(row.task.id)}
         />

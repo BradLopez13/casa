@@ -10,7 +10,13 @@ import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import { listTasks, skipTask } from './api';
-import { buildToggleOptions, invalidateIfStale, type ToggleVars } from './toggle';
+import {
+  buildToggleOptions,
+  invalidateIfStale,
+  runToggle,
+  TOGGLE_KEY,
+  type ToggleVars,
+} from './toggle';
 
 export const tasksKey = (householdId: string | undefined) => ['tasks', householdId] as const;
 
@@ -69,8 +75,9 @@ export function useSkipTask(_householdId: string | undefined) {
 }
 
 /**
- * Completes or reopens a task, optimistically. Ignores taps while that task is in flight, and on
- * provisional next occurrences, which only exist in the cache until the server creates the real one.
+ * Completes or reopens a task, optimistically. Ignores a repeated tap while that task is in flight
+ * and taps on provisional next occurrences, which only exist in the cache until the server creates
+ * the real one. The opposite toggle (an undo) queues behind the pending one: see runToggle.
  */
 export function useToggleTask(
   householdId: string | undefined,
@@ -78,23 +85,16 @@ export function useToggleTask(
 ): { toggle: (vars: ToggleVars) => void; isBusy: (id: string) => boolean } {
   const queryClient = useQueryClient();
   const notify = useNotice();
-  const mutation = useMutation(
-    buildToggleOptions(queryClient, householdId ?? '', userId ?? '', notify),
-  );
+  const options = buildToggleOptions(queryClient, householdId ?? '', userId ?? '', notify);
   const pending = useMutationState({
-    filters: { mutationKey: ['tasks', 'toggle'], status: 'pending' },
+    filters: { mutationKey: TOGGLE_KEY, status: 'pending' },
     select: (m) => (m.state.variables as ToggleVars).id,
   });
   const isBusy = (id: string) => isProvisional({ id }) || pending.includes(id);
   const toggle = (vars: ToggleVars) => {
     if (householdId === undefined || userId === null || isProvisional({ id: vars.id })) return;
-    // Check the cache synchronously: render-time state lags behind a quick double tap.
-    const inFlight = queryClient
-      .getMutationCache()
-      .findAll({ mutationKey: ['tasks', 'toggle'], status: 'pending' })
-      .some((m) => (m.state.variables as ToggleVars | undefined)?.id === vars.id);
-    if (inFlight) return;
-    mutation.mutate(vars);
+    // runToggle reads the mutation cache synchronously: render-time state lags a quick double tap.
+    runToggle(queryClient, options, vars);
   };
   return { toggle, isBusy };
 }

@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
@@ -57,6 +57,12 @@ function EditTaskScreen() {
   const skip = useSkipTask(householdId);
   const toggler = useToggleTask(householdId, userId);
   const close = useCloseModal('/today');
+  // Completing or reopening from the form closes it, but only after a render that marks the form
+  // busy: closing in the same tick let the discard guard ask over a task already toggled.
+  const [toggled, setToggled] = useState(false);
+  useEffect(() => {
+    if (toggled) close();
+  }, [toggled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (task === undefined) {
     const loading = tasksQuery.data === undefined && !tasksQuery.isError;
@@ -98,7 +104,8 @@ function EditTaskScreen() {
     remove.isSuccess ||
     skip.isPending ||
     skip.isSuccess ||
-    toggling;
+    toggling ||
+    toggled;
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&
@@ -126,7 +133,7 @@ function EditTaskScreen() {
     remove.reset();
     skip.reset();
     toggler.toggle({ id: task.id, done: !done });
-    close();
+    setToggled(true);
   };
   const initial: TaskInput = {
     title: task.title,

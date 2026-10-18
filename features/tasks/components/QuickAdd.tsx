@@ -20,6 +20,7 @@ import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { createTask, newTaskId } from '../api';
 import { taskErrorMessage } from '../errors';
+import { markFresh } from '../freshIds';
 import { highlightRuns, quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { useTaskMutation } from '../queries';
 import { useToday } from '../useToday';
@@ -128,8 +129,11 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     const typed = text;
     const dismissed = disabled;
     changeText('');
+    const id = newTaskId();
+    // Created here: its note lands with the pin choreography when it shows up in the list.
+    markFresh(id);
     create.mutate(
-      { id: newTaskId(), task },
+      { id, task },
       {
         onSuccess: () => {
           input.current?.focus();

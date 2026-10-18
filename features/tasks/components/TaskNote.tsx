@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import ReanimatedSwipeable, {
   SwipeDirection,
@@ -15,6 +15,7 @@ import Animated, {
 import type { MemberMark } from '@/domain/members/marks';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
+import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
@@ -64,14 +65,19 @@ export function TaskNote({
 }: Props) {
   const { colors, shadows, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
-  const scale = useSharedValue(reduceMotion ? 1 : SNAP_SCALE);
+  // Only a note created in this session lands: on first render, a filter change or a recycled
+  // row it is simply there. Peeked here, used up after mount (a Strict Mode re-run sees it too).
+  const [fresh] = useState(() => isFresh(task.id));
+  const lands = fresh && !reduceMotion;
+  const scale = useSharedValue(lands ? SNAP_SCALE : 1);
   const magnetStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   // The magnet snaps on as the note lands (QuickAdd gives the rigid vibration).
   useEffect(() => {
+    takeFresh(task.id);
     // Reanimated shared values are mutated through .value by design.
     // eslint-disable-next-line react-hooks/immutability
-    scale.value = reduceMotion ? 1 : withSpring(1, SPRING);
+    if (lands) scale.value = withSpring(1, SPRING);
     // Only on arrival: later presses animate the magnet themselves.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,7 +111,7 @@ export function TaskNote({
   return (
     <Animated.View
       layout={layoutTransition(reduceMotion)}
-      entering={enterAnimation(reduceMotion, tiltFor(task.id))}
+      entering={lands ? enterAnimation(reduceMotion, tiltFor(task.id)) : undefined}
       exiting={exitAnimation(reduceMotion)}
       style={{
         marginLeft: magnetSizes.md / 2,

@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskItem } from '@/domain/tasks/views';
+import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
 import { enterAnimation, layoutTransition, tiltFor } from '@/ui/motion';
@@ -21,6 +23,11 @@ type Props = {
 export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
   const { colors, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
+  // Only a task completed in this session arrives; the rest of the tray is simply there.
+  const [fresh] = useState(() => isFresh(task.id, 'done'));
+  useEffect(() => {
+    takeFresh(task.id, 'done');
+  }, [task.id]);
   const label = byYou
     ? t('tasks.a11y.reopenByYou', { title: task.title })
     : name
@@ -30,7 +37,7 @@ export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
     <Animated.View
       // It arrives from the list on the same spring the note left it with.
       layout={layoutTransition(reduceMotion)}
-      entering={enterAnimation(reduceMotion, tiltFor(task.id))}
+      entering={fresh ? enterAnimation(reduceMotion, tiltFor(task.id)) : undefined}
       style={{ marginLeft: magnetSizes.sm / 2 }}
     >
       <Pressable

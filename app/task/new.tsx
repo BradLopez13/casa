@@ -4,6 +4,7 @@ import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
+import { markFresh } from '@/features/tasks/freshIds';
 import { dueParam } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
@@ -59,6 +60,8 @@ function NewTaskScreen() {
       onCancel={close}
       onSave={(input) => {
         if (householdId === undefined) return;
+        // Created here: its note lands with the pin choreography on the list behind.
+        markFresh(id);
         save.submit({ input }, { onSuccess: close });
       }}
     />

@@ -4,7 +4,8 @@ import { AppError } from '@/data/supabase/errors';
 import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, reopenTask } from './api';
 import { membershipKey } from '@/features/households/keys';
-import { buildToggleOptions } from './toggle';
+import { isFresh, takeFresh } from './freshIds';
+import { buildToggleOptions, runToggle } from './toggle';
 
 vi.mock('./api', () => ({ completeTask: vi.fn(), reopenTask: vi.fn() }));
 
@@ -182,5 +183,58 @@ describe('buildToggleOptions', () => {
     expect(keys).toContainEqual(['tasks']);
     expect(keys).toContainEqual(membershipKey);
     expect(keys).toContainEqual(['members']);
+  });
+});
+
+describe('runToggle', () => {
+  function setupRun() {
+    const queryClient = new QueryClient();
+    const options = buildToggleOptions(queryClient, 'h', 'me', vi.fn());
+    return {
+      queryClient,
+      toggle: (vars: { id: string; done: boolean }) => runToggle(queryClient, options, vars),
+    };
+  }
+
+  it('queues the undo behind a pending complete instead of dropping it', async () => {
+    const { queryClient, toggle } = setupRun();
+    queryClient.setQueryData(key, [a]);
+    const d = deferred();
+    vi.mocked(completeTask).mockReturnValue(d.promise);
+    vi.mocked(reopenTask).mockResolvedValue(undefined);
+    toggle({ id: 'a', done: true });
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
+    toggle({ id: 'a', done: false });
+    // The reopen shows at once, but its request waits for the complete to settle.
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).toBeNull(),
+    );
+    expect(reopenTask).not.toHaveBeenCalled();
+    d.resolve();
+    await vi.waitFor(() => expect(reopenTask).toHaveBeenCalledWith('a'));
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+  });
+
+  it('drops a repeated tap while the same toggle is pending', async () => {
+    const { queryClient, toggle } = setupRun();
+    queryClient.setQueryData(key, [a]);
+    const d = deferred();
+    vi.mocked(completeTask).mockReturnValue(d.promise);
+    toggle({ id: 'a', done: true });
+    toggle({ id: 'a', done: true });
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
+    expect(queryClient.isMutating()).toBe(1);
+    d.resolve();
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+    expect(completeTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks a completed note as fresh for the tray', () => {
+    const { queryClient, toggle } = setupRun();
+    queryClient.setQueryData(key, [b]);
+    vi.mocked(completeTask).mockResolvedValue(undefined);
+    toggle({ id: 'b', done: true });
+    expect(isFresh('b', 'done')).toBe(true);
+    takeFresh('b', 'done');
   });
 });
