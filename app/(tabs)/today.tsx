@@ -145,7 +145,8 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
         ListHeaderComponent={
           <>
             {door}
-            <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
+            {/* space(6) clears the lower half of the door's handle (22 dp) above the quick add. */}
+            <View style={[column, { paddingTop: space(6) }]}>{quickAdd}</View>
           </>
         }
         ListEmptyComponent={

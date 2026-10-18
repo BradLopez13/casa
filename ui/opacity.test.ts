@@ -10,38 +10,55 @@ const ALLOWED: Record<string, string> = {
     'a task still on its way to the server is provisional (0.6)',
   'features/auth/social/AppleButton.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
   'features/auth/social/AppleButton.ios.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
+  'ui/magnetCheck.ts':
+    "the faint check on an open magnet (0.4) is the magnet's drawing, not a control turned off",
 };
 
 // Opacity that is fine anywhere: press feedback, the faint check, animated glows (shared values),
-// and the 0 / 1 literals used to hide or show.
+// the 0 / 1 literals used to hide or show, fades between them, and a type annotation.
 const FINE = [
-  /\bopacity:\s*(0|1|pressedOpacity\([^)]*\)|look\.opacity|[\w.]+\.value)\s*(?=[,}]|$)/g,
+  /\bopacity:\s*(0|1|number|pressedOpacity\([^)]*\)|look\.opacity|[\w.]+\.value|withTiming\(\s*[01]\s*,[^)]*\))\s*(?=[,;}]|$)/g,
   /\bpressedOpacity\b/g,
 ];
 
-function tsxFiles(dir: string): string[] {
+// Only an opacity actually set: a style key or a prop. Not `shadowOpacity`, not identifiers.
+const SETS_OPACITY = /\bopacity\s*:|\bopacity=\{/;
+
+function files(dir: string, ext: RegExp): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) return tsxFiles(path);
-    return path.endsWith('.tsx') ? [path] : [];
+    if (statSync(path).isDirectory()) return files(path, ext);
+    return ext.test(path) && !/\.test\.tsx?$/.test(path) ? [path] : [];
   });
 }
 
-function offending(file: string): string[] {
-  return readFileSync(join(ROOT, file), 'utf8')
+function offendingLines(text: string): string[] {
+  return text
     .split('\n')
     .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
     .map((line) => FINE.reduce((l, re) => l.replace(re, ''), line))
-    .filter((line) => /opacity/i.test(line));
+    .filter((line) => SETS_OPACITY.test(line));
 }
 
 describe('opacity', () => {
   it('is never used to say a control is off, outside the allowlist', () => {
-    const offenders = ['app', 'features', 'ui/components']
-      .flatMap((d) => tsxFiles(join(ROOT, d)))
+    const offenders = [
+      ...['app', 'features', 'ui/components'].flatMap((d) => files(join(ROOT, d), /\.tsx$/)),
+      // The look helpers under ui/ set opacity in plain .ts too.
+      ...files(join(ROOT, 'ui'), /\.ts$/),
+    ]
       .map((f) => relative(ROOT, f).split(sep).join('/'))
       .filter((f) => !(f in ALLOWED))
-      .filter((f) => offending(f).length > 0);
+      .filter((f) => offendingLines(readFileSync(join(ROOT, f), 'utf8')).length > 0);
     expect(offenders).toEqual([]);
+  });
+
+  it('looks only at opacity being set', () => {
+    expect(offendingLines('shadowOpacity: 0.2,')).toEqual([]);
+    expect(offendingLines('const PROVISIONAL_OPACITY = 0.6;')).toEqual([]);
+    expect(offendingLines('opacity: pressedOpacity(pressed),')).toEqual([]);
+    expect(offendingLines('opacity: withTiming(0, { duration: MAX_MS }),')).toEqual([]);
+    expect(offendingLines('opacity: disabled ? 0.4 : 1,')).toHaveLength(1);
+    expect(offendingLines('<View opacity={0.5} />')).toHaveLength(1);
   });
 });

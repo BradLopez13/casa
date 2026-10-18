@@ -79,9 +79,10 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
 
   // §14.5: one pósit per screen.
   // A `Button` with no `variant` is primary, so the count takes those too, plus `'primary'` inside
-  // a `variant={…}` and any `buttonLook('primary'`.
+  // a `variant={…}` and any `buttonLook('primary'`. An arrow inside a prop (`onPress={() => …}`)
+  // does not end the opening tag: `=>` is tried before any other character.
   const primaries = (text: string) => {
-    const defaults = [...text.matchAll(/<Button\b[\s\S]*?\/?>/g)].filter(
+    const defaults = [...text.matchAll(/<Button\b(?:=>|[^>])*?\/?>/g)].filter(
       ([opening]) => !/\bvariant=/.test(opening),
     ).length;
     const literal = (text.match(/variant="primary"/g) ?? []).length;
@@ -89,16 +90,33 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const looks = (text.match(/buttonLook\(\s*'primary'/g) ?? []).length;
     return defaults + literal + ternary + looks;
   };
+  /**
+   * Feature components that draw a pósit of their own: a screen that imports one has spent its
+   * primary on it. One reason each.
+   */
+  const PRIMARY_COMPONENTS: Record<string, string> = {
+    QuickAdd: 'its «+» is the pósit of Hoy and Tareas',
+    AddItemField: 'its «+» is the pósit of the shopping list',
+    TaskForm: 'its footer Save is the pósit of the task modals',
+  };
+  /** The PRIMARY_COMPONENTS a screen imports (each counts once, whatever the layouts). */
+  const importedPrimaries = (text: string) => {
+    const names = [...text.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from/g)].flatMap(
+      ([, list]) => (list ?? '').split(',').map((n) => n.trim().replace(/^type\s+/, '')),
+    );
+    return Object.keys(PRIMARY_COMPONENTS).filter((name) => names.includes(name));
+  };
+  const posits = (text: string) => primaries(text) + importedPrimaries(text).length;
   /** Screens with two primaries in the code that are never on screen together. */
   const NEVER_TOGETHER: Record<string, string> = {
     // «Invitar» turns secondary while the name is open, and «Guardar» only exists then.
     'app/(tabs)/settings.tsx': 'Invitar | Guardar el nombre',
   };
 
-  it('at most one primary button per screen', () => {
+  it('at most one primary per screen, its feature components included', () => {
     const found = screens
-      .filter((f) => primaries(read(f)) > (NEVER_TOGETHER[f] ? 2 : 1))
-      .map((f) => `${f}: ${primaries(read(f))}`);
+      .filter((f) => posits(read(f)) > (NEVER_TOGETHER[f] ? 2 : 1))
+      .map((f) => `${f}: ${primaries(read(f))} + [${importedPrimaries(read(f)).join(', ')}]`);
     expect(found).toEqual([]);
   });
 
@@ -109,6 +127,17 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     );
     expect(primaries('<Button title="a" />\n<Button title="b" variant="primary" />')).toBe(2);
     expect(primaries("buttonLook('primary', 'default', 'idle', colors)")).toBe(1);
+    // The arrow in onPress does not cut the tag before its variant.
+    expect(primaries('<Button onPress={() => go()} variant="secondary" />')).toBe(0);
+    expect(primaries('<Button onPress={() => go()} title="a" />')).toBe(1);
+  });
+
+  it('counts the feature components that bring their own pósit', () => {
+    const screen =
+      "import { QuickAdd } from 'q';\nimport { Button } from 'b';\n<Button title=\"a\" />";
+    expect(importedPrimaries(screen)).toEqual(['QuickAdd']);
+    expect(posits(screen)).toBe(2);
+    expect(importedPrimaries("import { TaskForm, type X } from 'f';")).toEqual(['TaskForm']);
   });
 
   // §2.4b, §14.4: the tabs share one door; the display titles stay on auth and onboarding.
