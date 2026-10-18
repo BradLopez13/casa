@@ -21,18 +21,24 @@ import { FADE_MS, layoutTransition } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
-import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
+import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
+import { hangingMagnet } from '../hangingMagnet';
 import { isBoughtHeader, isItemRow, sheetRows, type SheetRow } from '../sheetRows';
 import { ShoppingRow, type Glyph } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
 
-/** Room above the note for the magnet that holds it, so the first row stays clear of it. */
-const HANG = 30;
+// The magnet's centre sits on the note's top edge (`HANG` above it); the first row moves down
+// past its lower half. The row is `MIN_TOUCH + space(2)` tall with a small magnet as checkbox.
+const { hang: HANG, firstRowInset: FIRST_ROW_INSET } = hangingMagnet(
+  magnetSizes.md,
+  MIN_TOUCH + 8,
+  magnetSizes.sm,
+);
 
 /**
- * The pósit magnet that holds the note, hanging over its top-left corner. Decorative chrome: the
+ * The pósit magnet that holds the note, half over its top edge near the left corner. Decorative chrome: the
  * «+» of the field stays the screen's one primary.
  */
 function HangingMagnet({ left }: { left: number }) {
@@ -146,6 +152,7 @@ export function ShoppingSheet({
     return {
       marginHorizontal: margin,
       marginTop: index === pendingCount && pendingCount > 0 ? space(4) : 0,
+      paddingTop: index === 0 && pendingCount > 0 ? FIRST_ROW_INSET : 0,
       backgroundColor: ruled ? colors.taskNote : colors.note,
       borderColor: edgeColor,
       borderLeftWidth: edge,
@@ -268,7 +275,8 @@ export function EmptyList({
         style={{
           gap: space(3),
           padding: space(4),
-          paddingTop: space(5),
+          // Clear of the lower half of the magnet.
+          paddingTop: HANG + space(2),
           backgroundColor: colors.taskNote,
           borderRadius: radii.note,
           ...shadows.note,
