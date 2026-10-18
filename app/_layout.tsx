@@ -49,7 +49,14 @@ import {
   resumeShoppingQueue,
 } from '@/features/shopping/offline';
 import { actionIcons } from '@/ui/actionIcons';
-import { initTelemetry, trackNavigation, withTelemetry } from '@/data/telemetry/sentry';
+import { configProblem } from '@/data/supabase/client';
+import {
+  captureError,
+  initTelemetry,
+  trackNavigation,
+  withTelemetry,
+} from '@/data/telemetry/sentry';
+import { FatalScreen } from '@/ui/components/FatalScreen';
 
 initTelemetry();
 
@@ -320,7 +327,20 @@ function ThemedStatusBar() {
   return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
 }
 
+/** A build without its Supabase settings: says so, reports it once and goes no further. */
+function ConfigMissing() {
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+    captureError(new Error('config missing'), { missing: configProblem });
+  }, []);
+  return <FatalScreen kind="config" detail={configProblem.join('\n')} />;
+}
+
 export default withTelemetry(function RootLayout() {
+  return configProblem.length > 0 ? <ConfigMissing /> : <App />;
+});
+
+function App() {
   // Nothing navigates or renders until the display fonts are registered (the splash stays up).
   // A font that fails to load falls back to the system face; it must not keep the splash up.
   const [fontsLoaded, fontError] = useFonts({
@@ -342,4 +362,4 @@ export default withTelemetry(function RootLayout() {
       </GestureHandlerRootView>
     </RootErrorBoundary>
   );
-});
+}
