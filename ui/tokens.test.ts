@@ -55,6 +55,7 @@ describe('magnet material', () => {
 describe('the fridge tab bar', () => {
   // Composites an `rgba(r,g,b,a)` token over an opaque hex ground, as the screen shows it.
   function over(rgba: string, ground: string): string {
+    if (rgba.startsWith('#')) return rgba;
     const m = /^rgba\((\d+),(\d+),(\d+),([\d.]+)\)$/.exec(rgba);
     if (!m) throw new Error(`Not an rgba colour: ${rgba}`);
     const a = Number(m[4]);
@@ -65,13 +66,15 @@ describe('the fridge tab bar', () => {
       .join('')}`;
   }
 
-  it.each(['light', 'dark'] as const)('%s: every tab reads on the slate band', (scheme) => {
+  it.each(['light', 'dark'] as const)('%s: every tab reads on the bar', (scheme) => {
     const p = palettes[scheme];
-    expect(contrastRatio(p.onBrandBand, p.brandBand)).toBeGreaterThanOrEqual(4.5);
-    expect(
-      contrastRatio(over(p.onBrandBandMuted, p.brandBand), p.brandBand),
-    ).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.onTabBar, p.tabBar)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(over(p.onTabBarMuted, p.tabBar), p.tabBar)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('light: the bar is the door enamel', () => {
+    expect(palettes.light.tabBar).toBe(palettes.light.door);
   });
 
   it('holds the active tab in a 40 dp pósit', () => {

@@ -110,9 +110,6 @@ describe('createInvalidationBatcher', () => {
   it('flushAll also leaves a busy key to its mutation', () => {
     const { batcher, invalidate } = setup((key) => key[0] === 'shopping');
     batcher.flushAll();
-    expect(invalidate.mock.calls).toEqual([
-      [['tasks']],
-      [['shopping-history']],
-    ]);
+    expect(invalidate.mock.calls).toEqual([[['tasks']], [['shopping-history']]]);
   });
 });
