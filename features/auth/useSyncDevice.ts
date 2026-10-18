@@ -2,15 +2,19 @@ import { getCalendars } from 'expo-localization';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { shouldSyncTimeZone } from '@/domain/time-zone/sync';
+import { setLocale } from '@/features/households/api';
+import { lang } from '@/i18n';
 import { fetchOwnTimeZone, setTimeZone } from './time-zone';
 
 /**
- * Keeps the profile's time zone equal to the phone's: on mount and each time the app returns
- * to the foreground. Errors are ignored (the next foreground retries); only one sync runs at
- * a time.
+ * Keeps the profile's time zone and language equal to the phone's: on mount and each time the
+ * app returns to the foreground. The language is sent once per signed-in person and session
+ * (the last value sent is remembered). Errors are ignored (the next foreground retries); only
+ * one sync runs at a time.
  */
-export function useSyncTimeZone(userId: string | null): void {
+export function useSyncDevice(userId: string | null): void {
   const inFlight = useRef(false);
+  const sentLocale = useRef<{ userId: string; locale: string } | null>(null);
   useEffect(() => {
     if (!userId) return;
     const sync = async () => {
@@ -20,6 +24,11 @@ export function useSyncTimeZone(userId: string | null): void {
         const deviceTz = getCalendars()[0]?.timeZone;
         const profileTz = await fetchOwnTimeZone(userId);
         if (deviceTz && shouldSyncTimeZone(profileTz, deviceTz)) await setTimeZone(deviceTz);
+        const sent = sentLocale.current;
+        if (sent?.userId !== userId || sent.locale !== lang) {
+          await setLocale(lang);
+          sentLocale.current = { userId, locale: lang };
+        }
       } catch {
         // Silent by design: retried on the next foreground.
       } finally {

@@ -32,7 +32,7 @@ import { displayFont, displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
-import { useSyncTimeZone } from '@/features/auth/useSyncTimeZone';
+import { useSyncDevice } from '@/features/auth/useSyncDevice';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { useMembership } from '@/features/households/queries';
 import { routeForNotification } from '@/features/push/routes';
@@ -225,7 +225,7 @@ function Guard() {
   useForgetEndedHousehold(membershipQuery.data);
 
   const signedIn = session.status === 'signed-in';
-  useSyncTimeZone(signedIn ? session.userId : null);
+  useSyncDevice(signedIn ? session.userId : null);
   usePushRegistration(signedIn ? session.userId : null);
   useReminders();
   const hasData = membershipQuery.data !== undefined;

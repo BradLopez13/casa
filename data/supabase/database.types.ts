@@ -286,6 +286,9 @@ isOneToOne: false
 "set_item_category":
 { Args: { "p_category": string,"p_id": string }; Returns: undefined
                            },
+"set_locale":
+{ Args: { "p_locale": string }; Returns: undefined
+                           },
 "set_notification_prefs":
 { Args: { "p_member_joined": boolean,"p_task_assigned": boolean }; Returns: undefined
                            },

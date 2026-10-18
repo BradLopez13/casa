@@ -1,6 +1,7 @@
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
+import type { Locale } from '@/i18n';
 
 export type Role = 'owner' | 'member';
 
@@ -153,4 +154,9 @@ export async function deleteHousehold(householdId: string): Promise<void> {
 /** Replaces the signed-in person's visible name (1 to 40 characters once trimmed). */
 export async function setDisplayName(name: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('set_display_name', { p_name: name }));
+}
+
+/** Stores the phone's language in the signed-in person's profile, so pushes reach them in it. */
+export async function setLocale(locale: Locale): Promise<void> {
+  await unwrapMaybe(supabase.rpc('set_locale', { p_locale: locale }));
 }
