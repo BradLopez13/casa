@@ -18,10 +18,12 @@ import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
+import { Magnet } from '@/ui/components/Magnet';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
 import {
   isBoughtHeader,
   isCategoryHeader,
+  isItemRow,
   sheetRows,
   type SheetGrouping,
   type SheetRow,
@@ -31,6 +33,34 @@ import { ShoppingRow } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
+
+/** Height of a ruled row: the pósit's lines fall every `ROW_H` dp. */
+const ROW_H = 52;
+/** Room above the note for the magnet that holds it, so the first row stays clear of it. */
+const HANG = 30;
+
+/**
+ * The pósit magnet that holds the note, hanging over its top-left corner. Decorative chrome: the
+ * «+» of the field stays the screen's one primary.
+ */
+function HangingMagnet({ left }: { left: number }) {
+  const { colors } = useTheme();
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left, zIndex: 1 }}>
+      <Magnet
+        size="md"
+        decorative
+        initial=""
+        color="teal"
+        accessibilityLabel=""
+        glyph={{ node: null, fill: colors.accent }}
+      />
+    </View>
+  );
+}
+
+const isPendingRow = (row: SheetRow) =>
+  isCategoryHeader(row) || (isItemRow(row) && row.boughtAt === null);
 
 type Props = {
   pending: ShoppingItem[];
@@ -127,17 +157,25 @@ export function ShoppingSheet({
   const edge = hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth;
   const edgeColor = hasEdge ? noteEdge.borderColor : colors.hairline;
 
+  // The pending rows are one ruled pósit note; «En la bolsa» below is a plain sheet of its own.
+  const pendingCount = rows.filter(isPendingRow).length;
+  const margin = flush ? 0 : space(5);
+
   const cell = (index: number): ViewStyle => {
-    const firstCell = index === 0;
-    const lastCell = index === rows.length - 1;
+    const ruled = index < pendingCount;
+    const firstCell = index === 0 || index === pendingCount;
+    const lastCell = index === pendingCount - 1 || index === rows.length - 1;
     return {
-      marginHorizontal: flush ? 0 : space(5),
-      backgroundColor: colors.note,
+      marginHorizontal: margin,
+      marginTop: index === pendingCount && pendingCount > 0 ? space(4) : 0,
+      backgroundColor: ruled ? colors.taskNote : colors.note,
       borderColor: edgeColor,
       borderLeftWidth: edge,
       borderRightWidth: edge,
       borderTopWidth: firstCell ? edge : 0,
-      borderBottomWidth: lastCell ? edge : 0,
+      // Every ruled row ends in its hairline, so the lines survive virtualisation.
+      borderBottomWidth: lastCell ? edge : ruled ? 1 : 0,
+      ...(ruled && !lastCell ? { borderBottomColor: colors.hairline } : null),
       borderTopLeftRadius: firstCell ? radii.note : 0,
       borderTopRightRadius: firstCell ? radii.note : 0,
       borderBottomLeftRadius: lastCell ? radii.note : 0,
@@ -160,7 +198,8 @@ export function ShoppingSheet({
         contentContainerStyle={contentContainerStyle}
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
-          <View style={column}>
+          <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
+            {index === 0 && pendingCount > 0 ? <HangingMagnet left={margin + space(3)} /> : null}
             <View style={cell(index)}>
               {isCategoryHeader(row) ? (
                 <Text
@@ -169,12 +208,11 @@ export function ShoppingSheet({
                   style={{
                     color: colors.muted,
                     fontFamily: displayFontBold,
-                    fontSize: 13,
+                    fontSize: 12,
+                    minHeight: ROW_H,
+                    textAlignVertical: 'bottom',
                     paddingHorizontal: space(4),
-                    paddingTop: space(index > 0 ? 4 : 3),
-                    paddingBottom: space(1),
-                    borderTopWidth: index > 0 ? StyleSheet.hairlineWidth : 0,
-                    borderTopColor: colors.hairline,
+                    paddingBottom: space(2),
                   }}
                 >
                   {t(`shopping.category.${row.category}`)}
@@ -192,8 +230,6 @@ export function ShoppingSheet({
                     paddingHorizontal: space(4),
                     paddingTop: space(4),
                     paddingBottom: space(2),
-                    borderTopWidth: index > 0 ? StyleSheet.hairlineWidth : 0,
-                    borderTopColor: colors.hairline,
                   }}
                 >
                   <Pressable
@@ -232,7 +268,7 @@ export function ShoppingSheet({
               ) : (
                 <ShoppingRow
                   item={row}
-                  first={index === 0 || isCategoryHeader(rows[index - 1] as SheetRow)}
+                  first={index < pendingCount || isCategoryHeader(rows[index - 1] as SheetRow)}
                   unsent={unsentIds.has(row.id)}
                   buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
                   buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
@@ -273,37 +309,50 @@ export function EmptyList({
   usual: readonly HistoryEntry[];
   onAdd: (name: string) => void;
 }) {
-  const { colors, radii, space } = useTheme();
+  const { colors, radii, noteEdge, shadows, space } = useTheme();
   return (
-    <View style={{ gap: space(3) }}>
-      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>
-      {usual.length > 0 ? (
-        <>
-          <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-            {usual.map((entry) => (
-              <Pressable
-                key={entry.normalizedName}
-                testID={`shopping.usual.${entry.normalizedName}`}
-                onPress={() => onAdd(entry.name)}
-                accessibilityRole="button"
-                accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
-                style={({ pressed }) => ({
-                  minHeight: MIN_TOUCH,
-                  justifyContent: 'center',
-                  paddingHorizontal: space(4),
-                  borderRadius: radii.pill,
-                  borderWidth: 1,
-                  borderColor: colors.hairline,
-                  opacity: pressedOpacity(pressed),
-                })}
-              >
-                <Text style={{ color: colors.ink, fontSize: 15 }}>{entry.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      ) : null}
+    <View style={{ paddingTop: HANG }}>
+      <HangingMagnet left={space(3)} />
+      <View
+        style={{
+          gap: space(3),
+          padding: space(4),
+          paddingTop: space(5),
+          backgroundColor: colors.taskNote,
+          borderRadius: radii.note,
+          ...shadows.note,
+          ...noteEdge,
+        }}
+      >
+        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>
+        {usual.length > 0 ? (
+          <>
+            <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+              {usual.map((entry) => (
+                <Pressable
+                  key={entry.normalizedName}
+                  testID={`shopping.usual.${entry.normalizedName}`}
+                  onPress={() => onAdd(entry.name)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
+                  style={({ pressed }) => ({
+                    minHeight: MIN_TOUCH,
+                    justifyContent: 'center',
+                    paddingHorizontal: space(4),
+                    borderRadius: radii.pill,
+                    borderWidth: 1,
+                    borderColor: colors.hairline,
+                    opacity: pressedOpacity(pressed),
+                  })}
+                >
+                  <Text style={{ color: colors.ink, fontSize: 15 }}>{entry.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
+      </View>
     </View>
   );
 }

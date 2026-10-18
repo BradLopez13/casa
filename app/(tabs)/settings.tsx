@@ -23,6 +23,7 @@ import { DoorHeader, useDoorCompact } from '@/ui/components/DoorHeader';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
+import { NidoSymbol } from '@/ui/components/NidoSymbol';
 import { TextField } from '@/ui/components/TextField';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -141,12 +142,17 @@ export default function SettingsScreen() {
       title={displayName}
       eyebrow={t('settings.title')}
       heading={
-        <NameHeading
-          name={displayName}
-          mark={userId ? marks.get(userId) : undefined}
-          editing={editing}
-          onEditingChange={setEditing}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(3) }}>
+          <View style={{ flex: 1 }}>
+            <NameHeading
+              name={displayName}
+              mark={userId ? marks.get(userId) : undefined}
+              editing={editing}
+              onEditingChange={setEditing}
+            />
+          </View>
+          <BrandPlate />
+        </View>
       }
       subtitle={membership ? householdLine(membership.householdName, others) : undefined}
     />
@@ -161,6 +167,27 @@ export default function SettingsScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: space(8) }}
       />
+    </View>
+  );
+}
+
+/** The symbol on a small brand-band disc at the door's right: decorative, the only place in Ajustes. */
+function BrandPlate() {
+  const { colors } = useTheme();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.brandBand,
+      }}
+    >
+      <NidoSymbol size={20} onSlate />
     </View>
   );
 }
