@@ -1,4 +1,4 @@
-import { ScrollView, Text } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { actionIcons } from '../actionIcons';
@@ -51,7 +51,10 @@ export function FatalScreen({ kind, onRetry, detail }: Props) {
             {t(kind === 'crash' ? 'fatal.crash.body' : 'fatal.config.body')}
           </Text>
           {kind === 'crash' && onRetry ? (
-            <Button title={t('fatal.crash.retry')} icon={actionIcons.retry} onPress={onRetry} />
+            // A hugging button aligns itself to the start; the wrapper keeps it centred.
+            <View>
+              <Button title={t('fatal.crash.retry')} icon={actionIcons.retry} onPress={onRetry} />
+            </View>
           ) : null}
           {__DEV__ && detail ? (
             <Text
