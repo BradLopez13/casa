@@ -26,7 +26,7 @@ export type Palette = {
   onAccent: string;
   /** Edge of the accent pill. Equals `accent` (no visible edge): the pill is told apart by its shadow in light mode. */
   accentEdge: string;
-  /** Fill of a chosen option or an "on" track: slate in light, the pósit in dark. At least 3:1 on page, note and door. */
+  /** Fill of a chosen option or an "on" track: slate in light, chalk in dark (never the pósit, which is for doing). At least 3:1 on page, note and door. */
   selection: string;
   /** Text and icons on a selection fill. */
   onSelection: string;
@@ -128,13 +128,13 @@ export const palettes: Record<Scheme, Palette> = {
     ink: '#ECEFEA',
     muted: '#A7B2B5',
     mutedStrong: '#CBD3D5',
-    // Chalk: the pósit is kept for what is chosen and the main action.
+    // Chalk: the pósit is kept for the main action; what is chosen is chalk too.
     cobalt: '#ECEFEA',
     textSelection: 'rgba(236,239,234,0.3)',
     accent: '#F2D04B',
     onAccent: '#151B1E',
     accentEdge: '#F2D04B',
-    selection: '#F2D04B',
+    selection: '#ECEFEA',
     onSelection: '#151B1E',
     focusRing: '#ECEFEA',
     brandBand: '#2E3B41',

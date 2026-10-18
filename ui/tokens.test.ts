@@ -81,3 +81,16 @@ describe('the fridge tab bar', () => {
     expect(magnetSizes.tab).toBe(40);
   });
 });
+
+describe('selection is chalk or slate, never the pósit', () => {
+  it.each(['light', 'dark'] as const)('%s: selection is not the pósit', (scheme) => {
+    expect(palettes[scheme].selection).not.toBe(palettes[scheme].accent);
+  });
+
+  it.each(['light', 'dark'] as const)('%s: selection reads on door, page and note', (scheme) => {
+    const p = palettes[scheme];
+    for (const g of [p.door, p.page, p.note]) {
+      expect(contrastRatio(p.selection, g)).toBeGreaterThanOrEqual(3);
+    }
+  });
+});

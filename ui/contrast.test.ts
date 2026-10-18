@@ -54,7 +54,7 @@ it('the dark task note is the dark note', () => {
 });
 
 describe('dark palette keeps red apart from the pósit', () => {
-  it('red sits at least 30° of hue away from the pósit selection and accent', () => {
+  it('red sits at least 30° of hue away from the pósit accent and the chalk selection', () => {
     // By hue alone "Vencida" must not read as chosen or tappable.
     expect(hueDistance(palettes.dark.red, palettes.dark.selection)).toBeGreaterThanOrEqual(30);
     expect(hueDistance(palettes.dark.red, palettes.dark.accent)).toBeGreaterThanOrEqual(30);
@@ -201,9 +201,9 @@ describe('Pizarra y pósit', () => {
     expect(palettes.light.accent).toBe('#F2D04B');
     expect(palettes.dark.accent).toBe('#F2D04B');
   });
-  it('keeps the pósit for what is chosen and the main action in dark mode', () => {
+  it('keeps the pósit for the main action and uses chalk for what is chosen in dark mode', () => {
     expect(palettes.dark.cobalt).toBe('#ECEFEA');
-    expect(palettes.dark.selection).toBe('#F2D04B');
+    expect(palettes.dark.selection).toBe('#ECEFEA');
   });
   it('uses a leaf magnet instead of coral', () => {
     expect(MAGNET_COLORS).not.toContain('coral');
