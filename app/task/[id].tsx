@@ -9,6 +9,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
+import { markHintSeen } from '@/features/tasks/completeHint';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
@@ -133,6 +134,7 @@ function EditTaskScreen() {
     remove.reset();
     skip.reset();
     toggler.toggle({ id: task.id, done: !done });
+    if (!done) markHintSeen();
     setToggled(true);
   };
   const initial: TaskInput = {
