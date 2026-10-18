@@ -73,6 +73,8 @@ type Props = {
   onToggle: (item: ShoppingItem) => void;
   onOpen: (id: string) => void;
   onClear: () => void;
+  /** A new quantity for a pending item, from its row's stepper. */
+  onQuantity: (item: ShoppingItem, quantity: string | null) => void;
   /** No side margin of its own: inside a TwoPane pane, which already keeps the gutter. */
   flush?: boolean;
   /**
@@ -125,6 +127,7 @@ export function ShoppingSheet({
   onToggle,
   onOpen,
   onClear,
+  onQuantity,
   flush = false,
   header,
   column,
@@ -135,6 +138,8 @@ export function ShoppingSheet({
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const [boughtCollapsed, setBoughtCollapsed] = useState(false);
+  // One quantity stepper open at a time; scrolling the list closes it.
+  const [openQuantity, setOpenQuantity] = useState<string | null>(null);
   const rows = sheetRows(pending, bought, boughtCollapsed);
   // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
   const hasEdge = noteEdge.borderWidth > 0;
@@ -177,6 +182,7 @@ export function ShoppingSheet({
         keyExtractor={(row) => row.id}
         scrollEnabled={header !== undefined}
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => setOpenQuantity(null)}
         itemLayoutAnimation={layoutTransition(reduceMotion)}
         ListHeaderComponent={header}
         refreshControl={refreshControl}
@@ -246,6 +252,13 @@ export function ShoppingSheet({
                   flash={flash?.id === row.id ? flash.count : 0}
                   onToggle={() => onToggle(row)}
                   onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
+                  quantityOpen={openQuantity === row.id}
+                  online={online}
+                  onQuantityOpen={() => setOpenQuantity(row.id)}
+                  onQuantityClose={() =>
+                    setOpenQuantity((current) => (current === row.id ? null : current))
+                  }
+                  onQuantity={(quantity) => onQuantity(row, quantity)}
                 />
               )}
             </View>

@@ -26,6 +26,7 @@ import {
   useClearBought,
   usePendingItemIds,
   useSetBought,
+  useSetQuantity,
   useShoppingHistory,
   useShoppingItems,
 } from '@/features/shopping/queries';
@@ -85,6 +86,7 @@ export default function ShoppingScreen() {
   const addItem = useAddItem();
   const setBought = useSetBought();
   const clearBought = useClearBought();
+  const setQuantity = useSetQuantity();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
   // Only the pull gesture shows the refresh indicator, not background refetches.
@@ -114,6 +116,14 @@ export default function ShoppingScreen() {
   const toggle = (item: ShoppingItem) => {
     if (householdId === undefined || userId === null) return;
     setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
+  };
+
+  const changeQuantity = (item: ShoppingItem, quantity: string | null) => {
+    if (householdId === undefined || quantity === item.quantity) return;
+    setQuantity.mutate(
+      { id: item.id, householdId, name: item.name, quantity },
+      { onError: (error) => notify(shoppingErrorMessage(error)) },
+    );
   };
 
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -210,6 +220,7 @@ export default function ShoppingScreen() {
       onToggle: toggle,
       onOpen: open,
       onClear: clear,
+      onQuantity: changeQuantity,
     },
     online,
     door,

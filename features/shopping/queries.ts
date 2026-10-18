@@ -1,6 +1,7 @@
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { AppError } from '@/data/supabase/errors';
+import { applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import {
   clearBoughtItems,
   deleteShoppingItem,
@@ -63,6 +64,39 @@ export function useEditItem() {
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     mutationFn: ({ id, name, quantity }) => updateShoppingItem(id, name, quantity),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+  });
+}
+
+export type QuantityVars = {
+  id: string;
+  householdId: string;
+  name: string;
+  quantity: string | null;
+};
+export type QuantityContext = { previous: ShoppingItem[] | undefined };
+
+/**
+ * Sets an item's quantity from the row, optimistically: the stepper shows each tap at once and
+ * saves after a pause. Online only, like the other edits; an error puts the old list back.
+ */
+export function useSetQuantity() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AppError, QuantityVars, QuantityContext>({
+    mutationKey: ['shopping', 'quantity'],
+    scope: SHOPPING_SCOPE,
+    networkMode: 'online',
+    mutationFn: ({ id, name, quantity }) => updateShoppingItem(id, name, quantity),
+    onMutate: async ({ id, householdId, quantity }) => {
+      const key = shoppingKey(householdId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ShoppingItem[]>(key);
+      if (previous) queryClient.setQueryData(key, applyQuantity(previous, id, quantity));
+      return { previous };
+    },
+    onError: (_error, { householdId }, context) => {
+      if (context?.previous) queryClient.setQueryData(shoppingKey(householdId), context.previous);
+    },
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   });
 }

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, type ComponentProps } from 'react';
+import { useEffect, useRef, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -18,6 +18,7 @@ import { Magnet } from '@/ui/components/Magnet';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
+import { QuantityPill } from './QuantityPill';
 
 /** A glyph name of the icon set; `iconFor` only returns names its test finds in the set. */
 export type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -41,11 +42,18 @@ type Props = {
   onOpen: (() => void) | undefined;
   /** The product's glyph, deduced from its name; decorative, the name carries the meaning. */
   icon: ProductIcon;
+  /** This row's quantity stepper is the open one. */
+  quantityOpen: boolean;
+  /** Quantities change online only. */
+  online: boolean;
+  onQuantityOpen: () => void;
+  onQuantityClose: () => void;
+  onQuantity: (quantity: string | null) => void;
 };
 
 /**
  * One item on the sheet: a round checkbox, the product icon, the name (opens a pending one) and
- * its quantity.
+ * its quantity: a pill that steps on a pending item, plain text on a bought one.
  */
 export function ShoppingRow({
   item,
@@ -57,12 +65,18 @@ export function ShoppingRow({
   onToggle,
   onOpen,
   icon,
+  quantityOpen,
+  online,
+  onQuantityOpen,
+  onQuantityClose,
+  onQuantity,
 }: Props) {
   const { colors, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const bought = item.boughtAt !== null;
   const glow = useSharedValue(0);
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+  const flushQuantity = useRef<(() => void) | null>(null);
 
   // A fade in and out, so Reduce Motion needs no other version.
   useEffect(() => {
@@ -78,6 +92,9 @@ export function ShoppingRow({
   const toggle = () => {
     // Into the bag is a thing done; taking it back out is just a press.
     void haptic(bought ? 'light' : 'success');
+    // Taps on the stepper not yet sent go first, while the item is still pending.
+    flushQuantity.current?.();
+    if (quantityOpen) onQuantityClose();
     onToggle();
   };
 
@@ -111,7 +128,7 @@ export function ShoppingRow({
       >
         {item.name}
       </Text>
-      {item.quantity ? (
+      {bought && item.quantity ? (
         <Text
           // Shares the row with the name, so at a large text size it wraps rather than crowd it out.
           style={{
@@ -188,6 +205,20 @@ export function ShoppingRow({
           {name}
         </View>
       )}
+      {onOpen ? (
+        <QuantityPill
+          itemId={item.id}
+          name={item.name}
+          quantity={item.quantity}
+          open={quantityOpen}
+          online={online}
+          onOpen={onQuantityOpen}
+          onClose={onQuantityClose}
+          onCommit={onQuantity}
+          onEdit={onOpen}
+          flushRef={flushQuantity}
+        />
+      ) : null}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}
