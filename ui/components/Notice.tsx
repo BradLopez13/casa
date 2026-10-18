@@ -1,7 +1,7 @@
 import { useSegments } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
 import { isScreenReaderOn, useScreenReader } from '../a11y';
@@ -14,6 +14,9 @@ export type NoticeAction = { label: string; onPress: () => void; testID?: string
 type Notify = (message: string, action?: NoticeAction) => void;
 /** ms null: no timer, the notice waits (a screen reader is on and there is an action to reach). */
 type Shown = { message: string; action?: NoticeAction; ms: number | null; tab: string | null };
+
+/** Long enough for the new pill to be laid out before the screen reader is sent to it. */
+const FOCUS_DELAY_MS = 300;
 
 const NoticeContext = createContext<Notify>(() => undefined);
 
@@ -48,7 +51,8 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   const notify = useCallback<Notify>((message, action) => {
     const ms = noticeDuration({ action: !!action, screenReader: isScreenReaderOn() });
     setNotice({ message, action, ms, tab: tabRef.current });
-    AccessibilityInfo.announceForAccessibility(message);
+    // A waiting notice takes the screen reader's focus instead (below), which reads it.
+    if (ms !== null) AccessibilityInfo.announceForAccessibility(message);
   }, []);
 
   const dismiss = useCallback(() => setNotice(null), []);
@@ -58,6 +62,18 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
     if (notice?.ms == null) return;
     const timer = setTimeout(() => setNotice(null), notice.ms);
     return () => clearTimeout(timer);
+  }, [notice]);
+
+  // The row that was just completed leaves the list and takes the focus with it: a waiting
+  // notice catches it, so «Deshacer» is the next swipe and not a hunt to the bottom.
+  const messageRef = useRef<Text>(null);
+  useEffect(() => {
+    if (notice?.ms !== null || !notice) return;
+    const id = setTimeout(() => {
+      const tag = findNodeHandle(messageRef.current);
+      if (tag) AccessibilityInfo.setAccessibilityFocus(tag);
+    }, FOCUS_DELAY_MS);
+    return () => clearTimeout(id);
   }, [notice]);
 
   const action = notice?.action;
@@ -97,7 +113,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
               paddingVertical: action ? space(1) : space(3),
             }}
           >
-            <Text style={{ color: colors.page, fontSize: 15, fontWeight: '600' }}>
+            <Text ref={messageRef} style={{ color: colors.page, fontSize: 15, fontWeight: '600' }}>
               {notice.message}
             </Text>
             {action ? (

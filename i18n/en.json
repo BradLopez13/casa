@@ -237,6 +237,7 @@
   "refresh.inside": "{n} things to get",
   "refresh.insideOne": "1 thing to get",
   "refresh.insideNone": "Nothing to get",
+  "refresh.done": "Up to date",
   "tasks.new": "New task",
   "tasks.sectionA11yOne": "{title}, 1 task",
   "tasks.sectionA11yOther": "{title}, {count} tasks",

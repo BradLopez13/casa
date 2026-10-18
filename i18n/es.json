@@ -237,6 +237,7 @@
   "refresh.inside": "Faltan {n} cosas",
   "refresh.insideOne": "Falta 1 cosa",
   "refresh.insideNone": "No falta nada",
+  "refresh.done": "Actualizado",
   "tasks.new": "Nueva tarea",
   "tasks.sectionA11yOne": "{title}, 1 tarea",
   "tasks.sectionA11yOther": "{title}, {count} tareas",
