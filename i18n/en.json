@@ -33,6 +33,7 @@
   "auth.errors.RATE_LIMITED": "Wait a little before asking for another code.",
   "auth.errors.OAUTH_CANCELLED": "",
   "auth.errors.codeInvalid": "Enter the 6-digit code.",
+  "brand.name": "Nido",
   "brand.tagline": "Home, as a team.",
   "auth.social.or": "or",
   "auth.social.google": "Continue with Google",
