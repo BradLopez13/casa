@@ -53,34 +53,29 @@ Siguiente: publicación en TestFlight y en las pruebas internas de Google Play.
 
 ## Tests
 
-Resultado de `pnpm db:test` contra el Supabase local:
+Resultado de `pnpm db:test` contra el Supabase local (25 archivos, uno por área: hogares, invitaciones, miembros, tareas y recurrencia, compra, difusión en tiempo real, avisos, cuenta y el guard de permisos):
 
 ```
 $ supabase test db
-supabase/tests/households.test.sql ........ ok
-supabase/tests/invites.test.sql ........... ok
-supabase/tests/membership_admin.test.sql .. ok
-supabase/tests/profiles.test.sql .......... ok
 All tests successful.
-Files=4, Tests=124,  1 wallclock secs ( 0.04 usr  0.01 sys +  0.04 cusr  0.03 csys =  0.12 CPU)
+Files=25, Tests=599
 Result: PASS
 ```
 
-| Nivel            | Qué prueba                                                                                                                                           | Comando                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Cliente          | 70 tests de Vitest: trozos de sesión, mapa de errores, esquemas, enlaces de invitación, redirecciones según sesión y hogar                           | `pnpm test`                     |
-| Base de datos    | 124 aserciones pgTAP: `households` 24, `invites` 42, `membership_admin` 49, `profiles` 9. Permisos por rol, RLS, índices únicos, errores de cada RPC | `pnpm db:start && pnpm db:test` |
-| De punta a punta | Tres flujos Maestro en un emulador de Android                                                                                                        | `pnpm e2e`                      |
+| Nivel            | Qué prueba                                                                                                                                                                                     | Comando                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Cliente          | 1353 tests de Vitest en 125 archivos: dominio (recurrencia, fechas, alta rápida, normalización), caché y cola offline, Realtime, mapas de errores, esquemas, maquetación y reglas de DESIGN.md | `pnpm test`                     |
+| Render           | 15 tests de render (`*.test.tsx`) con react-native-web en jsdom: estados de la lista de tareas, Hoy y el formulario de tarea                                                                   | `pnpm test`                     |
+| Base de datos    | 599 aserciones pgTAP en 25 archivos: permisos por rol, RLS, índices únicos, errores de cada RPC, difusión por sentencia y grants                                                               | `pnpm db:start && pnpm db:test` |
+| De punta a punta | 19 flujos Maestro en un emulador de Android, más uno en inglés                                                                                                                                 | `pnpm e2e`                      |
 
-Los tres flujos de `e2e/`:
+Los flujos de `e2e/` cubren el acceso (registro, entrar, recuperar la contraseña, ver la contraseña, volver), el hogar (crearlo, unirse con un enlace con y sin sesión, quitar a alguien, pasar el hogar), las tareas (crear y completar, repetir, editar, saltar y borrar, tareas típicas), la compra (lista, tiempo real con otra persona y cola sin conexión), los ajustes de avisos, borrar la cuenta, el giro de pantalla y el idioma inglés (`e2e/locale/`). Cada flujo entra con su propio usuario de `supabase/e2e/fixtures.sql`, así que no comparten estado.
 
-- `sign-up-create-household.yaml`: registro, crear el hogar, copiar el enlace de invitación, revocarlo y borrar el hogar.
-- `join-with-invite.yaml`: registro, una invitación caducada muestra su error, un enlace válido pegado entra en el hogar, la lista de miembros muestra a Ana y a Bob sin acciones de propietario, y Bob sale.
-- `invite-link-signed-out.yaml`: abrir un enlace de invitación sin sesión, crear la cuenta, llegar a la pantalla de la invitación (no al onboarding) y aceptarla.
+Los tests de render dibujan los componentes con `react-native-web`; los módulos nativos (iconos, área segura, Reanimated, gestos, SVG, cripto, el cliente de Supabase) se simulan en `vitest.render.setup.tsx` y los datos llegan de un `QueryClient` rellenado por el test.
 
 ### CI
 
-Tres jobs en `.github/workflows/ci.yml`, sin secretos ni proyecto en la nube:
+Corre en los PR hacia `main` y en cada push a `main`, sin secretos ni proyecto en la nube:
 
 - `app`: Prettier, ESLint con `--max-warnings 0`, typecheck, Vitest y `expo export` para Android e iOS.
 - `db`: levanta Postgres con el CLI de Supabase, pasa pgTAP y falla si los tipos generados (`data/supabase/database.types.ts`) no están al día.

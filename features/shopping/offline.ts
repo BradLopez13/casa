@@ -51,13 +51,15 @@ export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: b
 const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping',
   'shopping-history',
+  'shopping-resolved',
   'membership',
   'members',
 ]);
 
 /**
- * Kept on the device: the shopping list and its history, plus the membership (an offline cold
- * start gets past the route guard) and the members (the buyers' magnets).
+ * Kept on the device: the shopping list, its history and the queue's resolved ids, plus the
+ * membership (an offline cold start gets past the route guard) and the members (the buyers'
+ * magnets).
  */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {
   return PERSISTED_QUERIES.has(queryKey[0]);
@@ -121,6 +123,14 @@ export function persistBuster(appVersion: string, userId: string | null): string
 
 const listKey = (householdId: string) => ['shopping', householdId];
 
+/**
+ * The adds that resolved to an item already on the list, by the id they were queued with: a
+ * bought queued behind one must reach that item, even after a restart. It lives in the query
+ * cache, so the persister saves it with the queue, in the same write.
+ */
+export const resolvedKey = (householdId: string) => ['shopping-resolved', householdId];
+type Resolved = Readonly<Record<string, string>>;
+
 /** Several shopping mutations can be in flight: refetch once, after the last one settles. */
 export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Promise<void> {
   if (queryClient.isMutating({ mutationKey: ['shopping'] }) === 1) {
@@ -160,10 +170,30 @@ export function buildShoppingMutationDefaults(
   bought: MutationOptions<void, AppError, BoughtVars, BoughtContext>;
   quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext>;
 } {
-  // An add can resolve to an item that was already on the list; a bought queued behind it
-  // must reach that item.
-  const resolved = new Map<string, string>();
-  const resolve = (id: string) => resolved.get(id) ?? id;
+  // Nothing observes the resolved ids: without this they would be collected after five minutes,
+  // while a bought waiting for the connection may still need them.
+  queryClient.setQueryDefaults(['shopping-resolved'], { gcTime: Infinity });
+  const resolve = (householdId: string, id: string) =>
+    queryClient.getQueryData<Resolved>(resolvedKey(householdId))?.[id] ?? id;
+  // Keeps the resolutions a pending bought or quantity change still needs, plus the new one.
+  const remember = (householdId: string, id: string, resolvedId: string) => {
+    const needed = new Set(
+      queryClient
+        .getMutationCache()
+        .findAll({
+          status: 'pending',
+          predicate: (m) => {
+            const kind = m.options.mutationKey?.[1];
+            return kind === boughtKey[1] || kind === quantityKey[1];
+          },
+        })
+        .map((m) => (m.state.variables as { id?: string } | undefined)?.id),
+    );
+    queryClient.setQueryData<Resolved>(resolvedKey(householdId), (current) => ({
+      ...Object.fromEntries(Object.entries(current ?? {}).filter(([from]) => needed.has(from))),
+      [id]: resolvedId,
+    }));
+  };
   const syncFailed = (name: string) => notify(t('shopping.syncFailed', { name }));
 
   const add: MutationOptions<string, AppError, AddVars, AddContext> = {
@@ -195,7 +225,7 @@ export function buildShoppingMutationDefaults(
     },
     onSuccess: (resolvedId, { id, householdId }, context) => {
       if (resolvedId === id) return;
-      resolved.set(id, resolvedId);
+      remember(householdId, id, resolvedId);
       // A restored add can come without its context (the app closed during onMutate): its
       // optimistic item, if it reached the list, is found by id.
       queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) => {
@@ -220,11 +250,12 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
-    mutationFn: ({ id, bought: value }) => setItemBought(resolve(id), value),
+    mutationFn: ({ id, householdId, bought: value }) =>
+      setItemBought(resolve(householdId, id), value),
     onMutate: async ({ id, householdId, bought: value, userId }) => {
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       const previous = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
       queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
         current ? applyBought(current, target, value, userId, new Date().toISOString()) : current,
@@ -234,7 +265,7 @@ export function buildShoppingMutationDefaults(
     // Roll back only this item's bought state: other changes in flight keep theirs.
     onError: (_error, { id, householdId }, context) => {
       const key = listKey(householdId);
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       const previous = context?.previous;
       if (previous) {
         queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
@@ -260,7 +291,7 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     mutationFn: async ({ id, householdId, name, quantity: value }) => {
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone before its turn: nothing left to change.
       const item = queryClient
         .getQueryData<ShoppingItem[]>(listKey(householdId))
@@ -270,7 +301,7 @@ export function buildShoppingMutationDefaults(
     },
     onMutate: async ({ id, householdId, quantity: value }) => {
       const key = listKey(householdId);
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       const previous = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
       // Before the await, so a bought queued right after cannot get in first and hide it.
       queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
@@ -284,7 +315,7 @@ export function buildShoppingMutationDefaults(
       const previous = context?.previous;
       if (previous) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
-          current ? applyQuantity(current, resolve(id), previous.quantity) : current,
+          current ? applyQuantity(current, resolve(householdId, id), previous.quantity) : current,
         );
       }
       notify(shoppingErrorMessage(error));

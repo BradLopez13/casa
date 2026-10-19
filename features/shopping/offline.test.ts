@@ -90,6 +90,7 @@ describe('shouldPersistQuery', () => {
     expect(shouldPersistQuery(['shopping-history', 'h'])).toBe(true);
     expect(shouldPersistQuery(['membership'])).toBe(true);
     expect(shouldPersistQuery(['members', 'h'])).toBe(true);
+    expect(shouldPersistQuery(['shopping-resolved', 'h'])).toBe(true);
     expect(shouldPersistQuery(['tasks', 'h'])).toBe(false);
     expect(shouldPersistQuery(['invites', 'h'])).toBe(false);
   });
@@ -335,6 +336,55 @@ describe('restart', () => {
 
     expect(addShoppingItem).toHaveBeenCalledWith('a', 'h', 'Leche', null);
     expect(after.queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success');
+  });
+
+  it('sends a restored bought to the item its add merged into before the app closed', async () => {
+    const before = setup();
+    before.queryClient.setQueryData(key, [existing]);
+    onlineManager.setOnline(false);
+    void before.add(milk).catch(() => undefined);
+    void before
+      .bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' })
+      .catch(() => undefined);
+    vi.mocked(addShoppingItem).mockResolvedValue('x');
+    // The bought is on its way when the app closes.
+    vi.mocked(setItemBought).mockReturnValue(new Promise<void>(() => undefined));
+    onlineManager.setOnline(true);
+    void before.queryClient.resumePausedMutations();
+    await vi.waitFor(() => expect(setItemBought).toHaveBeenCalledWith('x', true));
+
+    const after = restart(before.queryClient);
+    vi.mocked(setItemBought).mockReset().mockResolvedValue(undefined);
+    await resumeShoppingQueue(after.queryClient);
+
+    expect(setItemBought).toHaveBeenCalledWith('x', true);
+    expect(setItemBought).not.toHaveBeenCalledWith('a', true);
+  });
+
+  it('keeps the resolution a queued quantity change still needs when another add resolves', async () => {
+    const { queryClient, add, quantity } = setup();
+    queryClient.setQueryData(key, [existing]);
+    onlineManager.setOnline(false);
+    const added = add(milk);
+    const second = add({ ...milk, id: 'b' });
+    const changed = quantity({ id: 'a', householdId: 'h', name: 'Leche', quantity: '3' });
+    vi.mocked(addShoppingItem).mockResolvedValue('x');
+    vi.mocked(updateShoppingItem).mockResolvedValue(undefined);
+    onlineManager.setOnline(true);
+    await queryClient.resumePausedMutations();
+    await Promise.all([added, changed, second]);
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+  });
+
+  it('keeps only the resolutions a pending bought still needs', async () => {
+    const { queryClient, add, bought } = setup();
+    queryClient.setQueryData(key, [existing]);
+    vi.mocked(addShoppingItem).mockResolvedValue('x');
+    vi.mocked(setItemBought).mockResolvedValue(undefined);
+    await add(milk);
+    await bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' });
+    await add({ ...milk, id: 'b' });
+    expect(queryClient.getQueryData(['shopping-resolved', 'h'])).toEqual({ b: 'x' });
   });
 
   it('rebinds a restored add that lost its context (the app closed during onMutate)', async () => {
