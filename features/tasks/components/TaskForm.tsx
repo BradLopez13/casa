@@ -30,6 +30,7 @@ import { useTheme } from '@/ui/theme';
 import { displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
+import { oneLineTitle } from '@/domain/tasks/title';
 import type { TaskInput } from '../api';
 import { parsedFormValues, quickLocale } from '../quickAddInput';
 import { taskFormSchema } from '../schemas';
@@ -245,13 +246,18 @@ export function TaskForm({
                     label={t('taskForm.titleLabel')}
                     placeholder={t('taskForm.titlePlaceholder')}
                     value={typed.title}
-                    onChangeText={(text) => setTyped((current) => ({ ...current, title: text }))}
+                    onChangeText={(text) =>
+                      setTyped((current) => ({ ...current, title: oneLineTitle(text) }))
+                    }
                     // On a short window the keyboard would hide the rest of the note, so there
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}
                     maxLength={200}
                     returnKeyType="done"
-                    blurOnSubmit
+                    // Wraps instead of scrolling sideways: with large text a long title showed only
+                    // its end. Return still submits, so a title never gets a line break.
+                    multiline
+                    submitBehavior="blurAndSubmit"
                     // The keyboard's check mark takes the same path as Save.
                     onSubmitEditing={() => {
                       if (!saving) save();

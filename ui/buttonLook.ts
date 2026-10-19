@@ -57,7 +57,7 @@ export function buttonLook(
       ? { fill: colors.red, border: colors.red, foreground: colors.onRed, labelOpacity: 1 }
       : {
           fill: colors.accent,
-          border: colors.accent,
+          border: colors.accentEdge,
           foreground: colors.onAccent,
           labelOpacity: 1,
         };

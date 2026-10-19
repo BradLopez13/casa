@@ -205,4 +205,27 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(magnet).toContain('decorative');
     expect(magnet).not.toMatch(/check=/);
   });
+
+  // §36: the pósit's edge is a token of its own, so high contrast can turn it slate.
+  it('the pósit edge is always accentEdge', () => {
+    const accentBorder = /border(Color)?:\s*colors\.accent\b/;
+    expect(offenders(sources, (line) => accentBorder.test(line))).toEqual([]);
+    expect(read('ui/buttonLook.ts')).not.toMatch(accentBorder);
+  });
+
+  // §36: a pósit fill drawn by hand (not Button or Magnet) brings its edge along, or high
+  // contrast leaves it at 1.4:1 on paper. The swipe strip under a note is the documented exception.
+  it('a hand-drawn pósit fill also draws its edge', () => {
+    const edged = /positEdge|look\.border|accentEdge/;
+    const found = sources
+      .filter((f) => !edged.test(read(f)))
+      .flatMap((f) => {
+        // `look.fill` is the pósit only where the look is a primary button's.
+        const fill = read(f).includes("buttonLook('primary'")
+          ? /backgroundColor:\s*(colors\.accent|look\.fill)\b/
+          : /backgroundColor:\s*colors\.accent\b/;
+        return offenders([f], (line) => fill.test(line) && !line.includes('// pósit sin borde'));
+      });
+    expect(found).toEqual([]);
+  });
 });

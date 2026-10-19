@@ -24,6 +24,7 @@ import { useNotice } from '@/ui/components/Notice';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { announce } from '@/ui/a11y';
 
 /** Mounted once inside its frame, so rotating never remounts the form. */
 export default function EditTaskRoute() {
@@ -161,7 +162,15 @@ function EditTaskScreen() {
         onSave={(input) => {
           remove.reset();
           skip.reset();
-          save.submit({ input }, { onSuccess: close });
+          save.submit(
+            { input },
+            {
+              onSuccess: () => {
+                announce(t('tasks.a11y.saved'));
+                close();
+              },
+            },
+          );
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}

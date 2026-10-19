@@ -1,8 +1,9 @@
 // Pure: no react-native import, so Vitest can check it.
 
 export type DeferredClear = {
-  /** Starts the undo window; a clear already waiting goes through first. */
-  start: (ms: number) => void;
+  /** Starts the undo window; a clear already waiting goes through first. null: no timer, the
+   * clear waits for `flush` (a screen reader keeps «Deshacer» until the person is done). */
+  start: (ms: number | null) => void;
   /** Keeps the bag. True when there was a clear to stop. */
   undo: () => boolean;
   /** Clears now if one is waiting (the screen goes away). */
@@ -23,6 +24,7 @@ export function createDeferredClear({
   schedule: (fn: () => void, ms: number) => () => void;
 }): DeferredClear {
   let cancel: (() => void) | null = null;
+  const nothing = () => undefined;
   const take = () => {
     const waiting = cancel;
     cancel = null;
@@ -35,10 +37,13 @@ export function createDeferredClear({
   return {
     start: (ms) => {
       flush();
-      cancel = schedule(() => {
-        cancel = null;
-        commit();
-      }, ms);
+      cancel =
+        ms === null
+          ? nothing
+          : schedule(() => {
+              cancel = null;
+              commit();
+            }, ms);
     },
     undo: take,
     flush,

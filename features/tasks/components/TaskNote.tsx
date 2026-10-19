@@ -155,7 +155,7 @@ export function TaskNote({
               width: 72,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: colors.accent,
+              backgroundColor: colors.accent, // pósit sin borde: franja que solo asoma al deslizar
             }}
           >
             <Ionicons name="checkmark" size={24} color={colors.onAccent} accessible={false} />
