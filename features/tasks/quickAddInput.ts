@@ -13,14 +13,15 @@ export type QuickAddContext = QuickParseContext;
 export function quickAddInput(
   text: string,
   assigneeId: string | null,
-  dueOn: string,
+  dueOn: string | null,
   ctx: QuickAddContext,
 ): TaskInput | null {
   const raw = text.trim();
   if (raw === '') return null;
   const parse = quickParse(raw, ctx);
   // A repeat with no date of its own starts on the given day, and a monthly one keeps that day.
-  const due = parse.dueOn ?? dueOn;
+  // With no given day (Todas) the task stays undated, unless it repeats: a repeat needs a date.
+  const due = parse.dueOn ?? dueOn ?? (parse.recurrence === null ? null : ctx.today);
   return {
     title: parse.title === '' ? raw : parse.title,
     room: parse.room,

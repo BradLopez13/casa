@@ -13,15 +13,20 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { useTheme } from '@/ui/theme';
 
-/** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
-export function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
+/**
+ * The field for the chosen day: Hoy and Mañana read as words, any other day as its name. No day
+ * (Todas) adds the task undated.
+ */
+export function DayQuickAdd({ screen, day }: { screen: Screen; day: string | null }) {
   const { today, userId, membership } = screen;
   const placeholder =
-    day === today
-      ? t('today.quickAdd')
-      : day === addDays(today, 1)
-        ? t('tasks.quickAddTomorrow')
-        : t('tasks.quickAddDay', { day: dayInSentence(day, today) });
+    day === null
+      ? t('tasks.quickAddUndated')
+      : day === today
+        ? t('today.quickAdd')
+        : day === addDays(today, 1)
+          ? t('tasks.quickAddTomorrow')
+          : t('tasks.quickAddDay', { day: dayInSentence(day, today) });
   return (
     <QuickAdd
       testID="tasks.quick-add"

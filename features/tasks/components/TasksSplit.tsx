@@ -145,7 +145,7 @@ function AllColumn({ screen, sections, empty, door }: SplitProps) {
       >
         <View style={column}>
           <View style={{ paddingTop: space(4), gap: space(2) }}>
-            <DayQuickAdd screen={screen} day={screen.today} />
+            <DayQuickAdd screen={screen} day={null} />
             <IdeasButton />
           </View>
           {sections.length > 0 ? (
