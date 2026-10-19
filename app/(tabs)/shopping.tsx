@@ -49,6 +49,7 @@ import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { actionIcons } from '@/ui/actionIcons';
+import { announce } from '@/ui/a11y';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
@@ -101,6 +102,7 @@ export default function ShoppingScreen() {
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
     addItem.mutate({ id: newShoppingItemId(), householdId, name, quantity: null, userId });
+    announce(t('shopping.a11y.added', { name }));
   };
 
   // Held by the screen, not the field: a turn of the tablet moves the field between the door and
@@ -114,7 +116,10 @@ export default function ShoppingScreen() {
 
   const toggle = (item: ShoppingItem) => {
     if (householdId === undefined || userId === null) return;
-    setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
+    const bought = item.boughtAt === null;
+    setBought.mutate({ id: item.id, householdId, bought, userId });
+    // The row moves to the other list and the reader's focus goes with it: say where it went.
+    announce(t(bought ? 'shopping.a11y.inBag' : 'shopping.a11y.backOnList', { name: item.name }));
   };
 
   // «Vaciar bolsa» is routine, so it asks nothing: the bag empties at once with «Deshacer», and

@@ -62,3 +62,8 @@ export function useScreenReader(): boolean {
 
 /** The screen reader setting right now, for callbacks that run outside a render. */
 export const isScreenReaderOn = screenReader.get;
+
+/** Says `message` with a screen reader on; nothing otherwise. For actions whose result is silent. */
+export function announce(message: string): void {
+  AccessibilityInfo.announceForAccessibility(message);
+}
