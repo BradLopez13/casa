@@ -251,7 +251,10 @@ export function TaskForm({
                     autoFocus={isNew && density.autoFocusTitle}
                     maxLength={200}
                     returnKeyType="done"
-                    blurOnSubmit
+                    // Wraps instead of scrolling sideways: with large text a long title showed only
+                    // its end. Return still submits, so a title never gets a line break.
+                    multiline
+                    submitBehavior="blurAndSubmit"
                     // The keyboard's check mark takes the same path as Save.
                     onSubmitEditing={() => {
                       if (!saving) save();
