@@ -14,7 +14,6 @@ import {
   revokeInvite,
   transferOwnership,
 } from '@/features/households/api';
-import { inviteExpiresText } from '@/features/households/inviteText';
 import { buildInviteUrl } from '@/features/households/invite-link';
 import { MemberRow } from '@/features/households/MemberRow';
 import {
@@ -25,6 +24,8 @@ import {
 } from '@/features/households/queries';
 import { forgetHouseholdData } from '@/data/query/persist';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
+import { DIALOGS, type Pending } from '@/features/households/memberDialogs';
+import { PendingInvites } from '@/features/households/PendingInvites';
 import { memberErrorMessage } from '@/features/households/errors';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -39,36 +40,8 @@ import { useTheme } from '@/ui/theme';
 import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
-type Pending = { kind: 'remove' | 'transfer' | 'leave' | 'delete'; userId?: string };
-
-const DIALOGS: Record<
-  Pending['kind'],
-  { title: MessageKey; message: MessageKey; action: MessageKey }
-> = {
-  remove: {
-    title: 'members.confirm.removeTitle',
-    message: 'members.confirm.removeMessage',
-    action: 'members.confirm.removeAction',
-  },
-  transfer: {
-    title: 'members.confirm.transferTitle',
-    message: 'members.confirm.transferMessage',
-    action: 'members.confirm.transferAction',
-  },
-  leave: {
-    title: 'members.confirm.leaveTitle',
-    message: 'members.confirm.leaveMessage',
-    action: 'members.confirm.leaveAction',
-  },
-  delete: {
-    title: 'members.confirm.deleteTitle',
-    message: 'members.confirm.deleteMessage',
-    action: 'members.confirm.deleteAction',
-  },
-};
-
 export default function MembersScreen() {
-  const { colors, radii, shadows, noteEdge, space } = useTheme();
+  const { colors, space } = useTheme();
   const split = paneMode(useLayout()) === 'split';
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -291,60 +264,13 @@ export default function MembersScreen() {
       {error ? <ErrorText testID="members.error">{error}</ErrorText> : null}
 
       {heading('members.pendingTitle')}
-      {invites.isError ? (
-        <>
-          <ErrorText testID="members.invites-error">{t('members.invitesLoadError')}</ErrorText>
-          <Button
-            testID="members.invites-retry"
-            title={t('errors.retry')}
-            variant="secondary"
-            icon={actionIcons.retry}
-            width="hug"
-            loading={invites.isFetching}
-            onPress={() => void invites.refetch()}
-          />
-        </>
-      ) : invites.data ? (
-        invites.data.length === 0 ? (
-          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.pendingEmpty')}</Text>
-        ) : (
-          invites.data.map((inv, index) => (
-            <View
-              key={inv.id}
-              testID={`members.invite-row.${inv.id}`}
-              // A pending invite is a note on the page, like the member rows.
-              style={{
-                gap: space(3),
-                padding: space(4),
-                borderRadius: radii.note,
-                backgroundColor: colors.note,
-                ...shadows.note,
-                ...noteEdge,
-              }}
-            >
-              <Text style={{ color: colors.ink, fontSize: 16 }}>
-                {inviteExpiresText(inv.expiresAt)}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(3) }}>
-                {index === 0 ? copyLink : null}
-                {isOwner || inv.createdBy === userId ? (
-                  <Button
-                    testID={`members.revoke.${inv.id}`}
-                    title={t('members.revoke')}
-                    variant="tertiary"
-                    icon={actionIcons.revoke}
-                    width="hug"
-                    loading={revoke.isPending && revoke.variables === inv.id}
-                    onPress={() => onRevoke(inv.id)}
-                  />
-                ) : null}
-              </View>
-            </View>
-          ))
-        )
-      ) : (
-        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
-      )}
+      <PendingInvites
+        invites={invites}
+        copyLink={copyLink}
+        canRevoke={(createdBy) => isOwner || createdBy === userId}
+        revokingId={revoke.isPending ? revoke.variables : undefined}
+        onRevoke={onRevoke}
+      />
       <AccountZone>
         <Button
           testID="members.leave"

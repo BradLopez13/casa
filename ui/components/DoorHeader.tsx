@@ -1,98 +1,31 @@
-import { Children, createContext, useContext, useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useContext, useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
-import { DOOR_MAX_SCALE, DOOR_TYPE, doorFor, type Door, type DoorType } from '../door';
+import { DOOR_MAX_SCALE } from '../door';
 import { useTheme } from '../theme';
-import { displayFont, displayFontBold, MIN_TOUCH } from '../tokens';
+import { displayFontBold, MIN_TOUCH } from '../tokens';
 import { useLayout } from '../useLayout';
+import {
+  DoorCompactContext,
+  DoorInsetContext,
+  DoorTypeContext,
+  useDoor,
+  useFridgeRefresh,
+} from './doorContext';
+import { DoorHeadline } from './DoorHeadline';
 
-/** True when a parent (FridgeRefresh) already paints the door colour under the status bar. */
-export const DoorInsetContext = createContext(false);
-
-export type FridgeRefreshValue = { refreshing: boolean; onRefresh: () => void };
-
-/** Provided by FridgeRefresh: lets the door's handle refresh the pane it sits in. */
-export const FridgeRefreshContext = createContext<FridgeRefreshValue | null>(null);
-
-/** The refresh of the surrounding FridgeRefresh, or null when the screen has none. */
-export function useFridgeRefresh(): FridgeRefreshValue | null {
-  return useContext(FridgeRefreshContext);
-}
-
-const DoorCompactContext = createContext(false);
-const DoorTypeContext = createContext<DoorType>(DOOR_TYPE.full);
-
-/**
- * True inside a compact door (short window): the door's children have one row beside the
- * headline, so they should lay themselves out in a row (magnets, filter and counter side by side).
- */
-export function useDoorCompact(): boolean {
-  return useContext(DoorCompactContext);
-}
-
-/** How this window draws the door (`doorFor`): a screen asks it to know where its quick add goes. */
-export function useDoor(): Door {
-  const layout = useLayout();
-  const { height, fontScale } = useWindowDimensions();
-  return doorFor(layout, height, fontScale);
-}
-
-/** The sizes of the door this sits in (§14.4): full, or the same hierarchy smaller when compact. */
-export function useDoorType(): DoorType {
-  return useContext(DoorTypeContext);
-}
-
-/**
- * The controls under a door's headline (magnets, filter, counter): stacked in a full door, side by
- * side in one row in a compact one. In that row each control keeps its natural width and a
- * control that does not fit beside the one before moves onto a line of its own, where it may
- * shrink (a counter wraps its text, a long filter scrolls). Nothing is squeezed to make room for
- * a neighbour, so enlarged text never runs over a magnet.
- *
- * `row` (Tareas: filter and mode) is one line that never wraps, in a full door or a compact one:
- * the first controls shrink (the filter scrolls) and the last keeps its width. A horizontal
- * ScrollView has no intrinsic width on Android, so in a wrapping row it took the whole line, the
- * switch wrapped under it and the row did not grow for that second line, painting the switch over
- * the day strip below.
- */
-export function DoorControls({ children, row = false }: { children: ReactNode; row?: boolean }) {
-  const { space } = useTheme();
-  const compact = useDoorCompact();
-  if (!compact && !row) return <View style={{ gap: space(4) }}>{children}</View>;
-  if (row) {
-    const items = Children.toArray(children);
-    return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: space(5) }}>
-        {items.map((child, i) => (
-          <View
-            key={i}
-            style={i === items.length - 1 ? { flexShrink: 0 } : { flexShrink: 1, minWidth: 0 }}
-          >
-            {child}
-          </View>
-        ))}
-      </View>
-    );
-  }
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        columnGap: space(5),
-        rowGap: space(2),
-      }}
-    >
-      {Children.toArray(children).map((child, i) => (
-        <View key={i} style={{ flexShrink: 1, minWidth: 0, maxWidth: '100%' }}>
-          {child}
-        </View>
-      ))}
-    </View>
-  );
-}
+// The door's pieces live beside it; screens keep importing them from here.
+export {
+  DoorInsetContext,
+  FridgeRefreshContext,
+  useDoor,
+  useDoorCompact,
+  useDoorType,
+  useFridgeRefresh,
+  type FridgeRefreshValue,
+} from './doorContext';
+export { DoorControls, DoorHeadline } from './DoorHeadline';
 
 type Props = {
   /**
@@ -136,47 +69,6 @@ type Props = {
 const COMPACT_CHILDREN_MIN = 240;
 /** Seven one-line day cells («lun 18») side by side: below this the quick add wraps under them. */
 const STRIP_MIN = 360;
-
-/**
- * A door headline in the display face (Rounded 800, 32 on 38; 24 in a compact door), with its
- * count a point larger in the same colour. It grows with the phone's text size up to the door's
- * cap (`DOOR_MAX_SCALE`), so enlarged text never pushes the list off the screen.
- */
-export function DoorHeadline({
-  text,
-  number,
-  testID,
-}: {
-  text: string;
-  number?: string | null;
-  testID?: string;
-}) {
-  const { colors } = useTheme();
-  const type = useDoorType();
-  // The count is the last number in the sentence (a name could hold digits, never the count's tail).
-  const at = number ? text.lastIndexOf(number) : -1;
-  const head = at < 0 ? text : text.slice(0, at);
-  const tail = at < 0 || !number ? '' : text.slice(at + number.length);
-  return (
-    <Text
-      testID={testID}
-      maxFontSizeMultiplier={DOOR_MAX_SCALE}
-      style={{
-        color: colors.ink,
-        fontFamily: displayFont,
-        fontSize: type.heading,
-        lineHeight: type.lineHeight,
-        letterSpacing: -type.heading * 0.02,
-        fontVariant: ['tabular-nums'],
-        ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
-      }}
-    >
-      {head}
-      {at >= 0 ? <Text style={{ fontSize: type.number }}>{number}</Text> : null}
-      {tail}
-    </Text>
-  );
-}
 
 /**
  * The enamel door at the top of a main screen, with its handle on the bottom edge (it refreshes

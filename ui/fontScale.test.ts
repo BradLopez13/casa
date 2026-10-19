@@ -47,7 +47,9 @@ describe('font scale caps', () => {
   });
 
   it('caps the door’s eyebrow, headline and line', () => {
-    const door = readFileSync(path.join(ROOT, 'ui/components/DoorHeader.tsx'), 'utf8');
+    const door = ['ui/components/DoorHeader.tsx', 'ui/components/DoorHeadline.tsx']
+      .map((f) => readFileSync(path.join(ROOT, f), 'utf8'))
+      .join('\n');
     expect(door.split(DOOR_CAP).length - 1).toBeGreaterThanOrEqual(3);
   });
 });

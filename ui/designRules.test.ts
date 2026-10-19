@@ -202,7 +202,7 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   // vacía y en la puerta de Ajustes», besides the brand band, the fridge light and the fatal screen.
   it('the symbol only appears where DESIGN.md allows it', () => {
     const allowed = [
-      'app/(tabs)/settings.tsx',
+      'features/settings/SettingsPieces.tsx',
       'app/(tabs)/tasks.tsx',
       'features/tasks/components/DayDone.tsx',
       'features/tasks/components/MemberFilter.tsx',
