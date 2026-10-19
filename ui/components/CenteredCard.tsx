@@ -118,6 +118,21 @@ export function CenteredCard({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {/* The band asks for light status icons: beside, a slate strip under the status bar keeps
+          the ones over the page readable, and joins the band at the side. */}
+      {beside ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: insets.top,
+            backgroundColor: colors.brandBand,
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
