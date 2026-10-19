@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import { toAppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
 import { requestPermission } from '@/features/reminders/notifications';
+import { settingsErrorMessage } from '@/features/settings/errors';
 import { usePhonePermission } from '@/features/settings/useNotificationPermission';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -92,13 +92,7 @@ export function HouseholdNoticesSection() {
         <Text style={{ color: colors.muted, fontSize: 13 }}>{joinedState.caption}</Text>
       ) : null}
       {error ? (
-        <ErrorText testID="settings.push.error">
-          {t(
-            toAppError(error).code === 'NETWORK'
-              ? 'members.errors.NETWORK'
-              : 'members.errors.UNKNOWN',
-          )}
-        </ErrorText>
+        <ErrorText testID="settings.push.error">{settingsErrorMessage(error)}</ErrorText>
       ) : null}
       {view === 'enable' ? (
         <Button

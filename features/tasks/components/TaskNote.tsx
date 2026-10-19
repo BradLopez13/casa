@@ -18,6 +18,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
+import { CompleteBox } from '@/ui/components/CompleteBox';
 import { Magnet } from '@/ui/components/Magnet';
 import {
   enterAnimation,
@@ -38,7 +39,6 @@ const PRESS_MS = 80;
 const PRESS_SCALE = 0.9;
 // A new note's magnet starts a little small and snaps onto the door.
 const SNAP_SCALE = 0.85;
-const TOGGLE_SLOP = Math.ceil((MIN_TOUCH - magnetSizes.md) / 2);
 
 type Props = {
   task: TaskItem;
@@ -52,7 +52,10 @@ type Props = {
   onOpen: () => void;
 };
 
-/** A task as a paper note; its magnet (the assignee) sticks out of the left edge and completes it. */
+/**
+ * A task as a paper note: its magnet (the assignee) sticks out of the left edge and the box at the
+ * right edge completes it.
+ */
 export function TaskNote({
   task,
   today,
@@ -71,6 +74,8 @@ export function TaskNote({
   const lands = fresh && !reduceMotion;
   const scale = useSharedValue(lands ? SNAP_SCALE : 1);
   const magnetStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const boxScale = useSharedValue(1);
+  const boxStyle = useAnimatedStyle(() => ({ transform: [{ scale: boxScale.value }] }));
 
   // The magnet snaps on as the note lands (QuickAdd gives the rigid vibration).
   useEffect(() => {
@@ -78,7 +83,7 @@ export function TaskNote({
     // Reanimated shared values are mutated through .value by design.
     // eslint-disable-next-line react-hooks/immutability
     if (lands) scale.value = withSpring(1, SPRING);
-    // Only on arrival: later presses animate the magnet themselves.
+    // Only on arrival: later presses animate the box instead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -91,14 +96,14 @@ export function TaskNote({
 
   const press = () => {
     if (!reduceMotion) {
-      // The magnet sinks and springs back; the note then lifts off (exitAnimation).
+      // The box sinks and springs back; the note then lifts off (exitAnimation).
       // eslint-disable-next-line react-hooks/immutability
-      scale.value = withSequence(
+      boxScale.value = withSequence(
         withTiming(PRESS_SCALE, { duration: PRESS_MS }),
         withSpring(1, SPRING),
       );
     }
-    // Tapping an open note's magnet completes it; a done one only reopens.
+    // Tapping an open note's box completes it; a done one only reopens.
     void haptic(done ? 'light' : 'success');
     onToggle();
   };
@@ -124,31 +129,17 @@ export function TaskNote({
         ...noteEdge,
       }}
     >
-      <Pressable
-        testID={`task-note.${task.id}.toggle`}
-        onPress={press}
-        disabled={busy}
-        hitSlop={TOGGLE_SLOP}
-        accessibilityRole="checkbox"
-        accessibilityLabel={t(done ? 'tasks.a11y.reopen' : 'tasks.a11y.complete', {
-          title: task.title,
-        })}
-        accessibilityState={{ checked: done, disabled: busy, busy }}
-        style={{ marginLeft: -magnetSizes.md / 2 }}
-      >
-        <Animated.View style={magnetStyle}>
-          <Magnet
-            size="md"
-            decorative
-            variant={mark ? 'filled' : 'empty'}
-            posit={!done}
-            check={done ? 'filled' : 'faint'}
-            color={mark?.color ?? 'teal'}
-            initial={mark?.initial ?? ''}
-            accessibilityLabel={assigneeName ?? ''}
-          />
-        </Animated.View>
-      </Pressable>
+      {/* The magnet only says whose task it is; the box on the right completes it. */}
+      <Animated.View style={[{ marginLeft: -magnetSizes.md / 2 }, magnetStyle]}>
+        <Magnet
+          size="md"
+          decorative
+          variant={mark ? 'filled' : 'empty'}
+          color={mark?.color ?? 'teal'}
+          initial={mark?.initial ?? ''}
+          accessibilityLabel={assigneeName ?? ''}
+        />
+      </Animated.View>
       <ReanimatedSwipeable
         ref={swipeable}
         enabled={canSwipe}
@@ -164,7 +155,7 @@ export function TaskNote({
               width: 72,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: colors.accent,
+              backgroundColor: colors.accent, // pósit sin borde: franja que solo asoma al deslizar
             }}
           >
             <Ionicons name="checkmark" size={24} color={colors.onAccent} accessible={false} />
@@ -177,50 +168,74 @@ export function TaskNote({
           swipeable.current?.close();
         }}
       >
-        <Pressable
-          testID={`task-note.${task.id}`}
-          onPress={provisional ? undefined : onOpen}
-          accessibilityRole="button"
-          accessibilityLabel={label}
-          accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
-          accessibilityState={{ disabled: provisional }}
-          accessibilityActions={
-            canSwipe
-              ? [{ name: 'complete', label: t('tasks.a11y.complete', { title: task.title }) }]
-              : undefined
-          }
-          onAccessibilityAction={(e) => {
-            if (canSwipe && e.nativeEvent.actionName === 'complete') complete();
-          }}
-          style={{
-            flex: 1,
-            minHeight: MIN_TOUCH,
-            justifyContent: 'center',
-            gap: space(0.5),
-            padding: space(3),
-          }}
-        >
-          <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
-            {task.title}
-          </Text>
-          {room ? <Text style={{ color: colors.muted, fontSize: 14 }}>{room}</Text> : null}
-          {/* Overdue is a calm state, never an alarm: muted text with a clock, no red. */}
-          <Text style={{ color: colors.muted, fontSize: 14, fontVariant: ['tabular-nums'] }}>
-            <Ionicons
-              name={overdue ? 'time-outline' : 'calendar-outline'}
-              size={14}
-              color={colors.muted}
-              accessible={false}
-            />
-            {` ${due}`}
-          </Text>
-          {repeat ? (
-            <Text style={{ color: colors.muted, fontSize: 14 }}>
-              <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
-              {` ${repeat}`}
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable
+            testID={`task-note.${task.id}`}
+            onPress={provisional ? undefined : onOpen}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
+            accessibilityState={{ disabled: provisional }}
+            accessibilityActions={
+              canSwipe
+                ? [{ name: 'complete', label: t('tasks.a11y.complete', { title: task.title }) }]
+                : undefined
+            }
+            onAccessibilityAction={(e) => {
+              if (canSwipe && e.nativeEvent.actionName === 'complete') complete();
+            }}
+            style={{
+              flex: 1,
+              minHeight: MIN_TOUCH,
+              justifyContent: 'center',
+              gap: space(0.5),
+              padding: space(3),
+            }}
+          >
+            <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>
+              {task.title}
             </Text>
-          ) : null}
-        </Pressable>
+            {room ? <Text style={{ color: colors.muted, fontSize: 14 }}>{room}</Text> : null}
+            {/* Overdue is a calm state, never an alarm: muted text with a clock, no red. */}
+            <Text style={{ color: colors.muted, fontSize: 14, fontVariant: ['tabular-nums'] }}>
+              <Ionicons
+                name={overdue ? 'time-outline' : 'calendar-outline'}
+                size={14}
+                color={colors.muted}
+                accessible={false}
+              />
+              {` ${due}`}
+            </Text>
+            {repeat ? (
+              <Text style={{ color: colors.muted, fontSize: 14 }}>
+                <Ionicons name="repeat" size={14} color={colors.muted} accessible={false} />
+                {` ${repeat}`}
+              </Text>
+            ) : null}
+          </Pressable>
+          <Pressable
+            testID={`task-note.${task.id}.toggle`}
+            onPress={press}
+            disabled={busy}
+            accessibilityRole="checkbox"
+            accessibilityLabel={t(done ? 'tasks.a11y.reopen' : 'tasks.a11y.complete', {
+              title: task.title,
+            })}
+            accessibilityState={{ checked: done, disabled: busy, busy }}
+            style={{
+              minWidth: MIN_TOUCH,
+              minHeight: MIN_TOUCH,
+              alignSelf: 'stretch',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingRight: space(2),
+            }}
+          >
+            <Animated.View style={boxStyle}>
+              <CompleteBox checked={done} />
+            </Animated.View>
+          </Pressable>
+        </View>
       </ReanimatedSwipeable>
     </Animated.View>
   );

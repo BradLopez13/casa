@@ -67,3 +67,12 @@ export function applyBought(
     i.id !== id ? i : { ...i, boughtAt: bought ? nowIso : null, boughtBy: bought ? userId : null },
   );
 }
+
+/** Sets the quantity of a pending item; a bought item or an unknown id leaves the list as it is. */
+export function applyQuantity(
+  items: ShoppingItem[],
+  id: string,
+  quantity: string | null,
+): ShoppingItem[] {
+  return items.map((i) => (i.id === id && i.boughtAt === null ? { ...i, quantity } : i));
+}

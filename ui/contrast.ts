@@ -45,3 +45,16 @@ export function hueDistance(a: string, b: string): number {
   const d = Math.abs(hue(a) - hue(b));
   return Math.min(d, 360 - d);
 }
+
+/** The opaque colour `fg` at `alpha` makes when drawn over `bg`. */
+export function mixOver(fg: string, bg: string, alpha: number): string {
+  const top = channels(fg);
+  const under = channels(bg);
+  return `#${top
+    .map((c, i) =>
+      Math.round(c * alpha + (under[i] ?? 0) * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}

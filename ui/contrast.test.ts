@@ -61,6 +61,13 @@ describe('dark palette keeps red apart from the pósit', () => {
   });
 });
 
+describe('the light door', () => {
+  // The enamel door has to read as its own panel against the paper, not as a faint tint of it.
+  it('stands apart from the paper', () => {
+    expect(contrastRatio(palettes.light.door, palettes.light.page)).toBeGreaterThanOrEqual(1.3);
+  });
+});
+
 describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) => {
   const p = palettes[scheme];
   const grounds = { page: p.page, door: p.door, note: p.note };
@@ -115,26 +122,28 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
   const grounds = { page: p.page, note: p.note };
 
   // WCAG 1.4.11: the parts that show a switch and its state need 3:1 against what is around them.
-  it.each(Object.entries(grounds))('off: track, edge and thumb on %s', (_, ground) => {
+  it.each(Object.entries(grounds))('off: track, edge and thumb ring on %s', (_, ground) => {
     const off = toggleLook(false, p, ground);
     expect(off.track).toBe(ground);
     expect(contrastRatio(off.trackBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrastRatio(off.thumb, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    // The light thumb may vanish on a light ground; its `outline` ring carries it.
+    expect(contrastRatio(off.thumbBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(off.check).toBe(false);
   });
 
-  it.each(Object.entries(grounds))('on: track on %s, thumb on the track', (_, ground) => {
+  it.each(Object.entries(grounds))('on: filled track on %s, thumb on the track', (_, ground) => {
     const on = toggleLook(true, p, ground);
-    expect(on.track).toBe(p.selection);
+    expect(on.track).toBe(p.toggleOn);
     expect(contrastRatio(on.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(on.check).toBe(true);
   });
 
-  it('on in dark: the thumb is the dark slate and keeps its edge', () => {
-    const on = toggleLook(true, palettes.dark, palettes.dark.page);
-    expect(on.thumb).toBe('#151B1E');
-    expect(on.thumbBorder).toBe('#151B1E');
+  it('one polarity: the thumb is light, on and off, and only on fills the track', () => {
+    expect(toggleLook(true, p, p.page).thumb).toBe(p.toggleThumb);
+    expect(toggleLook(false, p, p.page).thumb).toBe(p.toggleThumb);
+    expect(p.toggleThumb).toBe('#F3F4F0');
+    expect(toggleLook(false, p, p.page).track).toBe(p.page);
   });
 });
 

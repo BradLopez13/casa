@@ -1,0 +1,54 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Tania owns "Piso Tania", where Toni is a member
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: tania@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      id: settings.members
+- tapOn:
+    id: settings.members
+- extendedWaitUntil:
+    visible: Toni
+    timeout: 20000
+
+# Hand the household to Toni
+- tapOn:
+    id: members.make-owner.*
+- extendedWaitUntil:
+    visible: ¿Pasar el hogar a Toni?
+    timeout: 5000
+- tapOn:
+    id: members.confirm
+# Tania is a member now: the owner's actions and deleting the household are gone
+- extendedWaitUntil:
+    notVisible:
+      id: members.make-owner.*
+    timeout: 20000
+- assertNotVisible:
+    id: members.remove.*
+- assertNotVisible:
+    id: members.delete-household
+- assertVisible:
+    id: members.leave

@@ -58,8 +58,8 @@ export function tabBarHeight({
 
 /**
  * How far from the screen's bottom edge something floating must sit to clear the tab bar: the
- * bar's height with the safe area when it is at the bottom; only the bottom inset when the
- * side rail takes its place.
+ * bar's height with the safe area when it is at the bottom (as measured once it has been laid
+ * out, the estimate until then); only the bottom inset when the side rail takes its place.
  */
 export function tabBarClearance({
   width,
@@ -67,13 +67,16 @@ export function tabBarClearance({
   fontScale,
   bottomInset,
   rail,
+  measured,
 }: {
   width: number;
   height: number;
   fontScale: number;
   bottomInset: number;
   rail: boolean;
+  measured?: number;
 }): number {
   if (rail) return bottomInset;
+  if (measured !== undefined && measured > 0) return measured;
   return tabBarHeight({ width, height, fontScale, bottomInset });
 }

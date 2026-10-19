@@ -12,6 +12,7 @@ import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { shoppingNameSchema } from '../schemas';
 import { actionIcons } from '@/ui/actionIcons';
+import { positEdge } from '@/ui/positEdge';
 
 const ADD_SIZE = 40;
 
@@ -150,6 +151,8 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
             justifyContent: 'center',
             borderRadius: radii.pill,
             backgroundColor: look.fill,
+            // With high contrast, the pósit on the white field gets its slate edge.
+            ...positEdge(look.fill, colors),
             opacity: pressedOpacity(pressed),
           })}
         >

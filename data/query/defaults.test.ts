@@ -10,6 +10,14 @@ afterEach(() => {
 });
 
 describe('appQueryDefaults', () => {
+  it('keeps a fresh load for a minute: Realtime and the reconnection refresh what changes', async () => {
+    const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
+    await queryClient.fetchQuery({ queryKey: ['tasks', 'h'], queryFn: () => [] });
+    const query = queryClient.getQueryCache().find({ queryKey: ['tasks', 'h'] });
+    expect(query?.isStale()).toBe(false);
+    expect(appQueryDefaults.queries?.staleTime).toBe(60_000);
+  });
+
   it('fails a mutation fast with NETWORK while offline instead of pausing it', async () => {
     const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
     onlineManager.setOnline(false);

@@ -22,7 +22,15 @@ export type Door = {
   handle: boolean;
   /** Tallest the door may be, in dp; `null` when it may grow with its content. */
   maxHeight: number | null;
+  /**
+   * The quick add sits inside the door, under its controls: on a short window in one column,
+   * where a field under the door would take the list's only row. Above two panes it stays put.
+   */
+  holdsQuickAdd: boolean;
 };
+
+/** Largest the door's own text grows with the system's: past it the list would have no room. */
+export const DOOR_MAX_SCALE = 1.4;
 
 /** Share of the window height a compact door may take, so the list keeps most of it. */
 const COMPACT_MAX_SHARE = 0.4;
@@ -46,15 +54,22 @@ export function doorFor(
   windowHeight: number,
   fontScale = 1,
 ): Door {
-  const fullDoor = FULL_DOOR_HEIGHT * Math.max(1, fontScale);
+  const fullDoor = FULL_DOOR_HEIGHT * Math.min(Math.max(1, fontScale), DOOR_MAX_SCALE);
   const crowdsPanes = layout.twoPane && fullDoor > windowHeight * COMPACT_MAX_SHARE;
   if (!layout.shortHeight && !crowdsPanes) {
-    return { compact: false, type: DOOR_TYPE.full, handle: true, maxHeight: null };
+    return {
+      compact: false,
+      type: DOOR_TYPE.full,
+      handle: true,
+      maxHeight: null,
+      holdsQuickAdd: false,
+    };
   }
   return {
     compact: true,
     type: DOOR_TYPE.compact,
     handle: false,
     maxHeight: Math.floor(windowHeight * COMPACT_MAX_SHARE),
+    holdsQuickAdd: layout.shortHeight && !layout.twoPane,
   };
 }
