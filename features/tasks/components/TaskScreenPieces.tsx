@@ -1,0 +1,90 @@
+import { type ReactNode } from 'react';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+import { addDays } from '@/domain/tasks/dates';
+import { dayInSentence } from '@/domain/tasks/labels';
+import { type StripDay } from '@/domain/tasks/strip';
+import { type TasksMode } from '@/features/tasks/components/ModeSwitch';
+import { QuickAdd } from '@/features/tasks/components/QuickAdd';
+import { type TaskListSection } from '@/features/tasks/sections';
+import { useTaskScreen } from '@/features/tasks/useTaskScreen';
+import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
+import { Button } from '@/ui/components/Button';
+import { useTheme } from '@/ui/theme';
+
+/** The field for the chosen day: Hoy and Mañana read as words, any other day as its name. */
+export function DayQuickAdd({ screen, day }: { screen: Screen; day: string }) {
+  const { today, userId, membership } = screen;
+  const placeholder =
+    day === today
+      ? t('today.quickAdd')
+      : day === addDays(today, 1)
+        ? t('tasks.quickAddTomorrow')
+        : t('tasks.quickAddDay', { day: dayInSentence(day, today) });
+  return (
+    <QuickAdd
+      testID="tasks.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={day}
+      placeholder={placeholder}
+    />
+  );
+}
+
+/**
+ * A chosen day with nothing on it says so by name, and offers the full form for that day. Hoy and
+ * Mañana keep the plain line: «Nada el hoy» would not read.
+ */
+export function EmptyDay({ day, today }: { day: string; today: string }) {
+  const { colors, space } = useTheme();
+  const router = useRouter();
+  const named = day !== today && day !== addDays(today, 1);
+  return (
+    <View style={{ gap: space(1), alignItems: 'flex-start' }}>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {named ? t('tasks.dayEmptyNamed', { day: dayInSentence(day, today) }) : t('tasks.dayEmpty')}
+      </Text>
+      <Button
+        testID="tasks.add-for-day"
+        title={t('tasks.addForDay')}
+        variant="tertiary"
+        width="hug"
+        onPress={() => router.push({ pathname: '/task/new', params: { due: day } })}
+      />
+    </View>
+  );
+}
+
+/** Todas offers the catalogue of typical chores the household does not have yet. */
+export function IdeasButton() {
+  const router = useRouter();
+  return (
+    <Button
+      testID="tasks.ideas"
+      title={t('tasks.ideas')}
+      icon={actionIcons.templates}
+      variant="tertiary"
+      width="hug"
+      onPress={() => router.push('/templates')}
+    />
+  );
+}
+
+export type Screen = ReturnType<typeof useTaskScreen>;
+
+/** What both layouts share: the mode, the week, the chosen day and the list pieces. */
+export type TasksParts = {
+  screen: Screen;
+  mode: TasksMode;
+  setMode: (mode: TasksMode) => void;
+  strip: StripDay[];
+  sections: TaskListSection[];
+  /** The day Semana shows on two panes; held by the screen so a change of layout keeps it. */
+  day: string;
+  chooseDay: (date: string) => void;
+  empty: ReactNode;
+  /** The door's line under its headline: what is yours (or the household's) this week. */
+  doorLine: string;
+};

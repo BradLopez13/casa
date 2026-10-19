@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { cloneElement, useEffect, type ReactElement } from 'react';
+import { cloneElement, useEffect, useRef, type ReactElement } from 'react';
 import {
   AccessibilityInfo,
   Platform,
@@ -24,10 +24,10 @@ import { t } from '@/i18n';
 import { FADE_MS, MAX_MS } from '../motion';
 import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
-import { DoorInsetContext, FridgeRefreshContext } from './DoorHeader';
+import { DoorInsetContext, FridgeRefreshContext } from './doorContext';
 import { NidoSymbol } from './NidoSymbol';
 
-export { useFridgeRefresh } from './DoorHeader';
+export { useFridgeRefresh } from './doorContext';
 
 type ScrollableProps = {
   refreshControl?: ReactElement;
@@ -45,8 +45,12 @@ type Props = {
 const SLIDE = { duration: MAX_MS, easing: Easing.out(Easing.exp) };
 
 function useRefreshAnnouncement(refreshing: boolean) {
+  const was = useRef(refreshing);
   useEffect(() => {
+    // The start and the end: without the end, a screen reader never hears the refresh is over.
     if (refreshing) AccessibilityInfo.announceForAccessibility(t('refresh.label'));
+    else if (was.current) AccessibilityInfo.announceForAccessibility(t('refresh.done'));
+    was.current = refreshing;
   }, [refreshing]);
 }
 

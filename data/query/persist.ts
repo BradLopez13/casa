@@ -23,6 +23,7 @@ function removeHouseholdData(queryClient: QueryClient, householdId?: string): vo
   const scoped = (kind: string) => (householdId === undefined ? [kind] : [kind, householdId]);
   queryClient.removeQueries({ queryKey: scoped('shopping') });
   queryClient.removeQueries({ queryKey: scoped('shopping-history') });
+  queryClient.removeQueries({ queryKey: scoped('shopping-resolved') });
   queryClient.removeQueries({ queryKey: scoped('members') });
   const mutations = queryClient.getMutationCache();
   for (const mutation of mutations.findAll({ mutationKey: ['shopping'] })) {

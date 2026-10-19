@@ -1,6 +1,7 @@
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { AppError } from '@/data/supabase/errors';
+import type { ShoppingItem } from '@/domain/shopping/list';
 import {
   clearBoughtItems,
   deleteShoppingItem,
@@ -11,13 +12,17 @@ import {
 import {
   addKey,
   boughtKey,
+  countsAsUnsent,
   invalidateShoppingWhenIdle,
+  quantityKey,
   SHOPPING_SCOPE,
   shoppingQueryOptions,
   type AddContext,
   type AddVars,
   type BoughtContext,
   type BoughtVars,
+  type QuantityContext,
+  type QuantityVars,
 } from './offline';
 
 export const shoppingKey = (householdId: string | undefined) => ['shopping', householdId] as const;
@@ -67,6 +72,11 @@ export function useEditItem() {
   });
 }
 
+/** Sets an item's quantity from the row's stepper; its options are the registered defaults. */
+export function useSetQuantity() {
+  return useMutation<void, AppError, QuantityVars, QuantityContext>({ mutationKey: quantityKey });
+}
+
 export function useDeleteItem() {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, { id: string }>({
@@ -78,13 +88,29 @@ export function useDeleteItem() {
   });
 }
 
+/**
+ * Clears the bought items. Optimistic: they leave the cached list as the clear starts (the undo
+ * window has already hidden them), and come back if the server refuses.
+ */
 export function useClearBought() {
   const queryClient = useQueryClient();
-  return useMutation<void, AppError, { householdId: string }>({
+  return useMutation<void, AppError, { householdId: string }, { before?: ShoppingItem[] }>({
     mutationKey: ['shopping', 'clear'],
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     mutationFn: ({ householdId }) => clearBoughtItems(householdId),
+    onMutate: async ({ householdId }) => {
+      const key = shoppingKey(householdId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData<ShoppingItem[]>(key);
+      queryClient.setQueryData<ShoppingItem[]>(key, (items) =>
+        items?.filter((item) => item.boughtAt === null),
+      );
+      return { before };
+    },
+    onError: (_error, { householdId }, context) => {
+      if (context?.before) queryClient.setQueryData(shoppingKey(householdId), context.before);
+    },
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   });
 }
@@ -93,7 +119,10 @@ export function useClearBought() {
 export function usePendingItemIds(): Set<string> {
   const ids = useMutationState({
     filters: { mutationKey: ['shopping'], status: 'pending' },
-    select: (m) => (m.state.variables as { id?: string } | undefined)?.id,
+    select: (m) =>
+      countsAsUnsent(m.options.mutationKey, m.state.isPaused)
+        ? (m.state.variables as { id?: string } | undefined)?.id
+        : undefined,
   });
   const key = ids.filter((id): id is string => id !== undefined).join('\n');
   return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);

@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { Platform, Pressable, Text, View } from 'react-native';
 import { addDays, localDateIso, toLocalDate } from '@/domain/tasks/dates';
 import { isQuickDay, quickDays } from '@/domain/tasks/day-cells';
-import { weekdayDay } from '@/domain/tasks/labels';
+import { dayCellLabel, weekdayDay } from '@/domain/tasks/labels';
 import { locale, t } from '@/i18n';
 import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
@@ -31,11 +31,22 @@ type CellProps = {
   top?: string;
   /** Drawn in `muted` while not chosen (the past date). */
   quiet?: boolean;
+  /** What a screen reader says, when the drawn label is too short to say it («20 mar»). */
+  spoken?: string;
 };
 
-function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }: CellProps) {
+function Cell({
+  testID,
+  label,
+  selected,
+  disabled = false,
+  onPress,
+  top,
+  quiet,
+  spoken,
+}: CellProps) {
   const { colors, radii, space } = useTheme();
-  // A cell that cannot be chosen waits dashed and outlined, never faded (§5.6).
+  // A cell that cannot be chosen keeps its solid outline and fades its label: dashed is paused.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
   const labelColor = disabled
     ? off.foreground
@@ -51,7 +62,7 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
       disabled={disabled}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected, disabled }}
-      accessibilityLabel={top ? `${top} ${label}` : label}
+      accessibilityLabel={spoken ?? (top ? `${top} ${label}` : label)}
       style={({ pressed }) => ({
         minWidth: MIN_TOUCH + space(3),
         minHeight: top ? MIN_TOUCH + space(3) : MIN_TOUCH,
@@ -63,7 +74,6 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
         // One selected style (§14.1): chosen is filled with `selection`, the rest outlined on
         // the note, so it reads by shape and not by the label's colour alone.
         borderWidth: 1.5,
-        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : selected ? colors.selection : colors.outline,
         backgroundColor: disabled ? off.fill : selected ? colors.selection : colors.note,
         opacity: pressedOpacity(pressed),
@@ -87,6 +97,7 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
           fontWeight: top ? undefined : '600',
           color: labelColor,
           fontVariant: ['tabular-nums'],
+          opacity: disabled ? off.labelOpacity : 1,
         }}
       >
         {label}
@@ -134,7 +145,11 @@ export function DayCells({ value, today, onChange, noneDisabled, past = null }: 
 
   return (
     <View style={{ gap: space(2) }}>
-      <View accessibilityRole="radiogroup" style={{ gap: space(2) }}>
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel={t('taskForm.dueLabel')}
+        style={{ gap: space(2) }}
+      >
         {pastDay !== null ? (
           <View style={row}>
             <Cell
@@ -157,6 +172,7 @@ export function DayCells({ value, today, onChange, noneDisabled, past = null }: 
                   ? t('tasks.due.today')
                   : toLocalDate(day).toLocaleDateString(locale, { weekday: 'short' })
               }
+              spoken={dayCellLabel(day, today)}
               selected={value === day}
               onPress={() => onChange(day)}
             />

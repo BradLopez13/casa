@@ -1,0 +1,42 @@
+/**
+ * Geometry of assets/brand/nido/lettering.svg (lettering B): «nido» in M PLUS Rounded 1c
+ * ExtraBold, outlined, with the dot of the «i» drawn as a head of the symbol. Never replace it
+ * with the name typed in the font.
+ */
+export const NIDO_LETTERING_VIEWBOX = '0 0 2077 760';
+
+const VIEWBOX_WIDTH = 2077;
+const VIEWBOX_HEIGHT = 760;
+
+export const NIDO_LETTERING_PATH =
+  'M56 750Q33 750 16.5 733Q0 716 0 693L0 287Q0 264 16.5 247Q33 230 56 230L97 230Q121 230 137.5 246.5Q154 263 155 287L156 295Q156 296 157 296L159 294Q224 220 315 220Q406 220 446 271.5Q486 323 486 447L486 693Q486 716 469.5 733Q453 750 430 750L386 750Q363 750 346 733Q329 716 329 693L329 452Q329 392 313 369.5Q297 347 255 347Q220 347 190.5 375.5Q161 404 161 437L161 693Q161 716 144.5 733Q128 750 105 750L56 750ZM695 750Q672 750 655 733Q638 716 638 693L638 287Q638 264 655 247Q672 230 695 230L751 230Q774 230 791 247Q808 264 808 287L808 693Q808 716 791 733Q774 750 751 750L695 750ZM1193 340Q1093 340 1093 490Q1093 566 1120 603Q1147 640 1193 640Q1233 640 1263 613Q1293 586 1293 552L1293 428Q1293 394 1263 367Q1233 340 1193 340ZM1138 760Q1049 760 992 688.5Q935 617 935 490Q935 360 990 290Q1045 220 1138 220Q1220 220 1287 281Q1288 282 1289 282Q1290 282 1290 281L1290 24Q1290 9.6 1294.8 4.8Q1299.6 0 1314 0L1347 0Q1409.4 0 1430.2 20.8Q1451 41.6 1451 104L1451 693Q1451 716 1434.5 733Q1418 750 1395 750L1357 750Q1333 750 1316.5 733.5Q1300 717 1299 693L1299 685Q1299 684 1298 684L1296 686Q1233 760 1138 760ZM1815 333Q1765 333 1740.5 370Q1716 407 1716 490Q1716 573 1740.5 610Q1765 647 1815 647Q1865 647 1889.5 610Q1914 573 1914 490Q1914 407 1889.5 370Q1865 333 1815 333ZM1815 760Q1691 760 1622 689Q1553 618 1553 490Q1553 362 1622 291Q1691 220 1815 220Q1939 220 2008 291Q2077 362 2077 490Q2077 618 2008 689Q1939 760 1815 760Z';
+
+/** The dot of the «i», a head like the symbol's. */
+export const NIDO_LETTERING_DOT = { cx: 723, cy: 95, r: 95 } as const;
+
+/** Width of the lettering drawn `height` dp tall. */
+export function letteringWidth(height: number): number {
+  return (height * VIEWBOX_WIDTH) / VIEWBOX_HEIGHT;
+}
+
+/** The lettering is this share of the symbol's height in the horizontal signature. */
+const LETTERING_TO_SYMBOL = 0.62;
+const SIGNATURE_GAP = 12;
+
+/**
+ * Sizes of the horizontal signature (symbol, then «nido») on the brand band. `hero` opens
+ * onboarding; a short window (phone turned) shrinks every variant to the same compact size.
+ */
+export function brandSignatureSizes(
+  variant: 'regular' | 'hero',
+  shortHeight: boolean,
+): { symbol: number; lettering: number; gap: number } {
+  const symbol = shortHeight ? 48 : variant === 'hero' ? 80 : 64;
+  return { symbol, lettering: symbol * LETTERING_TO_SYMBOL, gap: SIGNATURE_GAP };
+}
+
+/**
+ * The signature stacked (symbol over «nido») in the column the band becomes on a phone on its
+ * side: the lettering fits the rail (`RAIL_WIDTH`, 88 dp) with 8 dp either side.
+ */
+export const BESIDE_SIGNATURE = { symbol: 48, lettering: 24, gap: 8 } as const;
