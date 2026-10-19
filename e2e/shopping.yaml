@@ -48,10 +48,18 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - hideKeyboard
 
-# Mark it as bought: it moves under "En la bolsa"
+# The quantity steps from the row without opening the item: «1» up twice is «3»
+- tapOn: 'Cantidad de Leche: 1'
+- tapOn: 'Uno más'
+- tapOn: 'Uno más'
+- extendedWaitUntil:
+    visible: 'Cantidad de Leche: 3'
+    timeout: 10000
+
+# Mark it as bought (the quantity is saved first): it moves under "En la bolsa"
 - tapOn: Marcar «Leche» como comprado
 - extendedWaitUntil:
-    visible: En la bolsa \(1\)
+    visible: 'En la bolsa.*1.*'
     timeout: 20000
 
 # Clear the bought ones: no dialog, the bag empties at once with an undo
@@ -64,7 +72,7 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: shopping.clear.undo
 - extendedWaitUntil:
-    visible: En la bolsa \(1\)
+    visible: 'En la bolsa.*1.*'
     timeout: 5000
 # Again, this time letting the notice go: the server clears it and it stays gone
 - tapOn:

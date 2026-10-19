@@ -21,19 +21,26 @@ import { FADE_MS, layoutTransition } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
-import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
+import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
+import { hangingMagnet } from '../hangingMagnet';
+import { boughtTitleLabel } from '../rowLabels';
 import { isBoughtHeader, isItemRow, sheetRows, type SheetRow } from '../sheetRows';
 import { ShoppingRow, type Glyph } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
 
 export type Flash = { id: string; count: number };
 
-/** Room above the note for the magnet that holds it, so the first row stays clear of it. */
-const HANG = 30;
+// The magnet's centre sits on the note's top edge (`HANG` above it); the first row moves down
+// past its lower half. The row is `MIN_TOUCH + space(2)` tall with a small magnet as checkbox.
+const { hang: HANG, firstRowInset: FIRST_ROW_INSET } = hangingMagnet(
+  magnetSizes.md,
+  MIN_TOUCH + 8,
+  magnetSizes.sm,
+);
 
 /**
- * The slate magnet that holds the note, hanging over its top-left corner. Decorative chrome in
- * `selection`, so the «+» of the field stays the screen's one pósit.
+ * The slate magnet that holds the note, half over its top edge near the left corner. Decorative
+ * chrome in `selection`, so the «+» of the field stays the screen's one pósit.
  */
 function HangingMagnet({ left }: { left: number }) {
   const { colors } = useTheme();
@@ -60,6 +67,8 @@ type Props = {
   unsentIds: Set<string>;
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
+  /** The current user, so a row they bought reads «comprado por ti». */
+  userId: string | null;
   flash: Flash | null;
   /** «Vaciar bolsa» only runs online. */
   online: boolean;
@@ -67,6 +76,8 @@ type Props = {
   onToggle: (item: ShoppingItem) => void;
   onOpen: (id: string) => void;
   onClear: () => void;
+  /** A new quantity for a pending item, from its row's stepper. */
+  onQuantity: (item: ShoppingItem, quantity: string | null) => void;
   /** No side margin of its own: inside a TwoPane pane, which already keeps the gutter. */
   flush?: boolean;
   /**
@@ -88,6 +99,7 @@ export function BoughtTitle({ count }: { count: number }) {
   return (
     <Text
       accessibilityRole="header"
+      accessibilityLabel={boughtTitleLabel(count)}
       style={{
         color: colors.muted,
         fontFamily: displayFontBold,
@@ -113,12 +125,14 @@ export function ShoppingSheet({
   unsentIds,
   marks,
   names,
+  userId,
   flash,
   online,
   clearing,
   onToggle,
   onOpen,
   onClear,
+  onQuantity,
   flush = false,
   header,
   column,
@@ -129,6 +143,8 @@ export function ShoppingSheet({
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const [boughtCollapsed, setBoughtCollapsed] = useState(false);
+  // One quantity stepper open at a time; scrolling the list closes it.
+  const [openQuantity, setOpenQuantity] = useState<string | null>(null);
   const rows = sheetRows(pending, bought, boughtCollapsed);
   // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
   const hasEdge = noteEdge.borderWidth > 0;
@@ -138,6 +154,9 @@ export function ShoppingSheet({
   // The pending rows are one ruled pósit note; «En la bolsa» below is a plain sheet of its own.
   const pendingCount = rows.filter(isPendingRow).length;
   const margin = flush ? 0 : space(5);
+  // An absolute child ignores its parent's padding: the magnet adds the column's own gutter.
+  const columnPadding = StyleSheet.flatten(column)?.paddingLeft;
+  const columnLeft = typeof columnPadding === 'number' ? columnPadding : 0;
 
   const cell = (index: number): ViewStyle => {
     const ruled = index < pendingCount;
@@ -146,6 +165,7 @@ export function ShoppingSheet({
     return {
       marginHorizontal: margin,
       marginTop: index === pendingCount && pendingCount > 0 ? space(4) : 0,
+      paddingTop: index === 0 && pendingCount > 0 ? FIRST_ROW_INSET : 0,
       backgroundColor: ruled ? colors.taskNote : colors.note,
       borderColor: edgeColor,
       borderLeftWidth: edge,
@@ -170,6 +190,7 @@ export function ShoppingSheet({
         keyExtractor={(row) => row.id}
         scrollEnabled={header !== undefined}
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => setOpenQuantity(null)}
         itemLayoutAnimation={layoutTransition(reduceMotion)}
         ListHeaderComponent={header}
         refreshControl={refreshControl}
@@ -177,7 +198,9 @@ export function ShoppingSheet({
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
           <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
-            {index === 0 && pendingCount > 0 ? <HangingMagnet left={margin + space(3)} /> : null}
+            {index === 0 && pendingCount > 0 ? (
+              <HangingMagnet left={columnLeft + margin + space(3)} />
+            ) : null}
             <View style={cell(index)}>
               {isBoughtHeader(row) ? (
                 <Animated.View
@@ -197,6 +220,7 @@ export function ShoppingSheet({
                   <Pressable
                     testID="shopping.bought.toggle"
                     accessibilityRole="button"
+                    accessibilityLabel={boughtTitleLabel(bought.length)}
                     accessibilityState={{ expanded: !boughtCollapsed }}
                     onPress={() => setBoughtCollapsed((c) => !c)}
                     style={({ pressed }) => ({
@@ -235,9 +259,17 @@ export function ShoppingSheet({
                   unsent={unsentIds.has(row.id)}
                   buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
                   buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
+                  boughtByMe={row.boughtBy !== null && row.boughtBy === userId}
                   flash={flash?.id === row.id ? flash.count : 0}
                   onToggle={() => onToggle(row)}
                   onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
+                  quantityOpen={openQuantity === row.id}
+                  online={online}
+                  onQuantityOpen={() => setOpenQuantity(row.id)}
+                  onQuantityClose={() =>
+                    setOpenQuantity((current) => (current === row.id ? null : current))
+                  }
+                  onQuantity={(quantity) => onQuantity(row, quantity)}
                 />
               )}
             </View>
@@ -249,8 +281,9 @@ export function ShoppingSheet({
 }
 
 /**
- * The empty list: the invitation to add, and, when the history has names that are not on the list,
- * «¿Falta algo de lo de siempre?» with the most used ones as pills; a tap adds that name.
+ * The empty list: the door already says «No falta nada.», so the note only shows up when the
+ * history has names that are not on the list: «¿Falta algo de lo de siempre?» with the most used
+ * ones as pills; a tap adds that name.
  */
 export function EmptyList({
   usual,
@@ -260,6 +293,7 @@ export function EmptyList({
   onAdd: (name: string) => void;
 }) {
   const { colors, radii, noteEdge, shadows, space } = useTheme();
+  if (usual.length === 0) return null;
   return (
     <View style={{ paddingTop: HANG }}>
       <HangingMagnet left={space(3)} />
@@ -267,55 +301,48 @@ export function EmptyList({
         style={{
           gap: space(3),
           padding: space(4),
-          paddingTop: space(5),
+          // Clear of the lower half of the magnet.
+          paddingTop: HANG + space(2),
           backgroundColor: colors.taskNote,
           borderRadius: radii.note,
           ...shadows.note,
           ...noteEdge,
         }}
       >
-        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('shopping.empty')}</Text>
-        {usual.length > 0 ? (
-          <>
-            <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-              {usual.map((entry) => (
-                <Pressable
-                  key={entry.normalizedName}
-                  testID={`shopping.usual.${entry.normalizedName}`}
-                  onPress={() => onAdd(entry.name)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
-                  style={({ pressed }) => ({
-                    minHeight: MIN_TOUCH,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: space(2),
-                    paddingHorizontal: space(4),
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    borderColor: colors.hairline,
-                    opacity: pressedOpacity(pressed),
-                  })}
-                >
-                  <MaterialCommunityIcons
-                    name={iconFor(entry.normalizedName) as Glyph}
-                    size={18}
-                    color={colors.muted}
-                    accessible={false}
-                    importantForAccessibility="no"
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={{ flexShrink: 1, color: colors.ink, fontSize: 15 }}
-                  >
-                    {entry.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : null}
+        <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
+          {usual.map((entry) => (
+            <Pressable
+              key={entry.normalizedName}
+              testID={`shopping.usual.${entry.normalizedName}`}
+              onPress={() => onAdd(entry.name)}
+              accessibilityRole="button"
+              accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
+              style={({ pressed }) => ({
+                minHeight: MIN_TOUCH,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: space(2),
+                paddingHorizontal: space(4),
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                opacity: pressedOpacity(pressed),
+              })}
+            >
+              <MaterialCommunityIcons
+                name={iconFor(entry.normalizedName) as Glyph}
+                size={18}
+                color={colors.muted}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+              <Text numberOfLines={1} style={{ flexShrink: 1, color: colors.ink, fontSize: 15 }}>
+                {entry.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
     </View>
   );

@@ -27,6 +27,7 @@ import {
   useClearBought,
   usePendingItemIds,
   useSetBought,
+  useSetQuantity,
   useShoppingHistory,
   useShoppingItems,
 } from '@/features/shopping/queries';
@@ -86,6 +87,7 @@ export default function ShoppingScreen() {
   const addItem = useAddItem();
   const setBought = useSetBought();
   const clearBought = useClearBought();
+  const setQuantity = useSetQuantity();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
   // Only the pull gesture shows the refresh indicator, not background refetches.
@@ -122,6 +124,12 @@ export default function ShoppingScreen() {
     setBought.mutate({ id: item.id, householdId, bought, userId });
     // The row moves to the other list and the reader's focus goes with it: say where it went.
     announce(t(bought ? 'shopping.a11y.inBag' : 'shopping.a11y.backOnList', { name: item.name }));
+  };
+
+  const changeQuantity = (item: ShoppingItem, quantity: string | null) => {
+    if (householdId === undefined || quantity === item.quantity) return;
+    // The registered default rolls back and explains a failure, even after this screen is gone.
+    setQuantity.mutate({ id: item.id, householdId, name: item.name, quantity });
   };
 
   // «Vaciar bolsa» is routine, so it asks nothing: the bag empties at once with «Deshacer», and
@@ -163,7 +171,8 @@ export default function ShoppingScreen() {
       heading={line?.text ?? ' '}
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
-      secondary={t('shopping.doorHint')}
+      // An empty list says one thing: the headline, without the hint under it.
+      secondary={state === 'empty' ? undefined : t('shopping.doorHint')}
     >
       {children}
     </DoorHeader>
@@ -212,12 +221,14 @@ export default function ShoppingScreen() {
       unsentIds,
       marks,
       names,
+      userId,
       flash,
       online,
       clearing: clearBought.isPending,
       onToggle: toggle,
       onOpen: open,
       onClear: clear,
+      onQuantity: changeQuantity,
     },
     online,
     door,

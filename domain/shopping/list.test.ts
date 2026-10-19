@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyAdd, applyBought, findPending, sortList, type ShoppingItem } from './list';
+import {
+  applyAdd,
+  applyBought,
+  applyQuantity,
+  findPending,
+  sortList,
+  type ShoppingItem,
+} from './list';
 import { normalizeItemName } from './normalize';
 
 const make = (id: string, name: string, over: Partial<ShoppingItem> = {}): ShoppingItem => ({
@@ -94,5 +101,23 @@ describe('applyBought', () => {
     const next = applyBought(bought, 'a', false, 'u9', '2026-10-07T10:00:00.000Z');
     expect(next[0]).toMatchObject({ boughtAt: null, boughtBy: null });
     expect(next[1]).toBe(items[1]);
+  });
+});
+
+describe('applyQuantity', () => {
+  const items = [
+    make('a', 'Leche'),
+    make('b', 'Pan', { boughtAt: '2026-10-04T10:00:00.000Z', boughtBy: 'u1' }),
+  ];
+  it('sets the quantity of a pending item', () => {
+    expect(applyQuantity(items, 'a', '2')[0]?.quantity).toBe('2');
+  });
+  it('clears it', () => {
+    const withTwo = applyQuantity(items, 'a', '2');
+    expect(applyQuantity(withTwo, 'a', null)[0]?.quantity).toBeNull();
+  });
+  it('leaves a bought item and an unknown id alone', () => {
+    expect(applyQuantity(items, 'b', '3')).toEqual(items);
+    expect(applyQuantity(items, 'zz', '3')).toEqual(items);
   });
 });

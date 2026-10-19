@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, type ComponentProps } from 'react';
+import { useEffect, useRef, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -18,6 +18,8 @@ import { Magnet } from '@/ui/components/Magnet';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
+import { boughtRowLabel } from '../rowLabels';
+import { QuantityPill } from './QuantityPill';
 
 /** A glyph name of the icon set; `iconFor` only returns names its test finds in the set. */
 export type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -34,6 +36,8 @@ type Props = {
   /** The buyer's magnet; undefined when they are no longer a member. */
   buyerMark: MemberMark | undefined;
   buyerName: string | undefined;
+  /** The current user bought it: the screen reader says «por ti», not «por Tú». */
+  boughtByMe: boolean;
   /** Bumped each time the row should flash (an add that was already on the list). */
   flash: number;
   onToggle: () => void;
@@ -41,11 +45,18 @@ type Props = {
   onOpen: (() => void) | undefined;
   /** The product's glyph, deduced from its name; decorative, the name carries the meaning. */
   icon: ProductIcon;
+  /** This row's quantity stepper is the open one. */
+  quantityOpen: boolean;
+  /** Quantities change online only. */
+  online: boolean;
+  onQuantityOpen: () => void;
+  onQuantityClose: () => void;
+  onQuantity: (quantity: string | null) => void;
 };
 
 /**
  * One item on the sheet: a round checkbox, the product icon, the name (opens a pending one) and
- * its quantity.
+ * its quantity: a pill that steps on a pending item, plain text on a bought one.
  */
 export function ShoppingRow({
   item,
@@ -53,16 +64,23 @@ export function ShoppingRow({
   unsent,
   buyerMark,
   buyerName,
+  boughtByMe,
   flash,
   onToggle,
   onOpen,
   icon,
+  quantityOpen,
+  online,
+  onQuantityOpen,
+  onQuantityClose,
+  onQuantity,
 }: Props) {
   const { colors, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const bought = item.boughtAt !== null;
   const glow = useSharedValue(0);
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+  const flushQuantity = useRef<(() => void) | null>(null);
 
   // A fade in and out, so Reduce Motion needs no other version.
   useEffect(() => {
@@ -78,10 +96,14 @@ export function ShoppingRow({
   const toggle = () => {
     // Into the bag is a thing done; taking it back out is just a press.
     void haptic(bought ? 'light' : 'success');
+    // Taps on the stepper not yet sent go first, while the item is still pending.
+    flushQuantity.current?.();
+    if (quantityOpen) onQuantityClose();
     onToggle();
   };
 
-  const label = item.quantity ? `${item.name}, ${item.quantity}` : item.name;
+  // The quantity has its own stop (the pill), so the name says only the name.
+  const label = item.name;
   const nameStyle = {
     flex: 1,
     minHeight: MIN_TOUCH,
@@ -111,7 +133,7 @@ export function ShoppingRow({
       >
         {item.name}
       </Text>
-      {item.quantity ? (
+      {bought && item.quantity ? (
         <Text
           // Shares the row with the name, so at a large text size it wraps rather than crowd it out.
           style={{
@@ -128,11 +150,30 @@ export function ShoppingRow({
     </>
   );
 
+  // A bought row is one stop for a screen reader: what, how much and who, and a tap puts it back.
+  const boughtA11y = bought
+    ? ({
+        accessible: true,
+        accessibilityRole: 'checkbox',
+        accessibilityState: { checked: true },
+        accessibilityLabel: boughtRowLabel({
+          name: item.name,
+          quantity: item.quantity,
+          buyer: buyerName,
+          byMe: boughtByMe,
+        }),
+        accessibilityHint: t('shopping.a11y.unmark', { name: item.name }),
+        accessibilityActions: [{ name: 'activate' }],
+        onAccessibilityAction: toggle,
+      } as const)
+    : null;
+
   return (
     <Animated.View
       // The list moves the rows (itemLayoutAnimation): the row only fades in and out.
       entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
       exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
+      {...boughtA11y}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -155,6 +196,10 @@ export function ShoppingRow({
           name: item.name,
         })}
         accessibilityState={{ checked: bought }}
+        // A bought row speaks as a whole (boughtA11y): its parts stay out of the reader's way.
+        accessible={!bought}
+        importantForAccessibility={bought ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={bought}
         style={{
           width: MIN_TOUCH,
           height: MIN_TOUCH,
@@ -184,10 +229,28 @@ export function ShoppingRow({
           {name}
         </Pressable>
       ) : (
-        <View accessible accessibilityLabel={label} style={nameStyle}>
+        <View
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={nameStyle}
+        >
           {name}
         </View>
       )}
+      {onOpen ? (
+        <QuantityPill
+          itemId={item.id}
+          name={item.name}
+          quantity={item.quantity}
+          open={quantityOpen}
+          online={online}
+          onOpen={onQuantityOpen}
+          onClose={onQuantityClose}
+          onCommit={onQuantity}
+          onEdit={onOpen}
+          flushRef={flushQuantity}
+        />
+      ) : null}
       {unsent ? (
         <View
           testID={`shopping.item.${item.id}.pending`}
@@ -205,8 +268,8 @@ export function ShoppingRow({
             variant={buyerMark ? 'filled' : 'empty'}
             color={buyerMark?.color ?? 'teal'}
             initial={buyerMark?.initial ?? ''}
-            accessibilityLabel={buyerName ? t('shopping.a11y.boughtBy', { name: buyerName }) : ''}
-            decorative={buyerName === undefined}
+            accessibilityLabel=""
+            decorative
           />
         </View>
       ) : null}

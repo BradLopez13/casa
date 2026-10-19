@@ -12,13 +12,17 @@ import {
 import {
   addKey,
   boughtKey,
+  countsAsUnsent,
   invalidateShoppingWhenIdle,
+  quantityKey,
   SHOPPING_SCOPE,
   shoppingQueryOptions,
   type AddContext,
   type AddVars,
   type BoughtContext,
   type BoughtVars,
+  type QuantityContext,
+  type QuantityVars,
 } from './offline';
 
 export const shoppingKey = (householdId: string | undefined) => ['shopping', householdId] as const;
@@ -68,6 +72,11 @@ export function useEditItem() {
   });
 }
 
+/** Sets an item's quantity from the row's stepper; its options are the registered defaults. */
+export function useSetQuantity() {
+  return useMutation<void, AppError, QuantityVars, QuantityContext>({ mutationKey: quantityKey });
+}
+
 export function useDeleteItem() {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, { id: string }>({
@@ -110,7 +119,10 @@ export function useClearBought() {
 export function usePendingItemIds(): Set<string> {
   const ids = useMutationState({
     filters: { mutationKey: ['shopping'], status: 'pending' },
-    select: (m) => (m.state.variables as { id?: string } | undefined)?.id,
+    select: (m) =>
+      countsAsUnsent(m.options.mutationKey, m.state.isPaused)
+        ? (m.state.variables as { id?: string } | undefined)?.id
+        : undefined,
   });
   const key = ids.filter((id): id is string => id !== undefined).join('\n');
   return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
