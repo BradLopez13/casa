@@ -35,6 +35,12 @@ export const DOOR_MAX_SCALE = 1.4;
 /** Share of the window height a compact door may take, so the list keeps most of it. */
 const COMPACT_MAX_SHARE = 0.4;
 /**
+ * From this text size a compact door's hierarchy, controls and day strip need more than 40 %:
+ * the quick add then goes to the list and the door may take 45 %, so nothing in it is cut.
+ */
+const LARGE_TEXT = 1.3;
+const COMPACT_MAX_SHARE_LARGE_TEXT = 0.45;
+/**
  * About how tall the full door is at the default text size, status bar included (Hoy, the
  * tallest: eyebrow and date, headline, its second line, magnets with names). Its text grows with
  * the system's, so the estimate does too.
@@ -65,11 +71,14 @@ export function doorFor(
       holdsQuickAdd: false,
     };
   }
+  const largeText = fontScale >= LARGE_TEXT;
   return {
     compact: true,
     type: DOOR_TYPE.compact,
     handle: false,
-    maxHeight: Math.floor(windowHeight * COMPACT_MAX_SHARE),
-    holdsQuickAdd: layout.shortHeight && !layout.twoPane,
+    maxHeight: Math.floor(
+      windowHeight * (largeText ? COMPACT_MAX_SHARE_LARGE_TEXT : COMPACT_MAX_SHARE),
+    ),
+    holdsQuickAdd: layout.shortHeight && !layout.twoPane && !largeText,
   };
 }
