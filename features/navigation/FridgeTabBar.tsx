@@ -23,8 +23,9 @@ const ICON_SIZE = 24;
 type Route = BottomTabBarProps['state']['routes'][number];
 
 /**
- * A tab's icon in its 40 dp slot: on the pósit magnet when the tab is the active one (the icon in
- * `onAccent`), bare otherwise. The slot keeps its size either way, so choosing a tab never moves
+ * A tab's icon in its 40 dp slot: on a slate magnet when the tab is the active one (`selection`,
+ * the icon in `onSelection`: the active tab is chosen, and the pósit is only for doing), bare
+ * otherwise. The slot keeps its size either way, so choosing a tab never moves
  * the row. Shared by the bottom bar and the rail.
  */
 export function TabMagnet({ focused, icon }: { focused: boolean; icon: ReactNode }) {
@@ -46,7 +47,7 @@ export function TabMagnet({ focused, icon }: { focused: boolean; icon: ReactNode
           size="tab"
           decorative
           accessibilityLabel=""
-          glyph={{ node: icon, fill: colors.accent }}
+          glyph={{ node: icon, fill: colors.selection }}
         />
       ) : (
         icon
@@ -80,7 +81,7 @@ export function tabHandlers({
 
 /**
  * The bottom tab bar as the door's bottom edge: a slate band in both themes, with a chalk hairline
- * along its top. The active tab holds its icon on the pósit magnet; the others are chalk at 80 %.
+ * along its top. The active tab holds its icon on the selection magnet; the others are chalk at 80 %.
  * The band runs under the gesture bar (Android edge to edge) and pads its content clear of it.
  */
 export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
@@ -129,7 +130,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
         const { options } = descriptor;
         const focused = index === state.index;
         const title = options.title ?? route.name;
-        const tint = focused ? colors.onAccent : colors.onTabBarMuted;
+        const tint = focused ? colors.onSelection : colors.onTabBarMuted;
         return (
           <Pressable
             key={route.key}

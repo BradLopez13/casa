@@ -118,6 +118,7 @@ export default function SettingsScreen() {
               variant="tertiary"
               icon={actionIcons.signOut}
               width="hug"
+              flush
               onPress={() => setConfirmingSignOut(true)}
             />
             <DeleteAccountButton
@@ -190,7 +191,7 @@ export default function SettingsScreen() {
   );
 }
 
-const PLATE = 32;
+const PLATE = 48;
 
 /** The symbol on a small brand-band disc at the door's right: decorative, the only place in Ajustes. */
 function BrandPlate() {
@@ -208,7 +209,7 @@ function BrandPlate() {
         backgroundColor: colors.brandBand,
       }}
     >
-      <NidoSymbol size={20} onSlate />
+      <NidoSymbol size={30} onSlate />
     </View>
   );
 }

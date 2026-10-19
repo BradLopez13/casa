@@ -9,6 +9,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
+import { markHintSeen } from '@/features/tasks/completeHint';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
@@ -133,6 +134,7 @@ function EditTaskScreen() {
     remove.reset();
     skip.reset();
     toggler.toggle({ id: task.id, done: !done });
+    if (!done) markHintSeen();
     setToggled(true);
   };
   const initial: TaskInput = {
@@ -163,7 +165,7 @@ function EditTaskScreen() {
         }}
         // A completed or skipped occurrence keeps its rule; it cannot start a series from there.
         repeatEditable={task.completedAt === null && task.skippedAt === null}
-        // Save is the foot's one pósit: completing and reopening are secondary next to it.
+        // Save is the foot's one pósit: completing and reopening are outlined next to it, never grey.
         footer={
           <View
             style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(3) }}
@@ -172,7 +174,7 @@ function EditTaskScreen() {
               testID={done ? 'task-form.reopen' : 'task-form.complete'}
               title={t(done ? 'taskForm.reopen' : 'taskForm.complete')}
               icon={done ? undefined : actionIcons.confirm}
-              variant="secondary"
+              variant="outlined"
               disabled={busy || isProvisional(task)}
               onPress={toggleDone}
             />

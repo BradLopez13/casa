@@ -176,10 +176,11 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
             <SectionHeader title={section.title} count={section.count} flush />
           </View>
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item, index, section }) => (
           <View style={column}>
             <TaskRow
               row={item}
+              first={index === 0 && section === sections[0]}
               today={today}
               marks={screen.marks}
               names={screen.names}

@@ -1,8 +1,12 @@
 // Pure: no react-native import, so Vitest can check it.
 import type { Palette } from './tokens';
 
-/** primary: the one main action. secondary: a tonal pill. tertiary: bare text. */
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
+/**
+ * primary: the one main action. secondary: a tonal pill. outlined: an empty pill with a slate (or
+ * chalk) edge, for a secondary action that sits on a note, where the tonal pill reads as disabled.
+ * tertiary: bare text.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'tertiary';
 
 /** destructive swaps cobalt for red; only primary and tertiary may be destructive. */
 export type ButtonTone = 'default' | 'destructive';
@@ -14,15 +18,22 @@ export type ButtonLook = {
   fill: string;
   border: string;
   foreground: string;
-  /** A disabled pill is dashed: it waits by shape, never by fading. */
-  borderStyle: 'solid' | 'dashed';
+  /** Opacity of the label and icon: 1, or `DISABLED_LABEL_OPACITY` when disabled. */
+  labelOpacity: number;
 };
 
 /**
- * The colours of a button. A disabled primary or secondary is an empty pill with an `outline`
- * border and `muted` text: it waits by shape, never by fading, so its text stays readable in both
- * themes. A disabled tertiary has no pill to empty, so it is just `muted` text. A busy one keeps
- * the look of an enabled one, so the spinner sits on the same pill.
+ * A disabled label is `ink` at this opacity: still at least 3:1 where it lands on page, door and
+ * note in both themes. Dashed edges are kept for a paused switch, so a disabled button waits by
+ * its faded label on a solid edge.
+ */
+export const DISABLED_LABEL_OPACITY = 0.6;
+
+/**
+ * The colours of a button. A disabled primary or secondary is an empty pill with a solid `outline`
+ * border and a faded `ink` label (`DISABLED_LABEL_OPACITY`). A disabled tertiary has no pill to
+ * empty, so it is just the faded label. A busy one keeps the look of an enabled one, so the
+ * spinner sits on the same pill.
  */
 export function buttonLook(
   variant: ButtonVariant,
@@ -30,40 +41,48 @@ export function buttonLook(
   state: ButtonState,
   colors: Palette,
 ): ButtonLook {
-  if (variant === 'secondary' && tone === 'destructive') {
-    throw new Error('A secondary button cannot be destructive');
+  if ((variant === 'secondary' || variant === 'outlined') && tone === 'destructive') {
+    throw new Error(`A ${variant} button cannot be destructive`);
   }
   if (state === 'disabled') {
     return {
       fill: 'transparent',
       border: variant === 'tertiary' ? 'transparent' : colors.outline,
-      borderStyle: variant === 'tertiary' ? 'solid' : 'dashed',
-      foreground: colors.muted,
+      foreground: colors.ink,
+      labelOpacity: DISABLED_LABEL_OPACITY,
     };
   }
   if (variant === 'primary') {
     return tone === 'destructive'
-      ? { fill: colors.red, border: colors.red, foreground: colors.onRed, borderStyle: 'solid' }
+      ? { fill: colors.red, border: colors.red, foreground: colors.onRed, labelOpacity: 1 }
       : {
           fill: colors.accent,
           border: colors.accent,
           foreground: colors.onAccent,
-          borderStyle: 'solid',
+          labelOpacity: 1,
         };
+  }
+  if (variant === 'outlined') {
+    return {
+      fill: 'transparent',
+      border: colors.selection,
+      foreground: colors.ink,
+      labelOpacity: 1,
+    };
   }
   if (variant === 'secondary') {
     return {
       fill: colors.tonal,
       border: colors.tonalEdge,
       foreground: colors.cobalt,
-      borderStyle: 'solid',
+      labelOpacity: 1,
     };
   }
   return {
     fill: 'transparent',
     border: 'transparent',
     foreground: tone === 'destructive' ? colors.red : colors.cobalt,
-    borderStyle: 'solid',
+    labelOpacity: 1,
   };
 }
 
@@ -94,6 +113,14 @@ const metrics: Record<ButtonVariant, ButtonMetrics> = {
     iconSize: 20,
     underline: false,
   },
+  outlined: {
+    minHeight: 44,
+    fontSize: 15,
+    paddingV: 10,
+    paddingH: 20,
+    iconSize: 20,
+    underline: false,
+  },
   tertiary: {
     minHeight: 44,
     fontSize: 15,
@@ -109,7 +136,7 @@ export function buttonMetrics(variant: ButtonVariant): ButtonMetrics {
   return metrics[variant];
 }
 
-/** Opacity is only the press feedback; a disabled button is never faded. */
+/** The press feedback; a disabled button fades its label instead (`labelOpacity`). */
 export function pressedOpacity(pressed: boolean): number {
   return pressed ? 0.8 : 1;
 }

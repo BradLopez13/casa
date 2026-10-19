@@ -1,5 +1,6 @@
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
@@ -9,10 +10,12 @@ import { NidoSymbol } from './NidoSymbol';
 
 /**
  * The slate band that opens sign-in, sign-up, forgot-password and onboarding: full width, under the status bar,
- * with the symbol at the start; on a phone on its side, a column at the left edge (`authBeside`). Render it as `CenteredCard`'s `header`, which lets it bleed to the
- * edges of the window.
+ * with the symbol at the start; on a phone on its side, a column at the left edge (`authBeside`).
+ * Render it as `CenteredCard`'s `header`, which lets it bleed to the edges of the window.
+ * `trailing` is a quiet control at the end of the band (the account menu): at its right, or at
+ * the foot of the column.
  */
-export function BrandHeader() {
+export function BrandHeader({ trailing }: { trailing?: ReactNode } = {}) {
   const { colors, space } = useTheme();
   const layout = useLayout();
   const { gutter, shortHeight } = layout;
@@ -32,6 +35,7 @@ export function BrandHeader() {
               paddingBottom: insets.bottom + space(3),
               paddingLeft: insets.left,
               alignItems: 'center',
+              justifyContent: 'space-between',
             }
           : {
               backgroundColor: colors.brandBand,
@@ -39,13 +43,16 @@ export function BrandHeader() {
               paddingBottom: shortHeight ? space(3) : space(5),
               paddingLeft: gutter + insets.left,
               paddingRight: gutter + insets.right,
-              alignItems: 'flex-start',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }
       }
     >
       {/* The band is slate in both themes: light status icons while it is on screen. */}
       {focused ? <StatusBar style="light" /> : null}
       <NidoSymbol size={shortHeight ? 48 : 64} onSlate />
+      {trailing}
     </View>
   );
 }

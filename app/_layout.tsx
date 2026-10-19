@@ -1,3 +1,4 @@
+import { MPLUSRounded1c_400Regular } from '@expo-google-fonts/m-plus-rounded-1c/400Regular';
 import { MPLUSRounded1c_700Bold } from '@expo-google-fonts/m-plus-rounded-1c/700Bold';
 import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
 import NetInfo from '@react-native-community/netinfo';
@@ -30,7 +31,7 @@ import { RootErrorBoundary } from '@/ui/components/RootErrorBoundary';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { displayFont, displayFontBold } from '@/ui/tokens';
+import { displayFont, displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
@@ -347,6 +348,7 @@ function App() {
   const [fontsLoaded, fontError] = useFonts({
     [displayFont]: MPLUSRounded1c_800ExtraBold,
     [displayFontBold]: MPLUSRounded1c_700Bold,
+    [displayFontRegular]: MPLUSRounded1c_400Regular,
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (

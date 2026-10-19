@@ -35,7 +35,7 @@ type CellProps = {
 
 function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }: CellProps) {
   const { colors, radii, space } = useTheme();
-  // A cell that cannot be chosen waits dashed and outlined, never faded (§5.6).
+  // A cell that cannot be chosen keeps its solid outline and fades its label: dashed is paused.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
   const labelColor = disabled
     ? off.foreground
@@ -63,7 +63,6 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
         // One selected style (§14.1): chosen is filled with `selection`, the rest outlined on
         // the note, so it reads by shape and not by the label's colour alone.
         borderWidth: 1.5,
-        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : selected ? colors.selection : colors.outline,
         backgroundColor: disabled ? off.fill : selected ? colors.selection : colors.note,
         opacity: pressedOpacity(pressed),
@@ -87,6 +86,7 @@ function Cell({ testID, label, selected, disabled = false, onPress, top, quiet }
           fontWeight: top ? undefined : '600',
           color: labelColor,
           fontVariant: ['tabular-nums'],
+          opacity: disabled ? off.labelOpacity : 1,
         }}
       >
         {label}
