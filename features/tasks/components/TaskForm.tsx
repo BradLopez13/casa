@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -26,7 +27,7 @@ import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { displayFontBold } from '@/ui/tokens';
+import { displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
 import type { TaskInput } from '../api';
@@ -89,7 +90,8 @@ export function TaskForm({
   const { colors, radii, noteEdge, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
-  const { scroll, reveal } = useRevealFocusedField();
+  const { scroll, reveal, show } = useRevealFocusedField();
+  const picker = useRef<View>(null);
   // What the person typed and chose; `values` adds what the title says.
   const [typed, setTyped] = useState<TaskInput>(initial);
   // Fields chosen by hand: the title no longer fills them and their words stay in it.
@@ -124,8 +126,12 @@ export function TaskForm({
     setTouched((current) => (current.has(field) ? current : new Set([...current, field])));
     setTyped((current) => ({ ...current, ...patch }));
   };
-  // Tapping the open magnet closes it; tapping another swaps the picker.
-  const toggle = (field: FormField) => setOpen((current) => (current === field ? null : field));
+  // Tapping the open magnet closes it; tapping another swaps the picker. Opening one puts the
+  // keyboard away, so the picker is not under it, and its block scrolls into view on layout.
+  const toggle = (field: FormField) => {
+    if (open !== field) Keyboard.dismiss();
+    setOpen((current) => (current === field ? null : field));
+  };
   // A monthly rule follows the date; weekly days stay as the user chose them. Re-tapping the
   // chosen day changes nothing, so a month-end rule on a short month keeps its day. Without the
   // repeat magnet the rule is not the user's to change, so it stays as it is.
@@ -252,7 +258,9 @@ export function TaskForm({
                     }}
                     error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
                     inputStyle={{
-                      fontFamily: displayFontBold,
+                      // The example («Sacar la basura») at the regular weight, so it never
+                      // reads as a title already typed.
+                      fontFamily: typed.title === '' ? displayFontRegular : displayFontBold,
                       fontSize: TITLE_SIZE,
                       ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
                     }}
@@ -270,43 +278,51 @@ export function TaskForm({
                   onOpen={toggle}
                   repeatEditable={repeatEditable}
                 />
-                {open === 'room' ? (
-                  <RoomPicker value={values.room} onChange={(room) => choose('room', { room })} />
-                ) : null}
-                {open === 'assignee' ? (
-                  <AssigneePicker
-                    value={values.assigneeId}
-                    members={members}
-                    marks={marks}
-                    userId={userId}
-                    onChange={(assigneeId) => {
-                      if (assigneeId !== values.assigneeId) choose('assignee', { assigneeId });
-                    }}
-                  />
-                ) : null}
-                {open === 'due' ? (
-                  <DayCells
-                    value={values.dueOn}
-                    today={today}
-                    onChange={setDueOn}
-                    noneDisabled={repeating}
-                    past={pastDue}
-                  />
-                ) : null}
-                {open === 'repeat' && repeatEditable ? (
-                  <View style={{ gap: space(3) }}>
-                    <RecurrencePicker
-                      value={values.recurrence}
-                      dueOn={values.dueOn ?? today}
-                      onChange={setRecurrence}
-                    />
-                    {nextDate !== null ? (
-                      <Text
-                        testID="task-form.repeat.next"
-                        style={{ color: colors.muted, fontSize: 13 }}
-                      >
-                        {t('taskForm.repeatNext', { date: nextDate })}
-                      </Text>
+                {/* The open picker, measured as one block so it scrolls into view whole. */}
+                {open !== null ? (
+                  <View key={open} ref={picker} onLayout={() => show(picker.current)}>
+                    {open === 'room' ? (
+                      <RoomPicker
+                        value={values.room}
+                        onChange={(room) => choose('room', { room })}
+                      />
+                    ) : null}
+                    {open === 'assignee' ? (
+                      <AssigneePicker
+                        value={values.assigneeId}
+                        members={members}
+                        marks={marks}
+                        userId={userId}
+                        onChange={(assigneeId) => {
+                          if (assigneeId !== values.assigneeId) choose('assignee', { assigneeId });
+                        }}
+                      />
+                    ) : null}
+                    {open === 'due' ? (
+                      <DayCells
+                        value={values.dueOn}
+                        today={today}
+                        onChange={setDueOn}
+                        noneDisabled={repeating}
+                        past={pastDue}
+                      />
+                    ) : null}
+                    {open === 'repeat' && repeatEditable ? (
+                      <View style={{ gap: space(3) }}>
+                        <RecurrencePicker
+                          value={values.recurrence}
+                          dueOn={values.dueOn ?? today}
+                          onChange={setRecurrence}
+                        />
+                        {nextDate !== null ? (
+                          <Text
+                            testID="task-form.repeat.next"
+                            style={{ color: colors.muted, fontSize: 13 }}
+                          >
+                            {t('taskForm.repeatNext', { date: nextDate })}
+                          </Text>
+                        ) : null}
+                      </View>
                     ) : null}
                   </View>
                 ) : null}
@@ -315,9 +331,10 @@ export function TaskForm({
             </FocusRevealContext.Provider>
           </ScrollView>
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
-              actions on the task right above it. */}
+              actions on the task right above it, or beside it on a short window. */}
           <View
             style={{
+              ...(density.footRow ? { flexDirection: 'row', alignItems: 'center' } : null),
               paddingHorizontal: space(5),
               paddingTop: space(3),
               paddingBottom: space(density.headerStep + 1),
@@ -327,13 +344,13 @@ export function TaskForm({
               backgroundColor: colors.page,
             }}
           >
-            {footer}
+            {density.footRow ? <View style={{ flex: 1 }}>{footer}</View> : footer}
             <Button
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
               loading={saving}
-              width="full"
+              width={density.footRow ? 'hug' : 'full'}
             />
           </View>
         </KeyboardAvoidingView>

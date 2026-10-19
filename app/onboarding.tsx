@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { AppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import { signOut } from '@/features/auth/api';
-import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
+import { AccountMenu } from '@/features/auth/AccountMenu';
 import { createHousehold, setHouseholdRooms } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
 import { householdNameSchema } from '@/features/households/schemas';
@@ -13,7 +13,6 @@ import { membershipKey } from '@/features/households/queries';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { pressedOpacity } from '@/ui/buttonLook';
-import { AccountZone } from '@/ui/components/AccountZone';
 import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
 import { useNotice } from '@/ui/components/Notice';
@@ -205,9 +204,12 @@ function CreateStep({ onCreated }: { onCreated: () => void }) {
     router.push({ pathname: '/invite', params: { token } });
   }
 
+  // The account waits behind «⋯»: the first steps are only «create» or «paste a link».
   return (
-    <CenteredCard header={<BrandHeader />}>
-      <ScreenTitle subtitle={t('brand.tagline')}>{t('onboarding.title')}</ScreenTitle>
+    <CenteredCard
+      header={<BrandHeader trailing={<AccountMenu onSignOut={leave} signingOut={signingOut} />} />}
+    >
+      <ScreenTitle>{t('onboarding.title')}</ScreenTitle>
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('onboarding.welcome')}</Text>
       <TextField
         testID="onboarding.name"
@@ -262,18 +264,6 @@ function CreateStep({ onCreated }: { onCreated: () => void }) {
         width="full"
         onPress={submitJoin}
       />
-      <AccountZone>
-        <Button
-          testID="onboarding.sign-out"
-          title={t('auth.signOut')}
-          variant="tertiary"
-          icon={actionIcons.signOut}
-          width="hug"
-          loading={signingOut}
-          onPress={leave}
-        />
-        <DeleteAccountButton testID="onboarding.delete-account" />
-      </AccountZone>
     </CenteredCard>
   );
 }

@@ -18,16 +18,15 @@ appId: com.bradlopez13.casa
     env:
       EMAIL: iris@e2e.dev
 
-# Onboarding: no household yet -> delete the account from here
+# Onboarding: no household yet -> delete the account from the account menu
 - extendedWaitUntil:
     visible:
       id: onboarding.name
     timeout: 20000
-- scrollUntilVisible:
-    element:
-      id: onboarding.delete-account
 - tapOn:
-    id: onboarding.delete-account
+    id: account-menu
+- tapOn:
+    id: account-menu.delete-account
 - tapOn:
     id: members.confirm
 - extendedWaitUntil:
