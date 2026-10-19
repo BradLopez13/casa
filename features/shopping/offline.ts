@@ -175,13 +175,19 @@ export function buildShoppingMutationDefaults(
   queryClient.setQueryDefaults(['shopping-resolved'], { gcTime: Infinity });
   const resolve = (householdId: string, id: string) =>
     queryClient.getQueryData<Resolved>(resolvedKey(householdId))?.[id] ?? id;
-  // Keeps the resolutions a pending bought still needs, plus the new one.
+  // Keeps the resolutions a pending bought or quantity change still needs, plus the new one.
   const remember = (householdId: string, id: string, resolvedId: string) => {
     const needed = new Set(
       queryClient
         .getMutationCache()
-        .findAll({ mutationKey: boughtKey, status: 'pending' })
-        .map((m) => (m.state.variables as BoughtVars | undefined)?.id),
+        .findAll({
+          status: 'pending',
+          predicate: (m) => {
+            const kind = m.options.mutationKey?.[1];
+            return kind === boughtKey[1] || kind === quantityKey[1];
+          },
+        })
+        .map((m) => (m.state.variables as { id?: string } | undefined)?.id),
     );
     queryClient.setQueryData<Resolved>(resolvedKey(householdId), (current) => ({
       ...Object.fromEntries(Object.entries(current ?? {}).filter(([from]) => needed.has(from))),
@@ -285,7 +291,7 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     mutationFn: async ({ id, householdId, name, quantity: value }) => {
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone before its turn: nothing left to change.
       const item = queryClient
         .getQueryData<ShoppingItem[]>(listKey(householdId))
@@ -295,7 +301,7 @@ export function buildShoppingMutationDefaults(
     },
     onMutate: async ({ id, householdId, quantity: value }) => {
       const key = listKey(householdId);
-      const target = resolve(id);
+      const target = resolve(householdId, id);
       const previous = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
       // Before the await, so a bought queued right after cannot get in first and hide it.
       queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
@@ -309,7 +315,7 @@ export function buildShoppingMutationDefaults(
       const previous = context?.previous;
       if (previous) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
-          current ? applyQuantity(current, resolve(id), previous.quantity) : current,
+          current ? applyQuantity(current, resolve(householdId, id), previous.quantity) : current,
         );
       }
       notify(shoppingErrorMessage(error));

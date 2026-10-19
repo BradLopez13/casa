@@ -361,6 +361,21 @@ describe('restart', () => {
     expect(setItemBought).not.toHaveBeenCalledWith('a', true);
   });
 
+  it('keeps the resolution a queued quantity change still needs when another add resolves', async () => {
+    const { queryClient, add, quantity } = setup();
+    queryClient.setQueryData(key, [existing]);
+    onlineManager.setOnline(false);
+    const added = add(milk);
+    const second = add({ ...milk, id: 'b' });
+    const changed = quantity({ id: 'a', householdId: 'h', name: 'Leche', quantity: '3' });
+    vi.mocked(addShoppingItem).mockResolvedValue('x');
+    vi.mocked(updateShoppingItem).mockResolvedValue(undefined);
+    onlineManager.setOnline(true);
+    await queryClient.resumePausedMutations();
+    await Promise.all([added, changed, second]);
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+  });
+
   it('keeps only the resolutions a pending bought still needs', async () => {
     const { queryClient, add, bought } = setup();
     queryClient.setQueryData(key, [existing]);
