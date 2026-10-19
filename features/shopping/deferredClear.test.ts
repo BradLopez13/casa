@@ -85,4 +85,27 @@ describe('createDeferredClear', () => {
     clock.advance(5000);
     expect(commit).toHaveBeenCalledTimes(2);
   });
+
+  // A screen reader keeps «Deshacer» until the person is done with it: no timer, only flush.
+  it('without a window, waits for flush and never clears by itself', () => {
+    const clock = fakeSchedule();
+    const commit = vi.fn();
+    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    clear.start(null);
+    clock.advance(60_000);
+    expect(commit).not.toHaveBeenCalled();
+    expect(clear.pending()).toBe(true);
+    clear.flush();
+    expect(commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('undo also stops a clear waiting without a window', () => {
+    const clock = fakeSchedule();
+    const commit = vi.fn();
+    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    clear.start(null);
+    expect(clear.undo()).toBe(true);
+    clear.flush();
+    expect(commit).not.toHaveBeenCalled();
+  });
 });

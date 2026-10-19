@@ -8,12 +8,24 @@ import { isScreenReaderOn, useScreenReader } from '../a11y';
 import { useTheme } from '../theme';
 import { MIN_TOUCH, radii } from '../tokens';
 import { useTabBarClearance } from '../useTabBarClearance';
-import { NOTICE_ACTION_MS, noticeDuration } from './noticeTiming';
+import { NOTICE_ACTION_MS, noticeDuration, noticeExpired } from './noticeTiming';
 
-export type NoticeAction = { label: string; onPress: () => void; testID?: string };
+export type NoticeAction = {
+  label: string;
+  onPress: () => void;
+  testID?: string;
+  /** The notice went away without its action: timed out, closed, replaced or left on its tab. */
+  onExpire?: () => void;
+};
 type Notify = (message: string, action?: NoticeAction) => void;
 /** ms null: no timer, the notice waits (a screen reader is on and there is an action to reach). */
-type Shown = { message: string; action?: NoticeAction; ms: number | null; tab: string | null };
+type Shown = {
+  id: number;
+  message: string;
+  action?: NoticeAction;
+  ms: number | null;
+  tab: string | null;
+};
 
 /** Long enough for the new pill to be laid out before the screen reader is sent to it. */
 const FOCUS_DELAY_MS = 300;
@@ -48,14 +60,26 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   // The screen reader went off while a notice waited: from now on it times out like any other.
   if (!screenReader && notice?.ms === null) setNotice({ ...notice, ms: NOTICE_ACTION_MS });
 
+  const lastId = useRef(0);
   const notify = useCallback<Notify>((message, action) => {
     const ms = noticeDuration({ action: !!action, screenReader: isScreenReaderOn() });
-    setNotice({ message, action, ms, tab: tabRef.current });
+    lastId.current += 1;
+    setNotice({ id: lastId.current, message, action, ms, tab: tabRef.current });
     // A waiting notice takes the screen reader's focus instead (below), which reads it.
     if (ms !== null) AccessibilityInfo.announceForAccessibility(message);
   }, []);
 
   const dismiss = useCallback(() => setNotice(null), []);
+
+  // Whoever waits on a notice's end (a deferred «Vaciar bolsa») hears when it goes unused.
+  const acted = useRef<number | null>(null);
+  const previous = useRef<Shown | null>(null);
+  useEffect(() => {
+    const prev = previous.current;
+    previous.current = notice;
+    const seen = (n: Shown | null) => (n ? { id: n.id, hasAction: !!n.action } : null);
+    if (noticeExpired(seen(prev), seen(notice), acted.current)) prev?.action?.onExpire?.();
+  }, [notice]);
 
   // Each notice shown starts its own timer; a newer one, or putting it away, cancels it.
   useEffect(() => {
@@ -123,6 +147,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
                 accessibilityLabel={action.label}
                 hitSlop={space(1)}
                 onPress={() => {
+                  acted.current = notice.id;
                   dismiss();
                   action.onPress();
                 }}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NOTICE_ACTION_MS, NOTICE_MS, noticeDuration } from './noticeTiming';
+import { NOTICE_ACTION_MS, NOTICE_MS, noticeDuration, noticeExpired } from './noticeTiming';
 
 describe('noticeDuration', () => {
   it('lasts 4 s without an action', () => {
@@ -19,5 +19,28 @@ describe('noticeDuration', () => {
 
   it('keeps the plain notice timing with a screen reader', () => {
     expect(noticeDuration({ action: false, screenReader: true })).toBe(4000);
+  });
+});
+
+describe('noticeExpired', () => {
+  const a = { id: 1, hasAction: true };
+  const b = { id: 2, hasAction: true };
+
+  it('expires a notice with an action that leaves without its action', () => {
+    expect(noticeExpired(a, null, null)).toBe(true);
+    expect(noticeExpired(a, b, null)).toBe(true);
+  });
+
+  it('does not expire the notice whose action was used', () => {
+    expect(noticeExpired(a, null, 1)).toBe(false);
+  });
+
+  it('does not expire a notice that is still the one shown (its timing changed)', () => {
+    expect(noticeExpired(a, { id: 1, hasAction: true }, null)).toBe(false);
+  });
+
+  it('has nothing to expire without a previous notice or without an action', () => {
+    expect(noticeExpired(null, a, null)).toBe(false);
+    expect(noticeExpired({ id: 3, hasAction: false }, null, null)).toBe(false);
   });
 });
