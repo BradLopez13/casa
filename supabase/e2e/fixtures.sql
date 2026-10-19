@@ -11,6 +11,7 @@
 --   leo@e2e.dev   = Leo, owner of "Piso Leo" (create-complete-task)
 --   nora@e2e.dev  = Nora, owner of "Piso Nora" (notification-settings)
 --   olga@e2e.dev  = Olga, owner of "Piso Olga" (shopping-offline)
+--   pablo@e2e.dev = Pablo, owner of "Piso Pablo" (templates)
 --   quique@e2e.dev = Quique, owner of "Piso Quique", with Quim (quim@e2e.dev) (members-remove)
 --   rita@e2e.dev  = Rita, owner of "Piso Rita" (recurring-task)
 --   rosa@e2e.dev  = Rosa, owner of "Piso Rosa" (rotate)
@@ -123,5 +124,6 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('sara@e2e.dev', 'Sara'), 'Piso Sara');
   perform pg_temp.e2e_household(pg_temp.e2e_user('nora@e2e.dev', 'Nora'), 'Piso Nora');
   perform pg_temp.e2e_household(pg_temp.e2e_user('tere@e2e.dev', 'Tere'), 'Piso Tere');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('pablo@e2e.dev', 'Pablo'), 'Piso Pablo');
 end
 $$;
