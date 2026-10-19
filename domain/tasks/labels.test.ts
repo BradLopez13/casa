@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  dayCellLabel,
   dayHeading,
   dayInSentence,
   dayName,
@@ -107,5 +108,16 @@ describe('labels on an English phone', () => {
     expect(en.dayInSentence('2026-10-10', today)).toBe('tomorrow');
     expect(en.skippedNotice('2026-10-10', today)).toBe('Skipped. Back tomorrow.');
     expect(en.skippedNotice('2026-10-11', today)).toBe('Skipped. Back on Sunday 11.');
+  });
+});
+
+// A screen reader read the form's day cells as «20 mar» («veinte mar»): they say the whole date.
+describe('dayCellLabel', () => {
+  const today = '2026-10-19';
+  it('says today with its full date', () => {
+    expect(dayCellLabel('2026-10-19', today)).toBe('Hoy, lunes, 19 de octubre');
+  });
+  it('says any other day in full, never the short weekday', () => {
+    expect(dayCellLabel('2026-10-20', today)).toBe('martes, 20 de octubre');
   });
 });

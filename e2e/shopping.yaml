@@ -62,12 +62,23 @@ appId: com.bradlopez13.casa
     visible: En la bolsa \(1\)
     timeout: 20000
 
-# Clear the bought ones: the section goes away (it fades out after the server answers)
+# Clear the bought ones: no dialog, the bag empties at once with an undo
 - tapOn:
     id: shopping.clear
-- tapOn: 'Vaciar'
 - extendedWaitUntil:
-    notVisible: En la bolsa.*
+    visible: Bolsa vaciada.
+    timeout: 5000
+- assertNotVisible: En la bolsa.*
+- tapOn:
+    id: shopping.clear.undo
+- extendedWaitUntil:
+    visible: En la bolsa \(1\)
+    timeout: 5000
+# Again, this time letting the notice go: the server clears it and it stays gone
+- tapOn:
+    id: shopping.clear
+- extendedWaitUntil:
+    notVisible: Bolsa vaciada.
     timeout: 20000
 - assertNotVisible: En la bolsa.*
 

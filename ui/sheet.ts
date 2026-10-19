@@ -40,6 +40,8 @@ export type FormDensity = {
   /** Under the last field. */
   bottomStep: number;
   autoFocusTitle: boolean;
+  /** The foot's actions and Save share one row, so the sheet keeps its height for the fields. */
+  footRow: boolean;
 };
 
 /**
@@ -49,6 +51,13 @@ export type FormDensity = {
  */
 export function formDensity(layout: Pick<Layout, 'shortHeight'>): FormDensity {
   return layout.shortHeight
-    ? { headerStep: 1, topStep: 3, gapStep: 4, bottomStep: 5, autoFocusTitle: false }
-    : { headerStep: 2, topStep: 5, gapStep: 6, bottomStep: 8, autoFocusTitle: true };
+    ? { headerStep: 1, topStep: 3, gapStep: 4, bottomStep: 5, autoFocusTitle: false, footRow: true }
+    : {
+        headerStep: 2,
+        topStep: 5,
+        gapStep: 6,
+        bottomStep: 8,
+        autoFocusTitle: true,
+        footRow: false,
+      };
 }

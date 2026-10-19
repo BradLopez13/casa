@@ -21,6 +21,7 @@ import {
   type Flash,
 } from '@/features/shopping/components/ShoppingSheet';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
+import { useDeferredClear } from '@/features/shopping/useDeferredClear';
 import {
   useAddItem,
   useClearBought,
@@ -39,7 +40,6 @@ import {
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
-import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
@@ -50,6 +50,7 @@ import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { actionIcons } from '@/ui/actionIcons';
+import { announce } from '@/ui/a11y';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
@@ -97,11 +98,13 @@ export default function ShoppingScreen() {
   const history = historyQuery.data ?? NO_HISTORY;
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
-  const { pending, bought } = useMemo(() => sortList(items), [items]);
+  const sorted = useMemo(() => sortList(items), [items]);
+  const pending = sorted.pending;
 
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
     addItem.mutate({ id: newShoppingItemId(), householdId, name, quantity: null, userId });
+    announce(t('shopping.a11y.added', { name }));
   };
 
   // Held by the screen, not the field: a turn of the tablet moves the field between the door and
@@ -115,7 +118,12 @@ export default function ShoppingScreen() {
 
   const toggle = (item: ShoppingItem) => {
     if (householdId === undefined || userId === null) return;
-    setBought.mutate({ id: item.id, householdId, bought: item.boughtAt === null, userId });
+    const bought = item.boughtAt === null;
+    // A bag cleared with a screen reader waits for its notice; what goes in now is not part of it.
+    if (bought) deferred.settle();
+    setBought.mutate({ id: item.id, householdId, bought, userId });
+    // The row moves to the other list and the reader's focus goes with it: say where it went.
+    announce(t(bought ? 'shopping.a11y.inBag' : 'shopping.a11y.backOnList', { name: item.name }));
   };
 
   const changeQuantity = (item: ShoppingItem, quantity: string | null) => {
@@ -124,20 +132,20 @@ export default function ShoppingScreen() {
     setQuantity.mutate({ id: item.id, householdId, name: item.name, quantity });
   };
 
-  const [confirmingClear, setConfirmingClear] = useState(false);
-  const clear = () => {
-    if (householdId === undefined) return;
-    setConfirmingClear(true);
-  };
-  // The dialog closes on confirm: the clear is scoped behind the queue and can pause offline, so
-  // a dialog waiting on it could stay stuck. The «Vaciar bolsa» button shows it pending.
-  const confirmClear = () => {
-    setConfirmingClear(false);
+  // «Vaciar bolsa» is routine, so it asks nothing: the bag empties at once with «Deshacer», and
+  // the server is asked when the notice goes. The clear is scoped behind the queue.
+  const commitClear = () => {
     if (householdId === undefined) return;
     clearBought.mutate(
       { householdId },
       { onError: (error) => notify(shoppingErrorMessage(error)) },
     );
+  };
+  const deferred = useDeferredClear(commitClear);
+  const bought = deferred.hidden ? [] : sorted.bought;
+  const clear = () => {
+    if (householdId === undefined) return;
+    deferred.clear();
   };
 
   const open = (id: string) => router.push({ pathname: '/shopping/[id]', params: { id } });
@@ -170,11 +178,12 @@ export default function ShoppingScreen() {
     </DoorHeader>
   );
 
-  // Loading, a load error with nothing cached, empty, or the sheet.
+  // Loading, a load error with nothing cached, empty, or the sheet. It counts what is on screen:
+  // while «Vaciar bolsa» waits for its undo, an emptied list already says it is empty.
   const state = shoppingState({
     loaded: itemsQuery.data !== undefined,
     failed: itemsQuery.isError,
-    itemCount: items.length,
+    itemCount: pending.length + bought.length,
   });
   let stateView: ReactNode = null;
   if (state === 'error') {
@@ -229,19 +238,6 @@ export default function ShoppingScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <ShoppingSplit {...parts} /> : <ShoppingStack {...parts} />}
-      <ConfirmDialog
-        visible={confirmingClear}
-        title={t('shopping.clearTitle')}
-        message={
-          bought.length === 1
-            ? t('shopping.clearMessageOne')
-            : t('shopping.clearMessageOther', { count: bought.length })
-        }
-        confirmLabel={t('shopping.clearAction')}
-        destructive
-        onCancel={() => setConfirmingClear(false)}
-        onConfirm={confirmClear}
-      />
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { AppError } from '@/data/supabase/errors';
+import type { ShoppingItem } from '@/domain/shopping/list';
 import {
   clearBoughtItems,
   deleteShoppingItem,
@@ -87,13 +88,29 @@ export function useDeleteItem() {
   });
 }
 
+/**
+ * Clears the bought items. Optimistic: they leave the cached list as the clear starts (the undo
+ * window has already hidden them), and come back if the server refuses.
+ */
 export function useClearBought() {
   const queryClient = useQueryClient();
-  return useMutation<void, AppError, { householdId: string }>({
+  return useMutation<void, AppError, { householdId: string }, { before?: ShoppingItem[] }>({
     mutationKey: ['shopping', 'clear'],
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     mutationFn: ({ householdId }) => clearBoughtItems(householdId),
+    onMutate: async ({ householdId }) => {
+      const key = shoppingKey(householdId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData<ShoppingItem[]>(key);
+      queryClient.setQueryData<ShoppingItem[]>(key, (items) =>
+        items?.filter((item) => item.boughtAt === null),
+      );
+      return { before };
+    },
+    onError: (_error, { householdId }, context) => {
+      if (context?.before) queryClient.setQueryData(shoppingKey(householdId), context.before);
+    },
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   });
 }

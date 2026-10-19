@@ -2,6 +2,7 @@ import { Platform, Text, View } from 'react-native';
 import { t } from '@/i18n';
 import { NidoSymbol } from '@/ui/components/NidoSymbol';
 import { useDoorType } from '@/ui/components/DoorHeader';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 
@@ -25,6 +26,7 @@ export function DayDone() {
         <NidoSymbol size={FIGURE_SIZE} onSlate />
       </View>
       <Text
+        maxFontSizeMultiplier={DOOR_MAX_SCALE}
         style={{
           flexShrink: 1,
           color: colors.ink,

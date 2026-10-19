@@ -240,6 +240,11 @@ isOneToOne: false
 "mark_push_result":
 { Args: { "p_dead_tokens": (string)[],"p_error": string,"p_failed": (number)[],"p_sent": (number)[] }; Returns: undefined
                            },
+"preview_invite":
+{ Args: { "p_token": string }; Returns: {
+              "household_name": string,"inviter_name": string,"member_count": number
+            }[]
+                           },
 "register_push_token":
 { Args: { "p_platform": string,"p_token": string }; Returns: undefined
                            },

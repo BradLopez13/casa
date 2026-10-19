@@ -46,6 +46,7 @@ describe('formDensity', () => {
       gapStep: 6,
       bottomStep: 8,
       autoFocusTitle: true,
+      footRow: false,
     });
     expect(formDensity(layoutFor(1024, 1366)).autoFocusTitle).toBe(true);
   });
@@ -54,6 +55,7 @@ describe('formDensity', () => {
     const tall = formDensity(layoutFor(390, 844));
     const short = formDensity(layoutFor(844, 390));
     expect(short.autoFocusTitle).toBe(false);
+    expect(short.footRow).toBe(true);
     expect(short.headerStep).toBeLessThan(tall.headerStep);
     expect(short.topStep).toBeLessThan(tall.topStep);
     expect(short.gapStep).toBeLessThan(tall.gapStep);

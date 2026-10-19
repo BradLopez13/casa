@@ -24,7 +24,7 @@ export type Palette = {
   accent: string;
   /** Text and icons on the accent fill. */
   onAccent: string;
-  /** Edge of the accent pill. Equals `accent` (no visible edge): the pill is told apart by its shadow in light mode. */
+  /** Edge of every pósit surface (the primary pill, a pósit magnet). Equals `accent` (no visible edge) except with the system high contrast in light, where it is slate (`highContrast`). */
   accentEdge: string;
   /** Fill of a chosen option or an "on" track: slate in light, chalk in dark (never the pósit, which is for doing). At least 3:1 on page, note and door. */
   selection: string;
@@ -56,8 +56,12 @@ export type Palette = {
   onRed: string;
   /** Quiet separators that carry no meaning on their own. */
   hairline: string;
-  /** Field borders and the dashed empty magnet: at least 3:1 on every ground. */
+  /** Field borders and the empty magnet's ring: at least 3:1 on every ground. */
   outline: string;
+  /** The filled track of a switch that is on: at least 3:1 on page and note, and under the thumb. */
+  toggleOn: string;
+  /** The thumb of a switch, light in both themes so on and off keep one polarity. */
+  toggleThumb: string;
   /** Initials on a magnet: the deepest slate, readable on every magnet colour. */
   magnetInk: string;
   /** Soft translucent ring around a magnet to keep its edge on the ground; 'transparent' for none. */
@@ -104,6 +108,8 @@ export const palettes: Record<Scheme, Palette> = {
     onRed: '#FFFFFF',
     hairline: '#E3E7E3',
     outline: '#6F7B80',
+    toggleOn: '#2E3B41',
+    toggleThumb: '#F3F4F0',
     magnetInk: '#151B1E',
     magnetRing: 'rgba(21,27,30,0.35)',
     magnetHighlight: 'rgba(255,255,255,0.28)',
@@ -147,6 +153,8 @@ export const palettes: Record<Scheme, Palette> = {
     onRed: '#151B1E',
     hairline: '#2C383E',
     outline: '#7F8B90',
+    toggleOn: '#6A8590',
+    toggleThumb: '#F3F4F0',
     magnetInk: '#151B1E',
     magnetRing: 'transparent',
     magnetHighlight: 'rgba(255,255,255,0.35)',
@@ -160,6 +168,16 @@ export const palettes: Record<Scheme, Palette> = {
     light: { top: '#2B3A40', text: '#DCE3E1', shelf: 'rgba(242,208,75,0.40)' },
     scrim: 'rgba(8,12,14,0.65)',
   },
+};
+
+/**
+ * What the system's high contrast ("High contrast text" on Android, "Increase contrast" on iOS)
+ * changes: muted text takes its stronger tone, and in light the pósit, barely 1.4:1 on paper,
+ * gets a slate edge. In dark the pósit already stands out on slate.
+ */
+export const highContrast: Record<Scheme, Partial<Palette>> = {
+  light: { muted: palettes.light.mutedStrong, accentEdge: '#2E3B41' },
+  dark: { muted: palettes.dark.mutedStrong },
 };
 
 export type NoteEdge = { borderWidth: number; borderColor: string };
@@ -187,8 +205,13 @@ export const magnetInitialSizes: Record<MagnetSize, number> = { lg: 21, tab: 17,
 export const displayFont = 'MPLUSRounded1c_800ExtraBold';
 /** Same family, bold weight: loaded next to the 800 in app/_layout.tsx. */
 export const displayFontBold = 'MPLUSRounded1c_700Bold';
+/** Same family, regular weight: an empty title's placeholder, so the example never reads as typed. */
+export const displayFontRegular = 'MPLUSRounded1c_400Regular';
 
 export const MIN_TOUCH = 44;
+
+/** Side of the box that completes a task, at the right edge of its note. */
+export const COMPLETE_BOX = 30;
 
 /**
  * Least height of a text field, a Button and the New task pill: a touch target and a little air.

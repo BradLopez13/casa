@@ -69,14 +69,21 @@ export default function SignInScreen() {
   };
 
   return (
-    <CenteredCard header={<BrandHeader />}>
-      <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.signIn.title')}</ScreenTitle>
-      <SocialButtons />
-      {hasPendingInvite ? (
-        <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
-          {t('auth.pendingInvite')}
-        </Text>
-      ) : null}
+    <CenteredCard
+      header={<BrandHeader />}
+      // On a phone on its side the title and the quick ways in take their own column.
+      aside={
+        <>
+          <ScreenTitle subtitle={t('brand.tagline')}>{t('auth.signIn.title')}</ScreenTitle>
+          <SocialButtons />
+          {hasPendingInvite ? (
+            <Text testID="sign-in.pending-invite" style={{ color: colors.ink, fontSize: 16 }}>
+              {t('auth.pendingInvite')}
+            </Text>
+          ) : null}
+        </>
+      }
+    >
       <TextField
         ref={emailRef}
         testID="sign-in.email"

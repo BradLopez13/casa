@@ -38,8 +38,8 @@ const { hang: HANG, firstRowInset: FIRST_ROW_INSET } = hangingMagnet(
 );
 
 /**
- * The pósit magnet that holds the note, half over its top edge near the left corner. Decorative chrome: the
- * «+» of the field stays the screen's one primary.
+ * The slate magnet that holds the note, half over its top edge near the left corner. Decorative
+ * chrome in `selection`, so the «+» of the field stays the screen's one pósit.
  */
 function HangingMagnet({ left }: { left: number }) {
   const { colors } = useTheme();
@@ -51,7 +51,7 @@ function HangingMagnet({ left }: { left: number }) {
         initial=""
         color="teal"
         accessibilityLabel=""
-        glyph={{ node: null, fill: colors.accent }}
+        glyph={{ node: null, fill: colors.selection }}
       />
     </View>
   );
@@ -232,8 +232,7 @@ export function ShoppingSheet({
                   <Button
                     testID="shopping.clear"
                     title={t('shopping.clear')}
-                    variant="tertiary"
-                    tone="destructive"
+                    variant="secondary"
                     icon={actionIcons.delete}
                     disabled={!online}
                     loading={clearing}
