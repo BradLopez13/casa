@@ -252,6 +252,8 @@
   "tasks.a11y.reopen": "Reabrir «{title}»",
   "tasks.a11y.reopenBy": "Reabrir «{title}», hecha por {name}",
   "tasks.a11y.reopenByYou": "Reabrir «{title}», hecha por ti",
+  "tasks.doneWhen.yesterday": "ayer, {time}",
+  "tasks.doneWhen.on": "{date}, {time}",
   "tasks.a11y.unassigned": "Sin responsable",
   "tasks.a11y.edit": "Abre la tarea para editarla",
   "tasks.a11y.added": "«{title}» añadida.",

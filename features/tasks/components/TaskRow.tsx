@@ -66,6 +66,7 @@ export function TaskRow({
           marks={marks}
           names={names}
           userId={userId}
+          today={today}
           onReopen={(task) => toggle({ id: task.id, done: false })}
         />
       )}
