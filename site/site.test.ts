@@ -30,6 +30,11 @@ describe.each(pages)('privacy policy $file', ({ file, lang, other }) => {
     }
   });
 
+  it('promises the 30 days after which a deleted household is erased', () => {
+    // private.purge_deleted_households, every night (20261019120000_purge_deleted_households.sql).
+    expect(html.replace(/\s+/g, ' ')).toContain(lang === 'es' ? 'a los 30 días' : 'after 30 days');
+  });
+
   it('loads nothing from outside', () => {
     expect(html).not.toMatch(/<script|<link[^>]+href="https?:|src="https?:/);
   });
