@@ -15,7 +15,8 @@ import {
 } from '@/features/households/pending-invite';
 import { invitePreviewText } from '@/features/households/inviteText';
 import { membershipKey, useInvitePreview } from '@/features/households/queries';
-import { t, type MessageKey } from '@/i18n';
+import { inviteErrorKey } from '@/features/households/errors';
+import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
@@ -29,21 +30,6 @@ const TERMINAL: ReadonlySet<AppErrorCode> = new Set([
   'INVITE_EXPIRED',
   'ALREADY_IN_HOUSEHOLD',
 ]);
-
-function errorKey(code: AppErrorCode): MessageKey {
-  switch (code) {
-    case 'INVITE_INVALID':
-      return 'invite.errors.INVITE_INVALID';
-    case 'INVITE_EXPIRED':
-      return 'invite.errors.INVITE_EXPIRED';
-    case 'ALREADY_IN_HOUSEHOLD':
-      return 'invite.errors.ALREADY_IN_HOUSEHOLD';
-    case 'NETWORK':
-      return 'invite.errors.NETWORK';
-    default:
-      return 'invite.errors.UNKNOWN';
-  }
-}
 
 export default function InviteScreen() {
   const { colors } = useTheme();
@@ -245,7 +231,7 @@ export default function InviteScreen() {
     return (
       <CenteredCard header={band}>
         {title}
-        <ErrorText testID="invite.error">{t(errorKey(dead))}</ErrorText>
+        <ErrorText testID="invite.error">{t(inviteErrorKey(dead))}</ErrorText>
         <Button
           testID="invite.continue"
           title={t('invite.continue')}
@@ -281,7 +267,9 @@ export default function InviteScreen() {
     <CenteredCard header={band}>
       {title}
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('invite.body')}</Text>
-      {failure ? <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText> : null}
+      {failure ? (
+        <ErrorText testID="invite.error">{t(inviteErrorKey(failure.code))}</ErrorText>
+      ) : null}
       <Button
         testID="invite.accept"
         title={t('invite.accept')}

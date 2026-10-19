@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
-import { toAppError } from '@/data/supabase/errors';
 import type { MemberMark } from '@/domain/members/marks';
 import { isOwnerAlone } from '@/domain/account/delete';
 import { signOut } from '@/features/auth/api';
@@ -16,7 +15,8 @@ import { NotificationsOffBand } from '@/features/settings/NotificationsOffBand';
 import { settingsPanes, type SettingsGroup } from '@/features/settings/settingsPanes';
 import { useNotificationPermission } from '@/features/settings/useNotificationPermission';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
-import { t, type MessageKey } from '@/i18n';
+import { settingsErrorMessage } from '@/features/settings/errors';
+import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
@@ -36,12 +36,6 @@ import { displayFont, displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
 const NAME_MAX = 40;
-
-function nameErrorKey(code: string): MessageKey {
-  if (code === 'INVALID_DISPLAY_NAME') return 'errors.INVALID_DISPLAY_NAME';
-  if (code === 'NETWORK') return 'members.errors.NETWORK';
-  return 'members.errors.UNKNOWN';
-}
 
 export default function SettingsScreen() {
   const { colors, space } = useTheme();
@@ -288,7 +282,7 @@ function NameHeading({
     setError(undefined);
     save.mutate(next, {
       onSuccess: close,
-      onError: (e) => setError(t(nameErrorKey(toAppError(e).code))),
+      onError: (e) => setError(settingsErrorMessage(e)),
     });
   };
 

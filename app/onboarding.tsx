@@ -20,6 +20,7 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { Magnet } from '@/ui/components/Magnet';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
+import { onboardingErrorMessage } from '@/features/households/errors';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
@@ -100,18 +101,12 @@ function RoomsStep() {
         },
         onError: (e) => {
           switch (e.code) {
-            case 'INVALID_ROOM':
-              setError(t('errors.INVALID_ROOM'));
-              break;
             case 'NOT_A_MEMBER':
               // The household is gone: refresh so the guard sorts it out.
               void queryClient.invalidateQueries({ queryKey: membershipKey });
               break;
-            case 'NETWORK':
-              setError(t('onboarding.errors.NETWORK'));
-              break;
             default:
-              setError(t('onboarding.errors.UNKNOWN'));
+              setError(onboardingErrorMessage(e.code));
           }
         },
       },
@@ -178,17 +173,14 @@ function CreateStep({ onCreated }: { onCreated: () => void }) {
       onError: (error) => {
         switch (error.code) {
           case 'INVALID_NAME':
-            setNameError(t('onboarding.errors.nameInvalid'));
+            setNameError(onboardingErrorMessage(error.code));
             break;
           case 'ALREADY_IN_HOUSEHOLD':
             // The user already has a household: refresh so the guard redirects.
             void queryClient.invalidateQueries({ queryKey: membershipKey });
             break;
-          case 'NETWORK':
-            setFormError(t('onboarding.errors.NETWORK'));
-            break;
           default:
-            setFormError(t('onboarding.errors.UNKNOWN'));
+            setFormError(onboardingErrorMessage(error.code));
         }
       },
     });
