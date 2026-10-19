@@ -6,6 +6,7 @@ import {
   magnetSizes,
   MIN_TOUCH,
   noteEdges,
+  highContrast,
   palettes,
   radii,
   shadows,
@@ -92,5 +93,26 @@ describe('selection is chalk or slate, never the pósit', () => {
     for (const g of [p.door, p.page, p.note]) {
       expect(contrastRatio(p.selection, g)).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('highContrast', () => {
+  const hc = { ...palettes.light, ...highContrast.light };
+
+  // §36: with the system's high contrast, the pósit gets a slate edge where it sits on paper.
+  it('edges the pósit in slate on every light ground', () => {
+    for (const g of [hc.page, hc.note, hc.taskNote, hc.door]) {
+      expect(contrastRatio(hc.accentEdge, g)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('swaps muted for its stronger tone in both themes', () => {
+    expect(highContrast.light.muted).toBe(palettes.light.mutedStrong);
+    expect(highContrast.dark.muted).toBe(palettes.dark.mutedStrong);
+    expect(contrastRatio(hc.muted, hc.page)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('leaves the pósit edge alone in dark, where the pósit already stands out on slate', () => {
+    expect(highContrast.dark.accentEdge).toBeUndefined();
   });
 });

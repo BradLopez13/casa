@@ -10,11 +10,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appQueryDefaults } from '@/data/query/defaults';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
-import { addShoppingItem, setItemBought } from './api';
+import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
 import {
   addKey,
   boughtKey,
   buildShoppingMutationDefaults,
+  countsAsUnsent,
   NETWORK_RETRIES,
   persistBuster,
   persistDehydrateOptions,
@@ -22,13 +23,16 @@ import {
   shoppingQueryOptions,
   shouldPersistMutation,
   shouldPersistQuery,
+  quantityKey,
   type AddVars,
   type BoughtVars,
+  type QuantityVars,
 } from './offline';
 
 vi.mock('./api', () => ({
   addShoppingItem: vi.fn(),
   setItemBought: vi.fn(),
+  updateShoppingItem: vi.fn(),
 }));
 
 const key = ['shopping', 'h'];
@@ -52,6 +56,11 @@ function setup(queryClient = new QueryClient({ defaultOptions: appQueryDefaults 
   const defaults = buildShoppingMutationDefaults(queryClient, notify);
   queryClient.setMutationDefaults(addKey, defaults.add);
   queryClient.setMutationDefaults(boughtKey, defaults.bought);
+  queryClient.setMutationDefaults(quantityKey, defaults.quantity);
+  const quantity = (vars: QuantityVars) =>
+    new MutationObserver<void, AppError, QuantityVars>(queryClient, {
+      mutationKey: quantityKey,
+    }).mutate(vars);
   const add = (vars: AddVars) =>
     new MutationObserver<string, AppError, AddVars>(queryClient, { mutationKey: addKey }).mutate(
       vars,
@@ -60,7 +69,7 @@ function setup(queryClient = new QueryClient({ defaultOptions: appQueryDefaults 
     new MutationObserver<void, AppError, BoughtVars>(queryClient, {
       mutationKey: boughtKey,
     }).mutate(vars);
-  return { queryClient, notify, defaults, add, bought };
+  return { queryClient, notify, defaults, add, bought, quantity };
 }
 
 const list = (queryClient: QueryClient) => queryClient.getQueryData<ShoppingItem[]>(key);
@@ -68,6 +77,7 @@ const list = (queryClient: QueryClient) => queryClient.getQueryData<ShoppingItem
 beforeEach(() => {
   vi.mocked(addShoppingItem).mockReset();
   vi.mocked(setItemBought).mockReset();
+  vi.mocked(updateShoppingItem).mockReset();
 });
 
 afterEach(() => {
@@ -472,5 +482,59 @@ describe('shoppingQueryOptions', () => {
       retryDelay: 0,
     });
     expect(queryFn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('the quantity default', () => {
+  const bread: ShoppingItem = { ...existing, id: 'p', name: 'Pan', normalizedName: 'pan' };
+  const vars: QuantityVars = { id: 'x', householdId: 'h', name: 'Leche', quantity: '3' };
+
+  it('rolls back only its own item and tells why', async () => {
+    const { queryClient, notify, quantity } = setup();
+    queryClient.setQueryData(key, [existing, bread]);
+    let fail: (error: AppError) => void = () => undefined;
+    vi.mocked(updateShoppingItem).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        fail = reject;
+      }),
+    );
+    const sent = quantity(vars);
+    await vi.waitFor(() => expect(list(queryClient)?.[0]?.quantity).toBe('3'));
+    // Another change lands while the save is in flight.
+    queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
+      current?.map((i) => (i.id === 'p' ? { ...i, quantity: '2' } : i)),
+    );
+    fail(new AppError('ITEM_NOT_FOUND'));
+    await expect(sent).rejects.toBeDefined();
+    expect(list(queryClient)?.find((i) => i.id === 'x')?.quantity).toBe('2');
+    expect(list(queryClient)?.find((i) => i.id === 'p')?.quantity).toBe('2');
+    expect(notify).toHaveBeenCalledOnce();
+  });
+
+  it('does not send a quantity for an item bought before it ran', async () => {
+    const { queryClient, notify, quantity } = setup();
+    queryClient.setQueryData(key, [{ ...existing, boughtAt: '2026-10-02T00:00:00.000Z' }]);
+    await quantity(vars);
+    expect(updateShoppingItem).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('retries a request that never reached the server', async () => {
+    const { queryClient, quantity } = setup();
+    queryClient.setQueryData(key, [existing]);
+    vi.mocked(updateShoppingItem)
+      .mockRejectedValueOnce(new AppError('NETWORK'))
+      .mockResolvedValueOnce(undefined);
+    await quantity(vars);
+    expect(updateShoppingItem).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('countsAsUnsent', () => {
+  it('shows a queued add or bought, and a quantity save only while it waits offline', () => {
+    expect(countsAsUnsent(addKey, false)).toBe(true);
+    expect(countsAsUnsent(boughtKey, false)).toBe(true);
+    expect(countsAsUnsent(quantityKey, false)).toBe(false);
+    expect(countsAsUnsent(quantityKey, true)).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import type { TaskListSection } from '@/features/tasks/sections';
 import { SectionHeader } from './SectionHeader';
 import { TaskRow, TaskRowSeparator, taskRowKey } from './TaskRow';
 
-type Props = Omit<ComponentProps<typeof TaskRow>, 'row' | 'flush'> & {
+type Props = Omit<ComponentProps<typeof TaskRow>, 'row' | 'flush' | 'first'> & {
   sections: TaskListSection[];
 };
 
@@ -25,7 +25,9 @@ export function TaskSections({ sections, ...row }: Props) {
       renderSectionHeader={({ section }) => (
         <SectionHeader title={section.title} count={section.count} flush />
       )}
-      renderItem={({ item }) => <TaskRow row={item} flush {...row} />}
+      renderItem={({ item, index, section }) => (
+        <TaskRow row={item} flush first={index === 0 && section === sections[0]} {...row} />
+      )}
     />
   );
 }

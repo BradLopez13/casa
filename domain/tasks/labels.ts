@@ -19,6 +19,12 @@ export function longDateLabel(iso: string): string {
   });
 }
 
+/** What a screen reader says for a day cell of the form: the whole date, today named first. */
+export function dayCellLabel(iso: string, today: string): string {
+  const date = longDateLabel(iso);
+  return iso === today ? `${t('tasks.due.today')}, ${date}` : date;
+}
+
 /**
  * "sábado 11" / "Saturday 11": the weekday from Intl, the order from the strings (Intl in en-US
  * would say "11 Saturday").

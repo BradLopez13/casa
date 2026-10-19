@@ -3,7 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # Solo los PR hacia main pasan el CI; los de las fases hacia integracion entran sin esperar.
   pull_request:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}

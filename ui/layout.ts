@@ -33,13 +33,24 @@ function sizeClassFor(width: number): SizeClass {
 export function layoutFor(width: number, height: number): Layout {
   const size = sizeClassFor(width);
   const wide = size === 'expanded' || size === 'large';
+  const landscape = width > height;
+  const shortHeight = height < 500;
   return {
     size,
-    landscape: width > height,
-    shortHeight: height < 500,
+    landscape,
+    shortHeight,
     twoPane: wide,
-    rail: wide,
+    // A phone on its side runs out of height, not width: the rail gives the bar's row back.
+    rail: wide || (landscape && shortHeight),
     contentMax: wide ? TWO_PANE_MAX : ONE_COLUMN_MAX,
     gutter: GUTTER[size],
   };
+}
+
+/**
+ * Whether the sign-in screens set their slate band at the side and the form in two columns: on a
+ * phone on its side, where a stacked form puts its main button under the fold.
+ */
+export function authBeside(layout: Pick<Layout, 'shortHeight' | 'landscape'>): boolean {
+  return layout.shortHeight && layout.landscape;
 }
