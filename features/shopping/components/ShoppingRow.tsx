@@ -197,6 +197,7 @@ export function ShoppingRow({
         })}
         accessibilityState={{ checked: bought }}
         // A bought row speaks as a whole (boughtA11y): its parts stay out of the reader's way.
+        accessible={!bought}
         importantForAccessibility={bought ? 'no-hide-descendants' : 'auto'}
         accessibilityElementsHidden={bought}
         style={{
