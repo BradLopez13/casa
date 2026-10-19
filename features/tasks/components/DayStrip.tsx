@@ -28,7 +28,7 @@ type DotsProps = {
   ring?: string;
 };
 
-/** One dot per person with something that day, plus a dashed one for unassigned tasks. */
+/** One dot per person with something that day, plus an empty ring for unassigned tasks. */
 export function DayDots({ day, marks, ring }: DotsProps) {
   const { colors, space } = useTheme();
   const edge = ring
@@ -67,7 +67,6 @@ export function DayDots({ day, marks, ring }: DotsProps) {
             height: DOT,
             borderRadius: DOT / 2,
             borderWidth: 1,
-            borderStyle: 'dashed',
             borderColor: ring ?? colors.outline,
           }}
         />

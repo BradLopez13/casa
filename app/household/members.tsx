@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
   createInvite,
@@ -32,8 +32,7 @@ import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
-import { PaneHeader } from '@/ui/components/PaneHeader';
-import { ScreenTitle } from '@/ui/components/ScreenTitle';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
@@ -89,6 +88,7 @@ function errorText(e: unknown, selfDirected = false): string {
 export default function MembersScreen() {
   const { colors, radii, shadows, noteEdge, space } = useTheme();
   const split = paneMode(useLayout()) === 'split';
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useSession();
@@ -393,38 +393,23 @@ export default function MembersScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
+      {/* The bar of every secondary screen: «Volver» and the title, in the sheets' one size. Clear
+          of a side notch; the panes below keep their own gutter. */}
+      <View style={{ paddingLeft: insets.left, paddingRight: insets.right }}>
+        <ModalHeader
+          title={t('members.title')}
+          step={2}
+          cancel={{
+            testID: 'members.back',
+            label: t('members.back'),
+            onPress: () => (router.canGoBack() ? router.back() : router.replace('/today')),
+          }}
+        />
+      </View>
       {/* Outside the tabs: no rail beside it, so the panes keep clear of a side notch. */}
       <TwoPane
         besideRail={false}
-        contentContainerStyle={{ paddingBottom: space(8) }}
-        header={
-          <PaneHeader besideRail={false}>
-            {/* On two panes the button keeps its own size beside the title, not a long bar
-                across the screen, and the header stays low above panes that scroll. */}
-            <View
-              style={
-                split
-                  ? { flexDirection: 'row', alignItems: 'center', gap: space(4) }
-                  : { gap: space(4) }
-              }
-            >
-              {/* A hug button pins itself to the start; this wrapper centres it on the row. */}
-              <View style={{ alignSelf: split ? 'center' : 'flex-start' }}>
-                <Button
-                  testID="members.back"
-                  title={t('members.back')}
-                  variant="tertiary"
-                  icon={actionIcons.back}
-                  width="hug"
-                  onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
-                />
-              </View>
-              <View style={{ flexShrink: 1 }}>
-                <ScreenTitle>{t('members.title')}</ScreenTitle>
-              </View>
-            </View>
-          </PaneHeader>
-        }
+        contentContainerStyle={{ paddingTop: space(5), paddingBottom: space(8) }}
         left={people}
         right={household}
       />

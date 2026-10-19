@@ -26,6 +26,8 @@ type Props = {
   icon?: ActionIcon;
   /** full: stretches to its container. hug: only as wide as its content. */
   width?: 'full' | 'hug';
+  /** Tertiary only: no side padding, so its label lines up with the text of the note it sits in. */
+  flush?: boolean;
 };
 
 export function Button({
@@ -38,11 +40,12 @@ export function Button({
   tone = 'default',
   icon,
   width = 'hug',
+  flush = false,
 }: Props) {
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const { fill, border, foreground, borderStyle } = buttonLook(
+  const { fill, border, foreground, labelOpacity } = buttonLook(
     variant,
     tone,
     loading ? 'busy' : disabled ? 'disabled' : 'enabled',
@@ -68,11 +71,10 @@ export function Button({
           minHeight: m.minHeight,
           alignItems: 'center',
           justifyContent: 'center',
-          paddingHorizontal: m.paddingH,
+          paddingHorizontal: flush && variant === 'tertiary' ? 0 : m.paddingH,
           paddingVertical: m.paddingV,
           borderRadius: radii.pill,
           borderWidth: border === 'transparent' ? 0 : PRIMARY_EDGE,
-          borderStyle,
           borderColor: border,
           backgroundColor: fill,
           opacity: pressedOpacity(pressed),
@@ -82,7 +84,9 @@ export function Button({
         {loading ? (
           <ActivityIndicator color={foreground} />
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: labelOpacity }}
+          >
             {icon ? (
               <Ionicons
                 name={icon}
