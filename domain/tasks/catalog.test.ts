@@ -3,8 +3,10 @@ import { recurrenceRuleSchema } from '@/domain/recurrence/rule';
 import { t } from '@/i18n';
 import {
   CATALOG,
+  CATALOG_ROOMS,
   catalogFor,
   catalogInputs,
+  catalogLabel,
   catalogTitle,
   normalizeTaskTitle,
   offeredRooms,
@@ -115,5 +117,26 @@ describe('offeredRooms', () => {
 
   it('offers every room while the household rooms are unknown', () => {
     expect(offeredRooms(undefined, null)).toEqual([...ROOMS]);
+  });
+});
+
+describe('catalogInputs for a person', () => {
+  it('gives every pick to the chosen person', () => {
+    const picks = catalogInputs(['kitchen.dishes', 'general.bills'], today, 'u-2');
+    expect(picks.map((pick) => pick.input.assigneeId)).toEqual(['u-2', 'u-2']);
+  });
+});
+
+describe('catalogLabel', () => {
+  const find = (key: string) => CATALOG.kitchen.find((item) => item.key === key);
+
+  it('joins the chore and its repeat with a middle dot, the repeat in lower case', () => {
+    const dishes = find('dishes');
+    expect(dishes && catalogLabel(dishes)).toBe('Fregar los platos · cada día');
+  });
+
+  it('is the chore alone when it does not repeat', () => {
+    const once = CATALOG_ROOMS.flatMap((room) => CATALOG[room]).find((i) => i.recurrence === null);
+    expect(once && catalogLabel(once)).toBe(once && catalogTitle(once));
   });
 });
