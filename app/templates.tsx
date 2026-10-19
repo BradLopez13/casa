@@ -34,6 +34,7 @@ import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { useLayout } from '@/ui/useLayout';
 
 function TemplateRow({
   room,
@@ -102,6 +103,7 @@ function TemplatesScreen() {
   const membership = useMembership().data;
   const householdId = membership?.householdId;
   const { userId } = useSession();
+  const { shortHeight } = useLayout();
   const members = useMembers(householdId).data;
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
   // Who does every chosen task; nobody by default, as before.
@@ -169,6 +171,22 @@ function TemplatesScreen() {
     );
   };
 
+  // «Para» sits above «Añadir»: in the foot, or on a short window (a phone on its side) at the end
+  // of the list, so the foot does not take the little height the list has.
+  const assignee =
+    keys.length > 0 && members && members.length > 0 ? (
+      <View style={{ gap: space(2), paddingBottom: space(3) }}>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>{t('templates.assigneeLabel')}</Text>
+        <AssigneePicker
+          value={assigneeId}
+          members={members}
+          marks={marks}
+          userId={userId}
+          onChange={setAssigneeId}
+        />
+      </View>
+    ) : null;
+
   // Something chosen and not saved: Cancel, back and the gesture ask before dropping it.
   const { requestClose, dialog } = useDiscardGuard({
     dirty: keys.length > 0,
@@ -213,6 +231,7 @@ function TemplatesScreen() {
             {t('templates.empty')}
           </Text>
         ) : null}
+        {shortHeight && assignee ? <View style={{ paddingTop: space(4) }}>{assignee}</View> : null}
         {save.error ? (
           <View style={{ paddingTop: space(4) }}>
             <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
@@ -230,20 +249,7 @@ function TemplatesScreen() {
           backgroundColor: colors.page,
         }}
       >
-        {keys.length > 0 && members && members.length > 0 ? (
-          <View style={{ gap: space(2), paddingBottom: space(3) }}>
-            <Text style={{ color: colors.muted, fontSize: 14 }}>
-              {t('templates.assigneeLabel')}
-            </Text>
-            <AssigneePicker
-              value={assigneeId}
-              members={members}
-              marks={marks}
-              userId={userId}
-              onChange={setAssigneeId}
-            />
-          </View>
-        ) : null}
+        {shortHeight ? null : assignee}
         <Button
           testID="templates.add"
           title={
