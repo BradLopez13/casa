@@ -35,7 +35,11 @@ export function MemberFilter({ members, marks, userId, selected, onSelect, dense
       showsHorizontalScrollIndicator={false}
       accessibilityRole="radiogroup"
       accessibilityLabel={t('tasks.filterLabel')}
-      contentContainerStyle={{ gap: space(3), paddingVertical: compact ? 0 : space(1) }}
+      // Dense, the magnets close up to 8 dp so «Todos» and five people fit across a 375 dp phone.
+      contentContainerStyle={{
+        gap: compact ? space(2) : space(3),
+        paddingVertical: compact ? 0 : space(1),
+      }}
     >
       <View style={{ alignItems: 'center', gap: space(1) }}>
         <Magnet

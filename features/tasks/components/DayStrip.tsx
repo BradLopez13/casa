@@ -5,6 +5,7 @@ import { dayCountLabel, type StripDay } from '@/domain/tasks/strip';
 import { locale } from '@/i18n';
 import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { pressedOpacity } from '@/ui/buttonLook';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 
@@ -121,6 +122,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
             >
               <Text
                 numberOfLines={1}
+                maxFontSizeMultiplier={DOOR_MAX_SCALE}
                 style={{
                   color: isChosen || isToday ? ink : colors.muted,
                   fontSize: 12,
@@ -130,6 +132,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
                 {date.toLocaleDateString(locale, { weekday: 'short' })}
               </Text>
               <Text
+                maxFontSizeMultiplier={DOOR_MAX_SCALE}
                 style={{
                   color: ink,
                   fontFamily: displayFont,

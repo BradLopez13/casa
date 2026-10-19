@@ -207,6 +207,7 @@ export function DoorHeader({
   const insets = useSafeAreaInsets();
   const layout = useLayout();
   const door = useDoor();
+  const { fontScale } = useWindowDimensions();
   const type = door.type;
   const { rail, contentMax, gutter } = layout;
   // Beside the rail, the rail already takes the left inset (a landscape notch).
@@ -300,6 +301,9 @@ export function DoorHeader({
     // On a phone on its side the quick add comes into the door: beside the strip when there is
     // one (Tareas), under the controls otherwise (Hoy).
     const inDoor = door.holdsQuickAdd && quickAdd ? quickAdd : null;
+    // The strip's cells grow with the text (up to the door's cap); past that width the quick add
+    // takes a line of its own under the strip.
+    const stripMin = STRIP_MIN * Math.min(Math.max(fontScale, 1), DOOR_MAX_SCALE);
     const controls = children || (inDoor && !below);
     const paddingTop = top + space(2);
     const paddingBottom = space(3);
@@ -374,7 +378,7 @@ export function DoorHeader({
                     rowGap: space(2),
                   }}
                 >
-                  <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: STRIP_MIN }}>
+                  <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: stripMin }}>
                     {below}
                   </View>
                   <View
