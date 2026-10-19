@@ -30,6 +30,7 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { DoorControls, DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -118,7 +119,7 @@ type TasksParts = {
 };
 
 export default function TasksScreen() {
-  const { colors } = useTheme();
+  const { colors, space } = useTheme();
   const layout = useLayout();
   const screen = useTaskScreen();
   const { today, members, filtered, userId, assigneeId, tasksQuery } = screen;
@@ -153,10 +154,13 @@ export default function TasksScreen() {
   );
 
   const empty = (
-    <Text style={{ color: colors.muted, fontSize: 16 }}>
-      {/* Semana can be empty while Todas still has undated, later or done tasks. */}
-      {t(mode === 'week' && filtered.length > 0 ? 'tasks.weekEmpty' : 'tasks.empty')}
-    </Text>
+    <View style={{ gap: space(3), alignItems: 'flex-start' }}>
+      <SymbolPlate />
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {/* Semana can be empty while Todas still has undated, later or done tasks. */}
+        {t(mode === 'week' && filtered.length > 0 ? 'tasks.weekEmpty' : 'tasks.empty')}
+      </Text>
+    </View>
   );
 
   const parts: TasksParts = {

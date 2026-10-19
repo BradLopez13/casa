@@ -61,6 +61,13 @@ describe('dark palette keeps red apart from the pósit', () => {
   });
 });
 
+describe('the light door', () => {
+  // The enamel door has to read as its own panel against the paper, not as a faint tint of it.
+  it('stands apart from the paper', () => {
+    expect(contrastRatio(palettes.light.door, palettes.light.page)).toBeGreaterThanOrEqual(1.3);
+  });
+});
+
 describe.each<Scheme>(['light', 'dark'])('%s palette meets WCAG AA', (scheme) => {
   const p = palettes[scheme];
   const grounds = { page: p.page, door: p.door, note: p.note };

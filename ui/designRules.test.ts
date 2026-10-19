@@ -197,6 +197,27 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const found = tabs.filter((f) => /\bScreenTitle\b|\btitleSize=/.test(read(f)));
     expect(found).toEqual([]);
   });
+
+  // «El símbolo aparece dentro de la app solo en el filtro Todos, en el final del día, en Tareas
+  // vacía y en la puerta de Ajustes», besides the brand band, the fridge light and the fatal screen.
+  it('the symbol only appears where DESIGN.md allows it', () => {
+    const allowed = [
+      'app/(tabs)/settings.tsx',
+      'app/(tabs)/tasks.tsx',
+      'features/tasks/components/DayDone.tsx',
+      'features/tasks/components/MemberFilter.tsx',
+      'ui/components/BrandHeader.tsx',
+      'ui/components/FatalScreen.tsx',
+      // The mono symbol inside the fridge light that pull-to-refresh reveals.
+      'ui/components/FridgeRefresh.tsx',
+      'ui/components/SymbolPlate.tsx',
+    ];
+    const found = sources.filter(
+      (f) =>
+        /['"][^'"]*\/(NidoSymbol|SymbolPlate)(\.tsx)?['"]/.test(read(f)) && !allowed.includes(f),
+    );
+    expect(found).toEqual([]);
+  });
   // Fase 1: the box at the right completes a task; the magnet only says whose it is.
   it('a task note completes with the box, never the magnet', () => {
     const note = read('features/tasks/components/TaskNote.tsx');

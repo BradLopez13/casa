@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { contrastRatio } from './contrast';
-import { nidoSymbolColors } from './nidoSymbol';
+import { SYMBOL_PLATE, nidoSymbolColors } from './nidoSymbol';
 import { palettes } from './tokens';
 
 it('puts the light symbol on a slate tile', () => {
@@ -18,3 +18,8 @@ it.each(['light', 'dark'] as const)(
     expect(contrastRatio(right, ground)).toBeGreaterThanOrEqual(3);
   },
 );
+
+it('the symbol plate is 56 dp with the symbol at 40', () => {
+  expect(SYMBOL_PLATE.size).toBe(56);
+  expect(SYMBOL_PLATE.size - 2 * SYMBOL_PLATE.inset).toBe(40);
+});
