@@ -7,15 +7,17 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
-import { applyAdd, applyBought, type ShoppingItem } from '@/domain/shopping/list';
+import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
 import { t } from '@/i18n';
-import { addShoppingItem, setItemBought } from './api';
+import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
+import { shoppingErrorMessage } from './errors';
 
 /** Shopping mutations share one scope, so a queue built offline reaches the server in order. */
 export const SHOPPING_SCOPE = { id: 'shopping' };
 export const addKey = ['shopping', 'add'];
 export const boughtKey = ['shopping', 'bought'];
+export const quantityKey = ['shopping', 'quantity'];
 
 export type AddVars = {
   id: string;
@@ -28,6 +30,23 @@ export type AddContext = { item: ShoppingItem; added: boolean };
 
 export type BoughtVars = { id: string; householdId: string; bought: boolean; userId: string };
 export type BoughtContext = { previous: ShoppingItem | undefined };
+
+export type QuantityVars = {
+  id: string;
+  householdId: string;
+  name: string;
+  quantity: string | null;
+};
+export type QuantityContext = { previous: ShoppingItem | undefined };
+
+/**
+ * Whether a shopping mutation still on its way marks its row as unsent. A quantity save is a
+ * short online request: it only counts once it waits for the connection, so the icon does not
+ * jump in beside the stepper on every save.
+ */
+export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: boolean): boolean {
+  return mutationKey?.[1] === quantityKey[1] ? isPaused : true;
+}
 
 const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping',
@@ -139,6 +158,7 @@ export function buildShoppingMutationDefaults(
 ): {
   add: MutationOptions<string, AppError, AddVars, AddContext>;
   bought: MutationOptions<void, AppError, BoughtVars, BoughtContext>;
+  quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext>;
 } {
   // An add can resolve to an item that was already on the list; a bought queued behind it
   // must reach that item.
@@ -232,5 +252,45 @@ export function buildShoppingMutationDefaults(
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
 
-  return { add, bought };
+  // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Online
+  // only and not persisted, like the other edits, but retried when the request never got there.
+  const quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext> = {
+    mutationKey: quantityKey,
+    scope: SHOPPING_SCOPE,
+    networkMode: 'online',
+    retry: retryOnNetwork,
+    mutationFn: async ({ id, householdId, name, quantity: value }) => {
+      const target = resolve(id);
+      // Bought (here or by someone else) or gone before its turn: nothing left to change.
+      const item = queryClient
+        .getQueryData<ShoppingItem[]>(listKey(householdId))
+        ?.find((i) => i.id === target);
+      if (!item || item.boughtAt !== null) return;
+      await updateShoppingItem(target, name, value);
+    },
+    onMutate: async ({ id, householdId, quantity: value }) => {
+      const key = listKey(householdId);
+      const target = resolve(id);
+      const previous = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
+      // Before the await, so a bought queued right after cannot get in first and hide it.
+      queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
+        current ? applyQuantity(current, target, value) : current,
+      );
+      await queryClient.cancelQueries({ queryKey: key });
+      return { previous };
+    },
+    // Roll back only this item's quantity: other changes in flight keep theirs.
+    onError: (error, { id, householdId }, context) => {
+      const previous = context?.previous;
+      if (previous) {
+        queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
+          current ? applyQuantity(current, resolve(id), previous.quantity) : current,
+        );
+      }
+      notify(shoppingErrorMessage(error));
+    },
+    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+  };
+
+  return { add, bought, quantity };
 }

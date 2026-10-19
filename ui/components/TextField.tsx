@@ -40,7 +40,14 @@ export function TextField({
   return (
     <View style={{ gap: space(2) }}>
       {bare ? null : (
-        <Text style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+        // The field reads its own label: the visible one is not a focus stop of its own.
+        <Text
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          style={{ color: colors.ink, fontSize: 15, fontWeight: '600' }}
+        >
+          {label}
+        </Text>
       )}
       <View style={{ position: 'relative', justifyContent: 'center' }}>
         <TextInput
@@ -117,7 +124,7 @@ export function TextField({
           </View>
         ) : null}
       </View>
-      {error ? <ErrorText>{error}</ErrorText> : null}
+      {error ? <ErrorText inField>{error}</ErrorText> : null}
     </View>
   );
 }

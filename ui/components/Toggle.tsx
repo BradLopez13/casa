@@ -22,8 +22,8 @@ type Props = Pick<
 };
 
 /**
- * A switch in the Nido colours (`toggleLook`): a bordered track, a bordered thumb and a check
- * on the thumb when on, so state reads by fill, edge and mark in both themes. The check is
+ * A switch in the Nido colours (`toggleLook`): a light thumb in both themes, a track filled only
+ * when on, and a check on the thumb when on, so state reads by fill, position and mark. The check is
  * decorative; the state is announced through accessibilityState.
  */
 export function Toggle({ value = false, disabled, onValueChange, surface, ...rest }: Props) {
@@ -66,7 +66,7 @@ export function Toggle({ value = false, disabled, onValueChange, surface, ...res
             accessible={false}
             name={actionIcons.confirm}
             size={12}
-            color={colors.selection}
+            color={look.checkColor}
           />
         ) : null}
       </View>

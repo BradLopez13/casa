@@ -34,3 +34,9 @@ export function brandSignatureSizes(
   const symbol = shortHeight ? 48 : variant === 'hero' ? 80 : 64;
   return { symbol, lettering: symbol * LETTERING_TO_SYMBOL, gap: SIGNATURE_GAP };
 }
+
+/**
+ * The signature stacked (symbol over «nido») in the column the band becomes on a phone on its
+ * side: the lettering fits the rail (`RAIL_WIDTH`, 88 dp) with 8 dp either side.
+ */
+export const BESIDE_SIGNATURE = { symbol: 48, lettering: 24, gap: 8 } as const;

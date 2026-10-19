@@ -1,6 +1,7 @@
 import { supabase } from '@/data/supabase/client';
 import { AppError, toAppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
+import type { InvitePreview } from './inviteText';
 import type { Locale } from '@/i18n';
 
 export type Role = 'owner' | 'member';
@@ -125,6 +126,18 @@ export async function createInvite(
 
 export async function revokeInvite(inviteId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('revoke_invite', { p_invite_id: inviteId }));
+}
+
+/** What the invite leads to, before accepting. Errors like accept_invite (INVITE_INVALID…). */
+export async function previewInvite(token: string): Promise<InvitePreview> {
+  const rows = await unwrap(supabase.rpc('preview_invite', { p_token: token }));
+  const row = rows[0];
+  if (!row) throw new Error('preview_invite returned no row');
+  return {
+    householdName: row.household_name,
+    inviterName: row.inviter_name,
+    memberCount: row.member_count,
+  };
 }
 
 export async function acceptInvite(token: string): Promise<string> {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { RAIL_WIDTH } from './layout';
 import {
+  BESIDE_SIGNATURE,
   NIDO_LETTERING_DOT,
   NIDO_LETTERING_PATH,
   NIDO_LETTERING_VIEWBOX,
@@ -39,4 +41,9 @@ describe('brand signature on the band', () => {
     const s = brandSignatureSizes('hero', false);
     expect(s.symbol + s.gap + letteringWidth(s.lettering)).toBeLessThan(360 - 2 * 24);
   });
+});
+
+it('stacks the signature inside the rail when the phone is on its side', () => {
+  expect(letteringWidth(BESIDE_SIGNATURE.lettering)).toBeLessThanOrEqual(RAIL_WIDTH - 2 * 8);
+  expect(BESIDE_SIGNATURE.symbol).toBeLessThanOrEqual(RAIL_WIDTH - 2 * 8);
 });

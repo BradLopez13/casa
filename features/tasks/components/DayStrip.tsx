@@ -5,6 +5,7 @@ import { dayCountLabel, type StripDay } from '@/domain/tasks/strip';
 import { locale } from '@/i18n';
 import { useDoorCompact } from '@/ui/components/DoorHeader';
 import { pressedOpacity } from '@/ui/buttonLook';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
 
@@ -28,7 +29,7 @@ type DotsProps = {
   ring?: string;
 };
 
-/** One dot per person with something that day, plus a dashed one for unassigned tasks. */
+/** One dot per person with something that day, plus an empty ring for unassigned tasks. */
 export function DayDots({ day, marks, ring }: DotsProps) {
   const { colors, space } = useTheme();
   const edge = ring
@@ -67,7 +68,6 @@ export function DayDots({ day, marks, ring }: DotsProps) {
             height: DOT,
             borderRadius: DOT / 2,
             borderWidth: 1,
-            borderStyle: 'dashed',
             borderColor: ring ?? colors.outline,
           }}
         />
@@ -122,6 +122,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
             >
               <Text
                 numberOfLines={1}
+                maxFontSizeMultiplier={DOOR_MAX_SCALE}
                 style={{
                   color: isChosen || isToday ? ink : colors.muted,
                   fontSize: 12,
@@ -131,6 +132,7 @@ export function DayStrip({ days, today, chosen, marks, names, onSelect }: Props)
                 {date.toLocaleDateString(locale, { weekday: 'short' })}
               </Text>
               <Text
+                maxFontSizeMultiplier={DOOR_MAX_SCALE}
                 style={{
                   color: ink,
                   fontFamily: displayFont,

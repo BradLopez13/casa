@@ -17,7 +17,10 @@ import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
+import { announce } from '@/ui/a11y';
+import { positEdge } from '@/ui/positEdge';
 import { createTask, newTaskId } from '../api';
 import { taskErrorMessage } from '../errors';
 import { markFresh } from '../freshIds';
@@ -131,6 +134,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
         onSuccess: () => {
           input.current?.focus();
           void haptic('rigid');
+          // The field just empties: with a screen reader, say what was added.
+          announce(t('tasks.a11y.added', { title: task.title }));
         },
         onError: (error) => {
           // What was typed comes back, with its dismissed chips, only if nothing was typed since;
@@ -188,6 +193,9 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             autoCapitalize="sentences"
             autoCorrect={false}
             placeholder={placeholder}
+            // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
+            // el miércoles…») wrapped and was cut, or ran under the «+».
+            maxFontSizeMultiplier={DOOR_MAX_SCALE}
             accessibilityLabel={placeholder}
             placeholderTextColor={colors.muted}
             selectionColor={colors.textSelection}
@@ -200,7 +208,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
         <Pressable
           testID={`${testID}.submit`}
           accessibilityRole="button"
-          accessibilityLabel={t('shopping.add')}
+          accessibilityLabel={t('tasks.a11y.addButton')}
           // The circle is 40 dp inside the pill; the slop brings the touch area to 44 dp.
           hitSlop={space(1)}
           onPress={send}
@@ -212,6 +220,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             justifyContent: 'center',
             borderRadius: radii.pill,
             backgroundColor: look.fill,
+            // With high contrast, the pósit on the white field gets its slate edge.
+            ...positEdge(look.fill, colors),
             opacity: pressedOpacity(pressed),
           })}
         >
