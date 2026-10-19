@@ -24,10 +24,10 @@ import { t } from '@/i18n';
 import { FADE_MS, MAX_MS } from '../motion';
 import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
-import { DoorInsetContext, FridgeRefreshContext } from './DoorHeader';
+import { DoorInsetContext, FridgeRefreshContext } from './doorContext';
 import { NidoSymbol } from './NidoSymbol';
 
-export { useFridgeRefresh } from './DoorHeader';
+export { useFridgeRefresh } from './doorContext';
 
 type ScrollableProps = {
   refreshControl?: ReactElement;

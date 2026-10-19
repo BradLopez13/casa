@@ -38,6 +38,9 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./vitest.setup.ts', './vitest.render.setup.tsx'],
           exclude,
+          // Inlined so their own `react-native` imports go through the alias too, instead of
+          // Node loading the real (Flow) package.
+          server: { deps: { inline: [/react-native/, /[\\/]expo/, /@expo[\\/]/] } },
         },
       },
     ],
