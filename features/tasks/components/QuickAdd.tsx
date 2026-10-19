@@ -17,6 +17,7 @@ import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
@@ -192,6 +193,9 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             autoCapitalize="sentences"
             autoCorrect={false}
             placeholder={placeholder}
+            // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
+            // el miércoles…») wrapped and was cut, or ran under the «+».
+            maxFontSizeMultiplier={DOOR_MAX_SCALE}
             accessibilityLabel={placeholder}
             placeholderTextColor={colors.muted}
             selectionColor={colors.textSelection}
