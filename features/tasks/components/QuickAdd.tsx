@@ -19,6 +19,7 @@ import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
+import { positEdge } from '@/ui/positEdge';
 import { createTask, newTaskId } from '../api';
 import { taskErrorMessage } from '../errors';
 import { markFresh } from '../freshIds';
@@ -215,6 +216,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             justifyContent: 'center',
             borderRadius: radii.pill,
             backgroundColor: look.fill,
+            // With high contrast, the pósit on the white field gets its slate edge.
+            ...positEdge(look.fill, colors),
             opacity: pressedOpacity(pressed),
           })}
         >
