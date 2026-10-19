@@ -102,7 +102,8 @@ export function ShoppingRow({
     onToggle();
   };
 
-  const label = item.quantity ? `${item.name}, ${item.quantity}` : item.name;
+  // The quantity has its own stop (the pill), so the name says only the name.
+  const label = item.name;
   const nameStyle = {
     flex: 1,
     minHeight: MIN_TOUCH,
@@ -195,6 +196,9 @@ export function ShoppingRow({
           name: item.name,
         })}
         accessibilityState={{ checked: bought }}
+        // A bought row speaks as a whole (boughtA11y): its parts stay out of the reader's way.
+        importantForAccessibility={bought ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={bought}
         style={{
           width: MIN_TOUCH,
           height: MIN_TOUCH,
@@ -224,7 +228,11 @@ export function ShoppingRow({
           {name}
         </Pressable>
       ) : (
-        <View accessible accessibilityLabel={label} style={nameStyle}>
+        <View
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={nameStyle}
+        >
           {name}
         </View>
       )}

@@ -154,6 +154,9 @@ export function ShoppingSheet({
   // The pending rows are one ruled pósit note; «En la bolsa» below is a plain sheet of its own.
   const pendingCount = rows.filter(isPendingRow).length;
   const margin = flush ? 0 : space(5);
+  // An absolute child ignores its parent's padding: the magnet adds the column's own gutter.
+  const columnPadding = StyleSheet.flatten(column)?.paddingLeft;
+  const columnLeft = typeof columnPadding === 'number' ? columnPadding : 0;
 
   const cell = (index: number): ViewStyle => {
     const ruled = index < pendingCount;
@@ -195,7 +198,9 @@ export function ShoppingSheet({
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
           <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
-            {index === 0 && pendingCount > 0 ? <HangingMagnet left={margin + space(3)} /> : null}
+            {index === 0 && pendingCount > 0 ? (
+              <HangingMagnet left={columnLeft + margin + space(3)} />
+            ) : null}
             <View style={cell(index)}>
               {isBoughtHeader(row) ? (
                 <Animated.View
