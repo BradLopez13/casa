@@ -23,6 +23,7 @@ import { pressedOpacity } from '@/ui/buttonLook';
 import { Magnet } from '@/ui/components/Magnet';
 import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
 import { hangingMagnet } from '../hangingMagnet';
+import { boughtTitleLabel } from '../rowLabels';
 import { isBoughtHeader, isItemRow, sheetRows, type SheetRow } from '../sheetRows';
 import { ShoppingRow, type Glyph } from './ShoppingRow';
 import { actionIcons } from '@/ui/actionIcons';
@@ -66,6 +67,8 @@ type Props = {
   unsentIds: Set<string>;
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
+  /** The current user, so a row they bought reads «comprado por ti». */
+  userId: string | null;
   flash: Flash | null;
   /** «Vaciar bolsa» only runs online. */
   online: boolean;
@@ -96,6 +99,7 @@ export function BoughtTitle({ count }: { count: number }) {
   return (
     <Text
       accessibilityRole="header"
+      accessibilityLabel={boughtTitleLabel(count)}
       style={{
         color: colors.muted,
         fontFamily: displayFontBold,
@@ -121,6 +125,7 @@ export function ShoppingSheet({
   unsentIds,
   marks,
   names,
+  userId,
   flash,
   online,
   clearing,
@@ -210,6 +215,7 @@ export function ShoppingSheet({
                   <Pressable
                     testID="shopping.bought.toggle"
                     accessibilityRole="button"
+                    accessibilityLabel={boughtTitleLabel(bought.length)}
                     accessibilityState={{ expanded: !boughtCollapsed }}
                     onPress={() => setBoughtCollapsed((c) => !c)}
                     style={({ pressed }) => ({
@@ -248,6 +254,7 @@ export function ShoppingSheet({
                   unsent={unsentIds.has(row.id)}
                   buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
                   buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
+                  boughtByMe={row.boughtBy !== null && row.boughtBy === userId}
                   flash={flash?.id === row.id ? flash.count : 0}
                   onToggle={() => onToggle(row)}
                   onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}

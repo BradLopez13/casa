@@ -221,6 +221,7 @@ export default function ShoppingScreen() {
       unsentIds,
       marks,
       names,
+      userId,
       flash,
       online,
       clearing: clearBought.isPending,

@@ -18,6 +18,7 @@ import { Magnet } from '@/ui/components/Magnet';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
+import { boughtRowLabel } from '../rowLabels';
 import { QuantityPill } from './QuantityPill';
 
 /** A glyph name of the icon set; `iconFor` only returns names its test finds in the set. */
@@ -35,6 +36,8 @@ type Props = {
   /** The buyer's magnet; undefined when they are no longer a member. */
   buyerMark: MemberMark | undefined;
   buyerName: string | undefined;
+  /** The current user bought it: the screen reader says «por ti», not «por Tú». */
+  boughtByMe: boolean;
   /** Bumped each time the row should flash (an add that was already on the list). */
   flash: number;
   onToggle: () => void;
@@ -61,6 +64,7 @@ export function ShoppingRow({
   unsent,
   buyerMark,
   buyerName,
+  boughtByMe,
   flash,
   onToggle,
   onOpen,
@@ -145,11 +149,30 @@ export function ShoppingRow({
     </>
   );
 
+  // A bought row is one stop for a screen reader: what, how much and who, and a tap puts it back.
+  const boughtA11y = bought
+    ? ({
+        accessible: true,
+        accessibilityRole: 'checkbox',
+        accessibilityState: { checked: true },
+        accessibilityLabel: boughtRowLabel({
+          name: item.name,
+          quantity: item.quantity,
+          buyer: buyerName,
+          byMe: boughtByMe,
+        }),
+        accessibilityHint: t('shopping.a11y.unmark', { name: item.name }),
+        accessibilityActions: [{ name: 'activate' }],
+        onAccessibilityAction: toggle,
+      } as const)
+    : null;
+
   return (
     <Animated.View
       // The list moves the rows (itemLayoutAnimation): the row only fades in and out.
       entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
       exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
+      {...boughtA11y}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -236,8 +259,8 @@ export function ShoppingRow({
             variant={buyerMark ? 'filled' : 'empty'}
             color={buyerMark?.color ?? 'teal'}
             initial={buyerMark?.initial ?? ''}
-            accessibilityLabel={buyerName ? t('shopping.a11y.boughtBy', { name: buyerName }) : ''}
-            decorative={buyerName === undefined}
+            accessibilityLabel=""
+            decorative
           />
         </View>
       ) : null}
