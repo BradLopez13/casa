@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { t } from '@/i18n';
 import { useNotice } from '@/ui/components/Notice';
 import { isScreenReaderOn } from '@/ui/a11y';
@@ -29,6 +30,16 @@ export function useDeferredClear(onCommit: () => void) {
     },
   });
   useEffect(() => () => controller.current?.flush(), []);
+  // A clear waiting on a screen reader has no timer: leaving the app must not lose it.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background') controller.current?.flush();
+    });
+    return () => sub.remove();
+  }, []);
+
+  /** Sends a waiting clear now: something new is going into the bag, and it must not go with it. */
+  const settle = useCallback(() => controller.current?.flush(), []);
 
   const clear = useCallback(() => {
     setHidden(true);
@@ -43,5 +54,5 @@ export function useDeferredClear(onCommit: () => void) {
     });
   }, [notify]);
 
-  return { hidden, clear };
+  return { hidden, clear, settle };
 }

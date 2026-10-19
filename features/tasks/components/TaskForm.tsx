@@ -30,6 +30,7 @@ import { useTheme } from '@/ui/theme';
 import { displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
+import { oneLineTitle } from '@/domain/tasks/title';
 import type { TaskInput } from '../api';
 import { parsedFormValues, quickLocale } from '../quickAddInput';
 import { taskFormSchema } from '../schemas';
@@ -245,7 +246,9 @@ export function TaskForm({
                     label={t('taskForm.titleLabel')}
                     placeholder={t('taskForm.titlePlaceholder')}
                     value={typed.title}
-                    onChangeText={(text) => setTyped((current) => ({ ...current, title: text }))}
+                    onChangeText={(text) =>
+                      setTyped((current) => ({ ...current, title: oneLineTitle(text) }))
+                    }
                     // On a short window the keyboard would hide the rest of the note, so there
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}

@@ -117,6 +117,8 @@ export default function ShoppingScreen() {
   const toggle = (item: ShoppingItem) => {
     if (householdId === undefined || userId === null) return;
     const bought = item.boughtAt === null;
+    // A bag cleared with a screen reader waits for its notice; what goes in now is not part of it.
+    if (bought) deferred.settle();
     setBought.mutate({ id: item.id, householdId, bought, userId });
     // The row moves to the other list and the reader's focus goes with it: say where it went.
     announce(t(bought ? 'shopping.a11y.inBag' : 'shopping.a11y.backOnList', { name: item.name }));
