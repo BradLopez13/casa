@@ -15,8 +15,10 @@ const ALLOWED: Record<string, string> = {
 };
 
 // Opacity that is fine anywhere: press feedback, the faint check, animated glows (shared values),
-// the 0 / 1 literals used to hide or show, fades between them, and a type annotation.
+// the 0 / 1 literals used to hide or show, fades between them, a type annotation, and the faded
+// label of a disabled control, which only `buttonLook` decides (`labelOpacity`).
 const FINE = [
+  /\bopacity:\s*(?:\w+\s*\?\s*)?(?:[\w.]+\.)?labelOpacity\b(?:\s*:\s*1)?/g,
   /\bopacity:\s*(0|1|number|pressedOpacity\([^)]*\)|look\.opacity|[\w.]+\.value|withTiming\(\s*[01]\s*,[^)]*\))\s*(?=[,;}]|$)/g,
   /\bpressedOpacity\b/g,
 ];
@@ -41,7 +43,7 @@ function offendingLines(text: string): string[] {
 }
 
 describe('opacity', () => {
-  it('is never used to say a control is off, outside the allowlist', () => {
+  it('says a control is off only through buttonLook, outside the allowlist', () => {
     const offenders = [
       ...['app', 'features', 'ui/components'].flatMap((d) => files(join(ROOT, d), /\.tsx$/)),
       // The look helpers under ui/ set opacity in plain .ts too.
@@ -59,6 +61,8 @@ describe('opacity', () => {
     expect(offendingLines('opacity: pressedOpacity(pressed),')).toEqual([]);
     expect(offendingLines('opacity: withTiming(0, { duration: MAX_MS }),')).toEqual([]);
     expect(offendingLines('opacity: disabled ? 0.4 : 1,')).toHaveLength(1);
+    expect(offendingLines('opacity: disabled ? off.labelOpacity : 1,')).toEqual([]);
+    expect(offendingLines('opacity: look.labelOpacity,')).toEqual([]);
     expect(offendingLines('<View opacity={0.5} />')).toHaveLength(1);
   });
 });

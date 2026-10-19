@@ -13,6 +13,7 @@ import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ModalSheet } from '@/ui/components/ModalSheet';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { announce } from '@/ui/a11y';
 
 /** Mounted once inside its frame, so rotating never remounts the form. */
 export default function NewTaskRoute() {
@@ -62,7 +63,15 @@ function NewTaskScreen() {
         if (householdId === undefined) return;
         // Created here: its note lands with the pin choreography on the list behind.
         markFresh(id);
-        save.submit({ input }, { onSuccess: close });
+        save.submit(
+          { input },
+          {
+            onSuccess: () => {
+              announce(t('tasks.a11y.added', { title: input.title }));
+              close();
+            },
+          },
+        );
       }}
     />
   );

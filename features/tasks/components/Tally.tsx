@@ -5,6 +5,7 @@ import { todayLineText } from '@/features/tasks/todayLineText';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeadline, useDoorType } from '@/ui/components/DoorHeader';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 
 /**
@@ -29,7 +30,10 @@ export function TallyView({ line, onSeeAll }: { line: TodayLine; onSeeAll?: () =
       >
         {line.kind === 'allDone' ? <DayDone /> : <DoorHeadline text={first} number={number} />}
         {second !== null ? (
-          <Text style={{ marginTop: space(1), color: colors.muted, fontSize: type.secondary }}>
+          <Text
+            maxFontSizeMultiplier={DOOR_MAX_SCALE}
+            style={{ marginTop: space(1), color: colors.muted, fontSize: type.secondary }}
+          >
             {second}
           </Text>
         ) : null}

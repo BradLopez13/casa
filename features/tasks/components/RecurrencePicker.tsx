@@ -133,7 +133,7 @@ function StepButton({
   onPress: () => void;
 }) {
   const { colors, radii } = useTheme();
-  // At its limit the step waits dashed and outlined, never faded (§5.6).
+  // At its limit the step keeps its solid outline and fades its sign: dashed is paused.
   const off = buttonLook('secondary', 'default', 'disabled', colors);
   return (
     <Pressable
@@ -150,7 +150,6 @@ function StepButton({
         justifyContent: 'center',
         borderRadius: radii.pill,
         borderWidth: 1.5,
-        borderStyle: disabled ? off.borderStyle : 'solid',
         borderColor: disabled ? off.border : colors.outline,
         backgroundColor: disabled ? off.fill : colors.note,
         opacity: pressedOpacity(pressed),
@@ -160,6 +159,7 @@ function StepButton({
         name={icon}
         size={22}
         color={disabled ? off.foreground : colors.cobalt}
+        style={{ opacity: disabled ? off.labelOpacity : 1 }}
         accessible={false}
       />
     </Pressable>

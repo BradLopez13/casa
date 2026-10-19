@@ -78,12 +78,13 @@ export function ConfirmDialog({
             {content.title}
           </Text>
           <Text style={{ color: colors.ink, fontSize: 17, lineHeight: 24 }}>{content.message}</Text>
-          {/* The answer sits apart from the question. */}
+          {/* The answer sits apart from the question. Confirming is never the pósit: secondary,
+              or the red primary when it destroys, with Cancelar one step quieter. */}
           <View style={{ gap: space(3), marginTop: space(4) }}>
             <Button
               testID="members.confirm"
               title={content.confirmLabel}
-              variant="primary"
+              variant={content.destructive ? 'primary' : 'secondary'}
               width="full"
               tone={content.destructive ? 'destructive' : 'default'}
               loading={loading}
@@ -92,7 +93,7 @@ export function ConfirmDialog({
             <Button
               testID="members.cancel"
               title={cancelLabel}
-              variant="secondary"
+              variant={content.destructive ? 'secondary' : 'tertiary'}
               width="full"
               disabled={loading}
               onPress={onCancel}
