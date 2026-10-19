@@ -26,6 +26,7 @@ import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
+import { TabBarHeightProvider } from '@/ui/tabBarHeight';
 import { RootErrorBoundary } from '@/ui/components/RootErrorBoundary';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
@@ -355,11 +356,13 @@ function App() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <ThemedStatusBar />
-          <NoticeProvider>
-            <SessionProvider>
-              <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-            </SessionProvider>
-          </NoticeProvider>
+          <TabBarHeightProvider>
+            <NoticeProvider>
+              <SessionProvider>
+                <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+              </SessionProvider>
+            </NoticeProvider>
+          </TabBarHeightProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </RootErrorBoundary>

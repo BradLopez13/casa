@@ -22,6 +22,8 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader, useDoorCompact, useDoorType } from '@/ui/components/DoorHeader';
+import { StatusBarVeil } from '@/ui/components/StatusBarVeil';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useNotice } from '@/ui/components/Notice';
 import { ListRow } from '@/ui/components/ListRow';
 import { Magnet } from '@/ui/components/Magnet';
@@ -175,13 +177,16 @@ export default function SettingsScreen() {
         onCancel={() => setConfirmingSignOut(false)}
         onConfirm={leave}
       />
-      <TwoPane
-        header={door}
-        left={pane(left)}
-        right={right.length > 0 ? pane(right) : null}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: space(8) }}
-      />
+      {/* Scrolled, the door would pass under the clock: the veil keeps the status bar door-coloured. */}
+      <StatusBarVeil>
+        <TwoPane
+          header={door}
+          left={pane(left)}
+          right={right.length > 0 ? pane(right) : null}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: space(8) }}
+        />
+      </StatusBarVeil>
     </View>
   );
 }
@@ -364,7 +369,12 @@ function NameHeading({
           opacity: pressedOpacity(pressed),
         })}
       >
-        <Text style={[titleStyle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+        <Text
+          style={[titleStyle, { flexShrink: 1 }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          maxFontSizeMultiplier={DOOR_MAX_SCALE}
+        >
           {name}
         </Text>
         <Ionicons

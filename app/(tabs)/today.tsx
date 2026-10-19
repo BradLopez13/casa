@@ -16,7 +16,8 @@ import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/t
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
-import { DoorHeader } from '@/ui/components/DoorHeader';
+import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -93,12 +94,26 @@ export default function TodayScreen() {
     <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
   );
 
+  const quickAdd = (
+    <QuickAdd
+      testID="today.quick-add"
+      householdId={membership?.householdId}
+      assigneeId={userId}
+      dueOn={today}
+      placeholder={t('today.quickAdd')}
+    />
+  );
   const door = (
     <>
       <DoorHeader
         eyebrow={t('today.title')}
-        trailing={<Text style={dateStyle}>{longDateLabel(today)}</Text>}
+        trailing={
+          <Text style={dateStyle} maxFontSizeMultiplier={DOOR_MAX_SCALE}>
+            {longDateLabel(today)}
+          </Text>
+        }
         heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
+        quickAdd={quickAdd}
       >
         <MemberFilter
           members={members}
@@ -112,15 +127,6 @@ export default function TodayScreen() {
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : null}
     </>
-  );
-  const quickAdd = (
-    <QuickAdd
-      testID="today.quick-add"
-      householdId={membership?.householdId}
-      assigneeId={userId}
-      dueOn={today}
-      placeholder={t('today.quickAdd')}
-    />
   );
 
   const parts: TodayParts = { screen, door, quickAdd, sections, cards, invite, nothing };
@@ -140,6 +146,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
   const { space } = useTheme();
   const listStyle = { paddingBottom: useListEndPadding() };
   const column = useOneColumn();
+  const { holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery } = screen;
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
@@ -151,7 +158,10 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
         ListHeaderComponent={
           <>
             {door}
-            <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
+            {/* On a phone on its side the door holds the field. */}
+            {holdsQuickAdd ? null : (
+              <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
+            )}
           </>
         }
         ListEmptyComponent={
