@@ -4,6 +4,7 @@ import {
   dayHeading,
   dayInSentence,
   dayName,
+  doneWhen,
   dueLabel,
   longDateLabel,
   overdueLabel,
@@ -119,5 +120,26 @@ describe('dayCellLabel', () => {
   });
   it('says any other day in full, never the short weekday', () => {
     expect(dayCellLabel('2026-10-20', today)).toBe('martes, 20 de octubre');
+  });
+});
+
+describe('doneWhen', () => {
+  const at = (y: number, m: number, d: number, hh: number, mm: number) =>
+    new Date(y, m - 1, d, hh, mm).toISOString();
+
+  it('today: the time alone', () => {
+    expect(doneWhen(at(2026, 10, 9, 10, 42), '2026-10-09')).toBe('10:42');
+  });
+
+  it('yesterday: the word and the time', () => {
+    expect(doneWhen(at(2026, 10, 8, 18, 5), '2026-10-09')).toBe('ayer, 18:05');
+  });
+
+  it('another day: day, short month and time', () => {
+    expect(doneWhen(at(2026, 10, 2, 9, 0), '2026-10-09')).toBe('2 oct, 9:00');
+  });
+
+  it('just after local midnight is today, not yesterday', () => {
+    expect(doneWhen(at(2026, 10, 9, 0, 3), '2026-10-09')).toBe('0:03');
   });
 });
