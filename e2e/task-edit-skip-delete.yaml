@@ -1,0 +1,116 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Tere owns "Piso Tere", with no tasks yet
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: tere@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+- tapOn:
+    id: today.quick-add
+- inputText: Regar las plantas
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Regar las plantas
+    timeout: 20000
+
+# Edit: a new title, and every day
+# A note still on its way to the server does not open: tap again until the form shows.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Regar las plantas
+      - extendedWaitUntil:
+          visible:
+            id: task-form.title
+          timeout: 5000
+- tapOn:
+    id: task-form.title
+# The title wraps (multiline), so the tap leaves the caret where it lands, mid-text. Down on the
+# last line moves it to the end, and the erase then clears the whole title.
+- pressKey: Remote Dpad Down
+- eraseText: 40
+- inputText: Regar los cactus
+- hideKeyboard
+- tapOn:
+    id: task-form.prop.repeat
+- scrollUntilVisible:
+    element:
+      id: task-form.repeat.daily
+- tapOn:
+    id: task-form.repeat.daily
+- tapOn:
+    id: task-form.save
+- extendedWaitUntil:
+    visible: Regar los cactus
+    timeout: 20000
+- assertNotVisible: Regar las plantas
+
+# Skip today's: it leaves Para hoy and comes back tomorrow
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Regar los cactus
+      - extendedWaitUntil:
+          visible:
+            id: task-form.skip
+          timeout: 5000
+- tapOn:
+    id: task-form.skip
+- extendedWaitUntil:
+    visible: Saltada\. Vuelve.*
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible: Regar los cactus
+    timeout: 20000
+
+# Tomorrow's cell in Tareas counts it; delete it from there
+- tapOn:
+    id: tab.tasks
+- extendedWaitUntil:
+    visible: Mañana, 1 tarea.*
+    timeout: 20000
+- tapOn: Mañana, 1 tarea.*
+- extendedWaitUntil:
+    visible: Regar los cactus
+    timeout: 20000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Regar los cactus
+      - extendedWaitUntil:
+          visible:
+            id: task-form.title
+          timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: task-form.delete
+- tapOn:
+    id: task-form.delete
+- extendedWaitUntil:
+    visible: ¿Borrar esta tarea?
+    timeout: 5000
+- tapOn:
+    id: members.confirm
+- extendedWaitUntil:
+    visible: Mañana, 0 tareas
+    timeout: 20000
+- assertNotVisible: Regar los cactus

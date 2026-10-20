@@ -1,7 +1,8 @@
+import { recurrenceLabel } from '@/domain/recurrence/label';
 import { firstDueOn } from '@/domain/recurrence/next';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
 import { normalizeItemName } from '@/domain/shopping/normalize';
-import { t, type MessageKey } from '@/i18n';
+import { locale, t, type MessageKey } from '@/i18n';
 import type { TaskInput } from './input';
 import { ROOMS, type Room } from './rooms';
 
@@ -90,6 +91,14 @@ export function catalogTitle(entry: CatalogItem): string {
   return t(entry.titleKey);
 }
 
+/** "Fregar los platos · cada día": the chore, then its repeat in lower case, if it has one. */
+export function catalogLabel(entry: CatalogItem): string {
+  const title = catalogTitle(entry);
+  if (entry.recurrence === null) return title;
+  const repeat = recurrenceLabel(entry.recurrence);
+  return `${title} · ${repeat.charAt(0).toLocaleLowerCase(locale)}${repeat.slice(1)}`;
+}
+
 /** How a task title is compared with the catalogue: lower case, no accents, single spaces. */
 export function normalizeTaskTitle(title: string): string {
   return normalizeItemName(title);
@@ -127,6 +136,8 @@ export function catalogFor(
 export function catalogInputs(
   ids: readonly string[],
   today: string,
+  /** Who does every chosen task; null leaves them free, as the household decides later. */
+  assigneeId: string | null = null,
 ): { id: string; input: TaskInput }[] {
   const chosen = new Set(ids);
   return CATALOG_ROOMS.flatMap((room) =>
@@ -137,7 +148,7 @@ export function catalogInputs(
         input: {
           title: catalogTitle(entry),
           room: room === 'general' ? null : room,
-          assigneeId: null,
+          assigneeId,
           dueOn: entry.recurrence ? firstDueOn(entry.recurrence, today) : null,
           recurrence: entry.recurrence,
         },

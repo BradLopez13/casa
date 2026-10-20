@@ -1,5 +1,5 @@
 import { locale, t } from '@/i18n';
-import { addDays, daysBetween, toLocalDate } from './dates';
+import { addDays, daysBetween, localDateIso, toLocalDate } from './dates';
 
 /** Human label for a due date: relative for yesterday..tomorrow, else a long local date. */
 export function dueLabel(dueOn: string | null, today: string): string {
@@ -17,6 +17,12 @@ export function longDateLabel(iso: string): string {
     day: 'numeric',
     month: 'long',
   });
+}
+
+/** What a screen reader says for a day cell of the form: the whole date, today named first. */
+export function dayCellLabel(iso: string, today: string): string {
+  const date = longDateLabel(iso);
+  return iso === today ? `${t('tasks.due.today')}, ${date}` : date;
 }
 
 /**
@@ -75,4 +81,18 @@ export function skippedNotice(next: string, today: string): string {
   return next <= addDays(today, 1)
     ? t('tasks.skippedSoon', { day })
     : t('tasks.skipped', { date: day });
+}
+
+/**
+ * When a done task was done, without naming anyone (its magnet says who): "10:42" today,
+ * "ayer, 18:05", else "2 oct, 9:00". The clock follows the locale (24 h or a.m./p.m.).
+ */
+export function doneWhen(completedAt: string, today: string): string {
+  const when = new Date(completedAt);
+  const time = when.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
+  const day = localDateIso(when);
+  if (day === today) return time;
+  if (day === addDays(today, -1)) return t('tasks.doneWhen.yesterday', { time });
+  const date = when.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  return t('tasks.doneWhen.on', { date: date.replace(/\.$/, ''), time });
 }

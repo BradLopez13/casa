@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native';
 import { toAppError, type AppErrorCode } from '@/data/supabase/errors';
+import { AccountMenu } from '@/features/auth/AccountMenu';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
 import { acceptInvite, getMyMembership } from '@/features/households/api';
@@ -12,8 +13,10 @@ import {
   usePendingInvite,
   useSetPendingInvite,
 } from '@/features/households/pending-invite';
-import { membershipKey } from '@/features/households/queries';
-import { t, type MessageKey } from '@/i18n';
+import { invitePreviewText } from '@/features/households/inviteText';
+import { membershipKey, useInvitePreview } from '@/features/households/queries';
+import { inviteErrorKey } from '@/features/households/errors';
+import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { BrandHeader } from '@/ui/components/BrandHeader';
 import { Button } from '@/ui/components/Button';
@@ -27,21 +30,6 @@ const TERMINAL: ReadonlySet<AppErrorCode> = new Set([
   'INVITE_EXPIRED',
   'ALREADY_IN_HOUSEHOLD',
 ]);
-
-function errorKey(code: AppErrorCode): MessageKey {
-  switch (code) {
-    case 'INVITE_INVALID':
-      return 'invite.errors.INVITE_INVALID';
-    case 'INVITE_EXPIRED':
-      return 'invite.errors.INVITE_EXPIRED';
-    case 'ALREADY_IN_HOUSEHOLD':
-      return 'invite.errors.ALREADY_IN_HOUSEHOLD';
-    case 'NETWORK':
-      return 'invite.errors.NETWORK';
-    default:
-      return 'invite.errors.UNKNOWN';
-  }
-}
 
 export default function InviteScreen() {
   const { colors } = useTheme();
@@ -67,6 +55,17 @@ export default function InviteScreen() {
   const [persistFailed, setPersistFailed] = useState(false);
   const signedOut = session.status === 'signed-out';
   const stored = useRef(false);
+  // Before accepting: which household, who invites and how many live there.
+  const preview = useInvitePreview(session.status === 'signed-in' ? token : null);
+  const previewCode = preview.error ? toAppError(preview.error).code : null;
+  const previewDead = previewCode !== null && TERMINAL.has(previewCode);
+
+  // A dead invite is forgotten, so the guard does not bring the user back to it.
+  useEffect(() => {
+    if (previewDead) clearPending.mutate();
+    // clearPending is a new object each render; only the outcome matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewDead]);
 
   // Signed out: remember the invite, then sign in; the guard brings the user back here.
   useEffect(() => {
@@ -202,9 +201,12 @@ export default function InviteScreen() {
 
   if (session.status !== 'signed-in' || pending.isLoading || phase === 'busy') return null;
 
+  // Signed in: signing out (or deleting the account) waits behind «⋯» on the band.
+  const band = <BrandHeader trailing={<AccountMenu onSignOut={() => void onSignOut()} />} />;
+
   if (phase === 'failed') {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         <ErrorText testID="invite.error">
           {refreshNetwork ? t('errors.membershipNetwork') : t('errors.membershipLoad')}
         </ErrorText>
@@ -216,25 +218,20 @@ export default function InviteScreen() {
           width="hug"
           onPress={() => void refreshMembershipAndLeave()}
         />
-        <Button
-          testID="invite.sign-out"
-          title={t('auth.signOut')}
-          variant="tertiary"
-          icon={actionIcons.signOut}
-          width="hug"
-          onPress={() => void onSignOut()}
-        />
       </CenteredCard>
     );
   }
 
-  const title = <ScreenTitle subtitle={t('brand.tagline')}>{t('invite.title')}</ScreenTitle>;
+  // Without a preview (still loading, offline, or a dead invite) the plain title stays.
+  const text = invitePreviewText(preview.data ?? null);
+  const title = <ScreenTitle subtitle={text.from ?? undefined}>{text.title}</ScreenTitle>;
+  const dead = failure?.terminal ? failure.code : previewDead ? previewCode : null;
 
-  if (failure?.terminal) {
+  if (dead) {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         {title}
-        <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText>
+        <ErrorText testID="invite.error">{t(inviteErrorKey(dead))}</ErrorText>
         <Button
           testID="invite.continue"
           title={t('invite.continue')}
@@ -248,7 +245,7 @@ export default function InviteScreen() {
 
   if (!token) {
     return (
-      <CenteredCard header={<BrandHeader />}>
+      <CenteredCard header={band}>
         {title}
         <ErrorText testID="invite.error">{t('invite.errors.INVITE_INVALID')}</ErrorText>
         <Button
@@ -263,11 +260,16 @@ export default function InviteScreen() {
     );
   }
 
+  // A blank moment beats a title that changes under the reader's eyes.
+  if (preview.isPending) return null;
+
   return (
-    <CenteredCard header={<BrandHeader />}>
+    <CenteredCard header={band}>
       {title}
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('invite.body')}</Text>
-      {failure ? <ErrorText testID="invite.error">{t(errorKey(failure.code))}</ErrorText> : null}
+      {failure ? (
+        <ErrorText testID="invite.error">{t(inviteErrorKey(failure.code))}</ErrorText>
+      ) : null}
       <Button
         testID="invite.accept"
         title={t('invite.accept')}
@@ -283,14 +285,6 @@ export default function InviteScreen() {
         variant="tertiary"
         width="hug"
         onPress={() => void dismiss()}
-      />
-      <Button
-        testID="invite.sign-out"
-        title={t('auth.signOut')}
-        variant="tertiary"
-        icon={actionIcons.signOut}
-        width="hug"
-        onPress={() => void onSignOut()}
       />
     </CenteredCard>
   );

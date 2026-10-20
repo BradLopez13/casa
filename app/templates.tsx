@@ -2,21 +2,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { recurrenceLabel } from '@/domain/recurrence/label';
+import { memberMarks } from '@/domain/members/marks';
 import {
   CATALOG,
   CATALOG_ROOMS,
   catalogFor,
   catalogId,
   catalogInputs,
-  catalogTitle,
+  catalogLabel,
   normalizeTaskTitle,
   type CatalogItem,
   type CatalogRoom,
 } from '@/domain/tasks/catalog';
 import { ROOMS } from '@/domain/tasks/rooms';
-import { useMembership } from '@/features/households/queries';
+import { useSession } from '@/features/auth/SessionProvider';
+import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
+import { useMembers, useMembership } from '@/features/households/queries';
 import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
+import { AssigneePicker } from '@/features/tasks/components/AssigneePicker';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation, useTasks } from '@/features/tasks/queries';
@@ -24,12 +27,14 @@ import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { Magnet } from '@/ui/components/Magnet';
+import { Button } from '@/ui/components/Button';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
+import { useLayout } from '@/ui/useLayout';
 
 function TemplateRow({
   room,
@@ -44,9 +49,7 @@ function TemplateRow({
 }) {
   const { colors, space } = useTheme();
   // The room is the section heading, so the row says only the chore and its repeat.
-  const label = [catalogTitle(item), item.recurrence ? recurrenceLabel(item.recurrence) : null]
-    .filter((part) => part !== null)
-    .join(', ');
+  const label = catalogLabel(item);
   return (
     <Pressable
       testID={`templates.item.${catalogId(room, item)}`}
@@ -99,6 +102,12 @@ function TemplatesScreen() {
   const queryClient = useQueryClient();
   const membership = useMembership().data;
   const householdId = membership?.householdId;
+  const { userId } = useSession();
+  const { shortHeight } = useLayout();
+  const members = useMembers(householdId).data;
+  const marks = useMemo(() => memberMarks(members ?? []), [members]);
+  // Who does every chosen task; nobody by default, as before.
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const tasks = useTasks(householdId).data;
   // Only what the household has rooms for and does not do yet (by normalised title). A
   // membership persisted before rooms existed has none: every room then.
@@ -145,10 +154,9 @@ function TemplatesScreen() {
     });
   const add = () => {
     if (householdId === undefined || keys.length === 0) return;
-    const picks = catalogInputs(keys, today).map(({ id, input }): [string, TaskInput] => [
-      ids.get(id) as string,
-      input,
-    ]);
+    const picks = catalogInputs(keys, today, assigneeId).map(
+      ({ id, input }): [string, TaskInput] => [ids.get(id) as string, input],
+    );
     save.submit(
       { tasks: picks },
       {
@@ -163,25 +171,38 @@ function TemplatesScreen() {
     );
   };
 
+  // «Para» sits above «Añadir»: in the foot, or on a short window (a phone on its side) at the end
+  // of the list, so the foot does not take the little height the list has.
+  const assignee =
+    keys.length > 0 && members && members.length > 0 ? (
+      <View style={{ gap: space(2), paddingBottom: space(3) }}>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>{t('templates.assigneeLabel')}</Text>
+        <AssigneePicker
+          value={assigneeId}
+          members={members}
+          marks={marks}
+          userId={userId}
+          onChange={setAssigneeId}
+        />
+      </View>
+    ) : null;
+
+  // Something chosen and not saved: Cancel, back and the gesture ask before dropping it.
+  const { requestClose, dialog } = useDiscardGuard({
+    dirty: keys.length > 0,
+    onCancel: close,
+    busy: saving,
+  });
+
   return (
     <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
       <ModalHeader
         title={t('templates.title')}
         step={2}
-        cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: close }}
-        action={{
-          testID: 'templates.add',
-          label: failed
-            ? t('templates.retry')
-            : keys.length === 1
-              ? t('templates.addOne')
-              : t('templates.addCount', { n: keys.length }),
-          onPress: add,
-          disabled: keys.length === 0 || saving,
-          busy: saving,
-        }}
+        cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: requestClose }}
       />
       <ScrollView
+        style={fill}
         contentContainerStyle={{
           paddingHorizontal: space(5),
           paddingTop: space(3),
@@ -210,12 +231,41 @@ function TemplatesScreen() {
             {t('templates.empty')}
           </Text>
         ) : null}
+        {shortHeight && assignee ? <View style={{ paddingTop: space(4) }}>{assignee}</View> : null}
         {save.error ? (
           <View style={{ paddingTop: space(4) }}>
             <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
           </View>
         ) : null}
       </ScrollView>
+      {/* The foot, as on the task form: «Añadir» is the sheet's one pósit, under the thumb. */}
+      <View
+        style={{
+          paddingHorizontal: space(5),
+          paddingTop: space(3),
+          paddingBottom: space(3),
+          borderTopWidth: 1,
+          borderTopColor: colors.hairline,
+          backgroundColor: colors.page,
+        }}
+      >
+        {shortHeight ? null : assignee}
+        <Button
+          testID="templates.add"
+          title={
+            failed
+              ? t('templates.retry')
+              : keys.length === 1
+                ? t('templates.addOne')
+                : t('templates.addCount', { n: keys.length })
+          }
+          onPress={add}
+          disabled={keys.length === 0}
+          loading={saving}
+          width="full"
+        />
+      </View>
+      {dialog}
     </SafeAreaView>
   );
 }

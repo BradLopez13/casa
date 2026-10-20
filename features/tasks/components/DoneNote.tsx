@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { MemberMark } from '@/domain/members/marks';
+import { doneWhen } from '@/domain/tasks/labels';
 import type { TaskItem } from '@/domain/tasks/views';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { t } from '@/i18n';
@@ -16,11 +17,13 @@ type Props = {
   name: string | undefined;
   /** The signed-in user completed it, read out as "hecha por ti". */
   byYou: boolean;
+  /** YYYY-MM-DD, to say "ayer" or the date for a task done another day. */
+  today: string;
   onReopen: (task: TaskItem) => void;
 };
 
 /** A finished task as a compact note; its filled magnet hangs on the left edge and tapping reopens it. */
-export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
+export function DoneNote({ task, mark, name, byYou, today, onReopen }: Props) {
   const { colors, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   // Only a task completed in this session arrives; the rest of the tray is simply there.
@@ -28,11 +31,14 @@ export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
   useEffect(() => {
     takeFresh(task.id, 'done');
   }, [task.id]);
-  const label = byYou
+  // When, never who: the magnet already says who did it.
+  const when = task.completedAt === null ? null : doneWhen(task.completedAt, today);
+  const reopen = byYou
     ? t('tasks.a11y.reopenByYou', { title: task.title })
     : name
       ? t('tasks.a11y.reopenBy', { title: task.title, name })
       : t('tasks.a11y.reopen', { title: task.title });
+  const label = when === null ? reopen : `${reopen}, ${when}`;
   return (
     <Animated.View
       // It arrives from the list on the same spring the note left it with.
@@ -66,20 +72,44 @@ export function DoneNote({ task, mark, name, byYou, onReopen }: Props) {
             accessibilityLabel={name ?? ''}
           />
         </View>
-        <Text
-          numberOfLines={2}
+        {/* The time sits after the title and wraps under it when large text leaves no room. */}
+        <View
           style={{
             flex: 1,
-            color: colors.mutedStrong,
-            fontFamily: displayFontBold,
-            fontSize: 16,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'baseline',
+            columnGap: space(2),
             paddingVertical: space(2),
             paddingLeft: space(2),
             paddingRight: space(3),
           }}
         >
-          {task.title}
-        </Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              flexGrow: 1,
+              maxWidth: '100%',
+              color: colors.mutedStrong,
+              fontFamily: displayFontBold,
+              fontSize: 16,
+            }}
+          >
+            {task.title}
+          </Text>
+          {when === null ? null : (
+            <Text
+              style={{
+                marginLeft: 'auto',
+                color: colors.muted,
+                fontSize: 14,
+                fontVariant: ['tabular-nums'],
+              }}
+            >
+              {when}
+            </Text>
+          )}
+        </View>
       </Pressable>
     </Animated.View>
   );

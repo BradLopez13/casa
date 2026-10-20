@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DOOR_TYPE, doorFor } from './door';
+import { DOOR_MAX_SCALE, DOOR_TYPE, doorFor } from './door';
 import { layoutFor } from './layout';
 
 describe('DOOR_TYPE', () => {
@@ -26,6 +26,7 @@ describe('doorFor', () => {
       type: DOOR_TYPE.full,
       handle: true,
       maxHeight: null,
+      holdsQuickAdd: false,
     });
   });
 
@@ -39,6 +40,8 @@ describe('doorFor', () => {
       type: DOOR_TYPE.compact,
       handle: false,
       maxHeight: 156,
+      // 844 wide is two panes: the quick add keeps its pane.
+      holdsQuickAdd: false,
     });
     expect(doorFor(layoutFor(800, 499), 499)).toMatchObject({
       compact: true,
@@ -59,6 +62,7 @@ describe('doorFor', () => {
         type: DOOR_TYPE.compact,
         handle: false,
         maxHeight: 274,
+        holdsQuickAdd: false,
       });
     });
 
@@ -80,5 +84,47 @@ describe('doorFor', () => {
   it('keeps the full door in one column whatever the text size: it scrolls away there', () => {
     expect(doorFor(layoutFor(390, 844), 844, 2).compact).toBe(false);
     expect(doorFor(layoutFor(800, 600), 600, 2).compact).toBe(false);
+  });
+
+  it('stops growing its estimate at the door’s 1.4 text cap', () => {
+    expect(DOOR_MAX_SCALE).toBe(1.4);
+    expect(doorFor(layoutFor(1280, 1100), 1100, 2)).toEqual(
+      doorFor(layoutFor(1280, 1100), 1100, 1.4),
+    );
+  });
+
+  describe('holdsQuickAdd', () => {
+    it('takes the quick add inside a compact door on a short window in one column', () => {
+      expect(doorFor(layoutFor(817, 375), 375).holdsQuickAdd).toBe(true);
+    });
+
+    it('leaves it outside a full door and above two panes', () => {
+      expect(doorFor(layoutFor(375, 817), 817).holdsQuickAdd).toBe(false);
+      expect(doorFor(layoutFor(873, 393), 393).holdsQuickAdd).toBe(false);
+      expect(doorFor(layoutFor(1143, 686), 686).holdsQuickAdd).toBe(false);
+    });
+  });
+
+  describe('large text on a phone on its side', () => {
+    // At ×1,3 and up the compact door's hierarchy, controls and day strip need more than 40 %:
+    // the quick add leaves for the list and the door may take 45 %, so the strip stays whole.
+    it('moves the quick add out and lets the door take 45 %', () => {
+      expect(doorFor(layoutFor(817, 375), 375, 1.3)).toMatchObject({
+        compact: true,
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(375 * 0.45),
+      });
+      expect(doorFor(layoutFor(817, 375), 375, 2)).toMatchObject({
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(375 * 0.45),
+      });
+    });
+
+    it('keeps 40 % and the quick add inside below that', () => {
+      expect(doorFor(layoutFor(817, 375), 375, 1.2)).toMatchObject({
+        holdsQuickAdd: true,
+        maxHeight: Math.floor(375 * 0.4),
+      });
+    });
   });
 });

@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 const HOUSEHOLD_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping',
   'shopping-history',
+  'shopping-resolved',
   'members',
 ]);
 

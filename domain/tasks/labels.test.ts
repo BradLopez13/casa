@@ -1,8 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  dayCellLabel,
   dayHeading,
   dayInSentence,
   dayName,
+  doneWhen,
   dueLabel,
   longDateLabel,
   overdueLabel,
@@ -107,5 +109,37 @@ describe('labels on an English phone', () => {
     expect(en.dayInSentence('2026-10-10', today)).toBe('tomorrow');
     expect(en.skippedNotice('2026-10-10', today)).toBe('Skipped. Back tomorrow.');
     expect(en.skippedNotice('2026-10-11', today)).toBe('Skipped. Back on Sunday 11.');
+  });
+});
+
+// A screen reader read the form's day cells as «20 mar» («veinte mar»): they say the whole date.
+describe('dayCellLabel', () => {
+  const today = '2026-10-19';
+  it('says today with its full date', () => {
+    expect(dayCellLabel('2026-10-19', today)).toBe('Hoy, lunes, 19 de octubre');
+  });
+  it('says any other day in full, never the short weekday', () => {
+    expect(dayCellLabel('2026-10-20', today)).toBe('martes, 20 de octubre');
+  });
+});
+
+describe('doneWhen', () => {
+  const at = (y: number, m: number, d: number, hh: number, mm: number) =>
+    new Date(y, m - 1, d, hh, mm).toISOString();
+
+  it('today: the time alone', () => {
+    expect(doneWhen(at(2026, 10, 9, 10, 42), '2026-10-09')).toBe('10:42');
+  });
+
+  it('yesterday: the word and the time', () => {
+    expect(doneWhen(at(2026, 10, 8, 18, 5), '2026-10-09')).toBe('ayer, 18:05');
+  });
+
+  it('another day: day, short month and time', () => {
+    expect(doneWhen(at(2026, 10, 2, 9, 0), '2026-10-09')).toBe('2 oct, 9:00');
+  });
+
+  it('just after local midnight is today, not yesterday', () => {
+    expect(doneWhen(at(2026, 10, 9, 0, 3), '2026-10-09')).toBe('0:03');
   });
 });

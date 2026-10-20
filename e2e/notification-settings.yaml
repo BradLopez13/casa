@@ -1,0 +1,103 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# The phone already allows notifications, so turning reminders on asks nothing.
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+          permissions:
+            notifications: allow
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Nora owns "Piso Nora"
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: nora@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+- tapOn:
+    id: tab.settings
+
+# Reminders: off at first; on, they show their two times
+- scrollUntilVisible:
+    element:
+      id: settings.reminders.toggle
+- assertVisible:
+    id: settings.reminders.toggle
+    checked: false
+- tapOn:
+    id: settings.reminders.toggle
+- extendedWaitUntil:
+    visible:
+      id: settings.reminders.morning
+    timeout: 5000
+- assertVisible:
+    id: settings.reminders.evening
+
+# Household notices: on at first; turn off the one for assigned tasks
+- scrollUntilVisible:
+    element:
+      id: settings.push.task-assigned
+- assertVisible:
+    id: settings.push.task-assigned
+    checked: true
+- tapOn:
+    id: settings.push.task-assigned
+- extendedWaitUntil:
+    visible:
+      id: settings.push.task-assigned
+      checked: false
+      enabled: true
+    timeout: 20000
+
+# Both survive a restart: reminders on the phone, notices on the server
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      id: settings.reminders.toggle
+- assertVisible:
+    id: settings.reminders.toggle
+    checked: true
+- assertVisible:
+    id: settings.reminders.morning
+- scrollUntilVisible:
+    element:
+      id: settings.push.task-assigned
+- extendedWaitUntil:
+    visible:
+      id: settings.push.task-assigned
+      checked: false
+      enabled: true
+    timeout: 20000
+- assertVisible:
+    id: settings.push.member-joined
+    checked: true
+
+# Reminders off again: the times go away
+- scrollUntilVisible:
+    element:
+      id: settings.reminders.toggle
+    direction: UP
+- tapOn:
+    id: settings.reminders.toggle
+- extendedWaitUntil:
+    notVisible:
+      id: settings.reminders.morning
+    timeout: 5000

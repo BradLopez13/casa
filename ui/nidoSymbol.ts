@@ -36,3 +36,6 @@ export function nidoSymbolColors(scheme: Scheme): {
     tile: scheme === 'dark' ? null : '#2E3B41',
   };
 }
+
+/** The slate plate that carries the symbol at the end of the day and on an empty Tareas. */
+export const SYMBOL_PLATE = { size: 56, inset: 8 } as const;

@@ -48,7 +48,7 @@ export function SocialButtons() {
   }
 
   const look = GOOGLE_LOOK[scheme];
-  // While the other provider signs in, this one waits as a dashed empty pill, never faded.
+  // While the other provider signs in, this one waits as an empty pill with a faded label.
   const waiting = busy !== null && busy !== 'google';
   const off = buttonLook('secondary', 'default', 'disabled', colors);
 
@@ -77,7 +77,6 @@ export function SocialButtons() {
             paddingHorizontal: space(5),
             borderRadius: radii.pill,
             borderWidth: 1,
-            borderStyle: waiting ? off.borderStyle : 'solid',
             borderColor: waiting ? off.border : look.border,
             backgroundColor: waiting ? off.fill : look.fill,
             opacity: pressedOpacity(pressed),
@@ -91,6 +90,7 @@ export function SocialButtons() {
               <Text
                 style={{
                   color: waiting ? off.foreground : look.text,
+                  opacity: waiting ? off.labelOpacity : 1,
                   fontSize: 17,
                   fontWeight: '600',
                 }}

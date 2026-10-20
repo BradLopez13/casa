@@ -10,11 +10,12 @@ type Props = {
   names: Map<string, string>;
   /** The signed-in user, read out as "hecha por ti". */
   userId: string | null;
+  today: string;
   onReopen: (task: TaskItem) => void;
 };
 
 /** Finished tasks as a stack of compact notes; tapping one reopens it. */
-export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
+export function DoneTray({ tasks, marks, names, userId, today, onReopen }: Props) {
   const { space } = useTheme();
   return (
     <View style={{ gap: space(2) }}>
@@ -25,6 +26,7 @@ export function DoneTray({ tasks, marks, names, userId, onReopen }: Props) {
           mark={task.completedBy ? marks.get(task.completedBy) : undefined}
           name={task.completedBy ? names.get(task.completedBy) : undefined}
           byYou={task.completedBy !== null && task.completedBy === userId}
+          today={today}
           onReopen={onReopen}
         />
       ))}

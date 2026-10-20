@@ -62,6 +62,29 @@ describe('quickAddInput', () => {
       quickAddInput('Regar mañana', 'u1', '2026-10-17', { ...ctx, disabled: new Set(['due']) }),
     ).toMatchObject({ title: 'Regar mañana', dueOn: '2026-10-17' });
   });
+
+  describe('with no given day (Todas)', () => {
+    it('leaves the task undated', () => {
+      expect(quickAddInput('Ordenar el trastero', 'u1', null, ctx)).toMatchObject({
+        title: 'Ordenar el trastero',
+        dueOn: null,
+        recurrence: null,
+      });
+    });
+
+    it('still takes a written date', () => {
+      expect(quickAddInput('Regar mañana', 'u1', null, ctx)).toMatchObject({
+        dueOn: '2026-10-18',
+      });
+    });
+
+    it('starts a repeat today, since a repeat needs a date', () => {
+      expect(quickAddInput('Regar cada día', 'u1', null, ctx)).toMatchObject({
+        dueOn: '2026-10-17',
+        recurrence: { kind: 'interval', every: 1 },
+      });
+    });
+  });
 });
 
 describe('quickLocale', () => {

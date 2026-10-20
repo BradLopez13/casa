@@ -26,6 +26,8 @@ type Props = {
   icon?: ActionIcon;
   /** full: stretches to its container. hug: only as wide as its content. */
   width?: 'full' | 'hug';
+  /** Tertiary only: no side padding, so its label lines up with the text of the note it sits in. */
+  flush?: boolean;
 };
 
 export function Button({
@@ -38,11 +40,12 @@ export function Button({
   tone = 'default',
   icon,
   width = 'hug',
+  flush = false,
 }: Props) {
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
   const inactive = disabled || loading;
-  const { fill, border, foreground, borderStyle } = buttonLook(
+  const { fill, border, foreground, labelOpacity } = buttonLook(
     variant,
     tone,
     loading ? 'busy' : disabled ? 'disabled' : 'enabled',
@@ -59,18 +62,19 @@ export function Button({
         accessibilityState={{ disabled: inactive, busy: loading }}
         disabled={inactive}
         onPress={onPress}
-        hitSlop={variant === 'secondary' ? { top: 2, bottom: 2 } : undefined}
+        hitSlop={
+          variant === 'secondary' || variant === 'outlined' ? { top: 2, bottom: 2 } : undefined
+        }
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({
           minHeight: m.minHeight,
           alignItems: 'center',
           justifyContent: 'center',
-          paddingHorizontal: m.paddingH,
+          paddingHorizontal: flush && variant === 'tertiary' ? 0 : m.paddingH,
           paddingVertical: m.paddingV,
           borderRadius: radii.pill,
           borderWidth: border === 'transparent' ? 0 : PRIMARY_EDGE,
-          borderStyle,
           borderColor: border,
           backgroundColor: fill,
           opacity: pressedOpacity(pressed),
@@ -80,7 +84,13 @@ export function Button({
         {loading ? (
           <ActivityIndicator color={foreground} />
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          // Never flattened: fading the label (disabled) would otherwise give it a native view and
+          // move the text into it, and Fabric on Android crashed doing that in the same commit that
+          // closes a modal (CASA-3, deleting a task).
+          <View
+            collapsable={false}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: labelOpacity }}
+          >
             {icon ? (
               <Ionicons
                 name={icon}

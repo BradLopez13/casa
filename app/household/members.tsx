@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
 import { Share, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
   createInvite,
@@ -14,7 +14,6 @@ import {
   revokeInvite,
   transferOwnership,
 } from '@/features/households/api';
-import { inviteExpiresText } from '@/features/households/inviteText';
 import { buildInviteUrl } from '@/features/households/invite-link';
 import { MemberRow } from '@/features/households/MemberRow';
 import {
@@ -24,71 +23,27 @@ import {
   useMembership,
 } from '@/features/households/queries';
 import { forgetHouseholdData } from '@/data/query/persist';
-import { toAppError } from '@/data/supabase/errors';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
+import { DIALOGS, type Pending } from '@/features/households/memberDialogs';
+import { PendingInvites } from '@/features/households/PendingInvites';
+import { memberErrorMessage } from '@/features/households/errors';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
-import { PaneHeader } from '@/ui/components/PaneHeader';
-import { ScreenTitle } from '@/ui/components/ScreenTitle';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
-type Pending = { kind: 'remove' | 'transfer' | 'leave' | 'delete'; userId?: string };
-
-const ERROR_KEYS: Partial<Record<string, MessageKey>> = {
-  NOT_AUTHENTICATED: 'members.errors.NOT_AUTHENTICATED',
-  OWNER_MUST_TRANSFER: 'members.errors.OWNER_MUST_TRANSFER',
-  NOT_OWNER: 'members.errors.NOT_OWNER',
-  NOT_A_MEMBER: 'members.errors.NOT_A_MEMBER',
-  INVITE_INVALID: 'members.errors.INVITE_INVALID',
-  CANNOT_REMOVE_SELF: 'members.errors.CANNOT_REMOVE_SELF',
-  NETWORK: 'members.errors.NETWORK',
-};
-
-const DIALOGS: Record<
-  Pending['kind'],
-  { title: MessageKey; message: MessageKey; action: MessageKey }
-> = {
-  remove: {
-    title: 'members.confirm.removeTitle',
-    message: 'members.confirm.removeMessage',
-    action: 'members.confirm.removeAction',
-  },
-  transfer: {
-    title: 'members.confirm.transferTitle',
-    message: 'members.confirm.transferMessage',
-    action: 'members.confirm.transferAction',
-  },
-  leave: {
-    title: 'members.confirm.leaveTitle',
-    message: 'members.confirm.leaveMessage',
-    action: 'members.confirm.leaveAction',
-  },
-  delete: {
-    title: 'members.confirm.deleteTitle',
-    message: 'members.confirm.deleteMessage',
-    action: 'members.confirm.deleteAction',
-  },
-};
-
-// selfDirected: the action is about the current user (invite, leave, delete...), so a
-// NOT_A_MEMBER means "you are no longer in this household", not "that person left".
-function errorText(e: unknown, selfDirected = false): string {
-  const code = toAppError(e).code;
-  if (selfDirected && code === 'NOT_A_MEMBER') return t('members.errors.SELF_NOT_A_MEMBER');
-  return t(ERROR_KEYS[code] ?? 'members.errors.UNKNOWN');
-}
-
 export default function MembersScreen() {
-  const { colors, radii, shadows, noteEdge, space } = useTheme();
+  const { colors, space } = useTheme();
   const split = paneMode(useLayout()) === 'split';
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useSession();
@@ -141,7 +96,7 @@ export default function MembersScreen() {
       // Dismissing the share sheet is not an error; Share.share resolves either way.
       await Share.share({ message: t('invite.shareMessage', { url }) });
     } catch (e) {
-      setError(errorText(e, true));
+      setError(memberErrorMessage(e, true));
     } finally {
       inviteBusy.current = false;
       setAction(null);
@@ -159,7 +114,7 @@ export default function MembersScreen() {
       await Clipboard.setStringAsync(buildInviteUrl(token, Linking.createURL));
       setCopied(true);
     } catch (e) {
-      setError(errorText(e, true));
+      setError(memberErrorMessage(e, true));
     } finally {
       inviteBusy.current = false;
       setAction(null);
@@ -179,7 +134,7 @@ export default function MembersScreen() {
   function onRevoke(inviteId: string) {
     setCopied(false);
     setError(undefined);
-    revoke.mutate(inviteId, { onError: (e) => setError(errorText(e, true)) });
+    revoke.mutate(inviteId, { onError: (e) => setError(memberErrorMessage(e, true)) });
   }
 
   const target = pending?.userId
@@ -196,7 +151,7 @@ export default function MembersScreen() {
       onSuccess: () => setPending(null),
       onError: (e: unknown) => {
         setPending(null);
-        (footer ? setFooterError : setError)(errorText(e, footer));
+        (footer ? setFooterError : setError)(memberErrorMessage(e, footer));
       },
       onSettled: () => {
         confirming.current = false;
@@ -309,60 +264,13 @@ export default function MembersScreen() {
       {error ? <ErrorText testID="members.error">{error}</ErrorText> : null}
 
       {heading('members.pendingTitle')}
-      {invites.isError ? (
-        <>
-          <ErrorText testID="members.invites-error">{t('members.invitesLoadError')}</ErrorText>
-          <Button
-            testID="members.invites-retry"
-            title={t('errors.retry')}
-            variant="secondary"
-            icon={actionIcons.retry}
-            width="hug"
-            loading={invites.isFetching}
-            onPress={() => void invites.refetch()}
-          />
-        </>
-      ) : invites.data ? (
-        invites.data.length === 0 ? (
-          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.pendingEmpty')}</Text>
-        ) : (
-          invites.data.map((inv, index) => (
-            <View
-              key={inv.id}
-              testID={`members.invite-row.${inv.id}`}
-              // A pending invite is a note on the page, like the member rows.
-              style={{
-                gap: space(3),
-                padding: space(4),
-                borderRadius: radii.note,
-                backgroundColor: colors.note,
-                ...shadows.note,
-                ...noteEdge,
-              }}
-            >
-              <Text style={{ color: colors.ink, fontSize: 16 }}>
-                {inviteExpiresText(inv.expiresAt)}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(3) }}>
-                {index === 0 ? copyLink : null}
-                {isOwner || inv.createdBy === userId ? (
-                  <Button
-                    testID={`members.revoke.${inv.id}`}
-                    title={t('members.revoke')}
-                    variant="tertiary"
-                    icon={actionIcons.revoke}
-                    width="hug"
-                    loading={revoke.isPending && revoke.variables === inv.id}
-                    onPress={() => onRevoke(inv.id)}
-                  />
-                ) : null}
-              </View>
-            </View>
-          ))
-        )
-      ) : (
-        <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.loading')}</Text>
-      )}
+      <PendingInvites
+        invites={invites}
+        copyLink={copyLink}
+        canRevoke={(createdBy) => isOwner || createdBy === userId}
+        revokingId={revoke.isPending ? revoke.variables : undefined}
+        onRevoke={onRevoke}
+      />
       <AccountZone>
         <Button
           testID="members.leave"
@@ -393,38 +301,23 @@ export default function MembersScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
+      {/* The bar of every secondary screen: «Volver» and the title, in the sheets' one size. Clear
+          of a side notch; the panes below keep their own gutter. */}
+      <View style={{ paddingLeft: insets.left, paddingRight: insets.right }}>
+        <ModalHeader
+          title={t('members.title')}
+          step={2}
+          cancel={{
+            testID: 'members.back',
+            label: t('members.back'),
+            onPress: () => (router.canGoBack() ? router.back() : router.replace('/today')),
+          }}
+        />
+      </View>
       {/* Outside the tabs: no rail beside it, so the panes keep clear of a side notch. */}
       <TwoPane
         besideRail={false}
-        contentContainerStyle={{ paddingBottom: space(8) }}
-        header={
-          <PaneHeader besideRail={false}>
-            {/* On two panes the button keeps its own size beside the title, not a long bar
-                across the screen, and the header stays low above panes that scroll. */}
-            <View
-              style={
-                split
-                  ? { flexDirection: 'row', alignItems: 'center', gap: space(4) }
-                  : { gap: space(4) }
-              }
-            >
-              {/* A hug button pins itself to the start; this wrapper centres it on the row. */}
-              <View style={{ alignSelf: split ? 'center' : 'flex-start' }}>
-                <Button
-                  testID="members.back"
-                  title={t('members.back')}
-                  variant="tertiary"
-                  icon={actionIcons.back}
-                  width="hug"
-                  onPress={() => (router.canGoBack() ? router.back() : router.replace('/today'))}
-                />
-              </View>
-              <View style={{ flexShrink: 1 }}>
-                <ScreenTitle>{t('members.title')}</ScreenTitle>
-              </View>
-            </View>
-          </PaneHeader>
-        }
+        contentContainerStyle={{ paddingTop: space(5), paddingBottom: space(8) }}
         left={people}
         right={household}
       />

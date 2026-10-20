@@ -1,0 +1,75 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Pablo owns "Piso Pablo", with every room and no tasks yet
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: pablo@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# With no tasks, Hoy offers the typical ones
+- tapOn:
+    id: today.templates
+- extendedWaitUntil:
+    visible:
+      id: templates.item.kitchen.dishes
+    timeout: 10000
+- tapOn:
+    id: templates.item.kitchen.dishes
+- assertVisible:
+    id: templates.item.kitchen.dishes
+    checked: true
+- tapOn:
+    id: templates.item.kitchen.trash
+- assertVisible: Añadir 2 tareas
+- tapOn:
+    id: templates.add
+
+# Fregar los platos is every day: it is on Hoy at once, and the card is gone
+- extendedWaitUntil:
+    visible: Fregar los platos
+    timeout: 20000
+- assertNotVisible:
+    id: today.templates
+
+# The catalogue, from Tareas · Todas, no longer offers what the household has
+- tapOn:
+    id: tab.tasks
+- tapOn:
+    id: tasks.mode.all
+# The first-use hint and the dated list can push it below the fold on a small screen.
+- scrollUntilVisible:
+    element:
+      text: Sacar la basura
+    timeout: 20000
+- scrollUntilVisible:
+    direction: UP
+    element:
+      id: tasks.ideas
+- tapOn:
+    id: tasks.ideas
+- extendedWaitUntil:
+    visible:
+      id: templates.item.kitchen.fridge
+    timeout: 10000
+- assertNotVisible:
+    id: templates.item.kitchen.dishes
+- assertNotVisible:
+    id: templates.item.kitchen.trash
+- tapOn:
+    id: templates.cancel

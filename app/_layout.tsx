@@ -1,3 +1,4 @@
+import { MPLUSRounded1c_400Regular } from '@expo-google-fonts/m-plus-rounded-1c/400Regular';
 import { MPLUSRounded1c_700Bold } from '@expo-google-fonts/m-plus-rounded-1c/700Bold';
 import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
 import NetInfo from '@react-native-community/netinfo';
@@ -25,11 +26,12 @@ import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { NoticeProvider, useNotice } from '@/ui/components/Notice';
+import { TabBarHeightProvider } from '@/ui/tabBarHeight';
 import { RootErrorBoundary } from '@/ui/components/RootErrorBoundary';
 import { Screen } from '@/ui/components/Screen';
 import { modalFrameFor } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
-import { displayFont, displayFontBold } from '@/ui/tokens';
+import { displayFont, displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route';
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
@@ -43,6 +45,7 @@ import { useReminders } from '@/features/reminders/useReminders';
 import {
   addKey,
   boughtKey,
+  quantityKey,
   buildShoppingMutationDefaults,
   persistBuster,
   persistDehydrateOptions,
@@ -100,6 +103,7 @@ function PersistedQueries({ children }: { children: ReactNode }) {
     const defaults = buildShoppingMutationDefaults(queryClient, notify);
     queryClient.setMutationDefaults(addKey, defaults.add);
     queryClient.setMutationDefaults(boughtKey, defaults.bought);
+    queryClient.setMutationDefaults(quantityKey, defaults.quantity);
     return null;
   });
   if (status === 'loading') return null;
@@ -346,6 +350,7 @@ function App() {
   const [fontsLoaded, fontError] = useFonts({
     [displayFont]: MPLUSRounded1c_800ExtraBold,
     [displayFontBold]: MPLUSRounded1c_700Bold,
+    [displayFontRegular]: MPLUSRounded1c_400Regular,
   });
   const fontsReady = fontsLoaded || fontError !== null;
   return (
@@ -353,11 +358,13 @@ function App() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <ThemedStatusBar />
-          <NoticeProvider>
-            <SessionProvider>
-              <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
-            </SessionProvider>
-          </NoticeProvider>
+          <TabBarHeightProvider>
+            <NoticeProvider>
+              <SessionProvider>
+                <PersistedQueries>{fontsReady ? <Guard /> : null}</PersistedQueries>
+              </SessionProvider>
+            </NoticeProvider>
+          </TabBarHeightProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </RootErrorBoundary>

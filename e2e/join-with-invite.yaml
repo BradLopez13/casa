@@ -23,7 +23,7 @@ appId: com.bradlopez13.casa
       id: onboarding.link
     timeout: 20000
 
-# Expired invite: shows the error
+# Expired invite: the preview says so before accepting, and there is nothing to accept
 - tapOn:
     id: onboarding.link
 - inputText: b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
@@ -32,19 +32,11 @@ appId: com.bradlopez13.casa
     id: onboarding.join
 - extendedWaitUntil:
     visible:
-      id: invite.accept
-    timeout: 20000
-# On a small screen the brand header can push this element below the fold.
-- scrollUntilVisible:
-    element:
-      id: invite.accept
-- tapOn:
-    id: invite.accept
-- extendedWaitUntil:
-    visible:
       id: invite.error
       text: 'Esta invitación ha caducado.*'
     timeout: 20000
+- assertNotVisible:
+    id: invite.accept
 
 # Back to onboarding, paste the valid link
 # On a small screen the brand header can push this element below the fold.
