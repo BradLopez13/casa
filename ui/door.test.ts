@@ -104,4 +104,27 @@ describe('doorFor', () => {
       expect(doorFor(layoutFor(1143, 686), 686).holdsQuickAdd).toBe(false);
     });
   });
+
+  describe('large text on a phone on its side', () => {
+    // At ×1,3 and up the compact door's hierarchy, controls and day strip need more than 40 %:
+    // the quick add leaves for the list and the door may take 45 %, so the strip stays whole.
+    it('moves the quick add out and lets the door take 45 %', () => {
+      expect(doorFor(layoutFor(817, 375), 375, 1.3)).toMatchObject({
+        compact: true,
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(375 * 0.45),
+      });
+      expect(doorFor(layoutFor(817, 375), 375, 2)).toMatchObject({
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(375 * 0.45),
+      });
+    });
+
+    it('keeps 40 % and the quick add inside below that', () => {
+      expect(doorFor(layoutFor(817, 375), 375, 1.2)).toMatchObject({
+        holdsQuickAdd: true,
+        maxHeight: Math.floor(375 * 0.4),
+      });
+    });
+  });
 });
