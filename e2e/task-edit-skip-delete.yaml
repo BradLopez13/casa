@@ -44,6 +44,9 @@ appId: com.bradlopez13.casa
           timeout: 5000
 - tapOn:
     id: task-form.title
+# The title wraps (multiline), so the tap leaves the caret where it lands, mid-text. Down on the
+# last line moves it to the end, and the erase then clears the whole title.
+- pressKey: Remote Dpad Down
 - eraseText: 40
 - inputText: Regar los cactus
 - hideKeyboard
