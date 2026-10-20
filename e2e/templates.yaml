@@ -52,10 +52,13 @@ appId: com.bradlopez13.casa
     id: tab.tasks
 - tapOn:
     id: tasks.mode.all
-- extendedWaitUntil:
-    visible: Sacar la basura
+# The first-use hint and the dated list can push it below the fold on a small screen.
+- scrollUntilVisible:
+    element:
+      text: Sacar la basura
     timeout: 20000
 - scrollUntilVisible:
+    direction: UP
     element:
       id: tasks.ideas
 - tapOn:
