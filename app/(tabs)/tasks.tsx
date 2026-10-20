@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
 import { selectWeek } from '@/domain/tasks/views';
-import { weekLine } from '@/domain/tasks/weekLine';
+import { allLine, weekLine } from '@/domain/tasks/weekLine';
 import { DayStrip } from '@/features/tasks/components/DayStrip';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { ModeSwitch, type TasksMode } from '@/features/tasks/components/ModeSwitch';
@@ -17,7 +17,7 @@ import {
   type TaskListSection,
 } from '@/features/tasks/sections';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
-import { weekLineText } from '@/features/tasks/weekLineText';
+import { allLineText, weekLineText } from '@/features/tasks/weekLineText';
 import { chosenDay, weekDayPane } from '@/features/tasks/weekPanes';
 import { t } from '@/i18n';
 import { DoorControls, DoorHeader, useDoor } from '@/ui/components/DoorHeader';
@@ -62,14 +62,14 @@ export default function TasksScreen() {
     [filtered, today, members],
   );
 
-  // The door counts the whole household, like Hoy's, so it can say what is left for everyone.
+  // The door counts the whole household, like Hoy's, so it can say what is left for everyone:
+  // this week in Semana, everything pending in Todas.
   const tasks = tasksQuery.data;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
-  const doorLine = useMemo(
-    () =>
-      weekLineText(weekLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName })),
-    [tasks, today, userId, assigneeId, filterName],
-  );
+  const doorLine = useMemo(() => {
+    const input = { tasks: tasks ?? [], today, userId, filter: assigneeId, filterName };
+    return mode === 'week' ? weekLineText(weekLine(input)) : allLineText(allLine(input));
+  }, [mode, tasks, today, userId, assigneeId, filterName]);
 
   const sections = useMemo(
     () => (mode === 'week' ? weekSections(week, today) : allSections(filtered, today)),
@@ -183,7 +183,7 @@ function TasksStack({
             />
           ) : null
         }
-        quickAdd={<DayQuickAdd screen={screen} day={mode === 'week' ? day : today} />}
+        quickAdd={<DayQuickAdd screen={screen} day={mode === 'week' ? day : null} />}
       >
         <DoorControls row={compact}>
           <MemberFilter
@@ -225,7 +225,7 @@ function TasksStack({
               </View>
             ) : (
               <View style={[column, { paddingTop: space(4), gap: space(2) }]}>
-                {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={today} />}
+                {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={null} />}
                 <IdeasButton />
               </View>
             )}

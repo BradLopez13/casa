@@ -41,7 +41,7 @@ const KIND_ICONS = {
 type Props = {
   householdId: string | undefined;
   assigneeId: string | null;
-  dueOn: string;
+  dueOn: string | null;
   placeholder: string;
   testID: string;
 };
@@ -51,7 +51,7 @@ function chipLabel(
   kind: QuickSpanKind,
   parse: QuickParse,
   ctx: QuickAddContext,
-  dueOn: string,
+  dueOn: string | null,
 ): string {
   switch (kind) {
     case 'due':
