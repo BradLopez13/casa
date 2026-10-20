@@ -75,8 +75,6 @@ describe('scheduleReminders', () => {
       kind: 'morning',
       date: TODAY,
       count: 3,
-      overdue: 1,
-      titles: ['Old', 'A', 'B'],
     });
     expect(find(rs, 'evening-2026-10-11')).toEqual({
       id: 'evening-2026-10-11',
@@ -84,8 +82,6 @@ describe('scheduleReminders', () => {
       kind: 'evening',
       date: TODAY,
       count: 2,
-      overdue: 0,
-      titles: ['A', 'B'],
     });
     // Nothing on the following days.
     expect(rs).toHaveLength(2);
@@ -94,13 +90,6 @@ describe('scheduleReminders', () => {
   it('evening never counts overdue tasks', () => {
     const rs = run([task({ dueOn: '2026-10-09' })]);
     expect(rs.map((r) => r.id)).toEqual(['morning-2026-10-11']);
-  });
-
-  it('titles keep at most three, in the Hoy order', () => {
-    const ts = [1, 2, 3, 4].map((n) => task({ dueOn: TODAY, title: `T${n}` }));
-    const morning = find(run(ts.reverse()), 'morning-2026-10-11');
-    expect(morning?.count).toBe(4);
-    expect(morning?.titles).toEqual(['T1', 'T2', 'T3']);
   });
 
   it('everything today done → no evening reminder for today', () => {
@@ -122,7 +111,7 @@ describe('scheduleReminders', () => {
 
   it('a future day counts only its own tasks, never the overdue ones', () => {
     const rs = run([task({ dueOn: '2026-10-09' }), task({ dueOn: '2026-10-14' })]);
-    expect(find(rs, 'morning-2026-10-14')).toMatchObject({ count: 1, overdue: 0 });
+    expect(find(rs, 'morning-2026-10-14')).toMatchObject({ count: 1 });
   });
 
   it('projects a weekly unassigned series forward, skipping days without a rule date', () => {
@@ -140,7 +129,7 @@ describe('scheduleReminders', () => {
       'morning-2026-10-20',
       'evening-2026-10-20',
     ]);
-    expect(find(rs, 'morning-2026-10-20')).toMatchObject({ count: 1, titles: ['Bins'] });
+    expect(find(rs, 'morning-2026-10-20')).toMatchObject({ count: 1 });
     expect(find(rs, 'morning-2026-10-14')).toBeUndefined();
   });
 

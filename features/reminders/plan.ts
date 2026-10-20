@@ -19,23 +19,17 @@ export function reminderPlan(input: {
     : 'cancel';
 }
 
-function overdueSuffix(overdue: number): string {
-  if (overdue === 0) return '';
-  return overdue === 1
-    ? t('reminders.overdueSuffixOne')
-    : t('reminders.overdueSuffix', { overdue });
-}
-
-/** The notification text for a reminder. It names tasks only, never a person. */
+/**
+ * The notification text for a reminder. It is scheduled up to a week ahead and the tasks can
+ * change before it fires (someone else does them, new ones get assigned), so it neither counts
+ * nor names them: it can never go stale. Nor does it name a person.
+ */
 export function reminderText(r: Reminder): ScheduledReminder {
-  const { count } = r;
-  const title =
-    r.kind === 'morning'
-      ? (count === 1
-          ? t('reminders.morningTitleOne')
-          : t('reminders.morningTitleOther', { count })) + overdueSuffix(r.overdue)
-      : count === 1
-        ? t('reminders.eveningTitleOne')
-        : t('reminders.eveningTitleOther', { count });
-  return { id: r.id, fireAt: r.fireAt, title, body: r.titles.join(', ') };
+  const morning = r.kind === 'morning';
+  return {
+    id: r.id,
+    fireAt: r.fireAt,
+    title: t(morning ? 'reminders.morningTitle' : 'reminders.eveningTitle'),
+    body: t(morning ? 'reminders.morningBody' : 'reminders.eveningBody'),
+  };
 }
