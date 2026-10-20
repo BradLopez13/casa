@@ -84,7 +84,11 @@ export function Button({
         {loading ? (
           <ActivityIndicator color={foreground} />
         ) : (
+          // Never flattened: fading the label (disabled) would otherwise give it a native view and
+          // move the text into it, and Fabric on Android crashed doing that in the same commit that
+          // closes a modal (CASA-3, deleting a task).
           <View
+            collapsable={false}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: labelOpacity }}
           >
             {icon ? (
