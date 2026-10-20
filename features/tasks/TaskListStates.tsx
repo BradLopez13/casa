@@ -24,7 +24,7 @@ export function TaskListStates({ query, empty }: Props) {
   if (state === 'loading') {
     return (
       <View style={{ paddingVertical: space(6), alignItems: 'center' }}>
-        <ActivityIndicator color={colors.muted} accessibilityLabel={t('members.loading')} />
+        <ActivityIndicator color={colors.muted} accessibilityLabel={t('common.loading')} />
       </View>
     );
   }

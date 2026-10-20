@@ -1,5 +1,6 @@
 {
   "app.name": "Nido",
+  "common.loading": "Loading…",
   "members.count": "{count} members",
   "members.countOne": "1 member",
   "auth.signIn.title": "Sign in",
@@ -261,7 +262,10 @@
   "tasks.undo": "Undo",
   "notice.close": "Close",
   "tasks.completeHint": "Tap the box to tick it off.",
-  "tasks.toggleFailed": "Couldn't complete it. Try again.",
+  "tasks.completeFailed": "Couldn't mark it done. Try again.",
+  "tasks.completeFailedOffline": "Couldn't mark it done: no connection. Try again when it's back.",
+  "tasks.reopenFailed": "Couldn't reopen it. Try again.",
+  "tasks.reopenFailedOffline": "Couldn't reopen it: no connection. Try again when it's back.",
   "tasks.errors.INVALID_TITLE": "Enter a title of up to 100 characters.",
   "tasks.errors.INVALID_ROOM": "That room isn't valid.",
   "tasks.errors.INVALID_ASSIGNEE": "That person isn't in the household anymore.",

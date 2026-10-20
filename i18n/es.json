@@ -1,5 +1,6 @@
 {
   "app.name": "Nido",
+  "common.loading": "Cargando…",
   "members.count": "{count} miembros",
   "members.countOne": "1 miembro",
   "auth.signIn.title": "Inicia sesión",
@@ -261,7 +262,10 @@
   "tasks.undo": "Deshacer",
   "notice.close": "Cerrar",
   "tasks.completeHint": "Toca la casilla para marcarla.",
-  "tasks.toggleFailed": "No se pudo completar. Inténtalo de nuevo.",
+  "tasks.completeFailed": "No se pudo marcar como hecha. Inténtalo de nuevo.",
+  "tasks.completeFailedOffline": "No se pudo marcar como hecha: sin conexión. Inténtalo cuando vuelva.",
+  "tasks.reopenFailed": "No se pudo reabrir. Inténtalo de nuevo.",
+  "tasks.reopenFailedOffline": "No se pudo reabrir: sin conexión. Inténtalo cuando vuelva.",
   "tasks.errors.INVALID_TITLE": "Escribe un título de hasta 100 caracteres.",
   "tasks.errors.INVALID_ROOM": "Esa estancia no es válida.",
   "tasks.errors.INVALID_ASSIGNEE": "Esa persona ya no está en el hogar.",

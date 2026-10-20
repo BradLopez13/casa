@@ -202,7 +202,7 @@ export default function ShoppingScreen() {
   } else if (state === 'loading') {
     stateView = (
       <View style={{ paddingVertical: space(6), alignItems: 'center' }}>
-        <ActivityIndicator color={colors.muted} accessibilityLabel={t('members.loading')} />
+        <ActivityIndicator color={colors.muted} accessibilityLabel={t('common.loading')} />
       </View>
     );
   } else if (state === 'empty') {
