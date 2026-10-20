@@ -431,6 +431,7 @@
   "templates.addCount": "Add {n} tasks",
   "templates.addOne": "Add 1 task",
   "templates.empty": "You already have all the common tasks for your rooms.",
+  "templates.assigneeLabel": "For",
   "catalog.general": "Around the house",
   "catalog.kitchen.dishes": "Do the dishes",
   "catalog.kitchen.trash": "Take out the trash",

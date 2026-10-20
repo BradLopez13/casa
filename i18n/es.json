@@ -431,6 +431,7 @@
   "templates.addCount": "Añadir {n} tareas",
   "templates.addOne": "Añadir 1 tarea",
   "templates.empty": "Ya tienes todas las tareas típicas de tus estancias.",
+  "templates.assigneeLabel": "Para",
   "catalog.general": "En toda la casa",
   "catalog.kitchen.dishes": "Fregar los platos",
   "catalog.kitchen.trash": "Sacar la basura",
