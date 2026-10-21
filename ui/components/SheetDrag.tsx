@@ -15,6 +15,9 @@ import { radii } from '../tokens';
 
 type Drag = { offset: SharedValue<number>; height: SharedValue<number> };
 
+/** Long enough for a closing sheet to be gone before it would spring back. */
+const STAY_MS = 350;
+
 const SheetDragContext = createContext<Drag | null>(null);
 
 /**
@@ -59,6 +62,12 @@ export function SheetDragArea({
   const gesture = useMemo(() => {
     if (drag === null || !enabled) return null;
     const { offset, height } = drag;
+    // Left where the finger let go while the sheet goes; back in its place if it stays (the
+    // discard guard asked instead).
+    const dismiss = () => {
+      onDismiss();
+      setTimeout(() => offset.set(reduceMotion ? 0 : withSpring(0, SPRING)), STAY_MS);
+    };
     return (
       Gesture.Pan()
         // Down only, and a sideways or upward move is left to whatever is underneath.
@@ -74,8 +83,8 @@ export function SheetDragArea({
             velocityY: e.velocityY,
             height: height.get(),
           });
-          offset.set(reduceMotion ? 0 : withSpring(0, SPRING));
-          if (close) runOnJS(onDismiss)();
+          if (close) runOnJS(dismiss)();
+          else offset.set(reduceMotion ? 0 : withSpring(0, SPRING));
         })
     );
   }, [drag, enabled, reduceMotion, onDismiss]);

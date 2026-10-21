@@ -80,6 +80,13 @@ describe('deleteWithUndo', () => {
     expect(second.remove).toHaveBeenCalledTimes(1);
   });
 
+  it('says it is too late when «Deshacer» comes after the delete went', () => {
+    const { notify, action, background } = setup();
+    background();
+    action.onPress();
+    expect(notify).toHaveBeenLastCalledWith(t('tasks.deleteTooLate'));
+  });
+
   it('puts the task back and says why when the delete fails', async () => {
     const remove = vi.fn(() => Promise.reject(new AppError('NETWORK')));
     const { clock, notify } = setup(remove);

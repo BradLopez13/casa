@@ -5,6 +5,7 @@ import { AppState, Platform } from 'react-native';
 import { secureStore } from '../secure-store';
 import { createChunkedStorage } from './chunked-storage';
 import { missingConfig } from './config';
+import { withTimeout } from './fetchWithTimeout';
 import type { Database } from './database.types';
 
 // Typed as unknown: CI has no generated env types, so these read as any there.
@@ -31,6 +32,8 @@ export const supabase = createClient<Database>(
       detectSessionInUrl: false,
       flowType: 'pkce',
     },
+    // A request with no answer in 15 s fails as NETWORK instead of spinning for ever.
+    global: { fetch: withTimeout(fetch) },
   },
 );
 

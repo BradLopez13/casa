@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, AppState, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
@@ -58,6 +58,8 @@ function EditTaskScreen() {
   if (found !== undefined && found !== task) setTask(found);
 
   const queryClient = useQueryClient();
+  // Synchronous: a quick double tap lands before the busy state re-renders.
+  const deleting = useRef(false);
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const skip = useSkipTask(householdId);
   const toggler = useToggleTask(householdId, userId);
@@ -138,10 +140,12 @@ function EditTaskScreen() {
   };
   // No dialog: the task leaves at once and «Tarea borrada. Deshacer» keeps it for a while.
   const deleteNow = () => {
+    if (deleting.current) return;
     if (!onlineManager.isOnline()) {
       notify(t('tasks.deleteOffline'));
       return;
     }
+    deleting.current = true;
     deleteWithUndo({
       id,
       remove: async (taskId) => {
@@ -151,6 +155,10 @@ function EditTaskScreen() {
           await invalidateIfStale(queryClient, error);
           throw error;
         }
+        // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
+        queryClient.setQueryData<TaskItem[]>(['tasks', householdId], (current) =>
+          current?.filter((item) => item.id !== taskId),
+        );
         await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       },
       notify,

@@ -79,7 +79,12 @@ export function deleteWithUndo({ id, remove, notify, ms, schedule, watchBackgrou
     label: t('tasks.undo'),
     testID: 'notice.undo',
     onPress: () => {
-      if (!deferred.undo()) return;
+      // Already sent (the app went to the background, or the window just ended): say so rather
+      // than pretend it came back.
+      if (!deferred.undo()) {
+        notify(t('tasks.deleteTooLate'));
+        return;
+      }
       stopWatching();
       showTask(id);
     },

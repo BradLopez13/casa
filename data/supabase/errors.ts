@@ -46,7 +46,19 @@ const RPC_CODES: ReadonlySet<string> = new Set(
   APP_ERROR_CODES.filter((code) => code !== 'NETWORK' && code !== 'UNKNOWN'),
 );
 
-const NETWORK_MESSAGE = /Network request failed|Failed to fetch|fetch failed/i;
+/**
+ * A request that never reached the server or got no answer in time (the client's time limit,
+ * `fetchWithTimeout`): the fetch failure itself, or PostgREST's `${name}: ${message}` of it.
+ */
+export const NETWORK_MESSAGE =
+  /Network request failed|Failed to fetch|fetch failed|TimeoutError|AbortError|signal timed out|operation was aborted/i;
+
+/** Whether `e` is a fetch that failed or was cut by the time limit. */
+export function isNetworkFailure(e: object): boolean {
+  const name = 'name' in e && typeof e.name === 'string' ? e.name : '';
+  const message = 'message' in e && typeof e.message === 'string' ? e.message : '';
+  return name === 'TimeoutError' || name === 'AbortError' || NETWORK_MESSAGE.test(message);
+}
 
 function isCode(value: string): value is AppErrorCode {
   return RPC_CODES.has(value);
@@ -60,6 +72,6 @@ export function toAppError(e: unknown): AppError {
   const message = 'message' in e && typeof e.message === 'string' ? e.message : '';
 
   if (code === 'P0001') return new AppError(isCode(message) ? message : 'UNKNOWN');
-  if (NETWORK_MESSAGE.test(message)) return new AppError('NETWORK');
+  if (isNetworkFailure(e)) return new AppError('NETWORK');
   return new AppError('UNKNOWN');
 }
