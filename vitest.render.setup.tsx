@@ -52,6 +52,7 @@ vi.mock('react-native-safe-area-context', async () => {
     SafeAreaView: View,
     useSafeAreaInsets: () => insets,
     useSafeAreaFrame: () => frame,
+    SafeAreaInsetsContext: (await import('react')).createContext(insets),
     initialWindowMetrics: { insets, frame },
   };
 });

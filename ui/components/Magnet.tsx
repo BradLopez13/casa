@@ -29,7 +29,7 @@ type Props = {
   accessibilityRole?: 'button' | 'radio';
   /** Hide it from screen readers when the person's name is already read next to it. */
   decorative?: boolean;
-  /** faint: an open check (corner badge, or centred when empty). filled: the magnet fills with the accent and shows the check. */
+  /** A ticked box: the magnet fills with the accent and shows the check. Unticked boxes leave it out. */
   check?: MagnetCheck;
   /** Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member colour. */
   glyph?: { node: ReactNode; fill: string };
@@ -55,10 +55,9 @@ export function Magnet({
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
-  const { scheme } = useTheme();
   // The chip-sized magnet sits inside a pill and stays flat.
-  const look = check ? magnetCheckStyle(check, colors, scheme) : null;
-  const filledCheck = look?.fill != null;
+  const look = check ? magnetCheckStyle(colors) : null;
+  const filledCheck = look !== null;
   const raised = !empty && size !== 'sm';
   const fill = look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]);
   // Two stacked Views: Android allows one elevation per View, so ambient outside, contact inside.
@@ -115,37 +114,13 @@ export function Magnet({
           {initial}
         </Text>
       )}
-      {look && (filledCheck || empty) ? (
+      {look ? (
         <Ionicons
           name="checkmark"
-          size={Math.round(diameter * (filledCheck ? 0.66 : 0.5))}
+          size={Math.round(diameter * 0.66)}
           color={look.tint}
-          style={{ opacity: look.opacity }}
           accessible={false}
         />
-      ) : null}
-      {look && !filledCheck && !empty ? (
-        <View
-          style={{
-            position: 'absolute',
-            right: -2,
-            bottom: -2,
-            width: Math.round(diameter * 0.42),
-            height: Math.round(diameter * 0.42),
-            borderRadius: diameter,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.taskNote,
-          }}
-        >
-          <Ionicons
-            name="checkmark"
-            size={Math.round(diameter * 0.34)}
-            color={look.tint}
-            style={{ opacity: look.opacity }}
-            accessible={false}
-          />
-        </View>
       ) : null}
     </View>
   );

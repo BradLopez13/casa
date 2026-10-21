@@ -62,7 +62,7 @@ function RoomToggle({
         size="sm"
         decorative
         variant="empty"
-        check={checked ? 'filled' : 'faint'}
+        check={checked ? 'filled' : undefined}
         color="teal"
         initial=""
         accessibilityLabel={label}

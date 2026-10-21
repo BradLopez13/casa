@@ -128,10 +128,13 @@ export function TaskNote({
     onToggle();
   };
 
-  // A swipe, or the reader's «complete» action: the swipe hint has done its job.
+  // A swipe, or the reader's «complete» action. Offline the toggle only says so: the swipe did
+  // not work, so its hint stays.
   const complete = () => {
-    if (online) void haptic('success');
-    markHintSeen('swipe');
+    if (online) {
+      void haptic('success');
+      markHintSeen('swipe');
+    }
     onComplete?.();
   };
 

@@ -160,6 +160,9 @@ export function ShoppingSheet({
   // An absolute child ignores its parent's padding: the magnet adds the column's own gutter.
   const columnPadding = StyleSheet.flatten(column)?.paddingLeft;
   const columnLeft = typeof columnPadding === 'number' ? columnPadding : 0;
+  // The column sets each side's padding, which beats a paddingHorizontal: the hint adds to both.
+  const columnRightPadding = StyleSheet.flatten(column)?.paddingRight;
+  const columnRight = typeof columnRightPadding === 'number' ? columnRightPadding : 0;
 
   const cell = (index: number): ViewStyle => {
     const ruled = index < pendingCount;
@@ -204,7 +207,14 @@ export function ShoppingSheet({
             {/* Over the note, at the pills' side, until a quantity is first changed. */}
             {index === 0 && pendingCount > 0 && quantityHint ? (
               <View
-                style={[column, { paddingHorizontal: margin + space(4), paddingTop: space(2) }]}
+                style={[
+                  column,
+                  {
+                    paddingLeft: columnLeft + margin + space(4),
+                    paddingRight: columnRight + margin + space(4),
+                    paddingTop: space(2),
+                  },
+                ]}
               >
                 <FirstUseHint
                   testID="shopping.quantity-hint"

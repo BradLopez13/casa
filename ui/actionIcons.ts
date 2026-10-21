@@ -25,6 +25,7 @@ export const actionIcons = {
   chevron: 'chevron-forward',
   skip: 'play-skip-forward-outline',
   templates: 'sparkles-outline',
+  help: 'help-circle-outline',
 } as const;
 
 export type ActionIcon = (typeof actionIcons)[keyof typeof actionIcons];

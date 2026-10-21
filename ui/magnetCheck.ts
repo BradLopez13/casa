@@ -1,17 +1,15 @@
-import type { Palette, Scheme } from './tokens';
+import type { Palette } from './tokens';
 
-export type MagnetCheck = 'faint' | 'filled';
+/** A ticked box: the magnet fills with the accent. Unticked, it is the bare ring (no check). */
+export type MagnetCheck = 'filled';
 
 /**
- * Pure: how the check on a magnet is drawn. `faint` is a glyph tint, not a disabled state: muted
- * at 40 % in light, ink at 70 % in dark, where a muted 40 % sinks into the slate.
+ * Pure: how a ticked magnet is drawn: the accent fill with its check on top. An unticked one has
+ * no faint check inside (fase 9b): at large text it read as half ticked.
  */
-export function magnetCheckStyle(
-  check: MagnetCheck,
-  colors: Pick<Palette, 'ink' | 'muted' | 'accent' | 'onAccent'>,
-  scheme: Scheme,
-): { tint: string; opacity: number; fill: string | null } {
-  if (check === 'filled') return { tint: colors.onAccent, opacity: 1, fill: colors.accent };
-  const dark = scheme === 'dark';
-  return { tint: dark ? colors.ink : colors.muted, opacity: dark ? 0.7 : 0.4, fill: null };
+export function magnetCheckStyle(colors: Pick<Palette, 'accent' | 'onAccent'>): {
+  tint: string;
+  fill: string;
+} {
+  return { tint: colors.onAccent, fill: colors.accent };
 }
