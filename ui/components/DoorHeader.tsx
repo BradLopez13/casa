@@ -110,10 +110,12 @@ export function DoorHeader({
   const top = insetHandled ? 0 : insets.top;
   const refresh = useFridgeRefresh();
   const handle = refresh !== null && door.handle;
-  // The handle's hint waits for the box one: the first day is for learning to tick things off.
+  // The handle's hint waits for the box and the quick add ones: the first days are for ticking
+  // things off and writing them down, and at large text three hints left no note in view.
   const refreshOpen = useHint('refresh');
   const boxOpen = useHint('complete');
-  const refreshHint = refreshOpen && !boxOpen && handle;
+  const quickAddOpen = useHint('quickAdd');
+  const refreshHint = refreshOpen && !boxOpen && !quickAddOpen && handle;
   const right = gutter;
 
   // Only a compact door that cannot fit its content scrolls; otherwise its scroll stays off so a

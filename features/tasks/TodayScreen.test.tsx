@@ -183,4 +183,11 @@ describe('Hoy', () => {
     renderToday([task('Fregar', {})]);
     expect(screen.getByTestId('door.refresh-hint').textContent).toContain(t('refresh.hint'));
   });
+
+  it('keeps the door handle hint back while the quick add one shows', () => {
+    phoneSize();
+    hintsOpen('refresh', 'quickAdd');
+    renderToday([task('Fregar', {})]);
+    expect(screen.queryByTestId('door.refresh-hint')).toBeNull();
+  });
 });
