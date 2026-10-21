@@ -8,6 +8,9 @@ import { Magnet } from './Magnet';
 
 type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
+/** Android stacks by elevation before zIndex: above the note's, or a small magnet (flat) sinks. */
+const MAGNET_LIFT = 8;
+
 /** Who or what holds the note: a member's magnet (initial and colour) or a slate one with a glyph. */
 export type Pin = { mark: MemberMark } | { glyph: string };
 
@@ -88,8 +91,16 @@ export function PinnedNote({
         pointerEvents="none"
         style={
           left
-            ? { position: 'absolute', left: 0, top: space(4), zIndex: 1 }
-            : { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', zIndex: 1 }
+            ? { position: 'absolute', left: 0, top: space(4), zIndex: 1, elevation: MAGNET_LIFT }
+            : {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                alignItems: 'center',
+                zIndex: 1,
+                elevation: MAGNET_LIFT,
+              }
         }
       >
         {magnet}

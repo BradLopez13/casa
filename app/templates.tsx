@@ -221,31 +221,30 @@ function TemplatesScreen() {
             side="top"
             paper="task"
           >
-            <SectionHeader title={roomHeading(group.room)} count={group.items.length} flush />
-            {group.items.map((item) => {
-              const key = catalogId(group.room, item);
-              return (
-                <TemplateRow
-                  key={key}
-                  room={group.room}
-                  item={item}
-                  checked={selected.has(key)}
-                  onToggle={() => toggle(key)}
-                />
-              );
-            })}
+            {/* Heading and rows stay together, as before: the note's gap is for blocks. */}
+            <View>
+              <SectionHeader title={roomHeading(group.room)} count={group.items.length} flush />
+              {group.items.map((item) => {
+                const key = catalogId(group.room, item);
+                return (
+                  <TemplateRow
+                    key={key}
+                    room={group.room}
+                    item={item}
+                    checked={selected.has(key)}
+                    onToggle={() => toggle(key)}
+                  />
+                );
+              })}
+            </View>
           </PinnedNote>
         ))}
         {groups.length === 0 ? (
-          <Text style={{ paddingTop: space(4), color: colors.muted, fontSize: 16 }}>
-            {t('templates.empty')}
-          </Text>
+          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('templates.empty')}</Text>
         ) : null}
-        {shortHeight && assignee ? <View style={{ paddingTop: space(4) }}>{assignee}</View> : null}
+        {shortHeight && assignee ? assignee : null}
         {save.error ? (
-          <View style={{ paddingTop: space(4) }}>
-            <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
-          </View>
+          <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
         ) : null}
       </ScrollView>
       {/* The foot, as on the task form: «Añadir» is the sheet's one pósit, under the thumb. */}

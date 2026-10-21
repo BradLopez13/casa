@@ -209,9 +209,13 @@ function EditForm({
         : undefined
       : t('shopping.errors.INVALID_ITEM_NAME');
   const quantityInvalid = !parsedQuantity.success;
-  // The quantity field opens from its magnet, and stays open while what it holds is not valid.
+  // The quantity field opens from its magnet and only closes on a valid value, so it never goes
+  // away mid-typing or hides what has to be fixed.
   const [quantityOpen, setQuantityOpen] = useState(false);
-  const quantityShown = quantityOpen || quantityInvalid;
+  const quantityShown = quantityOpen;
+  const closeQuantity = () => {
+    if (!quantityInvalid) setQuantityOpen(false);
+  };
   const canSave = online && !busy;
   const save = () => {
     if (parsedName.success && parsedQuantity.success) {
@@ -284,7 +288,7 @@ function EditForm({
                     }
                     muted={quantity.trim() === ''}
                     open={quantityShown}
-                    onPress={() => setQuantityOpen((current) => !current)}
+                    onPress={() => (quantityOpen ? closeQuantity() : setQuantityOpen(true))}
                   />
                 </View>
                 {/* A short field keeps its label: it is what tells it from the title above. */}
@@ -297,7 +301,7 @@ function EditForm({
                     onChangeText={setQuantity}
                     autoFocus={quantityOpen}
                     returnKeyType="done"
-                    onSubmitEditing={() => setQuantityOpen(false)}
+                    onSubmitEditing={closeQuantity}
                     error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
                   />
                 ) : null}
