@@ -1,5 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, Text, TextInput, View, type TextStyle } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+  type TextStyle,
+} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { syncMonthly } from '@/domain/recurrence/form';
 import { recurrenceLabel } from '@/domain/recurrence/label';
@@ -19,7 +27,7 @@ import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
-import { DOOR_MAX_SCALE } from '@/ui/door';
+import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
@@ -104,7 +112,12 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   );
   const parse = useMemo(() => quickParse(text, ctx), [text, ctx]);
   // Until a task goes in with something the field understood, the empty field shows an example.
-  const hintOpen = useHint('quickAdd');
+  const quickAddOpen = useHint('quickAdd');
+  const boxOpen = useHint('complete');
+  const swipeOpen = useHint('swipe');
+  // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
+  const { fontScale } = useWindowDimensions();
+  const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
   const example = useMemo(() => {
     const name = hintName(ctx.members, assigneeId);
     const sentence =

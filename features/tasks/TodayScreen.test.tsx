@@ -190,4 +190,17 @@ describe('Hoy', () => {
     renderToday([task('Fregar', {})]);
     expect(screen.queryByTestId('door.refresh-hint')).toBeNull();
   });
+
+  it('with large text, the quick add hint waits for the list one', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.6 }));
+    hintsOpen('quickAdd', 'swipe');
+    renderToday([task('Fregar', {})]);
+    expect(screen.getByTestId('tasks.swipe-hint')).toBeTruthy();
+    expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
+    scale.mockRestore();
+  });
 });

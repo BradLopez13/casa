@@ -38,7 +38,7 @@ const COMPACT_MAX_SHARE = 0.4;
  * From this text size a compact door's hierarchy, controls and day strip need more than 40 %:
  * the quick add then goes to the list and the door may take 45 %, so nothing in it is cut.
  */
-const LARGE_TEXT = 1.3;
+export const LARGE_TEXT = 1.3;
 const COMPACT_MAX_SHARE_LARGE_TEXT = 0.45;
 /**
  * In one column the full door scrolls away with the list, so it may be taller than a fixed one:
