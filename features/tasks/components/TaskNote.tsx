@@ -87,6 +87,18 @@ export function TaskNote({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A note saved from its form lands again: the magnet snaps on as the change arrives (the mount
+  // effect above has already used up a mark made before the note was first drawn).
+  useEffect(() => {
+    if (reduceMotion || !takeFresh(task.id)) return;
+    // eslint-disable-next-line react-hooks/immutability
+    scale.value = SNAP_SCALE;
+    scale.value = withSpring(1, SPRING);
+    void haptic('rigid');
+    // Only when the task itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task]);
+
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
   const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);

@@ -1,5 +1,7 @@
 import { PixelRatio, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNoticeShown } from './components/noticeContext';
+import { listEndPadding } from './noticeClearance';
 import { tabBarClearance } from './tabBar';
 import { useMeasuredTabBarHeight } from './tabBarHeight';
 import { space } from './theme';
@@ -28,9 +30,15 @@ export function useTabBarClearance(): number {
 /**
  * Room under the last item of a tab screen's list. The bottom bar already sits below the list,
  * so only a little air; beside the rail the list runs to the screen's edge and also clears the
- * home indicator.
+ * home indicator. While a notice shows («Hecha. Deshacer») the pill's room is added, so the note
+ * it would cover can scroll clear of it.
  */
 export function useListEndPadding(): number {
+  return listEndPadding(useBaseListEndPadding(), useNoticeShown());
+}
+
+/** The same room without any notice: what `noticeNudge` subtracts to find the last note. */
+export function useBaseListEndPadding(): number {
   const { rail } = useLayout();
   const { bottom } = useSafeAreaInsets();
   return space(7) + (rail ? bottom : 0);

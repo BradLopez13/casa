@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { addDays } from '@/domain/tasks/dates';
 import { dayInSentence } from '@/domain/tasks/labels';
 import { type StripDay } from '@/domain/tasks/strip';
-import { type TasksMode } from '@/features/tasks/components/ModeSwitch';
+import { emptyDayText } from '@/features/tasks/dayFilter';
 import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { type TaskListSection } from '@/features/tasks/sections';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
@@ -39,26 +39,15 @@ export function DayQuickAdd({ screen, day }: { screen: Screen; day: string | nul
 }
 
 /**
- * A chosen day with nothing on it says so by name, and offers the full form for that day. Hoy and
- * Mañana keep the plain line: «Nada el hoy» would not read.
+ * A chosen day with nothing on it says so by name, in one line. It offers nothing else: the quick
+ * add for that same day is right above it.
  */
 export function EmptyDay({ day, today }: { day: string; today: string }) {
-  const { colors, space } = useTheme();
-  const router = useRouter();
-  const named = day !== today && day !== addDays(today, 1);
+  const { colors } = useTheme();
   return (
-    <View style={{ gap: space(1), alignItems: 'flex-start' }}>
-      <Text style={{ color: colors.muted, fontSize: 16 }}>
-        {named ? t('tasks.dayEmptyNamed', { day: dayInSentence(day, today) }) : t('tasks.dayEmpty')}
-      </Text>
-      <Button
-        testID="tasks.add-for-day"
-        title={t('tasks.addForDay')}
-        variant="tertiary"
-        width="hug"
-        onPress={() => router.push({ pathname: '/task/new', params: { due: day } })}
-      />
-    </View>
+    <Text testID="tasks.empty-day" style={{ color: colors.muted, fontSize: 16 }}>
+      {emptyDayText(day, today)}
+    </Text>
   );
 }
 
@@ -79,17 +68,16 @@ export function IdeasButton() {
 
 export type Screen = ReturnType<typeof useTaskScreen>;
 
-/** What both layouts share: the mode, the week, the chosen day and the list pieces. */
+/** What both layouts share: the week's days, the chosen one (or none) and the list pieces. */
 export type TasksParts = {
   screen: Screen;
-  mode: TasksMode;
-  setMode: (mode: TasksMode) => void;
   strip: StripDay[];
+  /** The list: everything pending with no day chosen, or the chosen day alone. */
   sections: TaskListSection[];
-  /** The day Semana shows on two panes; held by the screen so a change of layout keeps it. */
-  day: string;
-  chooseDay: (date: string) => void;
+  /** The day the list is filtered by, or null for «Todas»; held by the screen so a turn keeps it. */
+  day: string | null;
+  chooseDay: (date: string | null) => void;
   empty: ReactNode;
-  /** The door's line under its headline: what is yours (or the household's) this week. */
+  /** The door's line under its headline: what is yours (or the household's) in all. */
   doorLine: string;
 };

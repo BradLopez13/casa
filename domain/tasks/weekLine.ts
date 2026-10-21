@@ -1,8 +1,8 @@
-import { isOpen, selectWeek, type TaskItem } from './views';
+import { isOpen, type TaskItem } from './views';
 
 /**
- * What the door of Tareas says under «Esta semana»: the same reading as Hoy's line (§2.3), over
- * the seven days from today plus what is overdue. Counts are of open tasks only.
+ * What the door of Tareas says under «Todas las tareas»: the same reading as Hoy's line (§2.3),
+ * over every open task, dated or not.
  */
 export type WeekLine =
   | { kind: 'empty' }
@@ -21,11 +21,6 @@ type Input = {
   /** Display name of the filtered member. */
   filterName: string;
 };
-
-export function weekLine({ tasks, today, userId, filter, filterName }: Input): WeekLine {
-  const { overdue, days } = selectWeek(tasks, today);
-  return lineFor([...overdue, ...days.flatMap((d) => d.tasks)], userId, filter, filterName);
-}
 
 /** What the door says in Todas: the same reading over every open task, dated or not. */
 export function allLine({ tasks, userId, filter, filterName }: Input): WeekLine {

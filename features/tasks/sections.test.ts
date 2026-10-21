@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { selectWeek, type TaskItem } from '@/domain/tasks/views';
-import { allSections, todaySections, weekSections } from './sections';
+import type { TaskItem } from '@/domain/tasks/views';
+import { allSections, todaySections } from './sections';
 
 const TODAY = '2026-10-09';
 
@@ -52,25 +52,6 @@ describe('todaySections', () => {
     const due = task({ dueOn: TODAY });
     expect(todaySections([due], TODAY).map((s) => s.key)).toEqual(['today']);
     expect(todaySections([], TODAY)).toEqual([]);
-  });
-});
-
-describe('weekSections', () => {
-  it('keys each day section by its date and titles it with the day heading', () => {
-    const tomorrow = task({ dueOn: '2026-10-10' });
-    const saturday = task({ dueOn: '2026-10-11' });
-    const late = task({ dueOn: '2026-10-01' });
-    const tasks = [tomorrow, saturday, late];
-    const sections = weekSections(selectWeek(tasks, TODAY), TODAY);
-    expect(sections.map((s) => [s.key, s.title, s.count])).toEqual([
-      ['overdue', 'De otros días', 1],
-      ['2026-10-10', 'Mañana', 1],
-      ['2026-10-11', 'domingo 11', 1],
-    ]);
-  });
-
-  it('has no section for a day with nothing on it', () => {
-    expect(weekSections(selectWeek([], TODAY), TODAY)).toEqual([]);
   });
 });
 

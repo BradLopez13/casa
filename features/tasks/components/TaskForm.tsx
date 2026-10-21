@@ -115,11 +115,8 @@ export function TaskForm({
   // What the form opened with: a refreshed `initial` (realtime) must not count as an edit.
   const [opened] = useState(initial);
   const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
-  const { requestClose, dialog } = useDiscardGuard({
-    dirty: isDirty(opened, typed) || isDirty(opened, values),
-    onCancel,
-    busy: saving,
-  });
+  const dirty = isDirty(opened, typed) || isDirty(opened, values);
+  const { requestClose, dialog } = useDiscardGuard({ dirty, onCancel, busy: saving });
   const [triedSave, setTriedSave] = useState(false);
   const titleRef = useRef<TextInput>(null);
   // A value chosen in a picker is the person's: the title stops filling that field.
@@ -355,6 +352,9 @@ export function TaskForm({
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
+              // Editing: nothing to save until something changed, so Save waits faded (the
+              // contract's disabled look) instead of inviting a tap that does nothing.
+              disabled={!isNew && !dirty}
               loading={saving}
               width={density.footRow ? 'hug' : 'full'}
             />

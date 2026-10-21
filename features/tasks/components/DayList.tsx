@@ -3,18 +3,19 @@ import type { MemberMark } from '@/domain/members/marks';
 import { toLocalDate } from '@/domain/tasks/dates';
 import { dayCountLabel } from '@/domain/tasks/strip';
 import { dayName } from '@/domain/tasks/labels';
+import { t } from '@/i18n';
 import type { StripDay } from '@/domain/tasks/strip';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH, displayFont } from '@/ui/tokens';
-import { DayDots } from './DayStrip';
+import { DayDots } from './DayDots';
 
 type Props = {
   /** The same seven days as the strip (`weekStrip`). */
   days: StripDay[];
-  /** The chosen day; its row is filled. */
-  selected: string;
-  onSelect: (date: string) => void;
+  /** The chosen day, or null for «Todas»; its row is filled. */
+  selected: string | null;
+  onSelect: (date: string | null) => void;
   today: string;
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
@@ -24,17 +25,59 @@ type Props = {
 const NUMBER_COLUMN = 32;
 
 /**
- * The seven days stacked, for the left pane of Semana on a wide screen: day number, name, who has
- * something that day and how many open tasks. The chosen day is a filled block, the rest sit
- * flat on the page, so the choice reads by shape as well as colour.
+ * «Todas» and the seven days stacked, for the left pane of Tareas on a wide screen: day number,
+ * name, who has something that day and how many open tasks. The chosen row is a filled block,
+ * the rest sit flat on the page, so the choice reads by shape as well as colour.
  */
 export function DayList({ days, selected, onSelect, today, marks, names }: Props) {
   const { colors, radii, space } = useTheme();
   // Name and count grow with the system text; once a name may run to two lines, the number sits
   // level with its first line instead of floating in the middle.
   const align = useWindowDimensions().fontScale > 1.3 ? 'flex-start' : 'center';
+  const allSelected = selected === null;
+  const all = days.reduce((sum, day) => sum + day.count, 0);
   return (
     <View style={{ gap: space(1) }}>
+      <Pressable
+        testID="day-list.all"
+        accessibilityRole="button"
+        accessibilityState={{ selected: allSelected }}
+        accessibilityLabel={t('tasks.pill.allLabel')}
+        onPress={() => onSelect(null)}
+        style={({ pressed }) => ({
+          minHeight: MIN_TOUCH,
+          flexDirection: 'row',
+          alignItems: align,
+          gap: space(3),
+          paddingVertical: space(2),
+          paddingHorizontal: space(3),
+          borderRadius: radii.note,
+          backgroundColor: allSelected ? colors.selection : 'transparent',
+          opacity: pressedOpacity(pressed),
+        })}
+      >
+        <View style={{ minWidth: NUMBER_COLUMN }} />
+        <Text
+          style={{
+            flex: 1,
+            color: allSelected ? colors.onSelection : colors.ink,
+            fontSize: 16,
+            fontWeight: allSelected ? '700' : '400',
+          }}
+        >
+          {t('tasks.pill.all')}
+        </Text>
+        <Text
+          style={{
+            color: allSelected ? colors.onSelection : all > 0 ? colors.ink : colors.muted,
+            fontSize: 16,
+            fontWeight: '600',
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {all}
+        </Text>
+      </Pressable>
       {days.map((day) => {
         const isSelected = day.date === selected;
         const isToday = day.date === today;

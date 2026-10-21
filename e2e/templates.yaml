@@ -47,20 +47,14 @@ appId: com.bradlopez13.casa
 - assertNotVisible:
     id: today.templates
 
-# The catalogue, from Tareas · Todas, no longer offers what the household has
+# The catalogue, from Tareas, no longer offers what the household has
 - tapOn:
     id: tab.tasks
-- tapOn:
-    id: tasks.mode.all
-# The first-use hint and the dated list can push it below the fold on a small screen.
+# The catalogue waits at the end of the list, past the household's tasks.
 - scrollUntilVisible:
-    element:
-      text: Sacar la basura
-    timeout: 20000
-- scrollUntilVisible:
-    direction: UP
     element:
       id: tasks.ideas
+    timeout: 20000
 - tapOn:
     id: tasks.ideas
 - extendedWaitUntil:

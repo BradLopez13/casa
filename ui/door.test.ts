@@ -30,8 +30,10 @@ describe('doorFor', () => {
     });
   });
 
-  it('stays full at exactly 500 high', () => {
-    expect(doorFor(layoutFor(800, 500), 500).compact).toBe(false);
+  it('is not short at exactly 500 high: only the space rule can compact it there', () => {
+    // 300 of 500 is 60 %: compact by space, in one column as above two panes.
+    expect(doorFor(layoutFor(800, 500), 500)).toMatchObject({ compact: true, maxHeight: 200 });
+    expect(doorFor({ shortHeight: false, twoPane: false }, 620).compact).toBe(false);
   });
 
   it('turns compact below 500 high: smaller type, no handle, at most 40% of the window', () => {
@@ -81,9 +83,29 @@ describe('doorFor', () => {
     });
   });
 
-  it('keeps the full door in one column whatever the text size: it scrolls away there', () => {
-    expect(doorFor(layoutFor(390, 844), 844, 2).compact).toBe(false);
-    expect(doorFor(layoutFor(800, 600), 600, 2).compact).toBe(false);
+  describe('in one column, where the door scrolls away with the list', () => {
+    it('keeps the full door whatever the text size while 300 dp is within half the window', () => {
+      // The .51 (375 × 817): the door of Hoy at ×1,6 measures what it does at ×1, so it keeps
+      // its shape there; the text cap and the fixed magnets see to it.
+      expect(doorFor(layoutFor(375, 817), 817, 2).compact).toBe(false);
+      expect(doorFor(layoutFor(390, 844), 844, 1.4).compact).toBe(false);
+    });
+
+    it('turns compact as a safety net on a window under 600 dp high', () => {
+      expect(doorFor(layoutFor(390, 560), 560, 1)).toMatchObject({
+        compact: true,
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(560 * 0.4),
+      });
+      expect(doorFor(layoutFor(390, 560), 560, 1.6)).toMatchObject({
+        compact: true,
+        maxHeight: Math.floor(560 * 0.45),
+      });
+    });
+
+    it('stays full at exactly half', () => {
+      expect(doorFor(layoutFor(390, 600), 600, 1).compact).toBe(false);
+    });
   });
 
   it('stops growing its estimate at the door’s 1.4 text cap', () => {
