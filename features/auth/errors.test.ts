@@ -16,12 +16,15 @@ describe('toAuthFailure', () => {
     expect(toAuthFailure({ code, message: 'x' }).code).toBe(expected);
   });
 
-  it.each(['Network request failed', 'Failed to fetch', 'fetch failed', 'signal timed out'])(
-    'maps network message "%s" to NETWORK',
-    (message) => {
-      expect(toAuthFailure(new Error(message)).code).toBe('NETWORK');
-    },
-  );
+  it.each([
+    'Network request failed',
+    'Failed to fetch',
+    'fetch failed',
+    'signal timed out',
+    'Aborted',
+  ])('maps network message "%s" to NETWORK', (message) => {
+    expect(toAuthFailure(new Error(message)).code).toBe('NETWORK');
+  });
 
   it('maps non-objects and empty objects to UNKNOWN', () => {
     expect(toAuthFailure(null).code).toBe('UNKNOWN');

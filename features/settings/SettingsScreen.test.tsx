@@ -69,9 +69,8 @@ describe('Ajustes', () => {
     renderSettings();
     const message = await screen.findByTestId('settings.members-error');
     expect(message.textContent).toBe(t('members.loadError'));
-    expect(screen.getByTestId('settings.delete-account.waiting').textContent).toBe(
-      t('settings.deleteAccountWaiting'),
-    );
+    // The error already says what is missing: no second line under Borrar.
+    expect(screen.queryByTestId('settings.delete-account.waiting')).toBeNull();
     vi.mocked(listMembers).mockResolvedValueOnce(members);
     fireEvent.click(screen.getByTestId('settings.members-error.retry'));
     await vi.waitFor(() => expect(screen.queryByTestId('settings.members-error')).toBeNull());
@@ -79,7 +78,15 @@ describe('Ajustes', () => {
     expect(screen.queryByTestId('settings.delete-account.waiting')).toBeNull();
   });
 
-  it('without a connection, says changes wait for it', () => {
+  it('while the members load, Borrar mi cuenta says why it waits', () => {
+    vi.mocked(listMembers).mockReturnValue(new Promise(() => undefined));
+    renderSettings();
+    expect(screen.getByTestId('settings.delete-account.waiting').textContent).toBe(
+      t('settings.deleteAccountWaiting'),
+    );
+  });
+
+  it('without a connection, says saving needs it', () => {
     onlineManager.setOnline(false);
     renderSettings(members);
     expect(screen.getByTestId('settings.offline').getAttribute('aria-label')).toBe(

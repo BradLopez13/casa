@@ -27,8 +27,10 @@ type Props = {
   repeatEditable: boolean;
 };
 
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
 /** One glyph per property, so each magnet says what it holds before its value is read. */
-const GLYPHS: Record<FormField, ComponentProps<typeof Ionicons>['name']> = {
+const GLYPHS: Record<FormField, IconName> = {
   room: 'home-outline',
   assignee: 'person-outline',
   due: 'calendar-outline',
@@ -36,25 +38,34 @@ const GLYPHS: Record<FormField, ComponentProps<typeof Ionicons>['name']> = {
 };
 const GLYPH_SIZE = 16;
 
-function Chip({
-  field,
+/**
+ * A property magnet: a pill with its glyph and its value, which opens what changes it. Shared by
+ * the task form (estancia, persona, fecha, repetición) and the product sheet (cantidad).
+ */
+export function PropertyChip({
+  testID,
+  glyph,
   label,
   value,
   open,
   disabled = false,
-  onOpen,
+  onPress,
   children,
   spoken,
+  muted = false,
 }: {
-  field: FormField;
+  testID: string;
+  glyph: IconName;
   label: string;
   value: string;
   open: boolean;
   disabled?: boolean;
-  onOpen: (field: FormField) => void;
+  onPress: () => void;
   children?: ReactNode;
   /** Read instead of «label, value» when the value already says what it is. */
   spoken?: string;
+  /** The value is a placeholder («—»): drawn in `muted`, as an empty quantity pill. */
+  muted?: boolean;
 }) {
   const { colors, radii, space } = useTheme();
   // One selected style (§14.1): `selection` means chosen, so the open magnet is not filled with it; it
@@ -64,13 +75,13 @@ function Chip({
   const { fontScale } = useWindowDimensions();
   return (
     <Pressable
-      testID={`task-form.prop.${field}`}
+      testID={testID}
       accessibilityRole="button"
       // A value that already names its field («No se repite») is read alone, not after it.
       accessibilityLabel={spoken ?? `${label}, ${value}`}
       accessibilityState={{ expanded: open, disabled }}
       disabled={disabled}
-      onPress={() => onOpen(field)}
+      onPress={onPress}
       style={({ pressed }) => ({
         minHeight: MIN_TOUCH,
         flexDirection: 'row',
@@ -87,7 +98,7 @@ function Chip({
     >
       {children ?? (
         <Ionicons
-          name={GLYPHS[field]}
+          name={glyph}
           size={glyphSize(GLYPH_SIZE, fontScale)}
           color={disabled ? off.foreground : colors.muted}
           style={{ opacity: disabled ? off.labelOpacity : 1 }}
@@ -97,7 +108,7 @@ function Chip({
       )}
       <Text
         style={{
-          color: disabled ? off.foreground : colors.ink,
+          color: disabled ? off.foreground : muted ? colors.muted : colors.ink,
           opacity: disabled ? off.labelOpacity : 1,
           fontSize: 15,
           // One weight in both states, so opening does not change the text's width.
@@ -107,6 +118,30 @@ function Chip({
         {value}
       </Text>
     </Pressable>
+  );
+}
+
+function Chip({
+  field,
+  onOpen,
+  ...rest
+}: {
+  field: FormField;
+  label: string;
+  value: string;
+  open: boolean;
+  disabled?: boolean;
+  onOpen: (field: FormField) => void;
+  children?: ReactNode;
+  spoken?: string;
+}) {
+  return (
+    <PropertyChip
+      testID={`task-form.prop.${field}`}
+      glyph={GLYPHS[field]}
+      onPress={() => onOpen(field)}
+      {...rest}
+    />
   );
 }
 

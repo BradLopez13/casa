@@ -48,10 +48,11 @@ const RPC_CODES: ReadonlySet<string> = new Set(
 
 /**
  * A request that never reached the server or got no answer in time (the client's time limit,
- * `fetchWithTimeout`): the fetch failure itself, or PostgREST's `${name}: ${message}` of it.
+ * `fetchWithTimeout`): the fetch failure itself, or PostgREST's `${name}: ${message}` of it. On
+ * the phone the abort polyfill drops the reason, so the cut arrives as a bare «Aborted».
  */
 export const NETWORK_MESSAGE =
-  /Network request failed|Failed to fetch|fetch failed|TimeoutError|AbortError|signal timed out|operation was aborted/i;
+  /Network request failed|Failed to fetch|fetch failed|TimeoutError|AbortError|signal timed out|operation was aborted|^Aborted$/i;
 
 /** Whether `e` is a fetch that failed or was cut by the time limit. */
 export function isNetworkFailure(e: object): boolean {

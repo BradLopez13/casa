@@ -24,6 +24,18 @@ describe('withTimeout', () => {
     await failed;
   });
 
+  it('leaves deleting the account without a time limit', async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | null | undefined;
+    const base = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      signal = init?.signal;
+      return new Promise<Response>(() => undefined);
+    });
+    void withTimeout(base)('https://x.test/rest/v1/rpc/delete_account');
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS * 2);
+    expect(signal?.aborted ?? false).toBe(false);
+  });
+
   it('lets an answer in time through', async () => {
     const ok = new Response('ok');
     const base = vi.fn(() => Promise.resolve(ok));

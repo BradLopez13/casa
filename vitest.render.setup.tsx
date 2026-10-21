@@ -25,6 +25,9 @@ window.matchMedia = (query: string) =>
 vi.mock('@expo/vector-icons/Ionicons', () => ({
   default: ({ name }: { name: string }) => <span data-icon={name} />,
 }));
+vi.mock('@expo/vector-icons/MaterialCommunityIcons', () => ({
+  default: ({ name }: { name: string }) => <span data-icon={name} />,
+}));
 
 // Screens and forms reach the router; a render test checks what they draw and call, so the
 // router is a set of spies. A test that needs to check a navigation reads them.

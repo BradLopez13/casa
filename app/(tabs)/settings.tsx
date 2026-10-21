@@ -20,6 +20,7 @@ import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { LoadError } from '@/ui/components/LoadError';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { PinnedNote } from '@/ui/components/PinnedNote';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { StatusBarVeil } from '@/ui/components/StatusBarVeil';
@@ -103,9 +104,10 @@ export default function SettingsScreen() {
             />
           </Note>
         );
-      case 'account':
-        return (
-          <Note>
+      case 'account': {
+        const mark = userId ? marks.get(userId) : undefined;
+        const account = (
+          <>
             <Text
               accessibilityRole="header"
               style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 15 }}
@@ -128,7 +130,7 @@ export default function SettingsScreen() {
               quiet
             />
             {/* Deleting needs to know who else is in the household; until then, say why it waits. */}
-            {members.data ? null : (
+            {members.data || members.isError ? null : (
               <Text
                 testID="settings.delete-account.waiting"
                 style={{ marginTop: -space(2), color: colors.muted, fontSize: 14 }}
@@ -136,15 +138,25 @@ export default function SettingsScreen() {
                 {t('settings.deleteAccountWaiting')}
               </Text>
             )}
-          </Note>
+          </>
         );
+        // Your account is a small note held by your own magnet; until the members load, a plain one.
+        return mark ? (
+          <PinnedNote testID="settings.account" pin={{ mark }} side="left" size="sm">
+            {account}
+          </PinnedNote>
+        ) : (
+          <Note>{account}</Note>
+        );
+      }
     }
   };
 
   const pane = (groups: SettingsGroup[], first: boolean) => (
     <View style={{ gap: space(4), paddingTop: space(5) }}>
-      {/* Without the members the door has no name and Borrar waits: say so, and let it retry. */}
-      {first && members.isError ? (
+      {/* Without the members the door has no name and Borrar waits: say so, and let it retry. A
+          failed refetch over members already shown changes nothing. */}
+      {first && members.isError && !members.data ? (
         <LoadError
           testID="settings.members-error"
           message={t('members.loadError')}

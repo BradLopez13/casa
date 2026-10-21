@@ -198,7 +198,8 @@ export default function MembersScreen() {
   // Left pane: the people in the household.
   const people = (
     <View style={{ gap: space(4) }}>
-      {members.isError ? (
+      {members.isError && !members.data ? (
+        // A failed refetch keeps the members already shown.
         <LoadError
           testID="members.load-error"
           message={t('members.loadError')}
