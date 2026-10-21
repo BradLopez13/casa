@@ -208,7 +208,7 @@ describe('buildShoppingMutationDefaults', () => {
     vi.mocked(addShoppingItem).mockRejectedValue(new AppError('INVALID_ITEM_NAME'));
     await add(milk).catch(() => undefined);
     expect(list(queryClient)).toEqual([existing]);
-    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche»');
+    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche». Vuelve a intentarlo.');
   });
 
   it('restores the item and explains when the server rejects a bought', async () => {
@@ -217,7 +217,7 @@ describe('buildShoppingMutationDefaults', () => {
     vi.mocked(setItemBought).mockRejectedValue(new AppError('ITEM_NOT_FOUND'));
     await bought({ id: 'x', householdId: 'h', bought: true, userId: 'me' }).catch(() => undefined);
     expect(list(queryClient)).toEqual([existing]);
-    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche»');
+    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche». Vuelve a intentarlo.');
   });
 
   it('retries network errors a bounded number of times', () => {
@@ -241,7 +241,7 @@ describe('buildShoppingMutationDefaults', () => {
       .mutate(milk)
       .catch(() => undefined);
     expect(list(queryClient)).toEqual([]);
-    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche»');
+    expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche». Vuelve a intentarlo.');
   });
 
   it('says nothing when a rejected bought was for an item no longer on the list', async () => {

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Fragment, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
+import { useIsOnline } from '@/data/query/online';
 import { isOwnerAlone } from '@/domain/account/delete';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
@@ -17,6 +18,8 @@ import { BrandPlate, NameHeading, Note } from '@/features/settings/SettingsPiece
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
+import { LoadError } from '@/ui/components/LoadError';
+import { OfflineBand } from '@/ui/components/OfflineBand';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { DoorHeader } from '@/ui/components/DoorHeader';
 import { StatusBarVeil } from '@/ui/components/StatusBarVeil';
@@ -55,6 +58,7 @@ export default function SettingsScreen() {
   // While the name is open, its Guardar is the screen's one pósit; Invitar steps back.
   const [editing, setEditing] = useState(false);
   const notificationsOff = useNotificationPermission() === 'denied';
+  const online = useIsOnline();
 
   const group = (key: SettingsGroup) => {
     switch (key) {
@@ -123,13 +127,31 @@ export default function SettingsScreen() {
               disabled={!members.data}
               quiet
             />
+            {/* Deleting needs to know who else is in the household; until then, say why it waits. */}
+            {members.data ? null : (
+              <Text
+                testID="settings.delete-account.waiting"
+                style={{ marginTop: -space(2), color: colors.muted, fontSize: 14 }}
+              >
+                {t('settings.deleteAccountWaiting')}
+              </Text>
+            )}
           </Note>
         );
     }
   };
 
-  const pane = (groups: SettingsGroup[]) => (
+  const pane = (groups: SettingsGroup[], first: boolean) => (
     <View style={{ gap: space(4), paddingTop: space(5) }}>
+      {/* Without the members the door has no name and Borrar waits: say so, and let it retry. */}
+      {first && members.isError ? (
+        <LoadError
+          testID="settings.members-error"
+          message={t('members.loadError')}
+          retrying={members.isFetching}
+          onRetry={() => void members.refetch()}
+        />
+      ) : null}
       {groups.map((key) => (
         <Fragment key={key}>
           {/* One notice for both phone notes: before Recordatorios, which also heads the right
@@ -161,6 +183,12 @@ export default function SettingsScreen() {
       secondaryTestID="settings.household-name"
     />
   );
+  const doorAndBand = (
+    <View>
+      {door}
+      {online ? null : <OfflineBand label={t('settings.offline')} testID="settings.offline" />}
+    </View>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
@@ -176,9 +204,9 @@ export default function SettingsScreen() {
       {/* Scrolled, the door would pass under the clock: the veil keeps the status bar door-coloured. */}
       <StatusBarVeil>
         <TwoPane
-          header={door}
-          left={pane(left)}
-          right={right.length > 0 ? pane(right) : null}
+          header={doorAndBand}
+          left={pane(left, true)}
+          right={right.length > 0 ? pane(right, false) : null}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: space(8) }}
         />

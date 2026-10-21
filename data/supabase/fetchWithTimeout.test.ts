@@ -11,10 +11,14 @@ describe('withTimeout', () => {
     const hang = vi.fn(
       (_input: RequestInfo | URL, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+          init?.signal?.addEventListener('abort', () =>
+            reject(
+              init.signal?.reason instanceof Error ? init.signal.reason : new Error('aborted'),
+            ),
+          );
         }),
     );
-    const request = withTimeout(hang as typeof fetch)('https://x.test');
+    const request = withTimeout(hang)('https://x.test');
     const failed = expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
     await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
     await failed;
@@ -36,7 +40,7 @@ describe('withTimeout', () => {
         }),
     );
     const own = new AbortController();
-    const request = withTimeout(hang as typeof fetch)('https://x.test', { signal: own.signal });
+    const request = withTimeout(hang)('https://x.test', { signal: own.signal });
     own.abort();
     await expect(request).rejects.toThrow('stopped');
     expect(seen?.aborted).toBe(true);

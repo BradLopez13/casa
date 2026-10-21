@@ -22,6 +22,7 @@ import {
   useMembers,
   useMembership,
 } from '@/features/households/queries';
+import { useIsOnline } from '@/data/query/online';
 import { forgetHouseholdData } from '@/data/query/persist';
 import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/marks';
 import { DIALOGS, type Pending } from '@/features/households/memberDialogs';
@@ -32,6 +33,8 @@ import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { LoadError } from '@/ui/components/LoadError';
+import { OfflineBand } from '@/ui/components/OfflineBand';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -47,6 +50,7 @@ export default function MembersScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useSession();
+  const online = useIsOnline();
   const membership = useMembership().data;
   const householdId = membership?.householdId;
   const isOwner = membership?.role === 'owner';
@@ -195,18 +199,12 @@ export default function MembersScreen() {
   const people = (
     <View style={{ gap: space(4) }}>
       {members.isError ? (
-        <>
-          <ErrorText testID="members.load-error">{t('members.loadError')}</ErrorText>
-          <Button
-            testID="members.retry"
-            title={t('errors.retry')}
-            variant="secondary"
-            icon={actionIcons.retry}
-            width="hug"
-            loading={members.isFetching}
-            onPress={() => void members.refetch()}
-          />
-        </>
+        <LoadError
+          testID="members.load-error"
+          message={t('members.loadError')}
+          retrying={members.isFetching}
+          onRetry={() => void members.refetch()}
+        />
       ) : members.data ? (
         <View style={{ gap: space(3) }}>
           {members.data.map((m) => (
@@ -314,6 +312,7 @@ export default function MembersScreen() {
           }}
         />
       </View>
+      {online ? null : <OfflineBand label={t('members.offline')} testID="members.offline" />}
       {/* Outside the tabs: no rail beside it, so the panes keep clear of a side notch. */}
       <TwoPane
         besideRail={false}
