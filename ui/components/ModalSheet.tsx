@@ -9,6 +9,7 @@ import { SHEET_WIDTH } from '../layout';
 import { modalFrameFor, sheetMargins } from '../sheet';
 import { useTheme } from '../theme';
 import { useLayout } from '../useLayout';
+import { SheetDragFrame } from './SheetDrag';
 
 const InSheet = createContext(false);
 
@@ -41,7 +42,7 @@ export function useModalFill(): ModalFill {
  * The frame of the four modal routes. On a phone in portrait the modal fills the screen, as it
  * always has. From `medium` up it is a centred sheet: 560 dp wide at most, never taller than 90 %
  * of the window, with rounded corners over the theme's scrim. Tapping the scrim does nothing; the
- * modal still closes only with its own buttons or with back.
+ * modal closes with its own buttons, with back, or by pulling its header down (`SheetDrag`).
  *
  * The tree is the same in both frames and only the styles change, so rotating with the modal
  * open (or the keyboard up) keeps the route mounted and whatever was typed.
@@ -79,7 +80,7 @@ export function ModalSheet({ children }: { children: ReactNode }) {
               : { flex: 1 }
           }
         >
-          <View
+          <SheetDragFrame
             style={
               sheet
                 ? {
@@ -103,7 +104,7 @@ export function ModalSheet({ children }: { children: ReactNode }) {
                 {children}
               </SafeAreaInsetsContext.Provider>
             </InSheet.Provider>
-          </View>
+          </SheetDragFrame>
         </View>
       </KeyboardAvoidingView>
     </View>

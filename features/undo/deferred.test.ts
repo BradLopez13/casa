@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createDeferredClear } from './deferredClear';
+import { createDeferred } from './deferred';
 
 /** A clock the test moves by hand. */
 function fakeSchedule() {
@@ -24,11 +24,11 @@ function fakeSchedule() {
   return { schedule, advance };
 }
 
-describe('createDeferredClear', () => {
+describe('createDeferred', () => {
   it('clears once when the undo window ends', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(5000);
     expect(clear.pending()).toBe(true);
     clock.advance(4999);
@@ -43,7 +43,7 @@ describe('createDeferredClear', () => {
   it('undo inside the window keeps the bag', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(5000);
     expect(clear.undo()).toBe(true);
     clock.advance(10000);
@@ -54,7 +54,7 @@ describe('createDeferredClear', () => {
   it('undo after the window does nothing', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(5000);
     clock.advance(5000);
     expect(clear.undo()).toBe(false);
@@ -64,7 +64,7 @@ describe('createDeferredClear', () => {
   it('flush clears at once (leaving the screen), and only once', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.flush();
     expect(commit).not.toHaveBeenCalled();
     clear.start(5000);
@@ -77,7 +77,7 @@ describe('createDeferredClear', () => {
   it('a second start clears the first one before waiting again', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(5000);
     clock.advance(1000);
     clear.start(5000);
@@ -90,7 +90,7 @@ describe('createDeferredClear', () => {
   it('without a window, waits for flush and never clears by itself', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(null);
     clock.advance(60_000);
     expect(commit).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('createDeferredClear', () => {
   it('undo also stops a clear waiting without a window', () => {
     const clock = fakeSchedule();
     const commit = vi.fn();
-    const clear = createDeferredClear({ commit, schedule: clock.schedule });
+    const clear = createDeferred({ commit, schedule: clock.schedule });
     clear.start(null);
     expect(clear.undo()).toBe(true);
     clear.flush();

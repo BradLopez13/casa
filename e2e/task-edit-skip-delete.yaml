@@ -106,10 +106,8 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: task-form.delete
 - extendedWaitUntil:
-    visible: ¿Borrar esta tarea?
+    visible: Tarea borrada.
     timeout: 5000
-- tapOn:
-    id: members.confirm
 - extendedWaitUntil:
     visible: Mañana, 0 tareas
     timeout: 20000

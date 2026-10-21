@@ -98,6 +98,18 @@ vi.mock('react-native-reanimated', async () => {
   return mock;
 });
 
+// A sheet's header drag needs the native gesture handler too; in a test the header is drawn
+// without it (the drag's own logic is tested apart, in ui/sheetDrag.test.ts).
+vi.mock('react-native-gesture-handler', () => {
+  const pan: Record<string, () => unknown> = {};
+  for (const name of ['activeOffsetY', 'failOffsetY', 'failOffsetX', 'onUpdate', 'onEnd'])
+    pan[name] = () => pan;
+  return {
+    Gesture: { Pan: () => pan },
+    GestureDetector: ({ children }: { children?: ReactNode }) => children,
+  };
+});
+
 // A note's swipe needs the native gesture handler; in a test the note is drawn without it (the
 // swipe's own logic is tested apart).
 vi.mock('react-native-gesture-handler/ReanimatedSwipeable', () => ({

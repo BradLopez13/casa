@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 import { useNotice } from '@/ui/components/Notice';
 import { isScreenReaderOn } from '@/ui/a11y';
 import { noticeDuration } from '@/ui/components/noticeTiming';
-import { createDeferredClear, type DeferredClear } from './deferredClear';
+import { createDeferred, type Deferred } from '@/features/undo/deferred';
 
 /**
  * «Vaciar bolsa» without a dialog: the bought items hide at once, «Bolsa vaciada. Deshacer» shows,
@@ -18,8 +18,8 @@ export function useDeferredClear(onCommit: () => void) {
     latest.current = onCommit;
   }, [onCommit]);
   const [hidden, setHidden] = useState(false);
-  const controller = useRef<DeferredClear | null>(null);
-  controller.current ??= createDeferredClear({
+  const controller = useRef<Deferred | null>(null);
+  controller.current ??= createDeferred({
     commit: () => {
       setHidden(false);
       latest.current();

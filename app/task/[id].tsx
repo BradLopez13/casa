@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import { ActivityIndicator, AppState, View } from 'react-native';
 import { memberMarks } from '@/domain/members/marks';
 import { calculateNextOccurrence } from '@/domain/recurrence/next';
 import { skippedNotice } from '@/domain/tasks/labels';
@@ -8,24 +9,26 @@ import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
-import { markHintSeen } from '@/features/hints/hints';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
+import { deleteWithUndo } from '@/features/tasks/deferredDelete';
 import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
+import { invalidateIfStale } from '@/features/tasks/toggle';
+import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { markFresh } from '@/features/tasks/freshIds';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalSheet } from '@/ui/components/ModalSheet';
 import { useNotice } from '@/ui/components/Notice';
+import { noticeDuration } from '@/ui/components/noticeTiming';
 import { Screen } from '@/ui/components/Screen';
 import { useTheme } from '@/ui/theme';
 import { useCloseModal } from '@/ui/useCloseModal';
-import { announce } from '@/ui/a11y';
+import { announce, isScreenReaderOn } from '@/ui/a11y';
 
 /** Mounted once inside its frame, so rotating never remounts the form. */
 export default function EditTaskRoute() {
@@ -54,13 +57,12 @@ function EditTaskScreen() {
   const [task, setTask] = useState<TaskItem | undefined>(found);
   if (found !== undefined && found !== task) setTask(found);
 
-  const [confirming, setConfirming] = useState(false);
+  const queryClient = useQueryClient();
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
-  const remove = useTaskMutation<void, void>(() => deleteTask(id));
   const skip = useSkipTask(householdId);
   const toggler = useToggleTask(householdId, userId);
   const close = useCloseModal('/today');
-  // Completing or reopening from the form closes it, but only after a render that marks the form
+  // Completing, reopening or deleting from the form closes it, but only after a render that marks the form
   // busy: closing in the same tick let the discard guard ask over a task already toggled.
   const [toggled, setToggled] = useState(false);
   useEffect(() => {
@@ -98,17 +100,10 @@ function EditTaskScreen() {
   const canDelete = task.createdBy === userId || membership?.role === 'owner';
   const done = task.completedAt !== null;
   const toggling = toggler.isBusy(task.id) && !isProvisional(task);
-  const failure = skip.error ?? remove.error ?? save.error;
-  // Saving, deleting or skipping locks the other two, and a success keeps them locked while closing.
+  const failure = skip.error ?? save.error;
+  // Saving or skipping locks the other, and a success keeps both locked while closing.
   const busy =
-    save.isPending ||
-    save.isSuccess ||
-    remove.isPending ||
-    remove.isSuccess ||
-    skip.isPending ||
-    skip.isSuccess ||
-    toggling ||
-    toggled;
+    save.isPending || save.isSuccess || skip.isPending || skip.isSuccess || toggling || toggled;
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&
@@ -119,7 +114,6 @@ function EditTaskScreen() {
     // The server computes the next occurrence from this same `today`, so the notice matches it.
     const next = calculateNextOccurrence(task.recurrence, task.dueOn ?? today, today);
     save.reset();
-    remove.reset();
     skip.submit(
       { id, today },
       {
@@ -133,10 +127,45 @@ function EditTaskScreen() {
   const toggleDone = () => {
     if (isProvisional(task)) return;
     save.reset();
-    remove.reset();
     skip.reset();
-    if (!toggler.toggle({ id: task.id, done: !done })) return;
-    if (!done) markHintSeen('complete');
+    // As on the list: completing or reopening from here also offers «Deshacer».
+    const went = (done ? reopenWithUndo : completeWithUndo)({
+      toggle: toggler.toggle,
+      notify,
+      task,
+    });
+    if (went) setToggled(true);
+  };
+  // No dialog: the task leaves at once and «Tarea borrada. Deshacer» keeps it for a while.
+  const deleteNow = () => {
+    if (!onlineManager.isOnline()) {
+      notify(t('tasks.deleteOffline'));
+      return;
+    }
+    deleteWithUndo({
+      id,
+      remove: async (taskId) => {
+        try {
+          await deleteTask(taskId);
+        } catch (error) {
+          await invalidateIfStale(queryClient, error);
+          throw error;
+        }
+        await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      },
+      notify,
+      ms: noticeDuration({ action: true, screenReader: isScreenReaderOn() }),
+      schedule: (fn, ms) => {
+        const timer = setTimeout(fn, ms);
+        return () => clearTimeout(timer);
+      },
+      watchBackground: (flush) => {
+        const sub = AppState.addEventListener('change', (state) => {
+          if (state === 'background') flush();
+        });
+        return () => sub.remove();
+      },
+    });
     setToggled(true);
   };
   const initial: TaskInput = {
@@ -161,7 +190,6 @@ function EditTaskScreen() {
         error={failure ? taskErrorMessage(failure) : null}
         onCancel={close}
         onSave={(input) => {
-          remove.reset();
           skip.reset();
           save.submit(
             { input },
@@ -211,38 +239,12 @@ function EditTaskScreen() {
               variant="tertiary"
               tone="destructive"
               icon={actionIcons.delete}
-              // A saved edit or skip is already closing the modal: no confirm dialog on top.
-              disabled={
-                save.isPending ||
-                save.isSuccess ||
-                remove.isSuccess ||
-                skip.isPending ||
-                skip.isSuccess
-              }
-              onPress={() => setConfirming(true)}
+              // A saved edit or skip is already closing the modal.
+              disabled={busy}
+              onPress={deleteNow}
             />
           ) : null
         }
-      />
-      <ConfirmDialog
-        visible={confirming}
-        title={t('taskForm.deleteTitle')}
-        message={t('taskForm.deleteMessage')}
-        confirmLabel={t('taskForm.delete')}
-        destructive
-        loading={remove.isPending}
-        onCancel={() => setConfirming(false)}
-        onConfirm={() => {
-          save.reset();
-          skip.reset();
-          remove.submit(undefined, {
-            onSuccess: () => {
-              setConfirming(false);
-              close();
-            },
-            onError: () => setConfirming(false),
-          });
-        }}
       />
     </>
   );

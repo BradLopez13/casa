@@ -6,12 +6,14 @@ import {
   useQueryClient,
   type MutateOptions,
 } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
+import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { listTasks, skipTask } from './api';
+import { hiddenTasks } from './deferredDelete';
 import {
   buildToggleOptions,
   invalidateIfStale,
@@ -29,10 +31,18 @@ function sinceIso(): string {
 }
 
 export function useTasks(householdId: string | undefined) {
+  // A task deleted on screen stays out while its «Deshacer» lasts, whatever a refetch brings.
+  const hidden = useSyncExternalStore(hiddenTasks.subscribe, hiddenTasks.get);
+  const select = useCallback(
+    (tasks: TaskItem[]) =>
+      hidden.size === 0 ? tasks : tasks.filter((task) => !hidden.has(task.id)),
+    [hidden],
+  );
   return useQuery({
     queryKey: tasksKey(householdId),
     queryFn: () => listTasks(householdId as string, sinceIso()),
     enabled: householdId !== undefined,
+    select,
   });
 }
 
