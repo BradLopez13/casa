@@ -13,6 +13,7 @@ import { markHintSeen } from '@/features/tasks/completeHint';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
+import { markFresh } from '@/features/tasks/freshIds';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -167,6 +168,8 @@ function EditTaskScreen() {
             {
               onSuccess: () => {
                 announce(t('tasks.a11y.saved'));
+                // The edited note comes back pinned again: its magnet snaps on as it lands.
+                markFresh(id);
                 close();
               },
             },

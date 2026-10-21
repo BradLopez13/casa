@@ -66,8 +66,26 @@ describe('TaskForm', () => {
   it('keeps an edited task as it was apart from what was changed', () => {
     const initial: TaskInput = { ...blank, title: 'Barrer mañana', dueOn: '2026-10-25' };
     const { onSave } = renderForm({ initial, isNew: false, title: t('taskForm.editTitle') });
+    // Editing never reads the title: «mañana» stays in it and the date stays as it was.
+    fireEvent.change(titleField(), { target: { value: 'Barrer mañana el salón' } });
     save();
-    expect(onSave).toHaveBeenCalledWith(initial);
+    expect(onSave).toHaveBeenCalledWith({ ...initial, title: 'Barrer mañana el salón' });
+  });
+
+  it('keeps Save quiet on an edited task until something changes', () => {
+    const initial: TaskInput = { ...blank, title: 'Barrer', dueOn: '2026-10-25' };
+    const { onSave } = renderForm({ initial, isNew: false, title: t('taskForm.editTitle') });
+    save();
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.change(titleField(), { target: { value: 'Barrer el salón' } });
+    save();
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a new task save as soon as it has a title', () => {
+    const { onSave } = renderForm({ initial: { ...blank, title: 'Barrer' } });
+    save();
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 
   it('shows the save error it is given, and the footer and danger zone', () => {

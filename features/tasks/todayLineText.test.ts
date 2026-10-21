@@ -5,22 +5,52 @@ import { todayLineText } from './todayLineText';
 const text = (line: TodayLine) => todayLineText(line);
 
 describe('todayLineText', () => {
-  it('mine, singular and plural, with the household underneath', () => {
-    expect(text({ kind: 'mine', count: 1, household: 1 })).toEqual({
+  it('mine today, singular and plural, with the household underneath', () => {
+    expect(text({ kind: 'mine', today: 1, overdue: 0, household: 1 })).toEqual({
       first: 'Te toca 1.',
       number: '1',
       second: 'Al hogar le queda 1.',
     });
-    expect(text({ kind: 'mine', count: 2, household: 3 })).toEqual({
+    expect(text({ kind: 'mine', today: 2, overdue: 0, household: 3 })).toEqual({
       first: 'Te tocan 2.',
       number: '2',
       second: 'Al hogar le quedan 3.',
     });
   });
 
-  it('mine with nothing else left has no second line', () => {
-    expect(text({ kind: 'mine', count: 2, household: 0 }).second).toBeNull();
-    expect(text({ kind: 'mine', count: 2, household: null }).second).toBeNull();
+  it('always says the household line, even when nothing else is left', () => {
+    expect(text({ kind: 'mine', today: 2, overdue: 0, household: 0 }).second).toBe(
+      'Nada más para el hogar.',
+    );
+  });
+
+  it('has no household line while the filter is already «Tú»', () => {
+    expect(text({ kind: 'mine', today: 2, overdue: 0, household: null }).second).toBeNull();
+  });
+
+  it('separates what is overdue from today', () => {
+    expect(text({ kind: 'mine', today: 2, overdue: 1, household: 3 })).toEqual({
+      first: 'Te tocan 2.',
+      number: '2',
+      second: 'Y 1 de otros días. Al hogar le quedan 3.',
+    });
+    expect(text({ kind: 'mine', today: 1, overdue: 2, household: null }).second).toBe(
+      'Y 2 de otros días.',
+    );
+  });
+
+  it('nothing for today but something overdue: the overdue count is the number', () => {
+    expect(text({ kind: 'mine', today: 0, overdue: 3, household: 0 })).toEqual({
+      first: 'Nada para hoy.',
+      number: null,
+      second: '3 de otros días. Nada más para el hogar.',
+    });
+    expect(text({ kind: 'mine', today: 0, overdue: 1, household: 2 }).second).toBe(
+      '1 de otros días. Al hogar le quedan 2.',
+    );
+    expect(text({ kind: 'mine', today: 0, overdue: 1, household: null }).second).toBe(
+      '1 de otros días.',
+    );
   });
 
   it('household only', () => {

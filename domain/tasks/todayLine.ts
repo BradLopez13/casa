@@ -4,8 +4,12 @@ import { selectToday, type TaskItem } from './views';
 export type TodayLine =
   | { kind: 'empty' }
   | { kind: 'allDone' }
-  /** `household` is what is left for the whole home, or null when the filter is already "Tú". */
-  | { kind: 'mine'; count: number; household: number | null }
+  /**
+   * `today` is what is due today and `overdue` what waits from other days, so the door can tell
+   * them apart; `household` is what is left for the whole home, or null when the filter is
+   * already "Tú".
+   */
+  | { kind: 'mine'; today: number; overdue: number; household: number | null }
   | { kind: 'household'; household: number }
   | { kind: 'nothingMine'; unassigned: number }
   | { kind: 'person'; name: string; count: number };
@@ -26,14 +30,17 @@ export function todayLine({ tasks, today, userId, filter, filterName }: Input): 
   const pending = [...overdue, ...dueToday];
   if (pending.length === 0) return doneToday.length > 0 ? { kind: 'allDone' } : { kind: 'empty' };
 
-  const mine = pending.filter((task) => task.assigneeId === userId && userId !== null).length;
+  const isMine = (task: TaskItem) => task.assigneeId === userId && userId !== null;
+  const mineToday = dueToday.filter(isMine).length;
+  const mineOverdue = overdue.filter(isMine).length;
+  const mine = mineToday + mineOverdue;
   if (filter === null) {
     return mine > 0
-      ? { kind: 'mine', count: mine, household: pending.length - mine }
+      ? { kind: 'mine', today: mineToday, overdue: mineOverdue, household: pending.length - mine }
       : { kind: 'household', household: pending.length };
   }
   if (filter === userId) {
-    if (mine > 0) return { kind: 'mine', count: mine, household: null };
+    if (mine > 0) return { kind: 'mine', today: mineToday, overdue: mineOverdue, household: null };
     return { kind: 'nothingMine', unassigned: pending.filter((t) => t.assigneeId === null).length };
   }
   return {

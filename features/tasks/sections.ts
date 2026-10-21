@@ -1,11 +1,4 @@
-import { dayHeading } from '@/domain/tasks/labels';
-import {
-  isOverdue,
-  selectAll,
-  selectToday,
-  type selectWeek,
-  type TaskItem,
-} from '@/domain/tasks/views';
+import { isOverdue, selectAll, selectToday, type TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 
 /** One row of a task list: a note per open task, or the tray holding every finished one. */
@@ -40,17 +33,6 @@ export function todaySections(tasks: TaskItem[], today: string): TaskListSection
         ]
       : [notes('overdue', t('tasks.section.overdue'), overdue)]),
     tray('doneToday', t('tasks.section.doneToday'), doneToday),
-  ]);
-}
-
-/** Tareas › Semana: overdue, then one section per day keyed by its date (the strip scrolls to it). */
-export function weekSections(
-  week: ReturnType<typeof selectWeek>,
-  today: string,
-): TaskListSection[] {
-  return nonEmpty([
-    notes('overdue', t('tasks.section.overdue'), week.overdue),
-    ...week.days.map((day) => notes(day.date, dayHeading(day.date, today), day.tasks)),
   ]);
 }
 

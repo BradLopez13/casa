@@ -8,6 +8,7 @@ import { isScreenReaderOn, useScreenReader } from '../a11y';
 import { useTheme } from '../theme';
 import { MIN_TOUCH, radii } from '../tokens';
 import { useTabBarClearance } from '../useTabBarClearance';
+import { NoticeShownContext } from './noticeContext';
 import { NOTICE_ACTION_MS, noticeDuration, noticeExpired } from './noticeTiming';
 
 export type NoticeAction = {
@@ -109,7 +110,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
 
   return (
     <NoticeContext.Provider value={notify}>
-      {children}
+      <NoticeShownContext.Provider value={notice !== null}>{children}</NoticeShownContext.Provider>
       {notice === null ? null : (
         <View
           // The pill is tappable only for its action; everything around it lets touches through.

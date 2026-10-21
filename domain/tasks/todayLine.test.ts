@@ -40,13 +40,23 @@ describe('todayLine', () => {
       task({ assigneeId: other }),
       task(),
     ];
-    expect(line(tasks, null)).toEqual({ kind: 'mine', count: 2, household: 2 });
+    expect(line(tasks, null)).toEqual({ kind: 'mine', today: 1, overdue: 1, household: 2 });
+  });
+
+  it('all filter, only overdue for me: today 0, so the door can say «Nada para hoy»', () => {
+    expect(line([task({ assigneeId: me, dueOn: '2026-10-05' })], null)).toEqual({
+      kind: 'mine',
+      today: 0,
+      overdue: 1,
+      household: 0,
+    });
   });
 
   it('all filter, one mine and one left for the household', () => {
     expect(line([task({ assigneeId: me }), task({ assigneeId: other })], null)).toEqual({
       kind: 'mine',
-      count: 1,
+      today: 1,
+      overdue: 0,
       household: 1,
     });
   });
@@ -61,7 +71,8 @@ describe('todayLine', () => {
   it('filter me: how many are mine, without the household', () => {
     expect(line([task({ assigneeId: me }), task({ assigneeId: other })], me)).toEqual({
       kind: 'mine',
-      count: 1,
+      today: 1,
+      overdue: 0,
       household: null,
     });
   });

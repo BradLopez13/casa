@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, type ReactElement, type ReactNode } from 'react';
+import { useMemo, useRef, type ReactElement, type ReactNode } from 'react';
 import { SectionList, Text, View, type TextStyle } from 'react-native';
 import { longDateLabel } from '@/domain/tasks/labels';
 import { todayLine } from '@/domain/tasks/todayLine';
@@ -10,7 +10,7 @@ import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
-import { todaySections, type TaskListSection } from '@/features/tasks/sections';
+import { todaySections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
@@ -25,6 +25,7 @@ import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useOneColumn } from '@/ui/useOneColumn';
 import { useLayout } from '@/ui/useLayout';
+import { useNoticeNudge } from '@/ui/useNoticeNudge';
 import { useListEndPadding } from '@/ui/useTabBarClearance';
 import { actionIcons } from '@/ui/actionIcons';
 
@@ -148,9 +149,14 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
   const column = useOneColumn();
   const { holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery } = screen;
+  const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
+  // «Hecha. Deshacer» must not cover the note it speaks of.
+  const nudge = useNoticeNudge(listRef);
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
+        ref={listRef}
+        {...nudge}
         keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
