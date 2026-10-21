@@ -29,7 +29,7 @@ describe('iconFor', () => {
     ['huevos', 'egg'],
     ['agua', 'water'],
     ['aceite de oliva', 'bottle-tonic'],
-    ['tomates', 'food-apple'],
+    ['tomates', 'fruit-cherries'],
     ['platanos', 'food-apple'],
     ['patatas', 'sprout'],
     ['cebollas', 'sprout'],
@@ -47,7 +47,7 @@ describe('iconFor', () => {
     ['pasta', 'pasta'],
     ['azucar', 'sack'],
     ['galletas', 'cookie'],
-    ['cerveza', 'beer'],
+    ['cerveza', 'glass-mug-variant'],
     ['vino', 'bottle-wine'],
     ['zumo de naranja', 'cup-water'],
     ['detergente', 'washing-machine'],
@@ -61,7 +61,7 @@ describe('iconFor', () => {
     ['eggs', 'egg'],
     ['water', 'water'],
     ['olive oil', 'bottle-tonic'],
-    ['tomatoes', 'food-apple'],
+    ['tomatoes', 'fruit-cherries'],
     ['bananas', 'food-apple'],
     ['potatoes', 'sprout'],
     ['onions', 'sprout'],
@@ -79,7 +79,7 @@ describe('iconFor', () => {
     ['pasta', 'pasta'],
     ['sugar', 'sack'],
     ['biscuits', 'cookie'],
-    ['beer', 'beer'],
+    ['beer', 'glass-mug-variant'],
     ['wine', 'bottle-wine'],
     ['orange juice', 'cup-water'],
     ['detergent', 'washing-machine'],
@@ -87,6 +87,17 @@ describe('iconFor', () => {
     ['toilet paper', 'paper-roll'],
     ['toothpaste', 'toothbrush-paste'],
   ])('en: %s → %s', (name, icon) => expect(iconFor(name, 'en')).toBe(icon));
+  // Fase 9b: at 22 dp the two glasses and the apple-for-a-tomato read alike.
+  it.each(['es', 'en'] as const)(
+    '%s: yogurt, beer, tomato and apple each read as their own',
+    (lang) => {
+      const names =
+        lang === 'es'
+          ? ['yogur', 'cerveza', 'tomate', 'manzana']
+          : ['yogurt', 'beer', 'tomato', 'apple'];
+      expect(new Set(names.map((n) => iconFor(n, lang))).size).toBe(4);
+    },
+  );
   it.each([
     ['es', PRODUCT_ICONS_ES],
     ['en', PRODUCT_ICONS_EN],

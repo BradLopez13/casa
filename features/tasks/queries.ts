@@ -1,4 +1,5 @@
 import {
+  onlineManager,
   useMutation,
   useMutationState,
   useQuery,
@@ -9,6 +10,7 @@ import { useRef } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
+import { t } from '@/i18n';
 import { listTasks, skipTask } from './api';
 import {
   buildToggleOptions,
@@ -82,7 +84,7 @@ export function useSkipTask(_householdId: string | undefined) {
 export function useToggleTask(
   householdId: string | undefined,
   userId: string | null,
-): { toggle: (vars: ToggleVars) => void; isBusy: (id: string) => boolean } {
+): { toggle: (vars: ToggleVars) => boolean; isBusy: (id: string) => boolean } {
   const queryClient = useQueryClient();
   const notify = useNotice();
   const options = buildToggleOptions(queryClient, householdId ?? '', userId ?? '', notify);
@@ -91,10 +93,18 @@ export function useToggleTask(
     select: (m) => (m.state.variables as ToggleVars).id,
   });
   const isBusy = (id: string) => isProvisional({ id }) || pending.includes(id);
-  const toggle = (vars: ToggleVars) => {
-    if (householdId === undefined || userId === null || isProvisional({ id: vars.id })) return;
+  // True when the toggle went; false when it could not, having said why if it was the network.
+  const toggle = (vars: ToggleVars): boolean => {
+    if (householdId === undefined || userId === null || isProvisional({ id: vars.id }))
+      return false;
+    // Without a connection it would go, come back and fail: say so before the tap does anything.
+    if (!onlineManager.isOnline()) {
+      notify(t(vars.done ? 'tasks.completeOffline' : 'tasks.reopenOffline'));
+      return false;
+    }
     // runToggle reads the mutation cache synchronously: render-time state lags a quick double tap.
     runToggle(queryClient, options, vars);
+    return true;
   };
   return { toggle, isBusy };
 }

@@ -31,6 +31,7 @@ describe('actionIcons', () => {
         'chevron',
         'skip',
         'templates',
+        'help',
       ].sort(),
     );
   });

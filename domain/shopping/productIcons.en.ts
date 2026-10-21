@@ -32,8 +32,9 @@ export const PRODUCT_ICONS_EN: readonly (readonly [string, ProductIcon])[] = [
   ['kiwi', 'food-apple'],
   ['avocado', 'food-apple'],
   ['avocados', 'food-apple'],
-  ['tomato', 'food-apple'],
-  ['tomatoes', 'food-apple'],
+  // No tomato in the set: two round fruits on a stem read closer than the apple did.
+  ['tomato', 'fruit-cherries'],
+  ['tomatoes', 'fruit-cherries'],
   ['lettuce', 'leaf'],
   ['onion', 'sprout'],
   ['onions', 'sprout'],
@@ -182,7 +183,8 @@ export const PRODUCT_ICONS_EN: readonly (readonly [string, ProductIcon])[] = [
   ['water', 'water'],
   ['juice', 'cup-water'],
   ['soda', 'bottle-soda'],
-  ['beer', 'beer'],
+  // A mug with a handle: the plain `beer` glass read as the yogurt's `cup` at 22 dp.
+  ['beer', 'glass-mug-variant'],
   ['wine', 'bottle-wine'],
   ['coke', 'bottle-soda'],
   ['lemonade', 'bottle-soda'],

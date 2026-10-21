@@ -9,6 +9,7 @@ import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
+import { IdeasButton } from '@/features/tasks/components/TaskScreenPieces';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { todaySections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
@@ -174,7 +175,16 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
           <View style={[column, { paddingTop: space(6), gap: space(6) }]}>
             {/* Only a household with no tasks at all, whatever the filter, gets the templates. */}
             {cards.templates ? <TemplatesCard /> : null}
-            <TaskListStates query={tasksQuery} empty={members.length === 1 ? invite : nothing} />
+            <TaskListStates
+              query={tasksQuery}
+              empty={
+                <View style={{ gap: space(4) }}>
+                  {members.length === 1 ? invite : nothing}
+                  {/* The templates card already offers them. */}
+                  {cards.templates ? null : <IdeasButton />}
+                </View>
+              }
+            />
           </View>
         }
         renderSectionHeader={({ section }) => (
@@ -244,7 +254,15 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
             <TaskSections sections={left} {...rows} />
           ) : (
             <View style={{ paddingTop: space(6) }}>
-              <TaskListStates query={screen.tasksQuery} empty={nothing} />
+              <TaskListStates
+                query={screen.tasksQuery}
+                empty={
+                  <View style={{ gap: space(4) }}>
+                    {nothing}
+                    {cards.templates ? null : <IdeasButton />}
+                  </View>
+                }
+              />
             </View>
           )}
         </>

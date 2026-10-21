@@ -15,8 +15,10 @@ import type { MemberMark } from '@/domain/members/marks';
 import { iconFor } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
+import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
+import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { FADE_MS, layoutTransition } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { pressedOpacity } from '@/ui/buttonLook';
@@ -145,6 +147,7 @@ export function ShoppingSheet({
   const [boughtCollapsed, setBoughtCollapsed] = useState(false);
   // One quantity stepper open at a time; scrolling the list closes it.
   const [openQuantity, setOpenQuantity] = useState<string | null>(null);
+  const quantityHint = useHint('quantity');
   const rows = sheetRows(pending, bought, boughtCollapsed);
   // Dark has its 1 dp edge; light has none (the shadow did the work), so a hairline stands in.
   const hasEdge = noteEdge.borderWidth > 0;
@@ -157,6 +160,9 @@ export function ShoppingSheet({
   // An absolute child ignores its parent's padding: the magnet adds the column's own gutter.
   const columnPadding = StyleSheet.flatten(column)?.paddingLeft;
   const columnLeft = typeof columnPadding === 'number' ? columnPadding : 0;
+  // The column sets each side's padding, which beats a paddingHorizontal: the hint adds to both.
+  const columnRightPadding = StyleSheet.flatten(column)?.paddingRight;
+  const columnRight = typeof columnRightPadding === 'number' ? columnRightPadding : 0;
 
   const cell = (index: number): ViewStyle => {
     const ruled = index < pendingCount;
@@ -197,83 +203,105 @@ export function ShoppingSheet({
         contentContainerStyle={contentContainerStyle}
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
-          <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
-            {index === 0 && pendingCount > 0 ? (
-              <HangingMagnet left={columnLeft + margin + space(3)} />
+          <>
+            {/* Over the note, at the pills' side, until a quantity is first changed. */}
+            {index === 0 && pendingCount > 0 && quantityHint ? (
+              <View
+                style={[
+                  column,
+                  {
+                    paddingLeft: columnLeft + margin + space(4),
+                    paddingRight: columnRight + margin + space(4),
+                    paddingTop: space(2),
+                  },
+                ]}
+              >
+                <FirstUseHint
+                  testID="shopping.quantity-hint"
+                  text={t('shopping.quantityHint')}
+                  arrow="arrow-down"
+                  align="right"
+                />
+              </View>
             ) : null}
-            <View style={cell(index)}>
-              {isBoughtHeader(row) ? (
-                <Animated.View
-                  entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
-                  exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: space(3),
-                    paddingHorizontal: space(4),
-                    paddingTop: space(4),
-                    paddingBottom: space(2),
-                  }}
-                >
-                  <Pressable
-                    testID="shopping.bought.toggle"
-                    accessibilityRole="button"
-                    accessibilityLabel={boughtTitleLabel(bought.length)}
-                    accessibilityState={{ expanded: !boughtCollapsed }}
-                    onPress={() => setBoughtCollapsed((c) => !c)}
-                    style={({ pressed }) => ({
+            <View style={[column, index === 0 && pendingCount > 0 ? { paddingTop: HANG } : null]}>
+              {index === 0 && pendingCount > 0 ? (
+                <HangingMagnet left={columnLeft + margin + space(3)} />
+              ) : null}
+              <View style={cell(index)}>
+                {isBoughtHeader(row) ? (
+                  <Animated.View
+                    entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
+                    exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
+                    style={{
                       flexDirection: 'row',
                       alignItems: 'center',
-                      gap: space(2),
-                      minHeight: MIN_TOUCH,
-                      opacity: pressedOpacity(pressed),
-                    })}
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: space(3),
+                      paddingHorizontal: space(4),
+                      paddingTop: space(4),
+                      paddingBottom: space(2),
+                    }}
                   >
-                    <Ionicons
-                      name={boughtCollapsed ? 'chevron-forward' : 'chevron-down'}
-                      size={18}
-                      color={colors.muted}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no"
+                    <Pressable
+                      testID="shopping.bought.toggle"
+                      accessibilityRole="button"
+                      accessibilityLabel={boughtTitleLabel(bought.length)}
+                      accessibilityState={{ expanded: !boughtCollapsed }}
+                      onPress={() => setBoughtCollapsed((c) => !c)}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: space(2),
+                        minHeight: MIN_TOUCH,
+                        opacity: pressedOpacity(pressed),
+                      })}
+                    >
+                      <Ionicons
+                        name={boughtCollapsed ? 'chevron-forward' : 'chevron-down'}
+                        size={18}
+                        color={colors.muted}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no"
+                      />
+                      <BoughtTitle count={bought.length} />
+                    </Pressable>
+                    <Button
+                      testID="shopping.clear"
+                      title={t('shopping.clear')}
+                      variant="secondary"
+                      icon={actionIcons.delete}
+                      disabled={!online}
+                      loading={clearing}
+                      onPress={onClear}
                     />
-                    <BoughtTitle count={bought.length} />
-                  </Pressable>
-                  <Button
-                    testID="shopping.clear"
-                    title={t('shopping.clear')}
-                    variant="secondary"
-                    icon={actionIcons.delete}
-                    disabled={!online}
-                    loading={clearing}
-                    onPress={onClear}
+                  </Animated.View>
+                ) : (
+                  <ShoppingRow
+                    item={row}
+                    icon={iconFor(row.normalizedName)}
+                    // The ruled cells draw the lines between pending rows, so none of them adds its own.
+                    first={index < pendingCount || isBoughtHeader(rows[index - 1] as SheetRow)}
+                    unsent={unsentIds.has(row.id)}
+                    buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
+                    buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
+                    boughtByMe={row.boughtBy !== null && row.boughtBy === userId}
+                    flash={flash?.id === row.id ? flash.count : 0}
+                    onToggle={() => onToggle(row)}
+                    onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
+                    quantityOpen={openQuantity === row.id}
+                    online={online}
+                    onQuantityOpen={() => setOpenQuantity(row.id)}
+                    onQuantityClose={() =>
+                      setOpenQuantity((current) => (current === row.id ? null : current))
+                    }
+                    onQuantity={(quantity) => onQuantity(row, quantity)}
                   />
-                </Animated.View>
-              ) : (
-                <ShoppingRow
-                  item={row}
-                  icon={iconFor(row.normalizedName)}
-                  // The ruled cells draw the lines between pending rows, so none of them adds its own.
-                  first={index < pendingCount || isBoughtHeader(rows[index - 1] as SheetRow)}
-                  unsent={unsentIds.has(row.id)}
-                  buyerMark={row.boughtBy ? marks.get(row.boughtBy) : undefined}
-                  buyerName={row.boughtBy ? names.get(row.boughtBy) : undefined}
-                  boughtByMe={row.boughtBy !== null && row.boughtBy === userId}
-                  flash={flash?.id === row.id ? flash.count : 0}
-                  onToggle={() => onToggle(row)}
-                  onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
-                  quantityOpen={openQuantity === row.id}
-                  online={online}
-                  onQuantityOpen={() => setOpenQuantity(row.id)}
-                  onQuantityClose={() =>
-                    setOpenQuantity((current) => (current === row.id ? null : current))
-                  }
-                  onQuantity={(quantity) => onQuantity(row, quantity)}
-                />
-              )}
+                )}
+              </View>
             </View>
-          </View>
+          </>
         )}
       />
     </>

@@ -10,11 +10,9 @@ const ALLOWED: Record<string, string> = {
     'a task still on its way to the server is provisional (0.6)',
   'features/auth/social/AppleButton.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
   'features/auth/social/AppleButton.ios.tsx': "Apple's guidelines dictate the dimmed button (0.5)",
-  'ui/magnetCheck.ts':
-    "the faint check on an open magnet (0.4) is the magnet's drawing, not a control turned off",
 };
 
-// Opacity that is fine anywhere: press feedback, the faint check, animated glows (shared values),
+// Opacity that is fine anywhere: press feedback, animated glows (shared values),
 // the 0 / 1 literals used to hide or show, fades between them, a type annotation, and the faded
 // label of a disabled control, which only `buttonLook` decides (`labelOpacity`).
 const FINE = [

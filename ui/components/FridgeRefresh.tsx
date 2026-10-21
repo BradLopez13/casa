@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { markHintSeen } from '@/features/hints/hints';
 import { useMembership } from '@/features/households/queries';
 import { useShoppingItems } from '@/features/shopping/queries';
 import { t } from '@/i18n';
@@ -47,6 +48,8 @@ const SLIDE = { duration: MAX_MS, easing: Easing.out(Easing.exp) };
 function useRefreshAnnouncement(refreshing: boolean) {
   const was = useRef(refreshing);
   useEffect(() => {
+    // A refresh by the handle or by pulling: the handle's hint has done its job.
+    if (refreshing) markHintSeen('refresh');
     // The start and the end: without the end, a screen reader never hears the refresh is over.
     if (refreshing) AccessibilityInfo.announceForAccessibility(t('refresh.label'));
     else if (was.current) AccessibilityInfo.announceForAccessibility(t('refresh.done'));

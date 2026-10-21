@@ -1,5 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, Text, TextInput, View, type TextStyle } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+  type TextStyle,
+} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { syncMonthly } from '@/domain/recurrence/form';
 import { recurrenceLabel } from '@/domain/recurrence/label';
@@ -10,14 +18,16 @@ import {
   type QuickParse,
   type QuickSpanKind,
 } from '@/domain/tasks/quick-parse';
+import { markHintSeen, useHint } from '@/features/hints/hints';
 import { useMembers } from '@/features/households/queries';
 import { locale, t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { buttonLook, buttonMetrics, pressedOpacity } from '@/ui/buttonLook';
+import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
-import { DOOR_MAX_SCALE } from '@/ui/door';
+import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
@@ -25,6 +35,7 @@ import { createTask, newTaskId } from '../api';
 import { taskErrorMessage } from '../errors';
 import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
+import { hintName, quickHintSegments } from '../quickHint';
 import { useTaskMutation } from '../queries';
 import { useToday } from '../useToday';
 
@@ -100,6 +111,19 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     [today, memberRows, disabled],
   );
   const parse = useMemo(() => quickParse(text, ctx), [text, ctx]);
+  // Until a task goes in with something the field understood, the empty field shows an example.
+  const quickAddOpen = useHint('quickAdd');
+  const boxOpen = useHint('complete');
+  const swipeOpen = useHint('swipe');
+  // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
+  const { fontScale } = useWindowDimensions();
+  const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
+  const example = useMemo(() => {
+    const name = hintName(ctx.members, assigneeId);
+    const sentence =
+      name === null ? t('tasks.quickHint.exampleAlone') : t('tasks.quickHint.example', { name });
+    return { sentence, segments: quickHintSegments(sentence, ctx) };
+  }, [ctx, assigneeId]);
   const create = useTaskMutation(
     async ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) => {
       try {
@@ -121,6 +145,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     // An empty field is not an error: it just stays.
     if (task === null || householdId === undefined || inFlight.current) return;
     inFlight.current = true;
+    if (parse.spans.length > 0) markHintSeen('quickAdd');
     // Cleared at once, so the next task can be typed while this one saves; put back on error.
     const typed = text;
     const dismissed = disabled;
@@ -228,6 +253,35 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
           <Ionicons name={actionIcons.add} size={24} color={look.foreground} accessible={false} />
         </Pressable>
       </View>
+      {hintOpen && text === '' ? (
+        <FirstUseHint
+          testID={`${testID}.hint`}
+          door
+          readerText={`${t('tasks.quickHint.lead')} ${example.sentence}`}
+          text={
+            <>
+              {`${t('tasks.quickHint.lead')} «`}
+              {example.segments.map((segment, i) =>
+                segment.known ? (
+                  <Text
+                    key={i}
+                    style={{
+                      color: colors.ink,
+                      textDecorationLine: 'underline',
+                      textDecorationColor: colors.outline,
+                    }}
+                  >
+                    {segment.text}
+                  </Text>
+                ) : (
+                  segment.text
+                ),
+              )}
+              »
+            </>
+          }
+        />
+      ) : null}
       {parse.spans.length > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
           {parse.spans.map((span) => {

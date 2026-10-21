@@ -211,7 +211,7 @@ export function ShoppingRow({
           size="sm"
           decorative
           variant="empty"
-          check={bought ? 'filled' : 'faint'}
+          check={bought ? 'filled' : undefined}
           color="teal"
           initial=""
           accessibilityLabel={item.name}

@@ -88,6 +88,17 @@ export default function SettingsScreen() {
             <HouseholdNoticesSection />
           </Note>
         );
+      case 'help':
+        return (
+          <Note>
+            <ListRow
+              testID="settings.help"
+              title={t('settings.help')}
+              icon={actionIcons.help}
+              onPress={() => router.push('/help')}
+            />
+          </Note>
+        );
       case 'account':
         return (
           <Note>

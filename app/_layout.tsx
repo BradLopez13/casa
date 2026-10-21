@@ -309,6 +309,7 @@ function Guard() {
         <Stack.Screen name="task/[id]" options={modal} />
         <Stack.Screen name="shopping/[id]" options={modal} />
         <Stack.Screen name="templates" options={modal} />
+        <Stack.Screen name="help" options={modal} />
       </Stack>
       {failed ? (
         <MembershipError

@@ -71,7 +71,7 @@ function TemplateRow({
         size="sm"
         decorative
         variant="empty"
-        check={checked ? 'filled' : 'faint'}
+        check={checked ? 'filled' : undefined}
         color="teal"
         initial=""
         accessibilityLabel={label}
@@ -255,9 +255,12 @@ function TemplatesScreen() {
           title={
             failed
               ? t('templates.retry')
-              : keys.length === 1
-                ? t('templates.addOne')
-                : t('templates.addCount', { n: keys.length })
+              : keys.length === 0
+                ? // Disabled until something is chosen: it says what to do, never «Añadir 0».
+                  t('templates.choose')
+                : keys.length === 1
+                  ? t('templates.addOne')
+                  : t('templates.addCount', { n: keys.length })
           }
           onPress={add}
           disabled={keys.length === 0}

@@ -14,6 +14,7 @@ describe('coveredByModal', () => {
     expect(coveredByModal(['task', 'new'])).toBe(true);
     expect(coveredByModal(['shopping', '[id]'])).toBe(true);
     expect(coveredByModal(['templates'])).toBe(true);
+    expect(coveredByModal(['help'])).toBe(true);
   });
 
   it('does not hide anything before the first route settles', () => {

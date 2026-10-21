@@ -36,6 +36,8 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: today.quick-add.submit
 - hideKeyboard
-- extendedWaitUntil:
-    visible: Take out the trash
+# On the small emulator the first-use hints (quick add, box) push the new note below the fold.
+- scrollUntilVisible:
+    element:
+      text: Take out the trash
     timeout: 20000

@@ -48,8 +48,8 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - hideKeyboard
 
-# The quantity steps from the row without opening the item: «1» up twice is «3»
-- tapOn: 'Cantidad de Leche: 1'
+# The quantity steps from the row without opening the item: none («—», counted as 1) up twice is «3»
+- tapOn: 'Cantidad de Leche: sin cantidad'
 - tapOn: 'Uno más'
 - tapOn: 'Uno más'
 - extendedWaitUntil:

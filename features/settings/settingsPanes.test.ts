@@ -5,7 +5,7 @@ import { settingsPanes } from './settingsPanes';
 describe('settingsPanes', () => {
   it('keeps the usual order in one column', () => {
     expect(settingsPanes('stack')).toEqual({
-      left: ['members', 'reminders', 'notices', 'account'],
+      left: ['members', 'reminders', 'notices', 'help', 'account'],
       right: [],
     });
   });
@@ -13,7 +13,7 @@ describe('settingsPanes', () => {
   it('puts the household and account left, the phone right, on two panes', () => {
     expect(settingsPanes('split')).toEqual({
       left: ['members', 'account'],
-      right: ['reminders', 'notices'],
+      right: ['reminders', 'notices', 'help'],
     });
   });
 
@@ -21,7 +21,7 @@ describe('settingsPanes', () => {
     for (const mode of ['stack', 'split'] as const) {
       const { left, right } = settingsPanes(mode);
       expect([...left, ...right].sort()).toEqual(
-        ['account', 'members', 'notices', 'reminders'].sort(),
+        ['account', 'help', 'members', 'notices', 'reminders'].sort(),
       );
     }
   });
