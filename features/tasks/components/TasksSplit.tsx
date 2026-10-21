@@ -80,17 +80,30 @@ export function TasksSplit({
       }
       right={
         <>
-          <View style={{ gap: space(2) }}>
-            <DayQuickAdd screen={screen} day={day} />
-            {day === null ? <IdeasButton /> : null}
-          </View>
+          <DayQuickAdd screen={screen} day={day} />
           {sections.length > 0 ? (
-            <TaskSections sections={sections} {...rows} />
+            <>
+              <TaskSections sections={sections} {...rows} />
+              {day === null ? (
+                <View style={{ paddingTop: space(6) }}>
+                  <IdeasButton />
+                </View>
+              ) : null}
+            </>
           ) : (
             <View style={{ paddingTop: space(day === null ? 6 : 4) }}>
               <TaskListStates
                 query={screen.tasksQuery}
-                empty={day === null ? empty : <EmptyDay day={day} today={screen.today} />}
+                empty={
+                  day === null ? (
+                    <View style={{ gap: space(6), alignItems: 'flex-start' }}>
+                      {empty}
+                      <IdeasButton />
+                    </View>
+                  ) : (
+                    <EmptyDay day={day} today={screen.today} />
+                  )
+                }
               />
             </View>
           )}

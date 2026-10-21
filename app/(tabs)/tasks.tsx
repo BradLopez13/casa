@@ -159,15 +159,32 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
                 names={screen.names}
                 onSelect={chooseDay}
               />
-              {day === null ? <IdeasButton /> : null}
             </View>
           </>
+        }
+        // The catalogue waits at the end of Todas: a way to find more, not a layer before the
+        // first note (at ×1,6 that row was what pushed the first note under the tab bar).
+        ListFooterComponent={
+          day === null && sections.length > 0 ? (
+            <View style={[column, { paddingTop: space(6) }]}>
+              <IdeasButton />
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <View style={[column, { paddingTop: space(day === null ? 6 : 4) }]}>
             <TaskListStates
               query={tasksQuery}
-              empty={day === null ? empty : <EmptyDay day={day} today={today} />}
+              empty={
+                day === null ? (
+                  <View style={{ gap: space(6), alignItems: 'flex-start' }}>
+                    {empty}
+                    <IdeasButton />
+                  </View>
+                ) : (
+                  <EmptyDay day={day} today={today} />
+                )
+              }
             />
           </View>
         }

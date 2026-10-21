@@ -3,6 +3,7 @@ import { dayCountLabel, type StripDay } from '@/domain/tasks/strip';
 import { dayPills } from '@/features/tasks/dayFilter';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -57,7 +58,10 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
               opacity: pressedOpacity(pressed),
             })}
           >
+            {/* The door's old control, moved down: it keeps the door's text cap so the row
+                stays one line of pills at large text. */}
             <Text
+              maxFontSizeMultiplier={DOOR_MAX_SCALE}
               style={{
                 color: selected ? colors.onSelection : colors.ink,
                 fontSize: 15,
