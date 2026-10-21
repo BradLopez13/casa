@@ -181,12 +181,15 @@ export default function SettingsScreen() {
       heading={
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(3) }}>
           <View style={{ flex: 1 }}>
-            <NameHeading
-              name={displayName}
-              mark={userId ? marks.get(userId) : undefined}
-              editing={editing}
-              onEditingChange={setEditing}
-            />
+            {/* Without the members there is no name to show or edit: no pencil over nothing. */}
+            {members.data ? (
+              <NameHeading
+                name={displayName}
+                mark={userId ? marks.get(userId) : undefined}
+                editing={editing}
+                onEditingChange={setEditing}
+              />
+            ) : null}
           </View>
           <BrandPlate />
         </View>

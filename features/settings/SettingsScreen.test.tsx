@@ -69,6 +69,8 @@ describe('Ajustes', () => {
     renderSettings();
     const message = await screen.findByTestId('settings.members-error');
     expect(message.textContent).toBe(t('members.loadError'));
+    // No pencil over an empty name.
+    expect(screen.queryByRole('button', { name: t('settings.editName') })).toBeNull();
     // The error already says what is missing: no second line under Borrar.
     expect(screen.queryByTestId('settings.delete-account.waiting')).toBeNull();
     vi.mocked(listMembers).mockResolvedValueOnce(members);
