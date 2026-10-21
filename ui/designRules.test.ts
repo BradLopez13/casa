@@ -256,4 +256,15 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const found = offenders(sources, (line) => /check=\{[^}]*'faint'/.test(line));
     expect(found).toEqual([]);
   });
+
+  // Pistas de primer uso (fase 9b): every hint line goes through FirstUseHint, so each one is
+  // muted, said once to a screen reader and gone after its first use.
+  it('hint texts are only drawn through FirstUseHint', () => {
+    const hintKey =
+      /t\('(?:tasks\.(?:completeHint|swipeHint\w*|quickHint\.\w+)|shopping\.quantityHint|refresh\.hint\w*)'\)/;
+    const found = sources
+      .filter((file) => !file.endsWith('.test.tsx') && hintKey.test(read(file)))
+      .filter((file) => !read(file).includes('<FirstUseHint'));
+    expect(found).toEqual([]);
+  });
 });
