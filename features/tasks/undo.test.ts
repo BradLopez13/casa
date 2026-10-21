@@ -5,7 +5,7 @@ import { completeWithUndo } from './undo';
 
 describe('completeWithUndo', () => {
   it('completes the task and offers an undo that reopens it', () => {
-    const toggle = vi.fn();
+    const toggle = vi.fn(() => true);
     const notify = vi.fn<(message: string, action?: NoticeAction) => void>();
     completeWithUndo({ toggle, notify, task: { id: 't1' } });
 
@@ -19,5 +19,13 @@ describe('completeWithUndo', () => {
 
     action?.onPress();
     expect(toggle).toHaveBeenLastCalledWith({ id: 't1', done: false });
+  });
+
+  it('offers nothing when the toggle did not go', () => {
+    const toggle = vi.fn(() => false);
+    const notify = vi.fn<(message: string, action?: NoticeAction) => void>();
+    completeWithUndo({ toggle, notify, task: { id: 't1' } });
+    expect(toggle).toHaveBeenCalledTimes(1);
+    expect(notify).not.toHaveBeenCalled();
   });
 });

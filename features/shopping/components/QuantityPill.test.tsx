@@ -1,0 +1,62 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { markHintSeen } from '@/features/hints/hints';
+import { t } from '@/i18n';
+import { NoticeProvider } from '@/ui/components/Notice';
+import { QuantityPill } from './QuantityPill';
+
+vi.mock('@/features/hints/hints', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/hints/hints')>()),
+  markHintSeen: vi.fn(),
+}));
+
+function renderPill(quantity: string | null, online = true) {
+  const onOpen = vi.fn();
+  render(
+    <NoticeProvider>
+      <QuantityPill
+        itemId="i1"
+        name="Pan"
+        quantity={quantity}
+        open={false}
+        online={online}
+        onOpen={onOpen}
+        onClose={vi.fn()}
+        onCommit={vi.fn()}
+        onEdit={vi.fn()}
+        flushRef={{ current: null }}
+      />
+    </NoticeProvider>,
+  );
+  return { onOpen, pill: screen.getByTestId('shopping.item.i1.quantity') };
+}
+
+beforeEach(() => vi.mocked(markHintSeen).mockReset());
+
+describe('QuantityPill', () => {
+  it('with no quantity says nothing that looks like one', () => {
+    const { pill } = renderPill(null);
+    expect(pill.textContent).toBe('—');
+    expect(pill.getAttribute('aria-label')).toBe(
+      t('shopping.quantity.label', { name: 'Pan', quantity: t('shopping.quantity.none') }),
+    );
+  });
+
+  it('shows the quantity there is', () => {
+    expect(renderPill('2').pill.textContent).toBe('2');
+  });
+
+  it('opening the stepper is the first use of the quantity: its hint goes', () => {
+    const { pill, onOpen } = renderPill(null);
+    fireEvent.click(pill);
+    expect(onOpen).toHaveBeenCalled();
+    expect(markHintSeen).toHaveBeenCalledWith('quantity');
+  });
+
+  it('offline it does not open, and the hint stays', () => {
+    const { pill, onOpen } = renderPill(null, false);
+    fireEvent.click(pill);
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(markHintSeen).not.toHaveBeenCalled();
+  });
+});

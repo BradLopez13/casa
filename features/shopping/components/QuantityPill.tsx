@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { AccessibilityInfo, Pressable, Text } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { canStep, quantityStep, stepQuantity } from '@/domain/shopping/quantity';
+import { markHintSeen } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useNotice } from '@/ui/components/Notice';
@@ -16,6 +17,9 @@ export const SAVE_AFTER_MS = 700;
 export const CLOSE_AFTER_MS = 4000;
 
 const PILL_HEIGHT = 30;
+// What a pill with no quantity says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
+// words: the screen reader hears «sin cantidad».
+const NO_QUANTITY = '—';
 
 type Props = {
   itemId: string;
@@ -35,8 +39,8 @@ type Props = {
 };
 
 /**
- * The quantity of a pending item, at the end of its row: «2», «1 kg», or a quiet «1» when there is
- * none. A tap turns it into «− n +»; each tap shows at once and the value saves after a pause.
+ * The quantity of a pending item, at the end of its row: «2», «1 kg», or a quiet «—» when there
+ * is none (counting from it, the stepper starts at 1). A tap turns it into «− n +»; each tap shows at once and the value saves after a pause.
  * With a screen reader it is adjustable: swipe up or down to change it without opening anything.
  */
 export function QuantityPill({
@@ -144,6 +148,7 @@ export function QuantityPill({
       notify(t('shopping.quantity.offline'));
       return;
     }
+    markHintSeen('quantity');
     onOpen();
   };
 
@@ -154,12 +159,16 @@ export function QuantityPill({
       return;
     }
     if (!canStep(quantity, delta)) return;
+    markHintSeen('quantity');
     const next = stepQuantity(quantity, delta);
     onCommit(next);
     AccessibilityInfo.announceForAccessibility(next ?? '1');
   };
 
-  const label = t('shopping.quantity.label', { name, quantity: shown ?? '1' });
+  const label = t('shopping.quantity.label', {
+    name,
+    quantity: shown ?? (open ? '1' : t('shopping.quantity.none')),
+  });
   const fade = reduceMotion ? undefined : FadeIn.duration(FADE_MS);
 
   if (open) {
@@ -261,7 +270,7 @@ export function QuantityPill({
             fontVariant: ['tabular-nums'],
           }}
         >
-          {quantity ?? '1'}
+          {quantity ?? NO_QUANTITY}
         </Text>
       </Pressable>
     </Animated.View>

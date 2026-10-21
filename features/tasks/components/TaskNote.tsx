@@ -12,9 +12,11 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useIsOnline } from '@/data/query/online';
 import type { MemberMark } from '@/domain/members/marks';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
+import { markHintSeen } from '@/features/hints/hints';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { noteText } from '@/features/tasks/noteText';
 import { t } from '@/i18n';
@@ -68,6 +70,8 @@ export function TaskNote({
 }: Props) {
   const { colors, shadows, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
+  // Offline the toggle only says so (useToggleTask): the box neither sinks nor buzzes.
+  const online = useIsOnline();
   // Only a note created in this session lands: on first render, a filter change or a recycled
   // row it is simply there. Peeked here, used up after mount (a Strict Mode re-run sees it too).
   const [fresh] = useState(() => isFresh(task.id));
@@ -107,6 +111,10 @@ export function TaskNote({
   const canSwipe = !done && !provisional && !busy && !!onComplete;
 
   const press = () => {
+    if (!online) {
+      onToggle();
+      return;
+    }
     if (!reduceMotion) {
       // The box sinks and springs back; the note then lifts off (exitAnimation).
       // eslint-disable-next-line react-hooks/immutability
@@ -120,8 +128,10 @@ export function TaskNote({
     onToggle();
   };
 
+  // A swipe, or the reader's «complete» action: the swipe hint has done its job.
   const complete = () => {
-    void haptic('success');
+    if (online) void haptic('success');
+    markHintSeen('swipe');
     onComplete?.();
   };
 

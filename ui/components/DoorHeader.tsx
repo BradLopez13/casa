@@ -1,6 +1,7 @@
 import { useContext, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { DOOR_MAX_SCALE } from '../door';
 import { useTheme } from '../theme';
@@ -14,6 +15,7 @@ import {
   useFridgeRefresh,
 } from './doorContext';
 import { DoorHeadline } from './DoorHeadline';
+import { FirstUseHint } from './FirstUseHint';
 
 // The door's pieces live beside it; screens keep importing them from here.
 export {
@@ -108,6 +110,10 @@ export function DoorHeader({
   const top = insetHandled ? 0 : insets.top;
   const refresh = useFridgeRefresh();
   const handle = refresh !== null && door.handle;
+  // The handle's hint waits for the box one: the first day is for learning to tick things off.
+  const refreshOpen = useHint('refresh');
+  const boxOpen = useHint('complete');
+  const refreshHint = refreshOpen && !boxOpen && handle;
   const right = gutter;
 
   // Only a compact door that cannot fit its content scrolls; otherwise its scroll stays off so a
@@ -347,6 +353,18 @@ export function DoorHeader({
           {hierarchy}
           {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
           {below ? <View style={{ marginTop: space(4) }}>{below}</View> : null}
+          {refreshHint ? (
+            <View style={{ marginTop: space(4) }}>
+              <FirstUseHint
+                testID="door.refresh-hint"
+                text={t('refresh.hint')}
+                readerText={t('refresh.hintReader')}
+                arrow="arrow-down"
+                align="center"
+                door
+              />
+            </View>
+          ) : null}
         </View>
       </DoorTypeContext.Provider>
     </View>

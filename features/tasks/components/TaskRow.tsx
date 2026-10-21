@@ -3,11 +3,12 @@ import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
 import type { ToggleVars } from '@/features/tasks/toggle';
-import { useCompleteHint } from '@/features/tasks/completeHint';
+import { useHint } from '@/features/hints/hints';
 import { completeWithUndo } from '@/features/tasks/undo';
+import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { space } from '@/ui/theme';
-import { CompleteHint } from './CompleteHint';
+import { t } from '@/i18n';
 import { DoneTray } from './DoneTray';
 import { TaskNote } from './TaskNote';
 
@@ -18,10 +19,10 @@ type Props = {
   names: Map<string, string>;
   userId: string | null;
   isBusy: (id: string) => boolean;
-  toggle: (vars: ToggleVars) => void;
+  toggle: (vars: ToggleVars) => boolean;
   /** No side padding, for a pane whose container already brings the gutter. */
   flush?: boolean;
-  /** The list's first row: it carries the «tap the box» hint until the first completion. */
+  /** The list's first row: it carries the box hint, then the swipe one, until each is used. */
   first?: boolean;
 };
 
@@ -39,11 +40,34 @@ export function TaskRow({
 }: Props) {
   const router = useRouter();
   const notify = useNotice();
-  const hint = useCompleteHint() && first && row.kind === 'note';
+  const boxHint = useHint('complete');
+  const swipeHint = useHint('swipe');
+  // One hint over the list at a time: the box first, then the swipe.
+  const hint =
+    !first || row.kind !== 'note' ? null : boxHint ? 'complete' : swipeHint ? 'swipe' : null;
   const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   return (
     <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
-      {hint ? <CompleteHint /> : null}
+      {hint === null ? null : (
+        <View style={{ paddingBottom: space(1.5) }}>
+          {hint === 'complete' ? (
+            <FirstUseHint
+              testID="tasks.complete-hint"
+              text={t('tasks.completeHint')}
+              arrow="arrow-down"
+              align="right"
+            />
+          ) : (
+            <FirstUseHint
+              testID="tasks.swipe-hint"
+              text={t('tasks.swipeHint')}
+              readerText={t('tasks.swipeHintReader')}
+              arrow="arrow-forward"
+              align="right"
+            />
+          )}
+        </View>
+      )}
       {row.kind === 'note' ? (
         <TaskNote
           task={row.task}
