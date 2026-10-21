@@ -84,22 +84,22 @@ describe('doorFor', () => {
   });
 
   describe('in one column, where the door scrolls away with the list', () => {
-    it('keeps the full door while its estimate stays within half the window', () => {
-      // 300 × 1.4 = 420 is 49.8 % of 844: the door of Hoy at ×1,6 keeps its shape on a phone.
-      expect(doorFor(layoutFor(390, 844), 844, 2).compact).toBe(false);
+    it('keeps the full door whatever the text size while 300 dp is within half the window', () => {
+      // The .51 (375 × 817): the door of Hoy at ×1,6 measures what it does at ×1, so it keeps
+      // its shape there; the text cap and the fixed magnets see to it.
+      expect(doorFor(layoutFor(375, 817), 817, 2).compact).toBe(false);
       expect(doorFor(layoutFor(390, 844), 844, 1.4).compact).toBe(false);
     });
 
-    it('turns compact as a safety net once the estimate passes half the window', () => {
-      // A low window with large text: 420 of 800 is 52 %.
-      expect(doorFor(layoutFor(390, 800), 800, 1.6)).toMatchObject({
-        compact: true,
-        holdsQuickAdd: false,
-        maxHeight: Math.floor(800 * 0.45),
-      });
+    it('turns compact as a safety net on a window under 600 dp high', () => {
       expect(doorFor(layoutFor(390, 560), 560, 1)).toMatchObject({
         compact: true,
+        holdsQuickAdd: false,
         maxHeight: Math.floor(560 * 0.4),
+      });
+      expect(doorFor(layoutFor(390, 560), 560, 1.6)).toMatchObject({
+        compact: true,
+        maxHeight: Math.floor(560 * 0.45),
       });
     });
 

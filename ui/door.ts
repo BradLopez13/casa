@@ -42,7 +42,9 @@ const LARGE_TEXT = 1.3;
 const COMPACT_MAX_SHARE_LARGE_TEXT = 0.45;
 /**
  * In one column the full door scrolls away with the list, so it may be taller than a fixed one:
- * only past half the window does it compact, a safety net for a low window with large text.
+ * only past half the window does it compact, a safety net for a low window. Its estimate does not
+ * grow with the text there: the door's text is capped (`DOOR_MAX_SCALE`) and its magnets are
+ * fixed, and on the .51 the full door of Hoy measures 292 dp at ×1,6 against 297 at ×1.
  */
 const SCROLLING_MAX_SHARE = 0.5;
 /**
@@ -68,7 +70,7 @@ export function doorFor(
 ): Door {
   const fullDoor = FULL_DOOR_HEIGHT * Math.min(Math.max(1, fontScale), DOOR_MAX_SCALE);
   const crowdsPanes = layout.twoPane && fullDoor > windowHeight * COMPACT_MAX_SHARE;
-  const crowdsList = !layout.twoPane && fullDoor > windowHeight * SCROLLING_MAX_SHARE;
+  const crowdsList = !layout.twoPane && FULL_DOOR_HEIGHT > windowHeight * SCROLLING_MAX_SHARE;
   if (!layout.shortHeight && !crowdsPanes && !crowdsList) {
     return {
       compact: false,
