@@ -224,6 +224,8 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(note).toContain('<CompleteBox');
     const magnet = note.slice(note.indexOf('<Magnet'), note.indexOf('/>', note.indexOf('<Magnet')));
     expect(magnet).toContain('decorative');
+    expect(magnet).not.toMatch(/decorative=/);
+    expect(magnet).not.toMatch(/onPress=/);
     expect(magnet).not.toMatch(/\bcheck=/);
   });
 
@@ -292,5 +294,22 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   it('the door and the tab bar take an outline edge with high contrast', () => {
     expect(read('ui/components/DoorHeader.tsx')).toMatch(/doorEdge\(/);
     expect(read('features/navigation/FridgeTabBar.tsx')).toMatch(/doorEdge\(/);
+  });
+
+  // Movimiento and fase 10e: with Reducir movimiento everything turns to 120 ms fades or nothing,
+  // so every entering/exiting animation is chosen through the flag (or the helpers that read it).
+  it('every entering and exiting animation goes through Reducir movimiento', () => {
+    const guarded = /reduceMotion|enterAnimation\(|exitAnimation\(/;
+    const found = offenders(sources, (line, lines) => {
+      const prop = /\b(?:entering|exiting)=\{([^}]*)\}/.exec(line)?.[1];
+      if (prop === undefined || guarded.test(prop)) return false;
+      // A named animation counts when its own definition reads the flag.
+      const name = /^\s*(\w+)\s*$/.exec(prop)?.[1];
+      const definition = name
+        ? lines.find((l) => new RegExp(`const ${name}\\b`).test(l))
+        : undefined;
+      return definition === undefined || !guarded.test(definition);
+    });
+    expect(found).toEqual([]);
   });
 });
