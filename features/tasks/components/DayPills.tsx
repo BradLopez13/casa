@@ -1,10 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, Text } from 'react-native';
 import { dayCountLabel, type StripDay } from '@/domain/tasks/strip';
 import { dayPills } from '@/features/tasks/dayFilter';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { DOOR_MAX_SCALE } from '@/ui/door';
-import { useTheme } from '@/ui/theme';
+import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
 type Props = {
@@ -24,9 +25,20 @@ type Props = {
  */
 export function DayPills({ days, today, chosen, names, onSelect }: Props) {
   const { colors, radii, space } = useTheme();
+  const reduceMotion = useReduceMotion();
   const pills = dayPills(days, today);
+  // Where each pill starts, so the row can bring the chosen one in: at ×1.6 «sáb» and later sat
+  // past the edge, and choosing one left it half out of view (fase 10b).
+  const scroll = useRef<ScrollView>(null);
+  const starts = useRef(new Map<string, number>());
+  useEffect(() => {
+    const x = starts.current.get(chosen ?? 'all');
+    if (x === undefined) return;
+    scroll.current?.scrollTo({ x: Math.max(0, x - space(5)), animated: !reduceMotion });
+  }, [chosen, reduceMotion, space]);
   return (
     <ScrollView
+      ref={scroll}
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -47,6 +59,7 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
             accessibilityState={{ checked: selected }}
             accessibilityLabel={day ? dayCountLabel(day, today, names) : t('tasks.pill.allLabel')}
             onPress={() => onSelect(pill.date)}
+            onLayout={(event) => starts.current.set(pill.date ?? 'all', event.nativeEvent.layout.x)}
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH,
               paddingHorizontal: space(4),
