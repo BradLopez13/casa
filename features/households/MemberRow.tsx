@@ -3,8 +3,9 @@ import type { MemberMark } from '@/domain/members/marks';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { Magnet } from '@/ui/components/Magnet';
+import { PinnedNote } from '@/ui/components/PinnedNote';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 import type { Member } from './api';
 
 type Props = {
@@ -18,71 +19,47 @@ type Props = {
 };
 
 export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemove }: Props) {
-  const { colors, radii, shadows, noteEdge, space } = useTheme();
+  const { colors, space } = useTheme();
   return (
-    <View
-      testID={`members.row.${member.userId}`}
-      style={{
-        gap: space(3),
-        padding: space(4),
-        borderRadius: radii.note,
-        backgroundColor: colors.note,
-        // A member is a note held by their magnet, with the same depth as a task note.
-        ...shadows.note,
-        ...noteEdge,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
-        {/* The name is read right after it, so the magnet itself stays silent. */}
-        <Magnet
-          initial={mark.initial}
-          color={mark.color}
-          size="md"
-          accessibilityLabel={member.displayName}
-          decorative
-        />
+    // A member is a note held by their magnet, as a task is: the magnet bites its left edge.
+    <PinnedNote testID={`members.row.${member.userId}`} pin={{ mark }} side="left">
+      <View style={{ gap: space(1) }}>
         <View
           style={{
-            flex: 1,
             flexDirection: 'row',
             flexWrap: 'wrap',
-            alignItems: 'center',
+            alignItems: 'baseline',
             columnGap: space(2),
-            rowGap: space(1),
           }}
         >
-          <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '600' }}>
+          <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 18 }}>
             {member.displayName}
           </Text>
           {isSelf ? (
             <Text style={{ color: colors.muted, fontSize: 15 }}>{t('members.you')}</Text>
           ) : null}
-          {member.role === 'owner' ? (
-            <View
-              style={{
-                borderRadius: radii.pill,
-                backgroundColor: colors.door,
-                paddingHorizontal: space(3),
-                paddingVertical: space(1),
-              }}
-            >
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '600' }}>
-                {t('members.owner')}
-              </Text>
-            </View>
-          ) : null}
         </View>
+        {/* Who runs the household is a line under the name, not a badge. */}
+        {member.role === 'owner' ? (
+          <Text
+            testID={`members.owner.${member.userId}`}
+            style={{ color: colors.muted, fontSize: 14 }}
+          >
+            {t('members.owner')}
+          </Text>
+        ) : null}
       </View>
       {canManage && !isSelf ? (
         // Side by side when they fit; on a phone they wrap, and each already has a 44 dp target,
         // so the lines need no extra gap to stay apart.
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space(2) }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space(5) }}>
           <Button
             testID={`members.make-owner.${member.userId}`}
             title={t('members.makeOwner')}
             variant="tertiary"
             icon={actionIcons.makeOwner}
             width="hug"
+            flush
             onPress={onMakeOwner}
           />
           <Button
@@ -92,10 +69,11 @@ export function MemberRow({ member, mark, isSelf, canManage, onMakeOwner, onRemo
             tone="destructive"
             icon={actionIcons.removeMember}
             width="hug"
+            flush
             onPress={onRemove}
           />
         </View>
       ) : null}
-    </View>
+    </PinnedNote>
   );
 }

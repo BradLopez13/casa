@@ -48,5 +48,5 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: sign-in.submit
 - extendedWaitUntil:
-    visible: El correo o la contraseña no son correctos.
+    visible: El correo o la contraseña no coinciden. Revísalos o recupera la contraseña.
     timeout: 20000

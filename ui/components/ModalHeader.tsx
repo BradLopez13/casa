@@ -4,6 +4,7 @@ import { buttonLook, pressedOpacity } from '../buttonLook';
 import { modalTitleInline } from '../modalHeader';
 import { useTheme } from '../theme';
 import { MIN_TOUCH, displayFontBold } from '../tokens';
+import { SheetDragArea } from './SheetDrag';
 
 type Action = {
   testID: string;
@@ -56,7 +57,8 @@ const TITLE_SIZE = 20;
  * centred. The main action never sits here: it is the pósit at the foot. The title stays centred
  * between the action and an empty slot as wide while it fits on one line; with large system text
  * on a phone it would be cut, so it moves to a line of its own under the action instead, whole
- * and free to wrap (`modalTitleInline`).
+ * and free to wrap (`modalTitleInline`). Inside a sheet the bar is also its handle: pulling it
+ * down does what the action does.
  */
 export function ModalHeader({
   title,
@@ -105,34 +107,36 @@ export function ModalHeader({
   );
 
   return (
-    <View
-      style={{
-        paddingHorizontal: space(4),
-        paddingVertical: space(step),
-        borderBottomWidth: 1,
-        borderBottomColor: colors.hairline,
-      }}
-    >
-      {/* The title on one line, unconstrained and unseen: what it would need beside the action. */}
+    <SheetDragArea onDismiss={cancel.onPress} enabled={!cancel.disabled}>
       <View
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{ position: 'absolute', left: 0, top: 0, opacity: 0, flexDirection: 'row' }}
+        style={{
+          paddingHorizontal: space(4),
+          paddingVertical: space(step),
+          borderBottomWidth: 1,
+          borderBottomColor: colors.hairline,
+        }}
       >
-        <Text numberOfLines={1} style={titleStyle} onLayout={width(setTitleWidth)}>
-          {title}
-        </Text>
-      </View>
-      <View onLayout={width(setRow)} style={{ flexDirection: 'row', alignItems: 'center', gap }}>
-        <View onLayout={width(setCancelWidth)}>
-          <HeaderAction {...cancel} />
+        {/* The title on one line, unconstrained and unseen: what it would need beside the action. */}
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ position: 'absolute', left: 0, top: 0, opacity: 0, flexDirection: 'row' }}
+        >
+          <Text numberOfLines={1} style={titleStyle} onLayout={width(setTitleWidth)}>
+            {title}
+          </Text>
         </View>
-        {inline ? heading : <View style={{ flex: 1 }} />}
-        {/* An empty slot as wide as the action keeps the title centred. */}
-        <View style={{ width: cancelWidth }} />
+        <View onLayout={width(setRow)} style={{ flexDirection: 'row', alignItems: 'center', gap }}>
+          <View onLayout={width(setCancelWidth)}>
+            <HeaderAction {...cancel} />
+          </View>
+          {inline ? heading : <View style={{ flex: 1 }} />}
+          {/* An empty slot as wide as the action keeps the title centred. */}
+          <View style={{ width: cancelWidth }} />
+        </View>
+        {inline ? null : heading}
       </View>
-      {inline ? null : heading}
-    </View>
+    </SheetDragArea>
   );
 }

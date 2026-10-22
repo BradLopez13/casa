@@ -106,10 +106,12 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: task-form.delete
 - extendedWaitUntil:
-    visible: ¿Borrar esta tarea?
+    visible: Tarea borrada.
     timeout: 5000
-- tapOn:
-    id: members.confirm
+# The server deletes when the notice goes; the refetch after it must not bring the task back.
+- extendedWaitUntil:
+    notVisible: Tarea borrada.
+    timeout: 15000
 - extendedWaitUntil:
     visible: Mañana, 0 tareas
     timeout: 20000

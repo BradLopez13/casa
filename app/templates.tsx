@@ -14,6 +14,7 @@ import {
   type CatalogItem,
   type CatalogRoom,
 } from '@/domain/tasks/catalog';
+import { roomIcon } from '@/domain/tasks/roomIcons';
 import { ROOMS } from '@/domain/tasks/rooms';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
@@ -29,6 +30,7 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { Magnet } from '@/ui/components/Magnet';
 import { Button } from '@/ui/components/Button';
 import { ModalHeader } from '@/ui/components/ModalHeader';
+import { PinnedNote } from '@/ui/components/PinnedNote';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
@@ -205,37 +207,44 @@ function TemplatesScreen() {
         style={fill}
         contentContainerStyle={{
           paddingHorizontal: space(5),
-          paddingTop: space(3),
+          paddingTop: space(4),
           paddingBottom: space(8),
+          gap: space(5),
         }}
       >
         {groups.map((group) => (
-          <View key={group.room}>
-            <SectionHeader title={roomHeading(group.room)} count={group.items.length} flush />
-            {group.items.map((item) => {
-              const key = catalogId(group.room, item);
-              return (
-                <TemplateRow
-                  key={key}
-                  room={group.room}
-                  item={item}
-                  checked={selected.has(key)}
-                  onToggle={() => toggle(key)}
-                />
-              );
-            })}
-          </View>
+          // Each room is a note to choose from, held by the magnet of its room.
+          <PinnedNote
+            key={group.room}
+            testID={`templates.room.${group.room}`}
+            pin={{ glyph: roomIcon(group.room) }}
+            side="top"
+            paper="task"
+          >
+            {/* Heading and rows stay together, as before: the note's gap is for blocks. */}
+            <View>
+              <SectionHeader title={roomHeading(group.room)} count={group.items.length} flush />
+              {group.items.map((item) => {
+                const key = catalogId(group.room, item);
+                return (
+                  <TemplateRow
+                    key={key}
+                    room={group.room}
+                    item={item}
+                    checked={selected.has(key)}
+                    onToggle={() => toggle(key)}
+                  />
+                );
+              })}
+            </View>
+          </PinnedNote>
         ))}
         {groups.length === 0 ? (
-          <Text style={{ paddingTop: space(4), color: colors.muted, fontSize: 16 }}>
-            {t('templates.empty')}
-          </Text>
+          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('templates.empty')}</Text>
         ) : null}
-        {shortHeight && assignee ? <View style={{ paddingTop: space(4) }}>{assignee}</View> : null}
+        {shortHeight && assignee ? assignee : null}
         {save.error ? (
-          <View style={{ paddingTop: space(4) }}>
-            <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
-          </View>
+          <ErrorText testID="templates.error">{taskErrorMessage(save.error)}</ErrorText>
         ) : null}
       </ScrollView>
       {/* The foot, as on the task form: «Añadir» is the sheet's one pósit, under the thumb. */}

@@ -4,7 +4,7 @@ import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
 import type { ToggleVars } from '@/features/tasks/toggle';
 import { useHint } from '@/features/hints/hints';
-import { completeWithUndo } from '@/features/tasks/undo';
+import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { space } from '@/ui/theme';
@@ -75,11 +75,11 @@ export function TaskRow({
           mark={row.task.assigneeId ? marks.get(row.task.assigneeId) : undefined}
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
           busy={isBusy(row.task.id)}
-          // Tapping the magnet or swiping completes the same way: both offer «Deshacer».
+          // Tapping the box or swiping completes the same way, and reopening too: all offer «Deshacer».
           onToggle={() =>
             row.task.completedAt === null
               ? completeWithUndo({ toggle, notify, task: row.task })
-              : toggle({ id: row.task.id, done: false })
+              : reopenWithUndo({ toggle, notify, task: row.task })
           }
           onComplete={() => completeWithUndo({ toggle, notify, task: row.task })}
           onOpen={() => openTask(row.task.id)}
@@ -91,7 +91,7 @@ export function TaskRow({
           names={names}
           userId={userId}
           today={today}
-          onReopen={(task) => toggle({ id: task.id, done: false })}
+          onReopen={(task) => reopenWithUndo({ toggle, notify, task })}
         />
       )}
     </View>

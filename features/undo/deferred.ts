@@ -1,28 +1,28 @@
 // Pure: no react-native import, so Vitest can check it.
 
-export type DeferredClear = {
-  /** Starts the undo window; a clear already waiting goes through first. null: no timer, the
-   * clear waits for `flush` (a screen reader keeps «Deshacer» until the person is done). */
+export type Deferred = {
+  /** Starts the undo window; an action already waiting goes through first. null: no timer, the
+   * action waits for `flush` (a screen reader keeps «Deshacer» until the person is done). */
   start: (ms: number | null) => void;
-  /** Keeps the bag. True when there was a clear to stop. */
+  /** Keeps things as they were. True when there was an action to stop. */
   undo: () => boolean;
-  /** Clears now if one is waiting (the screen goes away). */
+  /** Runs now if one is waiting (the screen goes away). */
   flush: () => void;
   pending: () => boolean;
 };
 
 /**
- * «Vaciar bolsa» with an undo: the bag empties on screen at once and the server is asked only
- * when the undo window ends, so «Deshacer» has nothing to restore.
+ * An action with an undo («Vaciar bolsa», «Borrar tarea»): it happens on screen at once and the
+ * server is asked only when the undo window ends, so «Deshacer» has nothing to restore.
  */
-export function createDeferredClear({
+export function createDeferred({
   commit,
   schedule,
 }: {
   commit: () => void;
   /** Runs `fn` after `ms`; returns what cancels it. */
   schedule: (fn: () => void, ms: number) => () => void;
-}): DeferredClear {
+}): Deferred {
   let cancel: (() => void) | null = null;
   const nothing = () => undefined;
   const take = () => {

@@ -5,7 +5,7 @@ import type { useInvites } from '@/features/households/queries';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { ErrorText } from '@/ui/components/ErrorText';
+import { LoadError } from '@/ui/components/LoadError';
 import { useTheme } from '@/ui/theme';
 
 type Props = {
@@ -24,18 +24,12 @@ export function PendingInvites({ invites, copyLink, canRevoke, revokingId, onRev
   return (
     <>
       {invites.isError ? (
-        <>
-          <ErrorText testID="members.invites-error">{t('members.invitesLoadError')}</ErrorText>
-          <Button
-            testID="members.invites-retry"
-            title={t('errors.retry')}
-            variant="secondary"
-            icon={actionIcons.retry}
-            width="hug"
-            loading={invites.isFetching}
-            onPress={() => void invites.refetch()}
-          />
-        </>
+        <LoadError
+          testID="members.invites-error"
+          message={t('members.invitesLoadError')}
+          retrying={invites.isFetching}
+          onRetry={() => void invites.refetch()}
+        />
       ) : invites.data ? (
         invites.data.length === 0 ? (
           <Text style={{ color: colors.muted, fontSize: 16 }}>{t('members.pendingEmpty')}</Text>

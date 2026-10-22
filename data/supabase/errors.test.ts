@@ -39,6 +39,17 @@ describe('toAppError', () => {
     });
   });
 
+  it('maps a request cut by the time limit to NETWORK', () => {
+    const timeout = Object.assign(new Error('signal timed out'), { name: 'TimeoutError' });
+    expect(toAppError(timeout)).toMatchObject({ code: 'NETWORK' });
+    const aborted = Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' });
+    expect(toAppError(aborted)).toMatchObject({ code: 'NETWORK' });
+    // PostgREST hands back the fetch failure as `${name}: ${message}`.
+    expect(toAppError({ message: 'TimeoutError: signal timed out', code: '' })).toMatchObject({
+      code: 'NETWORK',
+    });
+  });
+
   it('returns an AppError unchanged', () => {
     const original = new AppError('NOT_OWNER');
     expect(toAppError(original)).toBe(original);

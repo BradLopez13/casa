@@ -5,11 +5,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { iconFor } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
@@ -26,14 +26,22 @@ import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
+import { PinnedNote } from '@/ui/components/PinnedNote';
+import { PropertyChip } from '@/features/tasks/components/PropertyMagnets';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
 import { useTheme } from '@/ui/theme';
+import { displayFontBold } from '@/ui/tokens';
 import { useCloseModal } from '@/ui/useCloseModal';
 import { useLayout } from '@/ui/useLayout';
 import { useRevealFocusedField } from '@/ui/useRevealFocusedField';
+
+/** The product's name as a note title, a step under the task's (26) for shorter words. */
+const TITLE_SIZE = 24;
+/** No quantity, as the pill in the list says it (a symbol, so it stays out of the copy). */
+const NO_QUANTITY = '—';
 
 /** Mounted once inside its frame, so rotating never remounts the form. */
 export default function EditShoppingItemRoute() {
@@ -173,7 +181,7 @@ function EditForm({
   onSave: (name: string, quantity: string | null) => void;
   onDelete: () => void;
 }) {
-  const { colors, radii, noteEdge, space } = useTheme();
+  const { colors, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
@@ -201,6 +209,13 @@ function EditForm({
         : undefined
       : t('shopping.errors.INVALID_ITEM_NAME');
   const quantityInvalid = !parsedQuantity.success;
+  // The quantity field opens from its magnet and only closes on a valid value, so it never goes
+  // away mid-typing or hides what has to be fixed.
+  const [quantityOpen, setQuantityOpen] = useState(false);
+  const quantityShown = quantityOpen;
+  const closeQuantity = () => {
+    if (!quantityInvalid) setQuantityOpen(false);
+  };
   const canSave = online && !busy;
   const save = () => {
     if (parsedName.success && parsedQuantity.success) {
@@ -210,8 +225,6 @@ function EditForm({
     setTriedSave(true);
     if (nameBlank) nameRef.current?.focus();
   };
-  // Dark has its 1 dp edge; light has none, so a hairline stands in, as on the task sheet.
-  const hasEdge = noteEdge.borderWidth > 0;
 
   return (
     <>
@@ -244,35 +257,56 @@ function EditForm({
           >
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
-              <View
-                style={{
-                  padding: space(4),
-                  gap: space(4),
-                  borderRadius: radii.note,
-                  backgroundColor: colors.note,
-                  borderWidth: hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth,
-                  borderColor: hasEdge ? noteEdge.borderColor : colors.hairline,
-                }}
-              >
+              {/* The same clean note as a task: the product's icon is the magnet that holds it, the
+                  name is its title, the quantity a property magnet that opens a short field. */}
+              <PinnedNote pin={{ glyph: iconFor(item.normalizedName) }} side="top">
                 <TextField
                   ref={nameRef}
+                  bare
                   testID="shopping.edit.name"
                   label={t('shopping.edit.name')}
                   value={name}
                   onChangeText={setName}
                   returnKeyType="done"
                   error={nameError}
+                  inputStyle={{
+                    fontFamily: displayFontBold,
+                    fontSize: TITLE_SIZE,
+                    ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
+                  }}
                 />
-                <TextField
-                  testID="shopping.edit.quantity"
-                  label={t('shopping.edit.quantity')}
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  returnKeyType="done"
-                  error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
-                />
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                  <PropertyChip
+                    testID="shopping.edit.quantity-chip"
+                    glyph="scale-outline"
+                    label={t('shopping.edit.quantityLabel')}
+                    value={quantity.trim() === '' ? NO_QUANTITY : quantity.trim()}
+                    spoken={
+                      quantity.trim() === ''
+                        ? t('shopping.edit.quantityNone')
+                        : `${t('shopping.edit.quantityLabel')}, ${quantity.trim()}`
+                    }
+                    muted={quantity.trim() === ''}
+                    open={quantityShown}
+                    onPress={() => (quantityOpen ? closeQuantity() : setQuantityOpen(true))}
+                  />
+                </View>
+                {/* A short field keeps its label: it is what tells it from the title above. */}
+                {quantityShown ? (
+                  <TextField
+                    testID="shopping.edit.quantity"
+                    label={t('shopping.edit.quantity')}
+                    placeholder={t('shopping.edit.quantityExample')}
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    autoFocus={quantityOpen}
+                    returnKeyType="done"
+                    onSubmitEditing={closeQuantity}
+                    error={quantityInvalid ? t('shopping.errors.INVALID_QUANTITY') : undefined}
+                  />
+                ) : null}
                 {error ? <ErrorText testID="shopping.edit.error">{error}</ErrorText> : null}
-              </View>
+              </PinnedNote>
               {/* Kept apart from the note, as the task sheet keeps «Borrar tarea». */}
               <Button
                 testID="shopping.edit.delete"
