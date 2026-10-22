@@ -1,5 +1,5 @@
 import { useContext, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
@@ -15,6 +15,7 @@ import {
   useDoor,
   useFridgeRefresh,
 } from './doorContext';
+import { DoorHandle } from './DoorHandle';
 import { DoorHeadline } from './DoorHeadline';
 import { FirstUseHint } from './FirstUseHint';
 
@@ -324,44 +325,7 @@ export function DoorHeader({
       }}
     >
       {/* The handle only exists where it works: a door outside a refreshing pane has none. */}
-      {refresh && handle ? (
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            // A 44 x 44 touch target inside the door's bottom padding: Android drops taps that
-            // reach past the parent, so only 2 dp of the bar overflow.
-            bottom: 0,
-            height: MIN_TOUCH,
-            alignItems: 'center',
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('refresh.pull')}
-            onPress={refresh.onRefresh}
-            style={{
-              width: MIN_TOUCH,
-              height: MIN_TOUCH,
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-            }}
-          >
-            {/* 36 x 4 drawn, sitting on the door's edge. */}
-            <View
-              style={{
-                width: 36,
-                height: 4,
-                marginBottom: -2,
-                borderRadius: radii.pill,
-                backgroundColor: colors.outline,
-              }}
-            />
-          </Pressable>
-        </View>
-      ) : null}
+      {refresh && handle ? <DoorHandle onRefresh={refresh.onRefresh} /> : null}
       <DoorTypeContext.Provider value={type}>
         <View style={column}>
           {hierarchy}
