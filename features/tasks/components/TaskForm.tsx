@@ -26,6 +26,7 @@ import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
+import { MoreBelowFade, useMoreBelow } from '@/ui/components/MoreBelowFade';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
@@ -92,6 +93,7 @@ export function TaskForm({
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal, show } = useRevealFocusedField();
+  const more = useMoreBelow();
   const picker = useRef<View>(null);
   // What the person typed and chose; `values` adds what the title says.
   const [typed, setTyped] = useState<TaskInput>(initial);
@@ -214,6 +216,15 @@ export function TaskForm({
         >
           <ScrollView
             {...scroll}
+            onScroll={(event) => {
+              scroll.onScroll(event);
+              more.onScroll(event);
+            }}
+            onLayout={(event) => {
+              scroll.onLayout(event);
+              more.onLayout(event);
+            }}
+            onContentSizeChange={more.onContentSizeChange}
             style={fill}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
@@ -333,6 +344,11 @@ export function TaskForm({
               {dangerZone}
             </FocusRevealContext.Provider>
           </ScrollView>
+          {/* On a phone on its side the fourth magnet sat cut under the foot with nothing to say
+              there was more: the page fades in over it (fase 10c). */}
+          <View>
+            <MoreBelowFade visible={more.below} />
+          </View>
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
               actions on the task right above it, or beside it on a short window. */}
           <View
