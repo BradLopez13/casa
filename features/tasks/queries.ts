@@ -47,6 +47,28 @@ export function useTasks(householdId: string | undefined) {
 }
 
 /**
+ * The tasks deleted on screen whose «Deshacer» is still up, as the cache last had them: the door
+ * of Hoy counts them as they were until the delete is confirmed or undone.
+ */
+export function useDeletingTasks(householdId: string | undefined): TaskItem[] {
+  const hidden = useSyncExternalStore(hiddenTasks.subscribe, hiddenTasks.get);
+  const select = useCallback(
+    (tasks: TaskItem[]) =>
+      hidden.size === 0 ? NONE : tasks.filter((task) => hidden.has(task.id)),
+    [hidden],
+  );
+  const { data } = useQuery({
+    queryKey: tasksKey(householdId),
+    queryFn: () => listTasks(householdId as string, sinceIso()),
+    enabled: householdId !== undefined,
+    select,
+  });
+  return data ?? NONE;
+}
+
+const NONE: TaskItem[] = [];
+
+/**
  * Runs a task RPC and refreshes the task list on success.
  *
  * `submit` is `mutate` for forms that close on success: it ignores calls while one is in flight

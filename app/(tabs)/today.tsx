@@ -13,6 +13,7 @@ import { IdeasButton } from '@/features/tasks/components/TaskScreenPieces';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { todaySections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
+import { useDeletingTasks } from '@/features/tasks/queries';
 import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
@@ -58,9 +59,12 @@ export default function TodayScreen() {
 
   // The door counts the whole household, so the line can say what is left for everyone else.
   const tasks = tasksQuery.data;
+  // A delete whose «Deshacer» is still up is not celebrated (DESIGN.md, fase 10a).
+  const deleting = useDeletingTasks(membership?.householdId);
   const line = useMemo(
-    () => todayLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
-    [tasks, today, userId, assigneeId, filterName],
+    () =>
+      todayLine({ tasks: tasks ?? [], deleting, today, userId, filter: assigneeId, filterName }),
+    [tasks, deleting, today, userId, assigneeId, filterName],
   );
   const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
   const cards = todayCards({
