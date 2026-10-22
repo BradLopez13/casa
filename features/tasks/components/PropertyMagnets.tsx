@@ -4,7 +4,7 @@ import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { recurrenceLabel } from '@/domain/recurrence/label';
 import type { RecurrenceRule } from '@/domain/recurrence/rule';
-import { dueLabel } from '@/domain/tasks/labels';
+import { dueChipLabel } from '@/domain/tasks/labels';
 import type { Room } from '@/domain/tasks/rooms';
 import { t } from '@/i18n';
 import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
@@ -190,7 +190,7 @@ export function PropertyMagnets({
       <Chip
         field="due"
         label={t('taskForm.dueLabel')}
-        value={dueLabel(due, today)}
+        value={dueChipLabel(due, today)}
         open={open === 'due'}
         onOpen={onOpen}
       />

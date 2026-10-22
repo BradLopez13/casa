@@ -1,5 +1,5 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TodayScreen from '@/app/(tabs)/today';
 import { AppError } from '@/data/supabase/errors';
@@ -100,6 +100,25 @@ beforeEach(() => {
   onlineManager.setOnline(true);
 });
 
+/**
+ * Runs `fn` with the window at `width` × `height` (a phone held upright), then puts it back.
+ * react-native-web reads the window from the root element, which jsdom leaves at 0 × 0.
+ */
+function atWindow(width: number, height: number, fn: () => void) {
+  const root = document.documentElement;
+  const resize = (w: number, h: number) => {
+    Object.defineProperty(root, 'clientWidth', { configurable: true, value: w });
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: h });
+    window.dispatchEvent(new Event('resize'));
+  };
+  act(() => resize(width, height));
+  try {
+    fn();
+  } finally {
+    act(() => resize(0, 0));
+  }
+}
+
 describe('Hoy', () => {
   it('lists the open tasks for today and says how many are left on the door', () => {
     renderToday([
@@ -148,12 +167,24 @@ describe('Hoy', () => {
 
   it('shows what the quick add understands while the field is empty', () => {
     hintsOpen('quickAdd');
+    atWindow(390, 844, () => {
+      renderToday([]);
+      const hint = screen.getByTestId('today.quick-add.hint');
+      // The example uses someone of the household.
+      expect(hint.textContent).toContain('@Bo');
+      fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+      expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
+    });
+  });
+
+  it('in a compact door (a phone on its side) the example drops «@nombre», whole on one line', () => {
+    hintsOpen('quickAdd');
+    // jsdom's own window (0 × 0 to react-native-web) is a short one: the door is compact.
     renderToday([]);
     const hint = screen.getByTestId('today.quick-add.hint');
-    // The example uses someone of the household.
-    expect(hint.textContent).toContain('@Bo');
-    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
-    expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
+    expect(hint.textContent).toContain(t('tasks.quickHint.exampleAlone'));
+    expect(hint.textContent).not.toContain('@');
+    expect(getComputedStyle(hint).textOverflow).toBe('ellipsis');
   });
 
   it('offers task ideas when there is nothing to do today', () => {
