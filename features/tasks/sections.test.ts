@@ -35,7 +35,7 @@ describe('todaySections', () => {
     const sections = todaySections([done, due, late], TODAY);
     expect(sections.map((s) => [s.key, s.title, s.count])).toEqual([
       ['today', 'Para hoy', 1],
-      ['overdue', 'De otros días', 1],
+      ['overdue', 'De días anteriores', 1],
       ['doneToday', 'Hechas hoy', 1],
     ]);
     expect(sections[1]?.data).toEqual([{ kind: 'note', task: late }]);
@@ -56,26 +56,43 @@ describe('todaySections', () => {
 });
 
 describe('allSections', () => {
-  it('separates the overdue tasks before the dated ones', () => {
+  // TODAY, 9 October 2026, is a Friday: Saturday and Sunday are still this week.
+  it('groups by date: earlier days, today, this week, later, no date, then the tray (fase 10c)', () => {
     const late = task({ dueOn: '2026-10-01' });
-    const dated = task({ dueOn: '2026-11-01' });
-    const sections = allSections([dated, late], TODAY);
-    expect(sections.map((s) => [s.key, s.count])).toEqual([
-      ['overdue', 1],
-      ['dated', 1],
-    ]);
-  });
-
-  it('lists dated, undated and the done tray', () => {
-    const dated = task({ dueOn: '2026-11-01' });
+    const due = task({ dueOn: TODAY });
+    const saturday = task({ dueOn: '2026-10-10' });
+    const sunday = task({ dueOn: '2026-10-11' });
+    const monday = task({ dueOn: '2026-10-12' });
     const undated = task();
     const done = doneToday();
-    const sections = allSections([done, undated, dated], TODAY);
+    const sections = allSections([done, undated, monday, sunday, saturday, due, late], TODAY);
     expect(sections.map((s) => [s.key, s.title, s.count])).toEqual([
-      ['dated', 'Con fecha', 1],
+      ['overdue', 'De días anteriores', 1],
+      ['today', 'Hoy', 1],
+      ['thisWeek', 'Esta semana', 2],
+      ['later', 'Más adelante', 1],
       ['undated', 'Sin fecha', 1],
       ['done', 'Hechas', 1],
     ]);
-    expect(sections[2]?.data).toEqual([{ kind: 'tray', tasks: [done] }]);
+    expect(sections[2]?.data).toEqual([
+      { kind: 'note', task: saturday },
+      { kind: 'note', task: sunday },
+    ]);
+    expect(sections[5]?.data).toEqual([{ kind: 'tray', tasks: [done] }]);
+  });
+
+  it('on a Sunday the week is over: from tomorrow on is later', () => {
+    const monday = task({ dueOn: '2026-10-12' });
+    expect(allSections([monday], '2026-10-11').map((s) => s.key)).toEqual(['later']);
+  });
+
+  it('on a Monday the whole week ahead is this week', () => {
+    const sunday = task({ dueOn: '2026-10-18' });
+    expect(allSections([sunday], '2026-10-12').map((s) => s.key)).toEqual(['thisWeek']);
+  });
+
+  it('drops the groups with nothing in them', () => {
+    expect(allSections([task()], TODAY).map((s) => s.key)).toEqual(['undated']);
+    expect(allSections([], TODAY)).toEqual([]);
   });
 });
