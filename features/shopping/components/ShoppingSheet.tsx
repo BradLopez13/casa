@@ -244,12 +244,10 @@ export function ShoppingSheet({
                   <Animated.View
                     entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
                     exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
+                    // «Vaciar bolsa» goes under the heading as a quiet tertiary: beside it, at
+                    // ×1.6 it was the biggest thing on Compra (fase 10a).
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: space(3),
+                      alignItems: 'flex-start',
                       paddingHorizontal: space(4),
                       paddingTop: space(4),
                       paddingBottom: space(2),
@@ -281,7 +279,9 @@ export function ShoppingSheet({
                     <Button
                       testID="shopping.clear"
                       title={t('shopping.clear')}
-                      variant="secondary"
+                      variant="tertiary"
+                      width="hug"
+                      flush
                       icon={actionIcons.delete}
                       disabled={!online}
                       loading={clearing}
