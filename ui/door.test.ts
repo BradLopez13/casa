@@ -27,7 +27,7 @@ describe('doorFor', () => {
       handle: true,
       maxHeight: null,
       holdsQuickAdd: false,
-      denseFilter: false,
+      beside: false,
     });
   });
 
@@ -45,7 +45,7 @@ describe('doorFor', () => {
       maxHeight: 156,
       // 844 wide is two panes: the quick add keeps its pane.
       holdsQuickAdd: false,
-      denseFilter: false,
+      beside: true,
     });
     expect(doorFor(layoutFor(800, 499), 499)).toMatchObject({
       compact: true,
@@ -67,7 +67,7 @@ describe('doorFor', () => {
         handle: false,
         maxHeight: 274,
         holdsQuickAdd: false,
-        denseFilter: false,
+        beside: true,
       });
     });
 
@@ -86,43 +86,51 @@ describe('doorFor', () => {
     });
   });
 
-  describe('in one column, where the door scrolls away with the list (fase 10b)', () => {
-    it('keeps the full door at the default text size on a phone', () => {
-      // The .51 (375 × 817): 300 dp is 37 % of it.
+  describe('in one column, where the door scrolls away with the list', () => {
+    it('keeps the full door at the default text while 300 dp is within half the window', () => {
       expect(doorFor(layoutFor(375, 817), 817, 1).compact).toBe(false);
-      expect(doorFor(layoutFor(390, 844), 844, 1).compact).toBe(false);
+      // An iPhone SE: 300 dp is 45 % of it, still under half.
+      expect(doorFor(layoutFor(375, 667), 667, 1).compact).toBe(false);
+      expect(doorFor(layoutFor(390, 600), 600, 1).compact).toBe(false);
     });
 
-    it('turns compact from ×1.3 on the .51: its estimate grows with the text past 40 %', () => {
-      // 300 × 1.3 = 390 dp, 48 % of 817: two whole notes need the room (PRODUCT.md, the person
-      // with large text).
+    it('turns compact as a safety net on a window under 600 dp high', () => {
+      expect(doorFor(layoutFor(390, 560), 560, 1)).toMatchObject({
+        compact: true,
+        holdsQuickAdd: false,
+        maxHeight: Math.floor(560 * 0.4),
+      });
+    });
+
+    it('below ×1.3 keeps the full door on the .51', () => {
+      expect(doorFor(layoutFor(375, 817), 817, 1.15).compact).toBe(false);
+      expect(doorFor(layoutFor(375, 817), 817, 1.29).compact).toBe(false);
+    });
+
+    it('from ×1.3 compacts at 40 % with an estimate that grows with the text (fase 10b)', () => {
+      // 300 × 1.3 = 390 dp, 48 % of the .51's 817: two whole notes need the room (PRODUCT.md,
+      // the person with large text).
       expect(doorFor(layoutFor(375, 817), 817, 1.3)).toMatchObject({
         compact: true,
         holdsQuickAdd: false,
         maxHeight: Math.floor(817 * 0.45),
+        beside: false,
       });
       expect(doorFor(layoutFor(375, 817), 817, 1.6).compact).toBe(true);
       expect(doorFor(layoutFor(375, 817), 817, 2).compact).toBe(true);
-    });
-
-    it('compacts at 40 %, as above two panes', () => {
-      expect(doorFor(layoutFor(390, 760), 760, 1).compact).toBe(false);
-      expect(doorFor(layoutFor(390, 740), 740, 1)).toMatchObject({
-        compact: true,
-        maxHeight: Math.floor(740 * 0.4),
-      });
+      // A tall one-column window keeps its full door: there is room.
+      expect(doorFor(layoutFor(600, 1100), 1100, 1.4).compact).toBe(false);
     });
   });
 
-  describe('denseFilter', () => {
-    it('takes the person filter to medium magnets without names from ×1.3 in one column', () => {
-      expect(doorFor(layoutFor(375, 817), 817, 1.3).denseFilter).toBe(true);
-      expect(doorFor(layoutFor(375, 817), 817, 1.6).denseFilter).toBe(true);
+  describe('beside', () => {
+    it('lays hierarchy and controls side by side on a short window and above two panes', () => {
+      expect(doorFor(layoutFor(817, 375), 375).beside).toBe(true);
+      expect(doorFor(layoutFor(1143, 686), 686).beside).toBe(true);
     });
 
-    it('keeps the names at smaller text, and above two panes', () => {
-      expect(doorFor(layoutFor(375, 817), 817, 1.2).denseFilter).toBe(false);
-      expect(doorFor(layoutFor(1280, 1200), 1200, 1.6).denseFilter).toBe(false);
+    it('stacks them on a phone held upright, compact at large text (fase 10b)', () => {
+      expect(doorFor(layoutFor(375, 817), 817, 1.6).beside).toBe(false);
     });
   });
 

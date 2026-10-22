@@ -2,7 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
-import { useDoor, useDoorCompact } from '@/ui/components/doorContext';
+import { useDoorCompact } from '@/ui/components/doorContext';
 import { Magnet } from '@/ui/components/Magnet';
 import { NidoSymbol } from '@/ui/components/NidoSymbol';
 import { useTheme } from '@/ui/theme';
@@ -23,14 +23,12 @@ type Props = {
  * In a compact door (a phone on its side) the magnets are the medium size, ring included still a
  * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
  * keeps its initial and colour on screen and the name for screen readers. `dense` forces that
- * layout in a full door, as large text does in one column (`Door.denseFilter`).
+ * layout in a full door. On a phone from ×1.3 the door is compact, so the names give way there too
+ * and two notes stay in view (fase 10b).
  */
 export function MemberFilter({ members, marks, userId, selected, onSelect, dense = false }: Props) {
   const { colors, space } = useTheme();
-  const inCompactDoor = useDoorCompact();
-  // From ×1.3 in one column the names give way too, so two notes stay in view (fase 10b).
-  const { denseFilter } = useDoor();
-  const compact = inCompactDoor || dense || denseFilter;
+  const compact = useDoorCompact() || dense;
   const allName = t('tasks.filterAll');
   return (
     <ScrollView

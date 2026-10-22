@@ -52,11 +52,10 @@ describe('font scale caps', () => {
     expect(capsOutsideDoor('<Text>')).toBe(false);
   });
 
-  it('caps the door’s eyebrow, headline and line', () => {
-    const door = ['ui/components/DoorHeader.tsx', 'ui/components/DoorHeadline.tsx']
-      .map((f) => readFileSync(path.join(ROOT, f), 'utf8'))
-      .join('\n');
-    const caps = door.split(DOOR_CAP).length - 1 + (door.split(HEADLINE_CAP).length - 1);
-    expect(caps).toBeGreaterThanOrEqual(3);
+  it('caps the door’s eyebrow and line at 1.4, and the headline at its own cap', () => {
+    const header = readFileSync(path.join(ROOT, 'ui/components/DoorHeader.tsx'), 'utf8');
+    const headline = readFileSync(path.join(ROOT, 'ui/components/DoorHeadline.tsx'), 'utf8');
+    expect(header.split(DOOR_CAP).length - 1).toBeGreaterThanOrEqual(2);
+    expect(headline.split(HEADLINE_CAP).length - 1).toBeGreaterThanOrEqual(1);
   });
 });

@@ -31,11 +31,14 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
   // past the edge, and choosing one left it half out of view (fase 10b).
   const scroll = useRef<ScrollView>(null);
   const starts = useRef(new Map<string, number>());
+  const bringIn = (x: number, animated: boolean) =>
+    scroll.current?.scrollTo({ x: Math.max(0, x - space(5)), animated });
   useEffect(() => {
     const x = starts.current.get(chosen ?? 'all');
-    if (x === undefined) return;
-    scroll.current?.scrollTo({ x: Math.max(0, x - space(5)), animated: !reduceMotion });
-  }, [chosen, reduceMotion, space]);
+    if (x !== undefined) bringIn(x, !reduceMotion);
+    // Only a new choice moves the row; a pill laid out for the first time places itself below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chosen]);
   return (
     <ScrollView
       ref={scroll}
@@ -59,7 +62,14 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
             accessibilityState={{ checked: selected }}
             accessibilityLabel={day ? dayCountLabel(day, today, names) : t('tasks.pill.allLabel')}
             onPress={() => onSelect(pill.date)}
-            onLayout={(event) => starts.current.set(pill.date ?? 'all', event.nativeEvent.layout.x)}
+            onLayout={(event) => {
+              const key = pill.date ?? 'all';
+              const first = !starts.current.has(key);
+              starts.current.set(key, event.nativeEvent.layout.x);
+              // Opened on a chosen day (a link, a turn): the row starts there, without a slide.
+              if (first && selected && pill.date !== null)
+                bringIn(event.nativeEvent.layout.x, false);
+            }}
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH,
               paddingHorizontal: space(4),

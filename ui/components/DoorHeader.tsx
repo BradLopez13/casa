@@ -249,8 +249,16 @@ export function DoorHeader({
                   rowGap: space(2),
                 }}
               >
+                {/* Beside the controls on a short window or above two panes; on a phone held
+                    upright (large text) there is no room beside, so it takes the full width and
+                    the controls go under it (fase 10b). */}
                 <View
-                  style={{ flexShrink: 1, ...(controls ? { maxWidth: '50%' } : { flexGrow: 1 }) }}
+                  style={{
+                    flexShrink: 1,
+                    ...(controls && door.beside
+                      ? { maxWidth: '50%' }
+                      : { flexGrow: 1, flexBasis: '100%' }),
+                  }}
                 >
                   {hierarchy}
                 </View>
