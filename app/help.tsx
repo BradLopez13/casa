@@ -65,7 +65,15 @@ function HelpScreen() {
   // Opened from an empty state on one entry: the list starts there.
   const { entry } = useLocalSearchParams<{ entry?: string }>();
   const scroll = useRef<ScrollView>(null);
-  const noteTop = useRef(0);
+  // Where the note and the asked entry sit; it scrolls once both are known, and only once, so a
+  // later layout (the members arriving, a turn) never pulls the reader back.
+  const spots = useRef<{ note?: number; item?: number; placed: boolean }>({ placed: false });
+  const place = () => {
+    const { note, item, placed } = spots.current;
+    if (placed || note === undefined || item === undefined) return;
+    spots.current.placed = true;
+    scroll.current?.scrollTo({ y: Math.max(0, note + item - space(3)), animated: false });
+  };
   const [again, setAgain] = useState(false);
   const body = (key: string) =>
     key === 'write'
@@ -84,13 +92,20 @@ function HelpScreen() {
       <ScrollView
         ref={scroll}
         style={fill}
+        // Once the reader moves the list, the asked entry stops pulling it back.
+        onScrollBeginDrag={() => (spots.current.placed = true)}
         contentContainerStyle={{
           paddingHorizontal: space(5),
           paddingTop: space(3),
           paddingBottom: space(8),
         }}
       >
-        <View onLayout={(event) => (noteTop.current = event.nativeEvent.layout.y)}>
+        <View
+          onLayout={(event) => {
+            spots.current.note = event.nativeEvent.layout.y;
+            place();
+          }}
+        >
           <Note>
             {HELP_ITEMS.map((item) => (
               <View
@@ -98,8 +113,8 @@ function HelpScreen() {
                 testID={`help.${item.key}`}
                 onLayout={(event) => {
                   if (item.key !== entry) return;
-                  const y = noteTop.current + event.nativeEvent.layout.y;
-                  scroll.current?.scrollTo({ y: Math.max(0, y - space(3)), animated: false });
+                  spots.current.item = event.nativeEvent.layout.y;
+                  place();
                 }}
                 style={{ flexDirection: 'row', gap: space(3), paddingVertical: space(1) }}
               >

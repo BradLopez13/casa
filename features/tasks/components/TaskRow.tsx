@@ -74,6 +74,7 @@ export function TaskRow({
           today={today}
           mark={row.task.assigneeId ? marks.get(row.task.assigneeId) : undefined}
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
+          mine={row.task.assigneeId !== null && row.task.assigneeId === userId}
           busy={isBusy(row.task.id)}
           // Tapping the box or swiping completes the same way, and reopening too: all offer «Deshacer».
           onToggle={() =>

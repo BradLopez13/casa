@@ -53,7 +53,8 @@ export function loadHintSeen(id: HintId): Promise<boolean> {
         const now = Date.now();
         const lastUse = parseLastUse(value, now);
         // The old dateless mark becomes today's date, so it can come back in a month.
-        if (value !== null && String(lastUse) !== value) {
+        // Not after «Volver a ver las pistas» ran meanwhile: that removal wins.
+        if (value !== null && String(lastUse) !== value && !seen.has(id)) {
           AsyncStorage.setItem(keyOf(id), String(lastUse)).catch(() => undefined);
         }
         if (!lastUses.has(id)) lastUses.set(id, lastUse);

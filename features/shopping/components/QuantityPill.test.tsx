@@ -59,7 +59,8 @@ describe('QuantityPill', () => {
       cleanup();
       return role;
     });
-    expect(new Set(roles).size).toBe(1);
+    // react-native-web draws «adjustable» as a slider.
+    expect(roles).toEqual(['slider', 'slider', 'slider']);
   });
 
   it('shows the quantity there is', () => {
