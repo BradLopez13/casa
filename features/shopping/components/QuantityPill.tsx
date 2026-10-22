@@ -254,8 +254,10 @@ export function QuantityPill({
         style={({ pressed }) => ({
           minHeight: PILL_HEIGHT,
           minWidth: MIN_TOUCH,
+          flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
+          gap: space(1),
           paddingHorizontal: space(3),
           borderRadius: radii.pill,
           borderWidth: 1,
@@ -263,8 +265,19 @@ export function QuantityPill({
           opacity: pressedOpacity(pressed),
         })}
       >
+        {/* The scale of the product sheet, before the value: the same piece in the list and in the
+            sheet, so «—» reads as «no quantity» and never as a «−» that removes (fase 10a). */}
+        <Ionicons
+          name="scale-outline"
+          size={14}
+          color={colors.muted}
+          accessible={false}
+          importantForAccessibility="no"
+        />
         <Text
+          numberOfLines={1}
           style={{
+            flexShrink: 1,
             color: quantity === null ? colors.muted : colors.ink,
             fontSize: 15,
             fontVariant: ['tabular-nums'],
