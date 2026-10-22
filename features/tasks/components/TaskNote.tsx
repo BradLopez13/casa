@@ -105,7 +105,7 @@ export function TaskNote({
 
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
-  const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);
+  const { room, due, overdue, repeat, label, owner } = noteText(task, today, assigneeName);
 
   const swipeable = useRef<SwipeableMethods>(null);
   const canSwipe = !done && !provisional && !busy && !!onComplete;
@@ -154,15 +154,16 @@ export function TaskNote({
         ...noteEdge,
       }}
     >
-      {/* The magnet only says whose task it is; the box on the right completes it. */}
+      {/* The magnet only says whose task it is; the box on the right completes it. A screen
+          reader hears it as a short stop, «de Segundo», never as a control (fase 10d). */}
       <Animated.View style={[{ marginLeft: -magnetSizes.md / 2 }, magnetStyle]}>
         <Magnet
           size="md"
-          decorative
+          decorative={owner === null}
           variant={mark ? 'filled' : 'empty'}
           color={mark?.color ?? 'teal'}
           initial={mark?.initial ?? ''}
-          accessibilityLabel={assigneeName ?? ''}
+          accessibilityLabel={owner ?? ''}
         />
       </Animated.View>
       <ReanimatedSwipeable

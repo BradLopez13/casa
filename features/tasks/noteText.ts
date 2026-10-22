@@ -8,8 +8,13 @@ export type NoteText = {
   due: string;
   overdue: boolean;
   repeat: string | null;
-  /** What a screen reader says for the note body (the magnet is hidden from it). */
+  /** What a screen reader says for the note body. */
   label: string;
+  /**
+   * What the magnet says, «de Ana», when someone has the task: a short stop of its own before the
+   * note (fase 10d). With nobody, the magnet stays hidden and the note says «Sin responsable».
+   */
+  owner: string | null;
 };
 
 /** The words a task note shows and announces, kept apart from the component so they can be tested. */
@@ -22,8 +27,9 @@ export function noteText(
   const room = task.room ? t(`rooms.${task.room}`) : null;
   const due = overdue && task.dueOn ? overdueLabel(task.dueOn, today) : dueLabel(task.dueOn, today);
   const repeat = task.recurrence ? recurrenceLabel(task.recurrence) : null;
-  const label = [task.title, assigneeName ?? t('tasks.a11y.unassigned'), room, due, repeat]
+  const owner = assigneeName === undefined ? null : t('tasks.a11y.owner', { name: assigneeName });
+  const label = [task.title, owner === null ? t('tasks.a11y.unassigned') : null, room, due, repeat]
     .filter((part) => part !== null)
     .join(', ');
-  return { room, due, overdue, repeat, label };
+  return { room, due, overdue, repeat, label, owner };
 }

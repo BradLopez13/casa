@@ -242,15 +242,17 @@ export function QuantityPill({
         testID={`shopping.item.${itemId}.quantity`}
         onPress={press}
         hitSlop={{ top: (MIN_TOUCH - PILL_HEIGHT) / 2, bottom: (MIN_TOUCH - PILL_HEIGHT) / 2 }}
-        accessibilityRole={steppable ? 'adjustable' : 'button'}
+        // Adjustable on every row (fase 10d): a quantity that cannot step («un poco») opens the
+        // item's sheet on a swipe, as a tap does.
+        accessibilityRole="adjustable"
         accessibilityLabel={label}
         accessibilityHint={steppable ? undefined : t('shopping.a11y.edit')}
-        accessibilityActions={
-          steppable ? [{ name: 'increment' }, { name: 'decrement' }] : undefined
-        }
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(event) => {
-          if (event.nativeEvent.actionName === 'increment') adjust(1);
-          if (event.nativeEvent.actionName === 'decrement') adjust(-1);
+          const { actionName } = event.nativeEvent;
+          if (actionName !== 'increment' && actionName !== 'decrement') return;
+          if (!steppable) onEdit();
+          else adjust(actionName === 'increment' ? 1 : -1);
         }}
         style={({ pressed }) => ({
           minHeight: PILL_HEIGHT,

@@ -285,6 +285,7 @@
   "tasks.a11y.reopenByYou": "Reopen “{title}”, done by you",
   "tasks.doneWhen.yesterday": "yesterday, {time}",
   "tasks.doneWhen.on": "{date}, {time}",
+  "tasks.a11y.owner": "{name}'s",
   "tasks.a11y.unassigned": "No one assigned",
   "tasks.a11y.edit": "Opens the task to edit it",
   "tasks.a11y.added": "“{title}” added.",

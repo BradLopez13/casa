@@ -24,7 +24,13 @@ describe('noteText', () => {
   it('has no repeat part for a one-off task', () => {
     const text = noteText(base, TODAY, 'Ana');
     expect(text.repeat).toBeNull();
-    expect(text.label).toBe('Regar las plantas, Ana, Cocina, Hoy');
+    // Whose it is, the magnet says on its own (fase 10d): the note does not say it twice.
+    expect(text.label).toBe('Regar las plantas, Cocina, Hoy');
+  });
+
+  it('gives the magnet a short part of its own, «de Ana», when someone has the task', () => {
+    expect(noteText(base, TODAY, 'Ana').owner).toBe('de Ana');
+    expect(noteText(base, TODAY, undefined).owner).toBeNull();
   });
 
   it('appends the rule to the label of a recurring task', () => {

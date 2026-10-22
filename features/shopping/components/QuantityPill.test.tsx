@@ -52,6 +52,16 @@ describe('QuantityPill', () => {
     }
   });
 
+  it('is adjustable on every row, even a quantity that cannot step (fase 10d)', () => {
+    const roles = [null, '2', 'un poco'].map((quantity) => {
+      const { pill } = renderPill(quantity);
+      const role = pill.getAttribute('role');
+      cleanup();
+      return role;
+    });
+    expect(new Set(roles).size).toBe(1);
+  });
+
   it('shows the quantity there is', () => {
     expect(renderPill('2').pill.textContent).toBe('2');
   });
