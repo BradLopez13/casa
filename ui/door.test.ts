@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DOOR_MAX_SCALE, DOOR_TYPE, doorFor } from './door';
+import { DOOR_HEADLINE_MAX_SCALE, DOOR_MAX_SCALE, DOOR_TYPE, doorFor } from './door';
 import { layoutFor } from './layout';
 
 describe('DOOR_TYPE', () => {
@@ -27,13 +27,14 @@ describe('doorFor', () => {
       handle: true,
       maxHeight: null,
       holdsQuickAdd: false,
+      denseFilter: false,
     });
   });
 
   it('is not short at exactly 500 high: only the space rule can compact it there', () => {
     // 300 of 500 is 60 %: compact by space, in one column as above two panes.
     expect(doorFor(layoutFor(800, 500), 500)).toMatchObject({ compact: true, maxHeight: 200 });
-    expect(doorFor({ shortHeight: false, twoPane: false }, 620).compact).toBe(false);
+    expect(doorFor({ shortHeight: false, twoPane: false }, 800).compact).toBe(false);
   });
 
   it('turns compact below 500 high: smaller type, no handle, at most 40% of the window', () => {
@@ -44,6 +45,7 @@ describe('doorFor', () => {
       maxHeight: 156,
       // 844 wide is two panes: the quick add keeps its pane.
       holdsQuickAdd: false,
+      denseFilter: false,
     });
     expect(doorFor(layoutFor(800, 499), 499)).toMatchObject({
       compact: true,
@@ -65,6 +67,7 @@ describe('doorFor', () => {
         handle: false,
         maxHeight: 274,
         holdsQuickAdd: false,
+        denseFilter: false,
       });
     });
 
@@ -83,28 +86,43 @@ describe('doorFor', () => {
     });
   });
 
-  describe('in one column, where the door scrolls away with the list', () => {
-    it('keeps the full door whatever the text size while 300 dp is within half the window', () => {
-      // The .51 (375 × 817): the door of Hoy at ×1,6 measures what it does at ×1, so it keeps
-      // its shape there; the text cap and the fixed magnets see to it.
-      expect(doorFor(layoutFor(375, 817), 817, 2).compact).toBe(false);
-      expect(doorFor(layoutFor(390, 844), 844, 1.4).compact).toBe(false);
+  describe('in one column, where the door scrolls away with the list (fase 10b)', () => {
+    it('keeps the full door at the default text size on a phone', () => {
+      // The .51 (375 × 817): 300 dp is 37 % of it.
+      expect(doorFor(layoutFor(375, 817), 817, 1).compact).toBe(false);
+      expect(doorFor(layoutFor(390, 844), 844, 1).compact).toBe(false);
     });
 
-    it('turns compact as a safety net on a window under 600 dp high', () => {
-      expect(doorFor(layoutFor(390, 560), 560, 1)).toMatchObject({
+    it('turns compact from ×1.3 on the .51: its estimate grows with the text past 40 %', () => {
+      // 300 × 1.3 = 390 dp, 48 % of 817: two whole notes need the room (PRODUCT.md, the person
+      // with large text).
+      expect(doorFor(layoutFor(375, 817), 817, 1.3)).toMatchObject({
         compact: true,
         holdsQuickAdd: false,
-        maxHeight: Math.floor(560 * 0.4),
+        maxHeight: Math.floor(817 * 0.45),
       });
-      expect(doorFor(layoutFor(390, 560), 560, 1.6)).toMatchObject({
-        compact: true,
-        maxHeight: Math.floor(560 * 0.45),
-      });
+      expect(doorFor(layoutFor(375, 817), 817, 1.6).compact).toBe(true);
+      expect(doorFor(layoutFor(375, 817), 817, 2).compact).toBe(true);
     });
 
-    it('stays full at exactly half', () => {
-      expect(doorFor(layoutFor(390, 600), 600, 1).compact).toBe(false);
+    it('compacts at 40 %, as above two panes', () => {
+      expect(doorFor(layoutFor(390, 760), 760, 1).compact).toBe(false);
+      expect(doorFor(layoutFor(390, 740), 740, 1)).toMatchObject({
+        compact: true,
+        maxHeight: Math.floor(740 * 0.4),
+      });
+    });
+  });
+
+  describe('denseFilter', () => {
+    it('takes the person filter to medium magnets without names from ×1.3 in one column', () => {
+      expect(doorFor(layoutFor(375, 817), 817, 1.3).denseFilter).toBe(true);
+      expect(doorFor(layoutFor(375, 817), 817, 1.6).denseFilter).toBe(true);
+    });
+
+    it('keeps the names at smaller text, and above two panes', () => {
+      expect(doorFor(layoutFor(375, 817), 817, 1.2).denseFilter).toBe(false);
+      expect(doorFor(layoutFor(1280, 1200), 1200, 1.6).denseFilter).toBe(false);
     });
   });
 
@@ -148,5 +166,11 @@ describe('doorFor', () => {
         maxHeight: Math.floor(375 * 0.4),
       });
     });
+  });
+
+  it('keeps the headline above a note title at ×2, even in a compact door (fase 10b)', () => {
+    const noteTitle = 17 * 2;
+    expect(DOOR_TYPE.compact.heading * DOOR_HEADLINE_MAX_SCALE).toBeGreaterThan(noteTitle);
+    expect(DOOR_TYPE.full.heading * DOOR_HEADLINE_MAX_SCALE).toBeGreaterThan(noteTitle);
   });
 });

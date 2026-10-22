@@ -27,10 +27,21 @@ export type Door = {
    * where a field under the door would take the list's only row. Above two panes it stays put.
    */
   holdsQuickAdd: boolean;
+  /**
+   * The person filter in medium magnets without names (`MemberFilter dense`): in one column from
+   * ×1.3, where names under 56 dp magnets left a single note in view (fase 10b).
+   */
+  denseFilter: boolean;
 };
 
 /** Largest the door's own text grows with the system's: past it the list would have no room. */
 export const DOOR_MAX_SCALE = 1.4;
+/**
+ * The headline's own cap, a step above the rest of the door: at ×2 a compact headline capped at
+ * 1.4 (24 × 1.4 = 33.6 sp) came out smaller than a note's title (17 × 2 = 34 sp) and the
+ * hierarchy turned upside down (fase 10b, decisión de Brad).
+ */
+export const DOOR_HEADLINE_MAX_SCALE = 1.6;
 
 /** Share of the window height a compact door may take, so the list keeps most of it. */
 const COMPACT_MAX_SHARE = 0.4;
@@ -41,13 +52,6 @@ const COMPACT_MAX_SHARE = 0.4;
 export const LARGE_TEXT = 1.3;
 const COMPACT_MAX_SHARE_LARGE_TEXT = 0.45;
 /**
- * In one column the full door scrolls away with the list, so it may be taller than a fixed one:
- * only past half the window does it compact, a safety net for a low window. Its estimate does not
- * grow with the text there: the door's text is capped (`DOOR_MAX_SCALE`) and its magnets are
- * fixed, and on the .51 the full door of Hoy measures 292 dp at ×1,6 against 297 at ×1.
- */
-const SCROLLING_MAX_SHARE = 0.5;
-/**
  * About how tall the full door is at the default text size, status bar included (Hoy, the
  * tallest: eyebrow and date, headline, its second line, magnets with names). Its text grows with
  * the system's, so the estimate does too.
@@ -57,10 +61,10 @@ const FULL_DOOR_HEIGHT = 300;
 /**
  * How the door is drawn for this window: full height with its handle, or compact.
  *
- * Compact on a short window (a phone on its side). Above two panes the door is fixed outside any
- * scroll, so it also turns compact once the full door would take more than 40 % of the window,
- * which happens sooner with enlarged text. In one column the full door scrolls away with the list,
- * so it compacts by space too, but only past half the window: the door is measured by the room it
+ * Compact on a short window (a phone on its side), and anywhere the full door would take more than
+ * 40 % of the window, which happens sooner with enlarged text: above two panes, where the door is
+ * fixed, and in one column too, where it scrolls away with the list but at ×1.6 still left a single
+ * note in view (fase 10b; on the .51, 817 dp high, from ×1.3). The door is measured by the room it
  * has, not by the phone's orientation.
  */
 export function doorFor(
@@ -69,18 +73,19 @@ export function doorFor(
   fontScale = 1,
 ): Door {
   const fullDoor = FULL_DOOR_HEIGHT * Math.min(Math.max(1, fontScale), DOOR_MAX_SCALE);
-  const crowdsPanes = layout.twoPane && fullDoor > windowHeight * COMPACT_MAX_SHARE;
-  const crowdsList = !layout.twoPane && FULL_DOOR_HEIGHT > windowHeight * SCROLLING_MAX_SHARE;
-  if (!layout.shortHeight && !crowdsPanes && !crowdsList) {
+  const crowds = fullDoor > windowHeight * COMPACT_MAX_SHARE;
+  const largeText = fontScale >= LARGE_TEXT;
+  const denseFilter = !layout.twoPane && largeText;
+  if (!layout.shortHeight && !crowds) {
     return {
       compact: false,
       type: DOOR_TYPE.full,
       handle: true,
       maxHeight: null,
       holdsQuickAdd: false,
+      denseFilter,
     };
   }
-  const largeText = fontScale >= LARGE_TEXT;
   return {
     compact: true,
     type: DOOR_TYPE.compact,
@@ -89,5 +94,6 @@ export function doorFor(
       windowHeight * (largeText ? COMPACT_MAX_SHARE_LARGE_TEXT : COMPACT_MAX_SHARE),
     ),
     holdsQuickAdd: layout.shortHeight && !layout.twoPane && !largeText,
+    denseFilter,
   };
 }
