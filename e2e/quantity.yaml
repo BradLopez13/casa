@@ -1,0 +1,70 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Yago owns "Piso Yago", with an empty list
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: yago@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible: No falta nada.
+    timeout: 20000
+- tapOn:
+    id: shopping.input
+- inputText: Huevos
+- tapOn:
+    id: shopping.add
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Huevos
+    timeout: 20000
+
+# No quantity yet: the pill says so to a screen reader
+- extendedWaitUntil:
+    visible: Cantidad de Huevos: sin cantidad
+    timeout: 20000
+
+# Open the stepper: up twice and once down from 1 leaves 2, saved after a pause
+- tapOn:
+    id: shopping.item.*.quantity
+- extendedWaitUntil:
+    visible:
+      id: shopping.item.*.quantity.stepper
+    timeout: 5000
+- tapOn:
+    id: shopping.item.*.quantity.more
+- tapOn:
+    id: shopping.item.*.quantity.more
+- tapOn:
+    id: shopping.item.*.quantity.less
+# It closes on its own after a few seconds untouched and shows the new amount
+- extendedWaitUntil:
+    visible: Cantidad de Huevos: 2
+    timeout: 15000
+
+# A refresh brings it back from the server as saved
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 800
+- extendedWaitUntil:
+    visible: Cantidad de Huevos: 2
+    timeout: 20000

@@ -18,6 +18,11 @@
 --   sara@e2e.dev  = Sara, owner of "Piso Sara" (shopping)
 --   tania@e2e.dev = Tania, owner of "Piso Tania", with Toni (toni@e2e.dev) (members-transfer)
 --   tere@e2e.dev  = Tere, owner of "Piso Tere" (task-edit-skip-delete)
+--   uma@e2e.dev   = Uma, owner of "Piso Uma" (undo)
+--   vera@e2e.dev  = Vera, owner of "Piso Vera" (tasks-offline)
+--   wanda@e2e.dev = Wanda, owner of "Piso Wanda", with Xavi (xavi@e2e.dev) (leave-household)
+--   yago@e2e.dev  = Yago, owner of "Piso Yago" (quantity)
+--   hugo@e2e.dev  = Hugo, owner of "Piso Hugo" (help)
 -- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
 -- The sign-up path itself stays covered by sign-up-create-household, forgot-password and
 -- invite-link-signed-out.
@@ -95,13 +100,15 @@ declare
   v_household uuid := pg_temp.e2e_household(v_ana, 'Casa E2E');
   v_quique uuid := pg_temp.e2e_user('quique@e2e.dev', 'Quique');
   v_tania uuid := pg_temp.e2e_user('tania@e2e.dev', 'Tania');
+  v_wanda uuid := pg_temp.e2e_user('wanda@e2e.dev', 'Wanda');
   v_token text;
 begin
   insert into public.household_members (household_id, user_id, role)
   values
     (v_household, v_berta, 'member'),
     (pg_temp.e2e_household(v_quique, 'Piso Quique'), pg_temp.e2e_user('quim@e2e.dev', 'Quim'), 'member'),
-    (pg_temp.e2e_household(v_tania, 'Piso Tania'), pg_temp.e2e_user('toni@e2e.dev', 'Toni'), 'member');
+    (pg_temp.e2e_household(v_tania, 'Piso Tania'), pg_temp.e2e_user('toni@e2e.dev', 'Toni'), 'member'),
+    (pg_temp.e2e_household(v_wanda, 'Piso Wanda'), pg_temp.e2e_user('xavi@e2e.dev', 'Xavi'), 'member');
 
   foreach v_token in array array[repeat('a1', 24), repeat('b2', 24), repeat('c3', 24)] loop
     insert into public.household_invites (household_id, token_hash, created_by, expires_at)
@@ -125,5 +132,9 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('nora@e2e.dev', 'Nora'), 'Piso Nora');
   perform pg_temp.e2e_household(pg_temp.e2e_user('tere@e2e.dev', 'Tere'), 'Piso Tere');
   perform pg_temp.e2e_household(pg_temp.e2e_user('pablo@e2e.dev', 'Pablo'), 'Piso Pablo');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('uma@e2e.dev', 'Uma'), 'Piso Uma');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('vera@e2e.dev', 'Vera'), 'Piso Vera');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('yago@e2e.dev', 'Yago'), 'Piso Yago');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('hugo@e2e.dev', 'Hugo'), 'Piso Hugo');
 end
 $$;
