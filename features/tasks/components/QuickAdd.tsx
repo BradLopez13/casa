@@ -221,6 +221,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             submitBehavior="submit"
             autoCapitalize="sentences"
             autoCorrect={false}
+            // A task title, not a name or an address: no autofill suggestions over the field.
+            autoComplete="off"
             placeholder={placeholder}
             // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
             // el miércoles…») wrapped and was cut, or ran under the «+».

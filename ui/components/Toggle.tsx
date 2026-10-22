@@ -13,10 +13,9 @@ const GAP = (HEIGHT - 2 * EDGE - THUMB) / 2;
 const SLOP_Y = Math.max(0, Math.ceil((MIN_TOUCH - HEIGHT) / 2));
 const SLOP_X = Math.max(0, Math.ceil((MIN_TOUCH - WIDTH) / 2));
 
-type Props = Pick<
-  SwitchProps,
-  'value' | 'disabled' | 'onValueChange' | 'testID' | 'accessibilityLabel'
-> & {
+type Props = Pick<SwitchProps, 'value' | 'disabled' | 'onValueChange' | 'testID'> & {
+  /** What the switch turns on and off: required, a switch without it is only «on» or «off». */
+  accessibilityLabel: string;
   /** The colour the switch is drawn on: the page (default) or a note. */
   surface?: string;
 };

@@ -261,6 +261,8 @@ export function TaskForm({
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}
                     maxLength={200}
+                    // A task title: no autofill suggestions over the note.
+                    autoComplete="off"
                     returnKeyType="done"
                     // Wraps instead of scrolling sideways: with large text a long title showed only
                     // its end. Return still submits, so a title never gets a line break.
