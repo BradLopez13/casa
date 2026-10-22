@@ -53,8 +53,7 @@ export function useTasks(householdId: string | undefined) {
 export function useDeletingTasks(householdId: string | undefined): TaskItem[] {
   const hidden = useSyncExternalStore(hiddenTasks.subscribe, hiddenTasks.get);
   const select = useCallback(
-    (tasks: TaskItem[]) =>
-      hidden.size === 0 ? NONE : tasks.filter((task) => hidden.has(task.id)),
+    (tasks: TaskItem[]) => (hidden.size === 0 ? NONE : tasks.filter((task) => hidden.has(task.id))),
     [hidden],
   );
   const { data } = useQuery({
