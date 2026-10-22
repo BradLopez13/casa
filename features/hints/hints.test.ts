@@ -1,9 +1,12 @@
 import storage from '@react-native-async-storage/async-storage';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
-  default: { getItem: vi.fn(), setItem: vi.fn() },
+  default: { getItem: vi.fn(), setItem: vi.fn(), multiRemove: vi.fn() },
 }));
+
+const DAY = 86_400_000;
+const NOW = new Date(2026, 9, 22, 12, 0).getTime();
 
 async function fresh() {
   vi.resetModules();
@@ -24,6 +27,17 @@ describe('first-use hints', () => {
       saved.set(k, v);
       return Promise.resolve();
     });
+    vi.mocked(storage.multiRemove).mockReset();
+    vi.mocked(storage.multiRemove).mockImplementation((keys: readonly string[]) => {
+      keys.forEach((k) => saved.delete(k));
+      return Promise.resolve();
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('has not been seen on a new device', async () => {
@@ -37,7 +51,8 @@ describe('first-use hints', () => {
     markHintSeen('swipe');
     expect(await loadHintSeen('swipe')).toBe(true);
     expect(await loadHintSeen('quantity')).toBe(false);
-    await vi.waitFor(() => expect(saved.get('casa-hint-swipe')).toBe('1'));
+    // The mark is the date of that use (fase 10d), so the hint can come back later.
+    await vi.waitFor(() => expect(saved.get('casa-hint-swipe')).toBe(String(NOW)));
     // A later start of the app reads it back from storage.
     const again = await fresh();
     expect(await again.loadHintSeen('swipe')).toBe(true);
@@ -48,6 +63,47 @@ describe('first-use hints', () => {
     saved.set('casa-hint-complete', '1');
     const { loadHintSeen } = await fresh();
     expect(await loadHintSeen('complete')).toBe(true);
+    // The old mark had no date: it counts from today, and is written as one.
+    await vi.waitFor(() => expect(saved.get('casa-hint-complete')).toBe(String(NOW)));
+  });
+
+  describe('coming back (fase 10d)', () => {
+    it('comes back after 30 days without using what it teaches', async () => {
+      saved.set('casa-hint-swipe', String(NOW - 31 * DAY));
+      const { loadHintSeen } = await fresh();
+      expect(await loadHintSeen('swipe')).toBe(false);
+    });
+
+    it('stays away while it was used within the last 30 days', async () => {
+      saved.set('casa-hint-swipe', String(NOW - 29 * DAY));
+      const { loadHintSeen } = await fresh();
+      expect(await loadHintSeen('swipe')).toBe(true);
+    });
+
+    it('every use moves the date on, writing at most once a day', async () => {
+      const { markHintSeen } = await fresh();
+      markHintSeen('quantity');
+      markHintSeen('quantity');
+      expect(storage.setItem).toHaveBeenCalledTimes(1);
+      vi.setSystemTime(NOW + DAY + 1);
+      markHintSeen('quantity');
+      expect(storage.setItem).toHaveBeenCalledTimes(2);
+      await vi.waitFor(() => expect(saved.get('casa-hint-quantity')).toBe(String(NOW + DAY + 1)));
+    });
+
+    it('«Volver a ver las pistas» brings every hint back and tells the screens', async () => {
+      const { loadHintSeen, markHintSeen, resetHints, subscribeHint } = await fresh();
+      markHintSeen('complete');
+      markHintSeen('refresh');
+      const listener = vi.fn();
+      const stop = subscribeHint('complete', listener);
+      resetHints();
+      expect(listener).toHaveBeenCalledWith(false);
+      expect(await loadHintSeen('complete')).toBe(false);
+      expect(await loadHintSeen('refresh')).toBe(false);
+      await vi.waitFor(() => expect(saved.has('casa-hint-complete')).toBe(false));
+      stop();
+    });
   });
 
   it('stays hidden when storage cannot be read', async () => {
