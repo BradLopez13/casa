@@ -15,6 +15,7 @@ import {
   tabLabelsBeside,
 } from '@/ui/tabBar';
 import { useReportTabBarHeight } from '@/ui/tabBarHeight';
+import { doorEdge } from '@/ui/positEdge';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -86,6 +87,8 @@ export function tabHandlers({
  */
 export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { colors } = useTheme();
+  // With high contrast in light the plinth draws the door's edge too (fase 10a).
+  const edge = doorEdge(colors);
   const { width, height, fontScale } = useWindowDimensions();
   const beside = tabLabelsBeside(width, height);
   const barHeight = tabBarHeight({ width, height, fontScale, bottomInset: insets.bottom });
@@ -120,8 +123,8 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
           top: 0,
           left: 0,
           right: 0,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: colors.tabBarEdge,
+          height: edge?.width ?? StyleSheet.hairlineWidth,
+          backgroundColor: edge?.color ?? colors.tabBarEdge,
         }}
       />
       {state.routes.map((route, index) => {

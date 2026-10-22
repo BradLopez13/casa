@@ -224,7 +224,7 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(note).toContain('<CompleteBox');
     const magnet = note.slice(note.indexOf('<Magnet'), note.indexOf('/>', note.indexOf('<Magnet')));
     expect(magnet).toContain('decorative');
-    expect(magnet).not.toMatch(/check=/);
+    expect(magnet).not.toMatch(/\bcheck=/);
   });
 
   // §36: the pósit's edge is a token of its own, so high contrast can turn it slate.
@@ -266,5 +266,31 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       .filter((file) => !file.endsWith('.test.tsx') && hintKey.test(read(file)))
       .filter((file) => !read(file).includes('<FirstUseHint'));
     expect(found).toEqual([]);
+  });
+
+  // Cierre del contrato (fase 10a): every magnet that holds something says what; a slate disk with
+  // nothing inside reads as a broken button.
+  it('no magnet with an empty glyph', () => {
+    expect(offenders(sources, (line) => /glyph=\{\{\s*node:\s*null/.test(line))).toEqual([]);
+  });
+
+  // Fase 10a: in every edit sheet Save waits dimmed until something changes.
+  it('edit sheets keep Save dimmed until something changes', () => {
+    expect(read('app/shopping/[id].tsx')).toMatch(/canSave = [^;]*\bdirty\b/);
+    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(/disabled=\{!isNew && !dirty\}/);
+  });
+
+  // Fase 10a: the quantity reads the same in the list and in the product sheet, with the scale
+  // before its value, so «—» never looks like a «−».
+  it('the quantity pill carries the scale of the product sheet', () => {
+    expect(read('app/shopping/[id].tsx')).toMatch(/glyph="scale-outline"/);
+    expect(read('features/shopping/components/QuantityPill.tsx')).toMatch(/name="scale-outline"/);
+  });
+
+  // Fase 10a: with the system's high contrast, in light, the door and the tab bar draw their
+  // `outline` edge, since the enamel and the paper are 1.32:1.
+  it('the door and the tab bar take an outline edge with high contrast', () => {
+    expect(read('ui/components/DoorHeader.tsx')).toMatch(/doorEdge\(/);
+    expect(read('features/navigation/FridgeTabBar.tsx')).toMatch(/doorEdge\(/);
   });
 });

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { DOOR_MAX_SCALE } from '../door';
+import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import { displayFontBold, MIN_TOUCH } from '../tokens';
 import { useLayout } from '../useLayout';
@@ -188,10 +189,13 @@ export function DoorHeader({
     </>
   );
 
+  // With high contrast in light the enamel and the paper are 1.32:1: the door draws its edge.
+  const edge = doorEdge(colors);
   const frame = {
     backgroundColor: colors.door,
     borderBottomLeftRadius: radii.door,
     borderBottomRightRadius: radii.door,
+    ...(edge ? { borderBottomWidth: edge.width, borderColor: edge.color } : null),
     paddingLeft: gutter + left,
     paddingRight: right + insets.right,
   };
