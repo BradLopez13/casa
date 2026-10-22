@@ -10,11 +10,25 @@ export type TodayLineText = {
 
 const plain = (first: string): TodayLineText => ({ first, number: null, second: null });
 
-/** The sentences of the second line, one after the other; null when there is none. */
-const join = (...parts: (string | null)[]): string | null => {
-  const said = parts.filter((part): part is string => part !== null);
-  return said.length === 0 ? null : said.join(' ');
-};
+/** What is left for the household as a sentence of its own. */
+const householdSentence = (household: number): string =>
+  household === 0
+    ? t('today.line.householdNone')
+    : t(household === 1 ? 'today.line.householdOne' : 'today.line.householdOther', {
+        count: household,
+      });
+
+/** «3 de días anteriores; al hogar no le queda nada más.»: the two facts in one sentence. */
+const joined = (overdue: string, household: number): string =>
+  t('today.line.joined', {
+    overdue,
+    household:
+      household === 0
+        ? t('today.line.householdPartNone')
+        : t(household === 1 ? 'today.line.householdPartOne' : 'today.line.householdPartOther', {
+            count: household,
+          }),
+  });
 
 /** The words of the door of Hoy. Spanish plural: 1 is singular, everything else plural. */
 export function todayLineText(line: TodayLine): TodayLineText {
@@ -24,35 +38,48 @@ export function todayLineText(line: TodayLine): TodayLineText {
     case 'allDone':
       return plain(t('today.line.allDone'));
     case 'mine': {
-      // The second line: what waits from other days, then what is left for the household (always
-      // said, so the door never leaves the line out). With the filter on «Tú» there is no home line.
-      const household =
-        line.household === null
-          ? null
-          : line.household === 0
-            ? t('today.line.householdNone')
-            : t(line.household === 1 ? 'today.line.householdOne' : 'today.line.householdOther', {
-                count: line.household,
-              });
+      // The second line says what waits from earlier days and what is left for the household
+      // (always, so the door never leaves it out) in one sentence, so it reads once (fase 10c).
+      // With the filter on «Tú» there is no home line.
+      const count = { count: line.overdue };
       if (line.today === 0) {
-        const overdue = t(
-          line.overdue === 1 ? 'today.line.onlyOverdueOne' : 'today.line.onlyOverdueOther',
-          { count: line.overdue },
-        );
-        return { first: t('today.line.noneToday'), number: null, second: join(overdue, household) };
+        const second =
+          line.household === null
+            ? t(
+                line.overdue === 1 ? 'today.line.onlyOverdueOne' : 'today.line.onlyOverdueOther',
+                count,
+              )
+            : joined(
+                t(
+                  line.overdue === 1
+                    ? 'today.line.onlyOverduePartOne'
+                    : 'today.line.onlyOverduePartOther',
+                  count,
+                ),
+                line.household,
+              );
+        return { first: t('today.line.noneToday'), number: null, second };
       }
-      const overdue =
+      const second =
         line.overdue === 0
-          ? null
-          : t(line.overdue === 1 ? 'today.line.overdueOne' : 'today.line.overdueOther', {
-              count: line.overdue,
-            });
+          ? line.household === null
+            ? null
+            : householdSentence(line.household)
+          : line.household === null
+            ? t(line.overdue === 1 ? 'today.line.overdueOne' : 'today.line.overdueOther', count)
+            : joined(
+                t(
+                  line.overdue === 1 ? 'today.line.overduePartOne' : 'today.line.overduePartOther',
+                  count,
+                ),
+                line.household,
+              );
       return {
         first: t(line.today === 1 ? 'today.line.mineOne' : 'today.line.mineOther', {
           count: line.today,
         }),
         number: String(line.today),
-        second: join(overdue, household),
+        second,
       };
     }
     case 'household':
