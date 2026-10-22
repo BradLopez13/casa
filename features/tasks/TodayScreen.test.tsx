@@ -12,6 +12,7 @@ import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 import { listTasks } from './api';
 import { TaskFilterProvider } from './filter';
+import { deleteWithUndo, showTask } from './deferredDelete';
 import { tasksKey } from './queries';
 
 vi.mock('@/features/auth/SessionProvider', () => ({
@@ -80,13 +81,19 @@ function renderToday(tasks?: TaskItem[]) {
   );
 }
 
+/** The window at `width` × `height`: react-native-web measures the document element. */
+function windowSize(width: number, height: number) {
+  const root = document.documentElement;
+  Object.defineProperty(root, 'clientWidth', { value: width, configurable: true });
+  Object.defineProperty(root, 'clientHeight', { value: height, configurable: true });
+  act(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
 /** A phone held upright: one column, so the door sits in the refreshing list with its handle. */
 function phoneSize() {
-  // react-native-web measures the document element, which jsdom leaves at 0 x 0.
-  const root = document.documentElement;
-  Object.defineProperty(root, 'clientWidth', { value: 400, configurable: true });
-  Object.defineProperty(root, 'clientHeight', { value: 860, configurable: true });
-  window.dispatchEvent(new Event('resize'));
+  windowSize(400, 860);
 }
 
 /** Which hints this device has not used yet. */
@@ -99,25 +106,6 @@ beforeEach(() => {
   hintsOpen();
   onlineManager.setOnline(true);
 });
-
-/**
- * Runs `fn` with the window at `width` × `height` (a phone held upright), then puts it back.
- * react-native-web reads the window from the root element, which jsdom leaves at 0 × 0.
- */
-function atWindow(width: number, height: number, fn: () => void) {
-  const root = document.documentElement;
-  const resize = (w: number, h: number) => {
-    Object.defineProperty(root, 'clientWidth', { configurable: true, value: w });
-    Object.defineProperty(root, 'clientHeight', { configurable: true, value: h });
-    window.dispatchEvent(new Event('resize'));
-  };
-  act(() => resize(width, height));
-  try {
-    fn();
-  } finally {
-    act(() => resize(0, 0));
-  }
-}
 
 describe('Hoy', () => {
   it('lists the open tasks for today and says how many are left on the door', () => {
@@ -167,24 +155,45 @@ describe('Hoy', () => {
 
   it('shows what the quick add understands while the field is empty', () => {
     hintsOpen('quickAdd');
-    atWindow(390, 844, () => {
-      renderToday([]);
-      const hint = screen.getByTestId('today.quick-add.hint');
-      // The example uses someone of the household.
-      expect(hint.textContent).toContain('@Bo');
-      fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
-      expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
-    });
+    phoneSize();
+    renderToday([]);
+    const hint = screen.getByTestId('today.quick-add.hint');
+    // The example uses someone of the household.
+    expect(hint.textContent).toContain('@Bo');
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
   });
 
   it('in a compact door (a phone on its side) the example drops «@nombre», whole on one line', () => {
     hintsOpen('quickAdd');
-    // jsdom's own window (0 × 0 to react-native-web) is a short one: the door is compact.
+    windowSize(817, 375);
     renderToday([]);
     const hint = screen.getByTestId('today.quick-add.hint');
     expect(hint.textContent).toContain(t('tasks.quickHint.exampleAlone'));
     expect(hint.textContent).not.toContain('@');
     expect(getComputedStyle(hint).textOverflow).toBe('ellipsis');
+  });
+
+  it('does not celebrate the last pending task deleted while its «Deshacer» is up', () => {
+    phoneSize();
+    renderToday([task('Fregar', {}), task('Barrer', { completedAt: new Date().toISOString() })]);
+    act(() =>
+      deleteWithUndo({
+        id: 'Fregar',
+        remove: () => new Promise(() => undefined),
+        notify: () => undefined,
+        ms: null,
+        schedule: () => () => undefined,
+        watchBackground: () => () => undefined,
+      }),
+    );
+    expect(screen.queryByTestId('task-note.Fregar')).toBeNull();
+    expect(screen.queryByText(t('today.line.allDone'))).toBeNull();
+    expect(screen.queryByText(t('today.nothing'))).toBeNull();
+    // Undone: the task is back and the door still counts it.
+    act(() => showTask('Fregar'));
+    expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
+    expect(screen.queryByText(t('today.line.allDone'))).toBeNull();
   });
 
   it('offers task ideas when there is nothing to do today', () => {

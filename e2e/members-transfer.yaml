@@ -50,8 +50,6 @@ appId: com.bradlopez13.casa
       id: members.menu.*
     timeout: 20000
 - assertNotVisible:
-    id: members.menu.*
-- assertNotVisible:
     id: members.delete-household
 - assertVisible:
     id: members.leave

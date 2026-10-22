@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { AccessibilityInfo, Pressable, Text } from 'react-native';
+import { AccessibilityInfo, Pressable, Text, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { canStep, quantityStep, stepQuantity } from '@/domain/shopping/quantity';
 import { markHintSeen } from '@/features/hints/hints';
@@ -58,6 +58,7 @@ export function QuantityPill({
   const { colors, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const notify = useNotice();
+  const { fontScale } = useWindowDimensions();
   const [draft, setDraft] = useState<string | null>(quantity);
   const unsaved = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -269,7 +270,8 @@ export function QuantityPill({
             sheet, so «—» reads as «no quantity» and never as a «−» that removes (fase 10a). */}
         <Ionicons
           name="scale-outline"
-          size={14}
+          // Grows with the value beside it, so at ×1.6 it is not a speck next to «—».
+          size={Math.round(14 * Math.min(fontScale, 2))}
           color={colors.muted}
           accessible={false}
           importantForAccessibility="no"

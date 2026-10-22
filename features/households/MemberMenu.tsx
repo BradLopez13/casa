@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { pressedOpacity } from '@/ui/buttonLook';
@@ -24,10 +24,14 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
   const { colors, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const [open, setOpen] = useState(false);
+  // On iOS a Modal opened while another fades out never shows: the chosen action (and its
+  // ConfirmDialog) waits for this menu to be gone. Android opens it at once.
+  const [chosen, setChosen] = useState<(() => void) | null>(null);
   const close = () => setOpen(false);
   const choose = (action: () => void) => () => {
     close();
-    action();
+    if (Platform.OS === 'ios') setChosen(() => action);
+    else action();
   };
 
   return (
@@ -53,6 +57,10 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
         transparent
         animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={close}
+        onDismiss={() => {
+          chosen?.();
+          setChosen(null);
+        }}
       >
         <Pressable
           accessible={false}
@@ -92,6 +100,7 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
                 variant="tertiary"
                 icon={actionIcons.makeOwner}
                 width="hug"
+                role="menuitem"
                 onPress={choose(onMakeOwner)}
               />
               <Button
@@ -101,6 +110,7 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
                 tone="destructive"
                 icon={actionIcons.removeMember}
                 width="hug"
+                role="menuitem"
                 onPress={choose(onRemove)}
               />
             </View>

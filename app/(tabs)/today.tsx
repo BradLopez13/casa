@@ -69,7 +69,8 @@ export default function TodayScreen() {
   const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
   const cards = todayCards({
     loaded: tasksQuery.isSuccess,
-    taskCount: tasksQuery.data?.length ?? 0,
+    // What is being deleted still counts until its «Deshacer» goes.
+    taskCount: (tasksQuery.data?.length ?? 0) + deleting.length,
     memberCount: members.length,
     listEmpty: sections.length === 0,
   });
@@ -96,9 +97,11 @@ export default function TodayScreen() {
     line.kind === 'allDone' ||
     line.kind === 'nothingMine' ||
     (line.kind === 'person' && line.count === 0);
-  const nothing = doorSaysNothing ? null : (
-    <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
-  );
+  // Nor while a delete waits for its «Deshacer»: the door still counts that task.
+  const nothing =
+    doorSaysNothing || deleting.length > 0 ? null : (
+      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
+    );
 
   const quickAdd = (
     <QuickAdd
