@@ -23,12 +23,18 @@ function walk(dir: string): string[] {
   });
 }
 
-/** The door's own text may cap anywhere, but only at the door's cap. */
+/** The door's own text may cap anywhere, but only at the door's cap (its headline, at its own). */
 const DOOR_CAP = 'maxFontSizeMultiplier={DOOR_MAX_SCALE}';
+const HEADLINE_CAP = 'maxFontSizeMultiplier={DOOR_HEADLINE_MAX_SCALE}';
 
-/** Whether a file caps text other than at the door's cap. */
+/** Whether a file caps text other than at the door's caps. */
 function capsOutsideDoor(source: string): boolean {
-  return source.split(DOOR_CAP).join('').includes('maxFontSizeMultiplier');
+  return source
+    .split(DOOR_CAP)
+    .join('')
+    .split(HEADLINE_CAP)
+    .join('')
+    .includes('maxFontSizeMultiplier');
 }
 
 describe('font scale caps', () => {
@@ -50,6 +56,7 @@ describe('font scale caps', () => {
     const door = ['ui/components/DoorHeader.tsx', 'ui/components/DoorHeadline.tsx']
       .map((f) => readFileSync(path.join(ROOT, f), 'utf8'))
       .join('\n');
-    expect(door.split(DOOR_CAP).length - 1).toBeGreaterThanOrEqual(3);
+    const caps = door.split(DOOR_CAP).length - 1 + (door.split(HEADLINE_CAP).length - 1);
+    expect(caps).toBeGreaterThanOrEqual(3);
   });
 });

@@ -2,7 +2,7 @@ import { Platform, Text, View } from 'react-native';
 import { t } from '@/i18n';
 import { useDoorType } from '@/ui/components/DoorHeader';
 import { SymbolPlate } from '@/ui/components/SymbolPlate';
-import { DOOR_MAX_SCALE } from '@/ui/door';
+import { DOOR_HEADLINE_MAX_SCALE } from '@/ui/door';
 import { useTheme } from '@/ui/theme';
 import { displayFont } from '@/ui/tokens';
 
@@ -14,7 +14,7 @@ export function DayDone() {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
       <SymbolPlate />
       <Text
-        maxFontSizeMultiplier={DOOR_MAX_SCALE}
+        maxFontSizeMultiplier={DOOR_HEADLINE_MAX_SCALE}
         style={{
           flexShrink: 1,
           color: colors.ink,
