@@ -34,6 +34,9 @@ appId: com.bradlopez13.casa
     timeout: 20000
 
 # Only the other member's row has the owner's actions: remove Quim and confirm
+# The owner's actions wait behind «⋯» on the member's note
+- tapOn:
+    id: members.menu.*
 - tapOn:
     id: members.remove.*
 - extendedWaitUntil:
@@ -46,6 +49,6 @@ appId: com.bradlopez13.casa
     timeout: 20000
 # Quique is alone again: no member left to manage, and the household stays theirs
 - assertNotVisible:
-    id: members.remove.*
+    id: members.menu.*
 - assertVisible:
     id: members.delete-household

@@ -34,6 +34,9 @@ appId: com.bradlopez13.casa
     timeout: 20000
 
 # Hand the household to Toni
+# The owner's actions wait behind «⋯» on the member's note
+- tapOn:
+    id: members.menu.*
 - tapOn:
     id: members.make-owner.*
 - extendedWaitUntil:
@@ -44,10 +47,10 @@ appId: com.bradlopez13.casa
 # Tania is a member now: the owner's actions and deleting the household are gone
 - extendedWaitUntil:
     notVisible:
-      id: members.make-owner.*
+      id: members.menu.*
     timeout: 20000
 - assertNotVisible:
-    id: members.remove.*
+    id: members.menu.*
 - assertNotVisible:
     id: members.delete-household
 - assertVisible:
