@@ -32,4 +32,10 @@ describe('FirstUseHint', () => {
     expect(announce).toHaveBeenCalledTimes(1);
     expect(announce).toHaveBeenCalledWith('Usa las acciones.');
   });
+
+  it('keeps to the lines it is given, ending in «…» rather than being cut (fase 10a)', () => {
+    render(<FirstUseHint testID="hint.c" door numberOfLines={1} text="Escribe como hablas." />);
+    const style = getComputedStyle(screen.getByTestId('hint.c'));
+    expect(style.textOverflow).toBe('ellipsis');
+  });
 });

@@ -27,6 +27,7 @@ import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
+import { useDoorCompact } from '@/ui/components/doorContext';
 import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
@@ -118,12 +119,15 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
   const { fontScale } = useWindowDimensions();
   const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
+  // In a compact door (a phone on its side) the field shares a narrow column: the example drops
+  // its «@nombre» and keeps to one line, so it is never cut half way (fase 10a).
+  const inCompactDoor = useDoorCompact();
   const example = useMemo(() => {
-    const name = hintName(ctx.members, assigneeId);
+    const name = inCompactDoor ? null : hintName(ctx.members, assigneeId);
     const sentence =
       name === null ? t('tasks.quickHint.exampleAlone') : t('tasks.quickHint.example', { name });
     return { sentence, segments: quickHintSegments(sentence, ctx) };
-  }, [ctx, assigneeId]);
+  }, [ctx, assigneeId, inCompactDoor]);
   const create = useTaskMutation(
     async ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) => {
       try {
@@ -257,6 +261,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
         <FirstUseHint
           testID={`${testID}.hint`}
           door
+          numberOfLines={inCompactDoor ? 1 : undefined}
           readerText={`${t('tasks.quickHint.lead')} ${example.sentence}`}
           text={
             <>

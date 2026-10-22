@@ -19,6 +19,11 @@ type Props = {
   align?: 'left' | 'right' | 'center';
   /** In or right under the door: it takes the door's text cap. */
   door?: boolean;
+  /**
+   * A cap on its lines, ending in «…» past it: a narrow compact door would otherwise clip the
+   * second line half way (fase 10a).
+   */
+  numberOfLines?: number;
 };
 
 /**
@@ -33,6 +38,7 @@ export function FirstUseHint({
   arrow,
   align = 'left',
   door = false,
+  numberOfLines,
 }: Props) {
   const { colors } = useTheme();
   const reader = useScreenReader();
@@ -59,11 +65,16 @@ export function FirstUseHint({
     </>
   );
   return door ? (
-    <Text testID={testID} maxFontSizeMultiplier={DOOR_MAX_SCALE} style={style}>
+    <Text
+      testID={testID}
+      maxFontSizeMultiplier={DOOR_MAX_SCALE}
+      numberOfLines={numberOfLines}
+      style={style}
+    >
       {line}
     </Text>
   ) : (
-    <Text testID={testID} style={style}>
+    <Text testID={testID} numberOfLines={numberOfLines} style={style}>
       {line}
     </Text>
   );
