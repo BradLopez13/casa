@@ -307,8 +307,6 @@
   "tasks.quickHint.lead": "Write it as you'd say it:",
   "tasks.quickHint.example": "Water the plants tomorrow every 2 days @{name}",
   "tasks.quickHint.exampleAlone": "Water the plants tomorrow every 2 days",
-  "tasks.completeOffline": "You're offline. Tasks get ticked off once you're back online.",
-  "tasks.reopenOffline": "You're offline. Tasks get reopened once you're back online.",
   "tasks.completeFailed": "Couldn't mark it done. Try again.",
   "tasks.completeFailedOffline": "Couldn't mark it done: no connection. Try again when it's back.",
   "tasks.reopenFailed": "Couldn't reopen it. Try again.",

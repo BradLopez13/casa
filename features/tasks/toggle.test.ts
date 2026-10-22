@@ -1,11 +1,11 @@
-import { MutationObserver, QueryClient } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@/data/supabase/errors';
 import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, reopenTask } from './api';
 import { membershipKey } from '@/features/households/keys';
 import { isFresh, takeFresh } from './freshIds';
-import { buildToggleOptions, runToggle } from './toggle';
+import { buildToggleOptions, runToggle, type ToggleVars } from './toggle';
 
 vi.mock('./api', () => ({ completeTask: vi.fn(), reopenTask: vi.fn() }));
 
@@ -27,13 +27,23 @@ const a: TaskItem = {
 const b: TaskItem = { ...a, id: 'b', title: 'B' };
 const key = ['tasks', 'h'];
 
+/** The household and the person ride with each toggle, so a queued one survives a restart. */
+const vars = (v: { id: string; done: boolean }): ToggleVars => ({
+  householdId: 'h',
+  userId: 'me',
+  ...v,
+});
+
 function setup() {
   const queryClient = new QueryClient();
+  // Mounted, as the provider does: it resumes the queue when the connection comes back.
+  queryClient.mount();
   const notify = vi.fn();
-  const options = buildToggleOptions(queryClient, 'h', 'me', notify);
-  const run = (vars: { id: string; done: boolean }) =>
-    new MutationObserver(queryClient, options).mutate(vars);
-  return { queryClient, notify, run };
+  // The network retries without their backoff, so a test does not wait for them.
+  const options = { ...buildToggleOptions(queryClient, notify), retryDelay: 0 };
+  const run = (v: { id: string; done: boolean }) =>
+    new MutationObserver(queryClient, options).mutate(vars(v));
+  return { queryClient, notify, run, options };
 }
 
 const deferred = () => {
@@ -49,6 +59,10 @@ const deferred = () => {
 beforeEach(() => {
   vi.mocked(completeTask).mockReset();
   vi.mocked(reopenTask).mockReset();
+});
+
+afterEach(() => {
+  onlineManager.setOnline(true);
 });
 
 describe('buildToggleOptions', () => {
@@ -126,10 +140,12 @@ describe('buildToggleOptions', () => {
     vi.mocked(completeTask).mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
     const p1 = run({ id: 'a', done: true });
     const p2 = run({ id: 'b', done: true });
-    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(2));
+    // One queue: the second goes once the first settles.
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
     d1.resolve();
     await p1;
     expect(spy).toHaveBeenCalledTimes(0);
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(2));
     d2.resolve();
     await p2;
     expect(spy).toHaveBeenCalledTimes(1);
@@ -143,8 +159,8 @@ describe('buildToggleOptions', () => {
     vi.mocked(completeTask).mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
     const p1 = run({ id: 'a', done: true }).catch(() => undefined);
     const p2 = run({ id: 'b', done: true });
-    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(2));
-    d1.reject(new AppError('NETWORK'));
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
+    d1.reject(new AppError('UNKNOWN'));
     await p1;
     const list = queryClient.getQueryData<TaskItem[]>(key);
     expect(list?.find((t) => t.id === 'a')?.completedAt).toBeNull();
@@ -221,10 +237,10 @@ describe('buildToggleOptions', () => {
 describe('runToggle', () => {
   function setupRun() {
     const queryClient = new QueryClient();
-    const options = buildToggleOptions(queryClient, 'h', 'me', vi.fn());
+    const options = buildToggleOptions(queryClient, vi.fn());
     return {
       queryClient,
-      toggle: (vars: { id: string; done: boolean }) => runToggle(queryClient, options, vars),
+      toggle: (v: { id: string; done: boolean }) => runToggle(queryClient, options, vars(v)),
     };
   }
 
@@ -268,5 +284,43 @@ describe('runToggle', () => {
     toggle({ id: 'b', done: true });
     expect(isFresh('b', 'done')).toBe(true);
     takeFresh('b', 'done');
+  });
+});
+
+describe('without a connection (fase 10e)', () => {
+  it('marks the note at once and sends it when the connection is back', async () => {
+    const { queryClient, run, notify } = setup();
+    queryClient.setQueryData(key, [a]);
+    vi.mocked(completeTask).mockResolvedValue(undefined);
+    onlineManager.setOnline(false);
+    void run({ id: 'a', done: true });
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).toEqual(
+        expect.any(String),
+      ),
+    );
+    expect(completeTask).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledWith('a', expect.any(String)));
+  });
+
+  it('keeps the queued toggles in order: a reopen goes after its complete', async () => {
+    const { queryClient, options } = setup();
+    queryClient.setQueryData(key, [a]);
+    const order: string[] = [];
+    vi.mocked(completeTask).mockImplementation(() => {
+      order.push('complete');
+      return Promise.resolve();
+    });
+    vi.mocked(reopenTask).mockImplementation(() => {
+      order.push('reopen');
+      return Promise.resolve();
+    });
+    onlineManager.setOnline(false);
+    runToggle(queryClient, options, vars({ id: 'a', done: true }));
+    runToggle(queryClient, options, vars({ id: 'a', done: false }));
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(order).toEqual(['complete', 'reopen']));
   });
 });

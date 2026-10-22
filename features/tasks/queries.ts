@@ -1,5 +1,4 @@
 import {
-  onlineManager,
   useMutation,
   useMutationState,
   useQuery,
@@ -11,7 +10,6 @@ import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
-import { t } from '@/i18n';
 import { listTasks, skipTask } from './api';
 import { hiddenTasks } from './deferredDelete';
 import {
@@ -22,7 +20,10 @@ import {
   type ToggleVars,
 } from './toggle';
 
-export const tasksKey = (householdId: string | undefined) => ['tasks', householdId] as const;
+import { offlineFirstQueryOptions } from '@/data/query/retry';
+import { tasksKey } from './keys';
+
+export { tasksKey };
 
 /** Start of the local day, 7 days ago, as an ISO instant. */
 function sinceIso(): string {
@@ -42,6 +43,8 @@ export function useTasks(householdId: string | undefined) {
     queryKey: tasksKey(householdId),
     queryFn: () => listTasks(householdId as string, sinceIso()),
     enabled: householdId !== undefined,
+    // Kept on the device, like the shopping list: offline it shows what it had (fase 10e).
+    ...offlineFirstQueryOptions,
     select,
   });
 }
@@ -60,6 +63,7 @@ export function useDeletingTasks(householdId: string | undefined): TaskItem[] {
     queryKey: tasksKey(householdId),
     queryFn: () => listTasks(householdId as string, sinceIso()),
     enabled: householdId !== undefined,
+    ...offlineFirstQueryOptions,
     select,
   });
   return data ?? NONE;
@@ -115,27 +119,26 @@ export function useSkipTask(_householdId: string | undefined) {
 export function useToggleTask(
   householdId: string | undefined,
   userId: string | null,
-): { toggle: (vars: ToggleVars) => boolean; isBusy: (id: string) => boolean } {
+): { toggle: (vars: ToggleRequest) => boolean; isBusy: (id: string) => boolean } {
   const queryClient = useQueryClient();
   const notify = useNotice();
-  const options = buildToggleOptions(queryClient, householdId ?? '', userId ?? '', notify);
-  const pending = useMutationState({
+  const options = buildToggleOptions(queryClient, notify);
+  // A toggle waiting for the connection is done on screen: the note can be tapped back (an undo
+  // queues behind it), so only one actually on its way, and a provisional note, is busy.
+  const sending = useMutationState({
     filters: { mutationKey: TOGGLE_KEY, status: 'pending' },
-    select: (m) => (m.state.variables as ToggleVars).id,
+    select: (m) => (m.state.isPaused ? null : (m.state.variables as ToggleVars).id),
   });
-  const isBusy = (id: string) => isProvisional({ id }) || pending.includes(id);
-  // True when the toggle went; false when it could not, having said why if it was the network.
-  const toggle = (vars: ToggleVars): boolean => {
-    if (householdId === undefined || userId === null || isProvisional({ id: vars.id }))
-      return false;
-    // Without a connection it would go, come back and fail: say so before the tap does anything.
-    if (!onlineManager.isOnline()) {
-      notify(t(vars.done ? 'tasks.completeOffline' : 'tasks.reopenOffline'));
-      return false;
-    }
+  const isBusy = (id: string) => isProvisional({ id }) || sending.includes(id);
+  // True when the toggle went (or waits for the connection, as the shopping «comprado» does).
+  const toggle = ({ id, done }: ToggleRequest): boolean => {
+    if (householdId === undefined || userId === null || isProvisional({ id })) return false;
     // runToggle reads the mutation cache synchronously: render-time state lags a quick double tap.
-    runToggle(queryClient, options, vars);
+    runToggle(queryClient, options, { id, done, householdId, userId });
     return true;
   };
   return { toggle, isBusy };
 }
+
+/** What a screen asks for: the household and the person come from the hook. */
+export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;

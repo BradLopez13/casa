@@ -134,6 +134,8 @@ describe('Hoy', () => {
 
   it('shows the load error with its retry when the tasks never loaded', async () => {
     vi.mocked(listTasks).mockRejectedValue(new AppError('NETWORK'));
+    // Offline the load is tried once and not again (fase 10e): the error shows at once.
+    onlineManager.setOnline(false);
     renderToday();
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe(t('tasks.errors.NETWORK'));
@@ -208,13 +210,12 @@ describe('Hoy', () => {
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();
   });
 
-  it('offline, the box says so before touching the task', () => {
+  it('offline, the box marks the task at once and offers «Deshacer», as the shopping does', () => {
     renderToday([task('Fregar', {})]);
     onlineManager.setOnline(false);
     fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
-    expect(screen.getByText(t('tasks.completeOffline'))).toBeTruthy();
-    expect(screen.queryByText(t('tasks.done'))).toBeNull();
-    expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
+    // Sent when the connection is back (fase 10e): no warning, the usual notice.
+    expect(screen.getByText(t('tasks.done'))).toBeTruthy();
   });
 
   it('keeps the door handle hint back while the box one shows', () => {

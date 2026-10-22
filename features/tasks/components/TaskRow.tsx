@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
-import type { ToggleVars } from '@/features/tasks/toggle';
+import type { ToggleRequest } from '@/features/tasks/queries';
 import { useHint } from '@/features/hints/hints';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { FirstUseHint } from '@/ui/components/FirstUseHint';
@@ -19,7 +19,7 @@ type Props = {
   names: Map<string, string>;
   userId: string | null;
   isBusy: (id: string) => boolean;
-  toggle: (vars: ToggleVars) => boolean;
+  toggle: (vars: ToggleRequest) => boolean;
   /** No side padding, for a pane whose container already brings the gutter. */
   flush?: boolean;
   /** The list's first row: it carries the box hint, then the swipe one, until each is used. */

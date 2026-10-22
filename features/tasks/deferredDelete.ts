@@ -54,6 +54,12 @@ type Args = {
  * «Borrar tarea» without a dialog: the task leaves the lists at once, «Tarea borrada. Deshacer»
  * shows, and the server deletes it only when the notice goes unused, as «Vaciar bolsa» does. A
  * failed delete puts the task back and says so; one already gone counts as deleted.
+ *
+ * Going to the background sends it at once (`watchBackground`), since the system may kill the app
+ * there. If it kills the process before the request lands, the task comes back on the next start:
+ * the safe direction (nothing is lost that the person did not see go), and the window is short,
+ * 5 s without a screen reader (`noticeTiming`). Nothing is kept on disk to replay it, on purpose:
+ * a delete that resurfaced days later from a queue would surprise more than a task that stayed.
  */
 export function deleteWithUndo({ id, remove, notify, ms, schedule, watchBackground }: Args): void {
   let stopWatching = () => undefined as void;

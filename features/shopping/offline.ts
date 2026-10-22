@@ -1,12 +1,6 @@
-import {
-  onlineManager,
-  type DehydrateOptions,
-  type MutationKey,
-  type MutationOptions,
-  type QueryClient,
-  type QueryKey,
-} from '@tanstack/react-query';
-import { toAppError, type AppError } from '@/data/supabase/errors';
+import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
+import { offlineFirstQueryOptions, retryOnNetwork } from '@/data/query/retry';
+import type { AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
 import { t } from '@/i18n';
@@ -48,45 +42,17 @@ export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: b
   return mutationKey?.[1] === quantityKey[1] ? isPaused : true;
 }
 
-const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
-  'shopping',
-  'shopping-history',
-  'shopping-resolved',
-  'membership',
-  'members',
-]);
-
 /**
- * Kept on the device: the shopping list, its history and the queue's resolved ids, plus the
- * membership (an offline cold start gets past the route guard) and the members (the buyers'
- * magnets).
+ * The queued shopping mutations, add and bought: theirs are the only shopping mutation functions
+ * registered (as defaults) before the cache is restored, so only they survive a restart
+ * (`features/offline/persistence.ts`).
  */
-export function shouldPersistQuery(queryKey: QueryKey): boolean {
-  return PERSISTED_QUERIES.has(queryKey[0]);
-}
-
-/**
- * Only the queued add and bought survive a restart: theirs are the only mutation
- * functions registered (as defaults) before the cache is restored.
- */
-export function shouldPersistMutation(mutationKey: MutationKey | undefined): boolean {
+export function isQueuedShoppingMutation(mutationKey: MutationKey | undefined): boolean {
   return (
     mutationKey?.[0] === 'shopping' &&
     (mutationKey[1] === addKey[1] || mutationKey[1] === boughtKey[1])
   );
 }
-
-/**
- * What goes on the device: settled persisted queries, and every queued add or bought
- * still pending. That includes one in flight or waiting to retry when the app closes; resending
- * it is safe, because the add is idempotent by id and the bought sets an absolute value.
- */
-export const persistDehydrateOptions: DehydrateOptions = {
-  shouldDehydrateQuery: (query) =>
-    shouldPersistQuery(query.queryKey) && query.state.status === 'success',
-  shouldDehydrateMutation: (mutation) =>
-    mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey),
-};
 
 /**
  * Resumes the restored queue, in order (the scope serializes it). `resumePausedMutations` alone
@@ -100,25 +66,14 @@ export function resumeShoppingQueue(queryClient: QueryClient): Promise<unknown> 
   const cache = queryClient.getMutationCache();
   const stale = cache.findAll({
     predicate: (m) =>
-      m.options.mutationKey?.[0] === 'shopping' && !shouldPersistMutation(m.options.mutationKey),
+      m.options.mutationKey?.[0] === 'shopping' && !isQueuedShoppingMutation(m.options.mutationKey),
   });
   for (const mutation of stale) cache.remove(mutation);
   const queued = cache.findAll({
     status: 'pending',
-    predicate: (m) => shouldPersistMutation(m.options.mutationKey),
+    predicate: (m) => isQueuedShoppingMutation(m.options.mutationKey),
   });
   return Promise.all(queued.map((m) => m.continue().catch(() => undefined)));
-}
-
-/**
- * Bumped when what the cache holds changes shape (v2: shopping without categories), so a cache
- * an older build wrote under the same app version is discarded too.
- */
-const CACHE_SCHEMA = 'v2';
-
-/** A persisted cache from another app version, another schema or another user is discarded. */
-export function persistBuster(appVersion: string, userId: string | null): string {
-  return `${appVersion}:${userId ?? 'anon'}:${CACHE_SCHEMA}`;
 }
 
 const listKey = (householdId: string) => ['shopping', householdId];
@@ -141,26 +96,10 @@ export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Prom
   }
 }
 
-/**
- * The shopping list and its history load offline first: a load is tried even while offline
- * (the connection state can lag), and an offline failure is final at once instead of waiting
- * for the connection. The cached list stays on screen with the offline band; with nothing
- * cached the screen shows its error and its retry. Back online, the reconnect refetches it.
- * The app's default ('always') would retry offline too; 'online' would leave a list never
- * loaded spinning until the connection is back.
- */
-export const shoppingQueryOptions = {
-  networkMode: 'offlineFirst',
-  retry: (failureCount: number) => failureCount < 1 && onlineManager.isOnline(),
-} as const;
+/** The shopping list and its history load offline first (`offlineFirstQueryOptions`). */
+export const shoppingQueryOptions = offlineFirstQueryOptions;
 
-export const NETWORK_RETRIES = 10;
-
-// A request that never reached the server is retried (retries pause while offline), with the
-// default backoff capped at 30 s. The cap keeps one stuck item from holding the scope, and with
-// it edits, deletes and clears, forever. Any other error is final.
-const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRIES && toAppError(error).code === 'NETWORK';
+export { NETWORK_RETRIES } from '@/data/query/retry';
 
 export function buildShoppingMutationDefaults(
   queryClient: QueryClient,

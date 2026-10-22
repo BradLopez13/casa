@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import {
   Platform,
@@ -19,6 +20,7 @@ import {
   type QuickSpanKind,
 } from '@/domain/tasks/quick-parse';
 import { markHintSeen, useHint } from '@/features/hints/hints';
+import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers } from '@/features/households/queries';
 import { locale, t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -32,12 +34,11 @@ import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
-import { createTask, newTaskId } from '../api';
-import { taskErrorMessage } from '../errors';
+import { newTaskId } from '../api';
 import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { hintName, quickHintSegments } from '../quickHint';
-import { useTaskMutation } from '../queries';
+import { buildCreateOptions } from '../create';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
@@ -128,15 +129,11 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
       name === null ? t('tasks.quickHint.exampleAlone') : t('tasks.quickHint.example', { name });
     return { sentence, segments: quickHintSegments(sentence, ctx) };
   }, [ctx, assigneeId, inCompactDoor]);
-  const create = useTaskMutation(
-    async ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) => {
-      try {
-        return await createTask(id, householdId as string, task);
-      } finally {
-        inFlight.current = false;
-      }
-    },
-  );
+  // Queued like a shopping add (fase 10e): the note shows at once, and without a connection it
+  // waits and goes when the connection is back. A final error says so from the queue itself.
+  const queryClient = useQueryClient();
+  const { userId } = useSession();
+  const create = useMutation(buildCreateOptions(queryClient, notify));
 
   const changeText = (next: string) => {
     latest.current = next;
@@ -158,26 +155,24 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     // Created here: its note lands with the pin choreography when it shows up in the list.
     markFresh(id);
     create.mutate(
-      { id, task },
+      { id, householdId, userId, input: task },
       {
-        onSuccess: () => {
-          input.current?.focus();
-          void haptic('rigid');
-          // The field just empties: with a screen reader, say what was added.
-          announce(t('tasks.a11y.added', { title: task.title }));
-        },
-        onError: (error) => {
-          // What was typed comes back, with its dismissed chips, only if nothing was typed since;
-          // the notice carries the error.
+        onError: () => {
+          // What was typed comes back, with its dismissed chips, only if nothing was typed since.
           if (latest.current === '') {
             latest.current = typed;
             setText(typed);
             setDisabled(dismissed);
           }
-          notify(taskErrorMessage(error));
         },
       },
     );
+    // The note is already in the list: the next task can be typed at once.
+    inFlight.current = false;
+    input.current?.focus();
+    void haptic('rigid');
+    // The field just empties: with a screen reader, say what was added.
+    announce(t('tasks.a11y.added', { title: task.title }));
   };
 
   // The chip's words go back into the title; the kind stays off until the field empties.

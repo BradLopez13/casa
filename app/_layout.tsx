@@ -1,26 +1,17 @@
 import { MPLUSRounded1c_400Regular } from '@expo-google-fonts/m-plus-rounded-1c/400Regular';
 import { MPLUSRounded1c_700Bold } from '@expo-google-fonts/m-plus-rounded-1c/700Bold';
 import { MPLUSRounded1c_800ExtraBold } from '@expo-google-fonts/m-plus-rounded-1c/800ExtraBold';
-import NetInfo from '@react-native-community/netinfo';
-import {
-  focusManager,
-  onlineManager,
-  QueryClient,
-  QueryClientProvider,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import Constants from 'expo-constants';
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Stack, useNavigationContainerRef, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { appQueryDefaults } from '@/data/query/defaults';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
-import { forgetEndedHousehold, persister } from '@/data/query/persist';
+import { forgetEndedHousehold } from '@/data/query/persist';
+import { queryClient, watchAppAndConnection } from '@/data/query/setup';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
@@ -42,15 +33,7 @@ import { routeForNotification } from '@/features/push/routes';
 import { usePushRegistration } from '@/features/push/usePushRegistration';
 import { onNotificationTapped } from '@/features/reminders/notifications';
 import { useReminders } from '@/features/reminders/useReminders';
-import {
-  addKey,
-  boughtKey,
-  quantityKey,
-  buildShoppingMutationDefaults,
-  persistBuster,
-  persistDehydrateOptions,
-  resumeShoppingQueue,
-} from '@/features/shopping/offline';
+import { PersistedQueries } from '@/features/offline/PersistedQueries';
 import { actionIcons } from '@/ui/actionIcons';
 import { configProblem } from '@/data/supabase/client';
 import {
@@ -65,69 +48,7 @@ initTelemetry();
 
 void SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
-
-// Refetch stale queries when the app returns to the foreground.
-if (Platform.OS !== 'web') {
-  focusManager.setEventListener((handleFocus) => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      handleFocus(state === 'active');
-    });
-    return () => subscription.remove();
-  });
-  // Tracks the connection: the shopping queue pauses while offline and resumes when it is
-  // back, and the offline band shows. On the web the default listener (the browser's online
-  // and offline events) already does this.
-  onlineManager.setEventListener((setOnline) =>
-    NetInfo.addEventListener((state) => {
-      setOnline(state.isConnected === true && state.isInternetReachable !== false);
-    }),
-  );
-}
-
-const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-const appVersion = Constants.expoConfig?.version ?? '0';
-
-/**
- * Restores the shopping list and its offline queue, and keeps them on the device. It waits for
- * the session (the splash stays up) because the persisted cache belongs to one user: a cache
- * saved under someone else is discarded. A change of user remounts it, so from then on the
- * cache is saved under the new user.
- */
-function PersistedQueries({ children }: { children: ReactNode }) {
-  const notify = useNotice();
-  const { status, userId } = useSession();
-  // The queued mutations' functions must be registered before the cache is restored. The
-  // notice is reachable from here, so the defaults use it directly.
-  useState(() => {
-    const defaults = buildShoppingMutationDefaults(queryClient, notify);
-    queryClient.setMutationDefaults(addKey, defaults.add);
-    queryClient.setMutationDefaults(boughtKey, defaults.bought);
-    queryClient.setMutationDefaults(quantityKey, defaults.quantity);
-    return null;
-  });
-  if (status === 'loading') return null;
-  const buster = persistBuster(appVersion, userId);
-  return (
-    <PersistQueryClientProvider
-      key={buster}
-      client={queryClient}
-      persistOptions={{
-        persister,
-        maxAge: PERSIST_MAX_AGE_MS,
-        buster,
-        dehydrateOptions: persistDehydrateOptions,
-      }}
-      // Not awaited: the provider stays in its restoring state until onSuccess settles, and the
-      // queue may take as long as the connection does.
-      onSuccess={() => {
-        void resumeShoppingQueue(queryClient);
-      }}
-    >
-      {children}
-    </PersistQueryClientProvider>
-  );
-}
+watchAppAndConnection();
 
 function MembershipError({
   network,
