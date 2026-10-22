@@ -1,6 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { router } from 'expo-router';
 import TodayScreen from '@/app/(tabs)/today';
 import { AppError } from '@/data/supabase/errors';
 import { addDays, localDateIso } from '@/domain/tasks/dates';
@@ -194,6 +195,12 @@ describe('Hoy', () => {
     act(() => showTask('Fregar'));
     expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
     expect(screen.queryByText(t('today.line.allDone'))).toBeNull();
+  });
+
+  it('links an empty Hoy to the help, on the entry that tells Hoy from Tareas (fase 10d)', () => {
+    renderToday([]);
+    fireEvent.click(screen.getByTestId('today.help'));
+    expect(vi.mocked(router.push)).toHaveBeenCalledWith('/help?entry=tabs');
   });
 
   it('offers task ideas when there is nothing to do today', () => {

@@ -9,6 +9,7 @@ import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
+import { HelpLink } from '@/features/settings/HelpLink';
 import { IdeasButton } from '@/features/tasks/components/TaskScreenPieces';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { todaySections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
@@ -189,6 +190,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
                   {members.length === 1 ? invite : nothing}
                   {/* The templates card already offers them. */}
                   {cards.templates ? null : <IdeasButton />}
+                  <HelpLink entry="tabs" testID="today.help" />
                 </View>
               }
             />
@@ -267,6 +269,7 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
                   <View style={{ gap: space(4) }}>
                     {nothing}
                     {cards.templates ? null : <IdeasButton />}
+                    <HelpLink entry="tabs" testID="today.help" />
                   </View>
                 }
               />
