@@ -5,7 +5,7 @@ export type TodayLine =
   | { kind: 'empty' }
   | { kind: 'allDone' }
   /**
-   * `today` is what is due today and `overdue` what waits from other days, so the door can tell
+   * `today` is what is due today and `overdue` what waits from earlier days, so the door can tell
    * them apart; `household` is what is left for the whole home, or null when the filter is
    * already "Tú".
    */

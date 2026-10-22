@@ -11,3 +11,8 @@ export function hasMoreBelow(contentHeight: number, offset: number, viewport: nu
   if (viewport <= 0) return false;
   return contentHeight - offset - viewport > SLACK;
 }
+
+/** The same colour, fully clear, for the start of a fade: «#F3F4F0» → «#F3F4F000». */
+export function clearOf(hex: string): string {
+  return /^#[0-9a-f]{6}$/i.test(hex) ? `${hex}00` : 'transparent';
+}

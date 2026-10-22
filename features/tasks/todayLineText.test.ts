@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TodayLine } from '@/domain/tasks/todayLine';
+import en from '@/i18n/en.json';
 import { todayLineText } from './todayLineText';
 
 const text = (line: TodayLine) => todayLineText(line);
@@ -97,5 +98,15 @@ describe('todayLineText', () => {
   it('all done and empty', () => {
     expect(text({ kind: 'allDone' }).first).toBe('Todo hecho por hoy.');
     expect(text({ kind: 'empty' }).first).toBe('Nada para hoy');
+  });
+
+  it('reads as one sentence in English too: no double stop, no capital after the semicolon', () => {
+    const fill = (text: string, vars: Record<string, string>) =>
+      Object.entries(vars).reduce((out, [k, v]) => out.replace(`{${k}}`, v), text);
+    const sentence = fill(en['today.line.joined'], {
+      overdue: en['today.line.overduePartOne'],
+      household: fill(en['today.line.householdPartOther'], { count: '3' }),
+    });
+    expect(sentence).toBe('And 1 from earlier days; 3 left for the household.');
   });
 });

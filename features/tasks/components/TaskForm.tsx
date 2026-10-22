@@ -346,9 +346,7 @@ export function TaskForm({
           </ScrollView>
           {/* On a phone on its side the fourth magnet sat cut under the foot with nothing to say
               there was more: the page fades in over it (fase 10c). */}
-          <View>
-            <MoreBelowFade visible={more.below} />
-          </View>
+          <MoreBelowFade visible={more.below} />
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
               actions on the task right above it, or beside it on a short window. */}
           <View
