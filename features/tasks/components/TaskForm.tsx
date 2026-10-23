@@ -41,7 +41,7 @@ import { openFieldFor, type FormField } from './formState';
 import { PropertyMagnets } from './PropertyMagnets';
 import { RecurrencePicker } from './RecurrencePicker';
 import { RoomPicker } from './RoomPicker';
-import { saveErrorText } from './taskFormText';
+import { invalidFieldError, saveErrorText } from './taskFormText';
 
 type Props = {
   title: string;
@@ -156,12 +156,20 @@ export function TaskForm({
     !blank && !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'title');
   // The pickers keep a date while a repeat is set; should one still be missing, say so on Save.
   const needsDate = !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'dueOn');
+  // Any other property that cannot be saved (a link that named someone not in the household).
+  const otherField = parsed.success
+    ? undefined
+    : parsed.error.issues
+        .map((issue) => String(issue.path[0]))
+        .find((field) => field !== 'title' && field !== 'dueOn');
+  const other = otherField === undefined ? null : invalidFieldError(otherField);
   const save = () => {
     if (parsed.success) onSave(parsed.data);
     else {
       setTriedSave(true);
       if (blank) titleRef.current?.focus();
       else if (needsDate) setOpen('due');
+      else if (other?.open) setOpen(other.open);
     }
   };
   // The empty-title message goes away as soon as something is typed.
@@ -171,7 +179,9 @@ export function TaskForm({
       ? saveErrorText('INVALID_TITLE')
       : triedSave && needsDate
         ? saveErrorText('RECURRENCE_NEEDS_DATE')
-        : null);
+        : triedSave && !titleInvalid && other
+          ? other.text
+          : null);
   const repeating = values.recurrence !== null;
   // What completing it today would produce, as the server computes it: the first date after
   // max(dueOn, today).

@@ -56,6 +56,16 @@ describe('TaskForm', () => {
     expect(onSave.mock.calls[0]?.[0]).toMatchObject({ dueOn: '2026-10-20' });
   });
 
+  it('says why it cannot save a person who is not an id, instead of doing nothing', () => {
+    const { onSave } = renderForm({ initial: { ...blank, assigneeId: 'bo' } });
+    fireEvent.change(titleField(), { target: { value: 'Fregar' } });
+    save();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByTestId('task-form.error').textContent).toContain(
+      t('tasks.errors.INVALID_ASSIGNEE'),
+    );
+  });
+
   it('does not save without a title, and says why', () => {
     const { onSave } = renderForm();
     save();
