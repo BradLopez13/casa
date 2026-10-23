@@ -168,12 +168,12 @@ describe('Hoy', () => {
     expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
   });
 
-  it('in a compact door (a phone on its side) the example drops «@nombre», whole on one line', () => {
+  it('in a compact door (a phone on its side) the example is a short one, whole on one line', () => {
     hintsOpen('quickAdd');
     windowSize(817, 375);
     renderToday([]);
     const hint = screen.getByTestId('today.quick-add.hint');
-    expect(hint.textContent).toContain(t('tasks.quickHint.exampleAlone'));
+    expect(hint.textContent).toContain(t('tasks.quickHint.exampleShort'));
     expect(hint.textContent).not.toContain('@');
     expect(getComputedStyle(hint).textOverflow).toBe('ellipsis');
   });

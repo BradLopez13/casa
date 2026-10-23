@@ -117,13 +117,18 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
   const { fontScale } = useWindowDimensions();
   const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
-  // In a compact door (a phone on its side) the field shares a narrow column: the example drops
-  // its «@nombre» and keeps to one line, so it is never cut half way (fase 10a).
+  // In a compact door (a phone on its side) the field shares a narrow column: the example is a
+  // short one, on one line, so it is never cut half way (fase 10a).
   const inCompactDoor = useDoorCompact();
   const example = useMemo(() => {
     const name = inCompactDoor ? null : hintName(ctx.members, assigneeId);
-    const sentence =
-      name === null ? t('tasks.quickHint.exampleAlone') : t('tasks.quickHint.example', { name });
+    // In the compact door even «Regar mañana cada 2 días» ran past the column on the .51 on its
+    // side: a shorter example that still underlines what the field understands.
+    const sentence = inCompactDoor
+      ? t('tasks.quickHint.exampleShort')
+      : name === null
+        ? t('tasks.quickHint.exampleAlone')
+        : t('tasks.quickHint.example', { name });
     return { sentence, segments: quickHintSegments(sentence, ctx) };
   }, [ctx, assigneeId, inCompactDoor]);
   // Queued like a shopping add (fase 10e): the note shows at once, and without a connection it

@@ -196,7 +196,16 @@ export function DoorHeader({
     backgroundColor: colors.door,
     borderBottomLeftRadius: radii.door,
     borderBottomRightRadius: radii.door,
-    ...(edge ? { borderBottomWidth: edge.width, borderColor: edge.color } : null),
+    // Only the bottom edge: Android drew the top too when the other widths were left unset.
+    ...(edge
+      ? {
+          borderTopWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          borderBottomWidth: edge.width,
+          borderColor: edge.color,
+        }
+      : null),
     paddingLeft: gutter + left,
     paddingRight: right + insets.right,
   };
