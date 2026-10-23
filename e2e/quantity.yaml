@@ -39,7 +39,7 @@ appId: com.bradlopez13.casa
 
 # No quantity yet: the pill says so to a screen reader
 - extendedWaitUntil:
-    visible: Cantidad de Huevos: sin cantidad
+    visible: 'Cantidad de Huevos: sin cantidad'
     timeout: 20000
 
 # Open the stepper: up twice and once down from 1 leaves 2, saved after a pause
@@ -57,7 +57,7 @@ appId: com.bradlopez13.casa
     id: shopping.item.*.quantity.less
 # It closes on its own after a few seconds untouched and shows the new amount
 - extendedWaitUntil:
-    visible: Cantidad de Huevos: 2
+    visible: 'Cantidad de Huevos: 2'
     timeout: 15000
 
 # A refresh brings it back from the server as saved
@@ -66,5 +66,5 @@ appId: com.bradlopez13.casa
     end: 50%, 85%
     duration: 800
 - extendedWaitUntil:
-    visible: Cantidad de Huevos: 2
+    visible: 'Cantidad de Huevos: 2'
     timeout: 20000
