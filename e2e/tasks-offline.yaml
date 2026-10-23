@@ -70,9 +70,17 @@ onFlowComplete:
 - extendedWaitUntil:
     visible: Poner la lavadora
     timeout: 30000
-- assertVisible: Hechas hoy
 - assertVisible:
     id: tasks.offline
+# On a small screen the tray sits below the fold: scroll down to it, then back to the door.
+- scrollUntilVisible:
+    element:
+      text: Hechas hoy
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      id: tasks.offline
+    direction: UP
 
 # Back online: the queue goes, the band leaves, and a refresh brings both back from the server
 - setAirplaneMode: disabled
@@ -88,4 +96,7 @@ onFlowComplete:
 - extendedWaitUntil:
     visible: Poner la lavadora
     timeout: 20000
-- assertVisible: Hechas hoy
+- scrollUntilVisible:
+    element:
+      text: Hechas hoy
+    direction: DOWN
