@@ -28,6 +28,7 @@ import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { useIsOnline } from '@/data/query/online';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { LoadError } from '@/ui/components/LoadError';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { Magnet } from '@/ui/components/Magnet';
 import { Button } from '@/ui/components/Button';
@@ -112,11 +113,14 @@ function TemplatesScreen() {
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
   // Who does every chosen task; nobody by default, as before.
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const tasks = useTasks(householdId).data;
+  const tasksQuery = useTasks(householdId);
+  const tasks = tasksQuery.data;
   const online = useIsOnline();
   // Until the household's tasks are in, the catalogue cannot leave out the ones it already does:
   // it waits, rather than offering everything and then taking some back (fase 10e).
-  const loadingTasks = tasks === undefined;
+  const loadingTasks = tasks === undefined && !tasksQuery.isError;
+  // A load that failed with nothing kept (a cold start offline) says so, with its retry.
+  const tasksFailed = tasks === undefined && tasksQuery.isError;
   // Only what the household has rooms for and does not do yet (by normalised title). A
   // membership persisted before rooms existed has none: every room then.
   const rooms = membership?.rooms;
@@ -228,7 +232,15 @@ function TemplatesScreen() {
             />
           </View>
         ) : null}
-        {(loadingTasks ? [] : groups).map((group) => (
+        {tasksFailed ? (
+          <LoadError
+            testID="templates.load-error"
+            message={taskErrorMessage(tasksQuery.error)}
+            retrying={tasksQuery.isFetching}
+            onRetry={() => void tasksQuery.refetch()}
+          />
+        ) : null}
+        {(tasks === undefined ? [] : groups).map((group) => (
           // Each room is a note to choose from, held by the magnet of its room.
           <PinnedNote
             key={group.room}
@@ -255,7 +267,7 @@ function TemplatesScreen() {
             </View>
           </PinnedNote>
         ))}
-        {!loadingTasks && groups.length === 0 ? (
+        {tasks !== undefined && groups.length === 0 ? (
           <Text testID="templates.empty" style={{ color: colors.muted, fontSize: 16 }}>
             {t('templates.empty')}
           </Text>
@@ -291,7 +303,7 @@ function TemplatesScreen() {
           }
           onPress={add}
           // Adding many tasks at once waits for the connection; the band says so.
-          disabled={keys.length === 0 || !online}
+          disabled={keys.length === 0 || !online || tasks === undefined}
           loading={saving}
           width="full"
         />

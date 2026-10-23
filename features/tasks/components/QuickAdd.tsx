@@ -97,11 +97,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   // Kinds dismissed for the text being typed; forgotten when the field empties.
   const [disabled, setDisabled] = useState<ReadonlySet<QuickSpanKind>>(() => new Set());
   const input = useRef<TextInput>(null);
-  // The text as of the last keystroke, read when a failed create puts its words back.
+  // The text as of the last keystroke: what Enter sends, and what a failed create puts back.
   const latest = useRef('');
-  // Set synchronously, so a second Enter before the next render cannot send twice. Cleared when
-  // the create itself ends, not when the list refetch that follows it does.
-  const inFlight = useRef(false);
   const look = buttonLook('primary', 'default', 'enabled', colors);
   const ctx = useMemo<QuickAddContext>(
     () => ({
@@ -142,13 +139,14 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   };
 
   const send = () => {
-    const task = quickAddInput(text, assigneeId, dueOn, ctx);
+    // What the field holds right now, not as of the last render: the field empties below at once,
+    // so a second Enter before the next render finds it empty and sends nothing twice.
+    const typed = latest.current;
+    const task = quickAddInput(typed, assigneeId, dueOn, ctx);
     // An empty field is not an error: it just stays.
-    if (task === null || householdId === undefined || inFlight.current) return;
-    inFlight.current = true;
-    if (parse.spans.length > 0) markHintSeen('quickAdd');
+    if (task === null || householdId === undefined) return;
+    if (quickParse(typed, ctx).spans.length > 0) markHintSeen('quickAdd');
     // Cleared at once, so the next task can be typed while this one saves; put back on error.
-    const typed = text;
     const dismissed = disabled;
     changeText('');
     const id = newTaskId();
@@ -168,7 +166,6 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
       },
     );
     // The note is already in the list: the next task can be typed at once.
-    inFlight.current = false;
     input.current?.focus();
     void haptic('rigid');
     // The field just empties: with a screen reader, say what was added.

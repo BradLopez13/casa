@@ -38,10 +38,11 @@ export const persistDehydrateOptions: DehydrateOptions = {
 };
 
 /**
- * Bumped when what the cache holds changes shape (v2: shopping without categories), so a cache
- * an older build wrote under the same app version is discarded too.
+ * Bumped when what the cache holds changes shape (v2: shopping without categories; v3: the tasks
+ * and their queue kept too, fase 10e), so a cache an older build wrote under the same app version
+ * is discarded too. A change to `TaskItem` or `ShoppingItem` bumps it.
  */
-const CACHE_SCHEMA = 'v2';
+const CACHE_SCHEMA = 'v3';
 
 /** A persisted cache from another app version, another schema or another user is discarded. */
 export function persistBuster(appVersion: string, userId: string | null): string {

@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
   type MutateOptions,
+  type QueryClient,
 } from '@tanstack/react-query';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
@@ -22,6 +23,8 @@ import {
 
 import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
+import { withQueued } from './pending';
+import { CREATE_KEY, type CreateVars } from './create';
 
 export { tasksKey };
 
@@ -31,7 +34,13 @@ function sinceIso(): string {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
 }
 
+/** The server's list, with what the queue still holds laid on top (`withQueued`). */
+async function loadTasks(queryClient: QueryClient, householdId: string): Promise<TaskItem[]> {
+  return withQueued(queryClient, householdId, await listTasks(householdId, sinceIso()));
+}
+
 export function useTasks(householdId: string | undefined) {
+  const queryClient = useQueryClient();
   // A task deleted on screen stays out while its «Deshacer» lasts, whatever a refetch brings.
   const hidden = useSyncExternalStore(hiddenTasks.subscribe, hiddenTasks.get);
   const select = useCallback(
@@ -41,7 +50,7 @@ export function useTasks(householdId: string | undefined) {
   );
   return useQuery({
     queryKey: tasksKey(householdId),
-    queryFn: () => listTasks(householdId as string, sinceIso()),
+    queryFn: () => loadTasks(queryClient, householdId as string),
     enabled: householdId !== undefined,
     // Kept on the device, like the shopping list: offline it shows what it had (fase 10e).
     ...offlineFirstQueryOptions,
@@ -54,6 +63,7 @@ export function useTasks(householdId: string | undefined) {
  * of Hoy counts them as they were until the delete is confirmed or undone.
  */
 export function useDeletingTasks(householdId: string | undefined): TaskItem[] {
+  const queryClient = useQueryClient();
   const hidden = useSyncExternalStore(hiddenTasks.subscribe, hiddenTasks.get);
   const select = useCallback(
     (tasks: TaskItem[]) => (hidden.size === 0 ? NONE : tasks.filter((task) => hidden.has(task.id))),
@@ -61,7 +71,7 @@ export function useDeletingTasks(householdId: string | undefined): TaskItem[] {
   );
   const { data } = useQuery({
     queryKey: tasksKey(householdId),
-    queryFn: () => listTasks(householdId as string, sinceIso()),
+    queryFn: () => loadTasks(queryClient, householdId as string),
     enabled: householdId !== undefined,
     ...offlineFirstQueryOptions,
     select,
@@ -142,3 +152,15 @@ export function useToggleTask(
 
 /** What a screen asks for: the household and the person come from the hook. */
 export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;
+
+/**
+ * The tasks created here whose create still waits in the queue: they exist only on this phone,
+ * so editing, skipping or deleting them would reach a server that does not know them yet.
+ */
+export function useUnsentTasks(): ReadonlySet<string> {
+  const ids = useMutationState({
+    filters: { mutationKey: CREATE_KEY, status: 'pending' },
+    select: (m) => (m.state.variables as CreateVars | undefined)?.id ?? '',
+  });
+  return new Set(ids);
+}

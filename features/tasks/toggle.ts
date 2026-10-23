@@ -96,7 +96,10 @@ export function buildToggleOptions(
     onError: async (error, { id, done, householdId }, context) => {
       const previous = context?.previous;
       const successor = context?.successor;
-      if (previous) {
+      // A later toggle of this task still queued (its «Deshacer») already set what it should
+      // show: putting back what this one found would undo the undo (fase 10e).
+      const later = pendingFor(queryClient, id).length > 1;
+      if (previous && !later) {
         queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) => {
           if (!current) return current;
           const restored = current

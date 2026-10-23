@@ -11,7 +11,7 @@ import { membersKey, membershipKey } from '@/features/households/keys';
 import { useHint, type HintId } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
-import { listTasks } from './api';
+import { createTask, listTasks } from './api';
 import { TaskFilterProvider } from './filter';
 import { deleteWithUndo, showTask } from './deferredDelete';
 import { tasksKey } from './queries';
@@ -30,6 +30,7 @@ vi.mock('@/ui/a11y', async (importOriginal) => ({
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api')>()),
   listTasks: vi.fn(),
+  createTask: vi.fn(),
 }));
 
 const today = localDateIso(new Date());
@@ -203,6 +204,19 @@ describe('Hoy', () => {
     renderToday([]);
     fireEvent.click(screen.getByTestId('today.help'));
     expect(vi.mocked(router.push)).toHaveBeenCalledWith('/help?entry=tabs');
+  });
+
+  it('two quick taps on «+» send the task once (fase 10e)', async () => {
+    vi.mocked(createTask).mockResolvedValue('x');
+    renderToday([]);
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    const add = screen.getByTestId('today.quick-add.submit');
+    fireEvent.click(add);
+    fireEvent.click(add);
+    // The note is there at once, before the server answers.
+    expect(await screen.findByText('Regar')).toBeTruthy();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(createTask).toHaveBeenCalledTimes(1);
   });
 
   it('offers task ideas when there is nothing to do today', () => {

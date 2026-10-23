@@ -294,6 +294,7 @@
   "tasks.a11y.addButton": "Add task",
   "tasks.done": "Done.",
   "tasks.reopened": "Reopened.",
+  "tasks.unsent": "It's still on its way. You can edit it once it reaches the household.",
   "tasks.deleted": "Task deleted.",
   "tasks.deleteFailed": "Couldn't delete the task; it's back on the list. Try again.",
   "tasks.deleteFailedOffline": "Couldn't delete the task: no connection. It's back on the list; delete it when you're online.",

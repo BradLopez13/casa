@@ -323,4 +323,17 @@ describe('without a connection (fase 10e)', () => {
     onlineManager.setOnline(true);
     await vi.waitFor(() => expect(order).toEqual(['complete', 'reopen']));
   });
+
+  it('a complete that fails for good does not undo the «Deshacer» queued behind it', async () => {
+    const { queryClient, options } = setup();
+    queryClient.setQueryData(key, [a]);
+    vi.mocked(completeTask).mockRejectedValue(new AppError('UNKNOWN'));
+    vi.mocked(reopenTask).mockResolvedValue(undefined);
+    onlineManager.setOnline(false);
+    runToggle(queryClient, options, vars({ id: 'a', done: true }));
+    runToggle(queryClient, options, vars({ id: 'a', done: false }));
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+    expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).toBeNull();
+  });
 });

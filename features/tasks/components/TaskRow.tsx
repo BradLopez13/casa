@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
-import type { ToggleRequest } from '@/features/tasks/queries';
+import { useUnsentTasks, type ToggleRequest } from '@/features/tasks/queries';
 import { useHint } from '@/features/hints/hints';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { FirstUseHint } from '@/ui/components/FirstUseHint';
@@ -45,7 +45,16 @@ export function TaskRow({
   // One hint over the list at a time: the box first, then the swipe.
   const hint =
     !first || row.kind !== 'note' ? null : boxHint ? 'complete' : swipeHint ? 'swipe' : null;
-  const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
+  const unsent = useUnsentTasks();
+  // A note created here and still waiting for the connection is not on the server yet: its sheet
+  // waits until it is (fase 10e). Ticking it off still works: it queues behind its create.
+  const openTask = (id: string) => {
+    if (unsent.has(id)) {
+      notify(t('tasks.unsent'));
+      return;
+    }
+    router.push({ pathname: '/task/[id]', params: { id } });
+  };
   return (
     <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
       {hint === null ? null : (

@@ -127,8 +127,8 @@ describe('shouldPersistMutation', () => {
 
 describe('persistBuster', () => {
   it('ties the cache to the app version, the cache schema and the user', () => {
-    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1:v2');
-    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon:v2');
+    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1:v3');
+    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon:v3');
   });
 
   it('discards a cache written before shopping lost its categories', () => {

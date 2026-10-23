@@ -20,7 +20,7 @@ export type CreateVars = {
 type Context = { added: boolean };
 
 /** The note as the person wrote it, until the server's comes back with the refetch. */
-function draftItem({ id, userId, input }: CreateVars): TaskItem {
+export function draftItem({ id, userId, input }: CreateVars, at = new Date()): TaskItem {
   return {
     id,
     seriesId: id,
@@ -34,7 +34,7 @@ function draftItem({ id, userId, input }: CreateVars): TaskItem {
     skippedAt: null,
     generatedFrom: null,
     createdBy: userId,
-    createdAt: new Date().toISOString(),
+    createdAt: at.toISOString(),
   };
 }
 
@@ -65,12 +65,12 @@ export function buildCreateOptions(
       });
       return { added };
     },
-    onError: async (error, { id, householdId }, context) => {
-      if (context?.added) {
-        queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
-          current?.filter((task) => task.id !== id),
-        );
-      }
+    // A new id is never on the server before its create: the note goes, also for a create
+    // restored after a restart, which has no context.
+    onError: async (error, { id, householdId }) => {
+      queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
+        current?.filter((task) => task.id !== id),
+      );
       notify(taskErrorMessage(error));
       await invalidateIfStale(queryClient, error);
     },
