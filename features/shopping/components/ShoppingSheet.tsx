@@ -257,7 +257,7 @@ export function ShoppingSheet({
                       testID="shopping.bought.toggle"
                       accessibilityRole="button"
                       accessibilityLabel={boughtTitleLabel(bought.length)}
-                      accessibilityState={{ expanded: !boughtCollapsed }}
+                      aria-expanded={!boughtCollapsed}
                       onPress={() => setBoughtCollapsed((c) => !c)}
                       style={({ pressed }) => ({
                         flexDirection: 'row',

@@ -182,7 +182,7 @@ export function QuantityPill({
           disabled={!enabled}
           accessibilityRole="button"
           accessibilityLabel={t(delta === 1 ? 'shopping.quantity.more' : 'shopping.quantity.less')}
-          accessibilityState={{ disabled: !enabled }}
+          aria-disabled={!enabled}
           style={({ pressed }) => ({
             width: MIN_TOUCH,
             height: MIN_TOUCH,

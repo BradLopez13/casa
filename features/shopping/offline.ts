@@ -78,6 +78,23 @@ export function resumeShoppingQueue(queryClient: QueryClient): Promise<unknown> 
 
 const listKey = (householdId: string) => ['shopping', householdId];
 
+/** The row as the person added it, until the server's comes back with the refetch. */
+export function draftShoppingItem(
+  { id, name, quantity, userId }: AddVars,
+  at = new Date(),
+): ShoppingItem {
+  return {
+    id,
+    name: trimItemText(name),
+    normalizedName: normalizeItemName(name),
+    quantity,
+    createdAt: at.toISOString(),
+    createdBy: userId,
+    boughtAt: null,
+    boughtBy: null,
+  };
+}
+
 /**
  * The adds that resolved to an item already on the list, by the id they were queued with: a
  * bought queued behind one must reach that item, even after a restart. It lives in the query
@@ -143,19 +160,11 @@ export function buildShoppingMutationDefaults(
     retry: retryOnNetwork,
     mutationFn: ({ id, householdId, name, quantity }) =>
       addShoppingItem(id, householdId, name, quantity),
-    onMutate: async ({ id, householdId, name, quantity, userId }) => {
+    onMutate: async (vars) => {
+      const { id, householdId } = vars;
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
-      const item: ShoppingItem = {
-        id,
-        name: trimItemText(name),
-        normalizedName: normalizeItemName(name),
-        quantity,
-        createdAt: new Date().toISOString(),
-        createdBy: userId,
-        boughtAt: null,
-        boughtBy: null,
-      };
+      const item = draftShoppingItem(vars);
       queryClient.setQueryData<ShoppingItem[]>(key, (current) =>
         current ? applyAdd(current, item) : current,
       );
