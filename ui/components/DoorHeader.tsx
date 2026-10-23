@@ -196,20 +196,31 @@ export function DoorHeader({
     backgroundColor: colors.door,
     borderBottomLeftRadius: radii.door,
     borderBottomRightRadius: radii.door,
-    // Only the bottom edge: Android drew the top too when the other widths were left unset.
-    ...(edge
-      ? {
-          borderTopWidth: 0,
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-          borderBottomWidth: edge.width,
-          borderColor: edge.color,
-        }
-      : null),
     paddingLeft: gutter + left,
     paddingRight: right + insets.right,
   };
   const column = { width: '100%', maxWidth: contentMax, alignSelf: 'center' } as const;
+  // The high-contrast edge as a layer over the door's bottom curve, not a border of the door
+  // itself: on Android a border on the door's background left a seam along its top edge.
+  const edgeLayer = edge ? (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: radii.door,
+        borderBottomWidth: edge.width,
+        borderLeftWidth: edge.width,
+        borderRightWidth: edge.width,
+        borderColor: edge.color,
+        borderBottomLeftRadius: radii.door,
+        borderBottomRightRadius: radii.door,
+        borderTopWidth: 0,
+      }}
+    />
+  ) : null;
 
   if (door.compact) {
     // On a phone on its side the quick add comes into the door: beside the strip when there is
@@ -236,6 +247,7 @@ export function DoorHeader({
           paddingBottom,
         }}
       >
+        {edgeLayer}
         <ScrollView
           style={{ flexGrow: 0, flexShrink: 1, maxHeight: scrollMax }}
           scrollEnabled={overflows}
@@ -333,6 +345,7 @@ export function DoorHeader({
         paddingBottom: handle ? MIN_TOUCH : space(6),
       }}
     >
+      {edgeLayer}
       {/* The handle only exists where it works: a door outside a refreshing pane has none. */}
       {refresh && handle ? <DoorHandle onRefresh={refresh.onRefresh} /> : null}
       <DoorTypeContext.Provider value={type}>
