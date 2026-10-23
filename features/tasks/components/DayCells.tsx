@@ -61,7 +61,8 @@ function Cell({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled }}
+      aria-checked={selected}
+      aria-disabled={disabled}
       accessibilityLabel={spoken ?? (top ? `${top} ${label}` : label)}
       style={({ pressed }) => ({
         minWidth: MIN_TOUCH + space(3),

@@ -160,8 +160,6 @@ describe('Crear tu hogar: la cuenta tras «⋯»', () => {
 });
 
 describe('Crear tu hogar: las estancias', () => {
-  // On react-native-web 0.21 `accessibilityState={{ checked }}` never becomes aria-checked, so
-  // what is chosen is read from what gets saved.
   it('lists every room as a named check, all of them chosen to start with', async () => {
     vi.mocked(setHouseholdRooms).mockReturnValue(new Promise(() => undefined));
     await toRoomsStep();
@@ -169,6 +167,7 @@ describe('Crear tu hogar: las estancias', () => {
     expect(checks.map((c) => c.getAttribute('aria-label'))).toEqual(
       ROOMS.map((room) => t(`rooms.${room}`)),
     );
+    expect(checks.every((c) => c.getAttribute('aria-checked') === 'true')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.roomsContinue') }));
     await vi.waitFor(() => expect(setHouseholdRooms).toHaveBeenCalled());
     expect(vi.mocked(setHouseholdRooms).mock.calls[0]?.[0]).toEqual([...ROOMS]);

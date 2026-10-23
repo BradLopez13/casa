@@ -41,7 +41,7 @@ export function DayList({ days, selected, onSelect, today, marks, names }: Props
       <Pressable
         testID="day-list.all"
         accessibilityRole="button"
-        accessibilityState={{ selected: allSelected }}
+        aria-selected={allSelected}
         accessibilityLabel={t('tasks.pill.allLabel')}
         onPress={() => onSelect(null)}
         style={({ pressed }) => ({
@@ -88,7 +88,7 @@ export function DayList({ days, selected, onSelect, today, marks, names }: Props
             key={day.date}
             testID={`day-list.${day.date}`}
             accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
+            aria-selected={isSelected}
             accessibilityLabel={dayCountLabel(day, today, names)}
             onPress={() => onSelect(day.date)}
             style={({ pressed }) => ({

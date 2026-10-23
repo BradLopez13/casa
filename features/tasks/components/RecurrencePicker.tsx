@@ -36,7 +36,7 @@ function Pill({
     <Pressable
       testID={testID}
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
+      aria-checked={selected}
       accessibilityLabel={label}
       onPress={onPress}
       style={({ pressed }) => ({
@@ -83,7 +83,8 @@ function WeekdayToggles({
             key={day}
             testID={`task-form.repeat.day.${day}`}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked, disabled: locked }}
+            aria-checked={checked}
+            aria-disabled={locked}
             accessibilityLabel={t(`weekdays.${day}`)}
             disabled={locked}
             onPress={() =>
@@ -140,7 +141,7 @@ function StepButton({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled }}
+      aria-disabled={disabled}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({

@@ -59,7 +59,7 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
             key={pill.date ?? 'all'}
             testID={`tasks.pill.${pill.date ?? 'all'}`}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
             accessibilityLabel={day ? dayCountLabel(day, today, names) : t('tasks.pill.allLabel')}
             onPress={() => onSelect(pill.date)}
             onLayout={(event) => {

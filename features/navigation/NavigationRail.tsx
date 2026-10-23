@@ -50,7 +50,7 @@ export function NavigationRail({ state, descriptors, navigation, insets }: Botto
             // Same roles as the bottom bar: iOS does not announce "tab" reliably.
             accessibilityRole={Platform.OS === 'ios' ? 'button' : 'tab'}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? title}
-            accessibilityState={{ selected: focused }}
+            aria-selected={focused}
             {...handlers(route, focused)}
             style={({ pressed }) => ({
               minHeight: MIN_TOUCH + space(4),

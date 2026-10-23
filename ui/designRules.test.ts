@@ -312,4 +312,11 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     });
     expect(found).toEqual([]);
   });
+
+  // The state of a control goes in the `aria-*` props: React Native gives them to TalkBack and
+  // VoiceOver as it did `accessibilityState`, and react-native-web, which drops that object,
+  // puts them in the DOM, where the render tests see them.
+  it('control states use aria-* props, never accessibilityState', () => {
+    expect(offenders(sources, (line) => /\baccessibilityState\b/.test(line))).toEqual([]);
+  });
 });

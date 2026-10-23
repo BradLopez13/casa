@@ -47,7 +47,8 @@ function NobodyChoice({ selected, onPress }: { selected: boolean; onPress: () =>
       hitSlop={NOBODY_SLOP}
       accessibilityRole="radio"
       accessibilityLabel={t('taskForm.nobody')}
-      accessibilityState={{ selected, checked: selected }}
+      aria-selected={selected}
+      aria-checked={selected}
       style={({ pressed }) => ({ opacity: pressedOpacity(pressed) })}
     >
       <View

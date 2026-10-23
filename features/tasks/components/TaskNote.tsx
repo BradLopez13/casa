@@ -204,7 +204,7 @@ export function TaskNote({
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
-            accessibilityState={{ disabled: provisional }}
+            aria-disabled={provisional}
             accessibilityActions={
               canSwipe
                 ? [{ name: 'complete', label: t('tasks.a11y.complete', { title: task.title }) }]
@@ -250,7 +250,9 @@ export function TaskNote({
             accessibilityLabel={t(done ? 'tasks.a11y.reopen' : 'tasks.a11y.complete', {
               title: task.title,
             })}
-            accessibilityState={{ checked: done, disabled: busy, busy }}
+            aria-checked={done}
+            aria-disabled={busy}
+            aria-busy={busy}
             style={{
               minWidth: MIN_TOUCH,
               minHeight: MIN_TOUCH,

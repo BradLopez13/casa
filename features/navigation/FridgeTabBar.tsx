@@ -141,7 +141,7 @@ export function FridgeTabBar({ state, descriptors, navigation, insets }: BottomT
             // Same roles as the rail: iOS does not announce "tab" reliably.
             accessibilityRole={Platform.OS === 'ios' ? 'button' : 'tab'}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? title}
-            accessibilityState={{ selected: focused }}
+            aria-selected={focused}
             {...handlers(route, focused)}
             style={({ pressed }) => ({
               flex: 1,

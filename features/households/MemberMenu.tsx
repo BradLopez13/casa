@@ -40,7 +40,7 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
         testID={`members.menu.${userId}`}
         accessibilityRole="button"
         accessibilityLabel={t('members.more', { name })}
-        accessibilityState={{ expanded: open }}
+        aria-expanded={open}
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({
           width: MIN_TOUCH,

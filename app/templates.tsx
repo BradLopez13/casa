@@ -59,7 +59,7 @@ function TemplateRow({
     <Pressable
       testID={`templates.item.${catalogId(room, item)}`}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
+      aria-checked={checked}
       accessibilityLabel={label}
       onPress={onToggle}
       style={({ pressed }) => ({

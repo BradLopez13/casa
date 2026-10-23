@@ -154,10 +154,14 @@ describe('Tareas', () => {
     expect(screen.getByRole('radio', { name: t('tasks.filterAll') })).toBeTruthy();
     expect(screen.getByRole('radiogroup', { name: t('tasks.pill.label') })).toBeTruthy();
     expect(screen.getByRole('radio', { name: t('tasks.pill.allLabel') })).toBeTruthy();
-    // react-native-web 0.21 drops `accessibilityState`: the checked state is not in the DOM.
     expect(
-      screen.getByRole('checkbox', { name: t('tasks.a11y.complete', { title: 'Fregar' }) }),
-    ).toBeTruthy();
+      screen
+        .getByRole('checkbox', { name: t('tasks.a11y.complete', { title: 'Fregar' }) })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
+    expect(
+      screen.getByRole('radio', { name: t('tasks.pill.allLabel') }).getAttribute('aria-checked'),
+    ).toBe('true');
     expect(screen.getByRole('button', { name: t('tasks.ideas') })).toBeTruthy();
   });
 

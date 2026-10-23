@@ -79,7 +79,8 @@ export function PropertyChip({
       accessibilityRole="button"
       // A value that already names its field («No se repite») is read alone, not after it.
       accessibilityLabel={spoken ?? `${label}, ${value}`}
-      accessibilityState={{ expanded: open, disabled }}
+      aria-expanded={open}
+      aria-disabled={disabled}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
