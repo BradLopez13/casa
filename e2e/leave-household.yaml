@@ -1,0 +1,54 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Xavi is a member of "Piso Wanda", which Wanda runs
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: xavi@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      id: settings.members
+- tapOn:
+    id: settings.members
+- extendedWaitUntil:
+    visible: Wanda
+    timeout: 20000
+# A member manages nobody: no «⋯» on any note, and no «Borrar hogar»
+- assertNotVisible:
+    id: members.menu.*
+- assertNotVisible:
+    id: members.delete-household
+
+# Leave, confirming in the dialog: Xavi has no household, so onboarding opens
+- scrollUntilVisible:
+    element:
+      id: members.leave
+- tapOn:
+    id: members.leave
+- extendedWaitUntil:
+    visible: ¿Salir del hogar?
+    timeout: 5000
+- tapOn:
+    id: members.confirm
+- extendedWaitUntil:
+    visible: Crea tu hogar
+    timeout: 20000

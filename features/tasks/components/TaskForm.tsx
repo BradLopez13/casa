@@ -26,6 +26,7 @@ import { useModalFill } from '@/ui/components/ModalSheet';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
+import { MoreBelowFade, useMoreBelow } from '@/ui/components/MoreBelowFade';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, displayFontRegular } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
@@ -40,7 +41,7 @@ import { openFieldFor, type FormField } from './formState';
 import { PropertyMagnets } from './PropertyMagnets';
 import { RecurrencePicker } from './RecurrencePicker';
 import { RoomPicker } from './RoomPicker';
-import { saveErrorText } from './taskFormText';
+import { invalidFieldError, saveErrorText } from './taskFormText';
 
 type Props = {
   title: string;
@@ -92,6 +93,7 @@ export function TaskForm({
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal, show } = useRevealFocusedField();
+  const more = useMoreBelow();
   const picker = useRef<View>(null);
   // What the person typed and chose; `values` adds what the title says.
   const [typed, setTyped] = useState<TaskInput>(initial);
@@ -154,12 +156,20 @@ export function TaskForm({
     !blank && !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'title');
   // The pickers keep a date while a repeat is set; should one still be missing, say so on Save.
   const needsDate = !parsed.success && parsed.error.issues.some((i) => i.path[0] === 'dueOn');
+  // Any other property that cannot be saved (a link that named someone not in the household).
+  const otherField = parsed.success
+    ? undefined
+    : parsed.error.issues
+        .map((issue) => String(issue.path[0]))
+        .find((field) => field !== 'title' && field !== 'dueOn');
+  const other = otherField === undefined ? null : invalidFieldError(otherField);
   const save = () => {
     if (parsed.success) onSave(parsed.data);
     else {
       setTriedSave(true);
       if (blank) titleRef.current?.focus();
       else if (needsDate) setOpen('due');
+      else if (other?.open) setOpen(other.open);
     }
   };
   // The empty-title message goes away as soon as something is typed.
@@ -169,7 +179,9 @@ export function TaskForm({
       ? saveErrorText('INVALID_TITLE')
       : triedSave && needsDate
         ? saveErrorText('RECURRENCE_NEEDS_DATE')
-        : null);
+        : triedSave && !titleInvalid && other
+          ? other.text
+          : null);
   const repeating = values.recurrence !== null;
   // What completing it today would produce, as the server computes it: the first date after
   // max(dueOn, today).
@@ -214,6 +226,15 @@ export function TaskForm({
         >
           <ScrollView
             {...scroll}
+            onScroll={(event) => {
+              scroll.onScroll(event);
+              more.onScroll(event);
+            }}
+            onLayout={(event) => {
+              scroll.onLayout(event);
+              more.onLayout(event);
+            }}
+            onContentSizeChange={more.onContentSizeChange}
             style={fill}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
@@ -250,6 +271,8 @@ export function TaskForm({
                     // the field waits for a tap.
                     autoFocus={isNew && density.autoFocusTitle}
                     maxLength={200}
+                    // A task title: no autofill suggestions over the note.
+                    autoComplete="off"
                     returnKeyType="done"
                     // Wraps instead of scrolling sideways: with large text a long title showed only
                     // its end. Return still submits, so a title never gets a line break.
@@ -333,6 +356,9 @@ export function TaskForm({
               {dangerZone}
             </FocusRevealContext.Provider>
           </ScrollView>
+          {/* On a phone on its side the fourth magnet sat cut under the foot with nothing to say
+              there was more: the page fades in over it (fase 10c). */}
+          <MoreBelowFade visible={more.below} />
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
               actions on the task right above it, or beside it on a short window. */}
           <View

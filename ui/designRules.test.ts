@@ -224,7 +224,9 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(note).toContain('<CompleteBox');
     const magnet = note.slice(note.indexOf('<Magnet'), note.indexOf('/>', note.indexOf('<Magnet')));
     expect(magnet).toContain('decorative');
-    expect(magnet).not.toMatch(/check=/);
+    expect(magnet).not.toMatch(/decorative=/);
+    expect(magnet).not.toMatch(/onPress=/);
+    expect(magnet).not.toMatch(/\bcheck=/);
   });
 
   // §36: the pósit's edge is a token of its own, so high contrast can turn it slate.
@@ -266,5 +268,55 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       .filter((file) => !file.endsWith('.test.tsx') && hintKey.test(read(file)))
       .filter((file) => !read(file).includes('<FirstUseHint'));
     expect(found).toEqual([]);
+  });
+
+  // Cierre del contrato (fase 10a): every magnet that holds something says what; a slate disk with
+  // nothing inside reads as a broken button.
+  it('no magnet with an empty glyph', () => {
+    expect(offenders(sources, (line) => /glyph=\{\{\s*node:\s*null/.test(line))).toEqual([]);
+  });
+
+  // Fase 10a: in every edit sheet Save waits dimmed until something changes.
+  it('edit sheets keep Save dimmed until something changes', () => {
+    expect(read('app/shopping/[id].tsx')).toMatch(/canSave = [^;]*\bdirty\b/);
+    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(/disabled=\{!isNew && !dirty\}/);
+  });
+
+  // Fase 10a: the quantity reads the same in the list and in the product sheet, with the scale
+  // before its value, so «—» never looks like a «−».
+  it('the quantity pill carries the scale of the product sheet', () => {
+    expect(read('app/shopping/[id].tsx')).toMatch(/glyph="scale-outline"/);
+    expect(read('features/shopping/components/QuantityPill.tsx')).toMatch(/name="scale-outline"/);
+  });
+
+  // Fase 10a: with the system's high contrast, in light, the door and the tab bar draw their
+  // `outline` edge, since the enamel and the paper are 1.32:1.
+  it('the door and the tab bar take an outline edge with high contrast', () => {
+    expect(read('ui/components/DoorHeader.tsx')).toMatch(/doorEdge\(/);
+    expect(read('features/navigation/FridgeTabBar.tsx')).toMatch(/doorEdge\(/);
+  });
+
+  // Movimiento and fase 10e: with Reducir movimiento everything turns to 120 ms fades or nothing,
+  // so every entering/exiting animation is chosen through the flag (or the helpers that read it).
+  it('every entering and exiting animation goes through Reducir movimiento', () => {
+    const guarded = /reduceMotion|enterAnimation\(|exitAnimation\(/;
+    const found = offenders(sources, (line, lines) => {
+      const prop = /\b(?:entering|exiting)=\{([^}]*)\}/.exec(line)?.[1];
+      if (prop === undefined || guarded.test(prop)) return false;
+      // A named animation counts when its own definition reads the flag.
+      const name = /^\s*(\w+)\s*$/.exec(prop)?.[1];
+      const definition = name
+        ? lines.find((l) => new RegExp(`const ${name}\\b`).test(l))
+        : undefined;
+      return definition === undefined || !guarded.test(definition);
+    });
+    expect(found).toEqual([]);
+  });
+
+  // The state of a control goes in the `aria-*` props: React Native gives them to TalkBack and
+  // VoiceOver as it did `accessibilityState`, and react-native-web, which drops that object,
+  // puts them in the DOM, where the render tests see them.
+  it('control states use aria-* props, never accessibilityState', () => {
+    expect(offenders(sources, (line) => /\baccessibilityState\b/.test(line))).toEqual([]);
   });
 });

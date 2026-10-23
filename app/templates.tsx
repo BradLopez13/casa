@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { memberMarks } from '@/domain/members/marks';
 import {
@@ -26,7 +26,10 @@ import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation, useTasks } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
+import { useIsOnline } from '@/data/query/online';
 import { ErrorText } from '@/ui/components/ErrorText';
+import { LoadError } from '@/ui/components/LoadError';
+import { OfflineBand } from '@/ui/components/OfflineBand';
 import { Magnet } from '@/ui/components/Magnet';
 import { Button } from '@/ui/components/Button';
 import { ModalHeader } from '@/ui/components/ModalHeader';
@@ -56,7 +59,7 @@ function TemplateRow({
     <Pressable
       testID={`templates.item.${catalogId(room, item)}`}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
+      aria-checked={checked}
       accessibilityLabel={label}
       onPress={onToggle}
       style={({ pressed }) => ({
@@ -110,7 +113,14 @@ function TemplatesScreen() {
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
   // Who does every chosen task; nobody by default, as before.
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const tasks = useTasks(householdId).data;
+  const tasksQuery = useTasks(householdId);
+  const tasks = tasksQuery.data;
+  const online = useIsOnline();
+  // Until the household's tasks are in, the catalogue cannot leave out the ones it already does:
+  // it waits, rather than offering everything and then taking some back (fase 10e).
+  const loadingTasks = tasks === undefined && !tasksQuery.isError;
+  // A load that failed with nothing kept (a cold start offline) says so, with its retry.
+  const tasksFailed = tasks === undefined && tasksQuery.isError;
   // Only what the household has rooms for and does not do yet (by normalised title). A
   // membership persisted before rooms existed has none: every room then.
   const rooms = membership?.rooms;
@@ -203,6 +213,7 @@ function TemplatesScreen() {
         step={2}
         cancel={{ testID: 'templates.cancel', label: t('templates.cancel'), onPress: requestClose }}
       />
+      {online ? null : <OfflineBand label={t('templates.offline')} testID="templates.offline" />}
       <ScrollView
         style={fill}
         contentContainerStyle={{
@@ -212,7 +223,24 @@ function TemplatesScreen() {
           gap: space(5),
         }}
       >
-        {groups.map((group) => (
+        {loadingTasks ? (
+          <View style={{ paddingVertical: space(6), alignItems: 'center' }}>
+            <ActivityIndicator
+              testID="templates.loading"
+              color={colors.muted}
+              accessibilityLabel={t('common.loading')}
+            />
+          </View>
+        ) : null}
+        {tasksFailed ? (
+          <LoadError
+            testID="templates.load-error"
+            message={taskErrorMessage(tasksQuery.error)}
+            retrying={tasksQuery.isFetching}
+            onRetry={() => void tasksQuery.refetch()}
+          />
+        ) : null}
+        {(tasks === undefined ? [] : groups).map((group) => (
           // Each room is a note to choose from, held by the magnet of its room.
           <PinnedNote
             key={group.room}
@@ -239,8 +267,10 @@ function TemplatesScreen() {
             </View>
           </PinnedNote>
         ))}
-        {groups.length === 0 ? (
-          <Text style={{ color: colors.muted, fontSize: 16 }}>{t('templates.empty')}</Text>
+        {tasks !== undefined && groups.length === 0 ? (
+          <Text testID="templates.empty" style={{ color: colors.muted, fontSize: 16 }}>
+            {t('templates.empty')}
+          </Text>
         ) : null}
         {shortHeight && assignee ? assignee : null}
         {save.error ? (
@@ -272,7 +302,8 @@ function TemplatesScreen() {
                   : t('templates.addCount', { n: keys.length })
           }
           onPress={add}
-          disabled={keys.length === 0}
+          // Adding many tasks at once waits for the connection; the band says so.
+          disabled={keys.length === 0 || !online || tasks === undefined}
           loading={saving}
           width="full"
         />

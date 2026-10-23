@@ -189,8 +189,9 @@ function EditForm({
   const [quantity, setQuantity] = useState(item.quantity ?? '');
   // What the form opened with: a refreshed item (realtime) must not count as an edit.
   const [opened] = useState({ name: item.name, quantity: item.quantity ?? '' });
+  const dirty = isDirty(opened, { name, quantity });
   const { requestClose, dialog } = useDiscardGuard({
-    dirty: isDirty(opened, { name, quantity }),
+    dirty,
     onCancel,
     busy,
   });
@@ -216,7 +217,8 @@ function EditForm({
   const closeQuantity = () => {
     if (!quantityInvalid) setQuantityOpen(false);
   };
-  const canSave = online && !busy;
+  // As in every edit sheet, Save waits dimmed until something changes (DESIGN.md, fase 10a).
+  const canSave = online && !busy && dirty;
   const save = () => {
     if (parsedName.success && parsedQuantity.success) {
       onSave(parsedName.data, parsedQuantity.data);

@@ -13,10 +13,9 @@ const GAP = (HEIGHT - 2 * EDGE - THUMB) / 2;
 const SLOP_Y = Math.max(0, Math.ceil((MIN_TOUCH - HEIGHT) / 2));
 const SLOP_X = Math.max(0, Math.ceil((MIN_TOUCH - WIDTH) / 2));
 
-type Props = Pick<
-  SwitchProps,
-  'value' | 'disabled' | 'onValueChange' | 'testID' | 'accessibilityLabel'
-> & {
+type Props = Pick<SwitchProps, 'value' | 'disabled' | 'onValueChange' | 'testID'> & {
+  /** What the switch turns on and off: required, a switch without it is only «on» or «off». */
+  accessibilityLabel: string;
   /** The colour the switch is drawn on: the page (default) or a note. */
   surface?: string;
 };
@@ -24,7 +23,7 @@ type Props = Pick<
 /**
  * A switch in the Nido colours (`toggleLook`): a light thumb in both themes, a track filled only
  * when on, and a check on the thumb when on, so state reads by fill, position and mark. The check is
- * decorative; the state is announced through accessibilityState.
+ * decorative; the state is announced through `aria-checked`.
  */
 export function Toggle({ value = false, disabled, onValueChange, surface, ...rest }: Props) {
   const { colors } = useTheme();
@@ -33,7 +32,8 @@ export function Toggle({ value = false, disabled, onValueChange, surface, ...res
     <Pressable
       {...rest}
       accessibilityRole="switch"
-      accessibilityState={{ checked: value, disabled: !!disabled }}
+      aria-checked={value}
+      aria-disabled={!!disabled}
       disabled={disabled}
       hitSlop={{ top: SLOP_Y, bottom: SLOP_Y, left: SLOP_X, right: SLOP_X }}
       onPress={() => void onValueChange?.(!value)}

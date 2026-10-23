@@ -1,9 +1,10 @@
 import { useContext, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { DOOR_MAX_SCALE } from '../door';
+import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import { displayFontBold, MIN_TOUCH } from '../tokens';
 import { useLayout } from '../useLayout';
@@ -14,6 +15,7 @@ import {
   useDoor,
   useFridgeRefresh,
 } from './doorContext';
+import { DoorHandle } from './DoorHandle';
 import { DoorHeadline } from './DoorHeadline';
 import { FirstUseHint } from './FirstUseHint';
 
@@ -188,6 +190,8 @@ export function DoorHeader({
     </>
   );
 
+  // With high contrast in light the enamel and the paper are 1.32:1: the door draws its edge.
+  const edge = doorEdge(colors);
   const frame = {
     backgroundColor: colors.door,
     borderBottomLeftRadius: radii.door,
@@ -196,6 +200,27 @@ export function DoorHeader({
     paddingRight: right + insets.right,
   };
   const column = { width: '100%', maxWidth: contentMax, alignSelf: 'center' } as const;
+  // The high-contrast edge as a layer over the door's bottom curve, not a border of the door
+  // itself: on Android a border on the door's background left a seam along its top edge.
+  const edgeLayer = edge ? (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: radii.door,
+        borderBottomWidth: edge.width,
+        borderLeftWidth: edge.width,
+        borderRightWidth: edge.width,
+        borderColor: edge.color,
+        borderBottomLeftRadius: radii.door,
+        borderBottomRightRadius: radii.door,
+        borderTopWidth: 0,
+      }}
+    />
+  ) : null;
 
   if (door.compact) {
     // On a phone on its side the quick add comes into the door: beside the strip when there is
@@ -222,6 +247,7 @@ export function DoorHeader({
           paddingBottom,
         }}
       >
+        {edgeLayer}
         <ScrollView
           style={{ flexGrow: 0, flexShrink: 1, maxHeight: scrollMax }}
           scrollEnabled={overflows}
@@ -245,8 +271,16 @@ export function DoorHeader({
                   rowGap: space(2),
                 }}
               >
+                {/* Beside the controls on a short window or above two panes; on a phone held
+                    upright (large text) there is no room beside, so it takes the full width and
+                    the controls go under it (fase 10b). */}
                 <View
-                  style={{ flexShrink: 1, ...(controls ? { maxWidth: '50%' } : { flexGrow: 1 }) }}
+                  style={{
+                    flexShrink: 1,
+                    ...(controls && door.beside
+                      ? { maxWidth: '50%' }
+                      : { flexGrow: 1, flexBasis: '100%' }),
+                  }}
                 >
                   {hierarchy}
                 </View>
@@ -311,45 +345,9 @@ export function DoorHeader({
         paddingBottom: handle ? MIN_TOUCH : space(6),
       }}
     >
+      {edgeLayer}
       {/* The handle only exists where it works: a door outside a refreshing pane has none. */}
-      {refresh && handle ? (
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            // A 44 x 44 touch target inside the door's bottom padding: Android drops taps that
-            // reach past the parent, so only 2 dp of the bar overflow.
-            bottom: 0,
-            height: MIN_TOUCH,
-            alignItems: 'center',
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('refresh.pull')}
-            onPress={refresh.onRefresh}
-            style={{
-              width: MIN_TOUCH,
-              height: MIN_TOUCH,
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-            }}
-          >
-            {/* 36 x 4 drawn, sitting on the door's edge. */}
-            <View
-              style={{
-                width: 36,
-                height: 4,
-                marginBottom: -2,
-                borderRadius: radii.pill,
-                backgroundColor: colors.outline,
-              }}
-            />
-          </Pressable>
-        </View>
-      ) : null}
+      {refresh && handle ? <DoorHandle onRefresh={refresh.onRefresh} /> : null}
       <DoorTypeContext.Provider value={type}>
         <View style={column}>
           {hierarchy}

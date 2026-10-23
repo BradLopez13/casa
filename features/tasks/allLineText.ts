@@ -1,8 +1,15 @@
 import type { WeekLine } from '@/domain/tasks/weekLine';
 import { t } from '@/i18n';
 
-/** The secondary line of the Tareas door: everything pending, dated or not. Spanish plural: 1 is singular, the rest plural. */
+/**
+ * The secondary line of the Tareas door: what the tab is for («Todo lo del hogar, por día.»,
+ * fase 10c), then how much is pending, dated or not. Spanish plural: 1 is singular, the rest plural.
+ */
 export function allLineText(line: WeekLine): string {
+  return `${t('tasks.allLine.purpose')} ${count(line)}`;
+}
+
+function count(line: WeekLine): string {
   switch (line.kind) {
     case 'empty':
       return t('tasks.allLine.empty');

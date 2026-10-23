@@ -28,6 +28,8 @@ type Props = {
   width?: 'full' | 'hug';
   /** Tertiary only: no side padding, so its label lines up with the text of the note it sits in. */
   flush?: boolean;
+  /** `menuitem` inside a menu (`MemberMenu`); a button anywhere else. */
+  role?: 'button' | 'menuitem';
 };
 
 export function Button({
@@ -41,6 +43,7 @@ export function Button({
   icon,
   width = 'hug',
   flush = false,
+  role = 'button',
 }: Props) {
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -57,9 +60,10 @@ export function Button({
     <View style={width === 'hug' ? { alignSelf: 'flex-start' } : undefined}>
       <Pressable
         testID={testID}
-        accessibilityRole="button"
+        accessibilityRole={role}
         accessibilityLabel={title}
-        accessibilityState={{ disabled: inactive, busy: loading }}
+        aria-disabled={inactive}
+        aria-busy={loading}
         disabled={inactive}
         onPress={onPress}
         hitSlop={

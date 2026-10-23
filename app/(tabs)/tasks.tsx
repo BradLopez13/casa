@@ -13,6 +13,7 @@ import { dueParam } from '@/features/tasks/dueParam';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { allSections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
+import { HelpLink } from '@/features/settings/HelpLink';
 import { t } from '@/i18n';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { OfflineBand } from '@/ui/components/OfflineBand';
@@ -82,6 +83,7 @@ export default function TasksScreen() {
     <View style={{ gap: space(3), alignItems: 'flex-start' }}>
       <SymbolPlate />
       <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.empty')}</Text>
+      <HelpLink entry="write" testID="tasks.help" />
     </View>
   );
 

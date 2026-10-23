@@ -1,4 +1,5 @@
-import { isOverdue, selectAll, selectToday, type TaskItem } from '@/domain/tasks/views';
+import { addDays, isoWeekday } from '@/domain/tasks/dates';
+import { selectAll, selectToday, type TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 
 /** One row of a task list: a note per open task, or the tray holding every finished one. */
@@ -36,14 +37,36 @@ export function todaySections(tasks: TaskItem[], today: string): TaskListSection
   ]);
 }
 
-/** Tareas › Todas: dated, undated, and the tray of everything finished. */
+/**
+ * Tareas › Todas, grouped by date so it does not repeat Hoy (fase 10c): earlier days, today, the
+ * rest of this week (to Sunday), later, no date, and the tray of everything finished.
+ */
 export function allSections(tasks: TaskItem[], today: string): TaskListSection[] {
   const { dated, undated, done } = selectAll(tasks, today);
-  const overdue = dated.filter((task) => isOverdue(task, today));
-  const upcoming = dated.filter((task) => !isOverdue(task, today));
+  const sunday = addDays(today, 7 - isoWeekday(today));
+  const group = (keep: (dueOn: string) => boolean) =>
+    dated.filter((task) => task.dueOn !== null && keep(task.dueOn));
   return nonEmpty([
-    notes('overdue', t('tasks.section.overdue'), overdue),
-    notes('dated', t('tasks.section.dated'), upcoming),
+    notes(
+      'overdue',
+      t('tasks.section.overdue'),
+      group((due) => due < today),
+    ),
+    notes(
+      'today',
+      t('tasks.section.allToday'),
+      group((due) => due === today),
+    ),
+    notes(
+      'thisWeek',
+      t('tasks.section.thisWeek'),
+      group((due) => due > today && due <= sunday),
+    ),
+    notes(
+      'later',
+      t('tasks.section.later'),
+      group((due) => due > sunday),
+    ),
     notes('undated', t('tasks.section.undated'), undated),
     tray('done', t('tasks.section.done'), done),
   ]);

@@ -119,6 +119,8 @@ export function AddItemField({ entry }: { entry: ItemEntry }) {
           submitBehavior="submit"
           autoCapitalize="sentences"
           autoCorrect={false}
+          // A product, not a name or an address: no autofill suggestions over the field.
+          autoComplete="off"
           placeholder={t('shopping.input')}
           accessibilityLabel={t('shopping.input')}
           placeholderTextColor={colors.muted}

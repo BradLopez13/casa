@@ -135,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         # One job per shard of scripts/e2e-shard.sh, which lists the flows of each.
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     name: e2e-android (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@v4

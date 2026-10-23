@@ -38,6 +38,7 @@ import {
   type ShoppingState,
 } from '@/features/shopping/shoppingPanes';
 import { useMemberLabels } from '@/features/tasks/useMemberLabels';
+import { HelpLink } from '@/features/settings/HelpLink';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeader } from '@/ui/components/DoorHeader';
@@ -207,7 +208,13 @@ export default function ShoppingScreen() {
     );
   } else if (state === 'empty') {
     stateView = (
-      <EmptyList usual={usual(history, pendingNames(items))} onAdd={(name) => entry.submit(name)} />
+      <View style={{ gap: space(4) }}>
+        <EmptyList
+          usual={usual(history, pendingNames(items))}
+          onAdd={(name) => entry.submit(name)}
+        />
+        <HelpLink entry="shopping" testID="shopping.help" />
+      </View>
     );
   }
 

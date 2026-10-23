@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { markHintSeen } from '@/features/hints/hints';
 import { t } from '@/i18n';
@@ -40,6 +40,27 @@ describe('QuantityPill', () => {
     expect(pill.getAttribute('aria-label')).toBe(
       t('shopping.quantity.label', { name: 'Pan', quantity: t('shopping.quantity.none') }),
     );
+  });
+
+  it('carries the scale of the product sheet before the value, with or without a quantity', () => {
+    for (const quantity of [null, '2']) {
+      const { pill } = renderPill(quantity);
+      const glyph = pill.querySelector('[data-icon="scale-outline"]');
+      expect(glyph).not.toBeNull();
+      expect(pill.textContent).toBe(quantity ?? '—');
+      cleanup();
+    }
+  });
+
+  it('is adjustable on every row, even a quantity that cannot step (fase 10d)', () => {
+    const roles = [null, '2', 'un poco'].map((quantity) => {
+      const { pill } = renderPill(quantity);
+      const role = pill.getAttribute('role');
+      cleanup();
+      return role;
+    });
+    // react-native-web draws «adjustable» as a slider.
+    expect(roles).toEqual(['slider', 'slider', 'slider']);
   });
 
   it('shows the quantity there is', () => {

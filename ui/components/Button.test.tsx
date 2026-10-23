@@ -36,4 +36,11 @@ describe('Button', () => {
     expect(enabled.collapsable).toBe(false);
     expect(disabled.collapsable).toBe(false);
   });
+
+  it('tells a screen reader it is disabled, or busy while it loads', () => {
+    const { getByRole, rerender } = render(<Button title="Guardar" disabled onPress={() => {}} />);
+    expect(getByRole('button').getAttribute('aria-disabled')).toBe('true');
+    rerender(<Button title="Guardar" loading onPress={() => {}} />);
+    expect(getByRole('button').getAttribute('aria-busy')).toBe('true');
+  });
 });

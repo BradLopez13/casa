@@ -1,0 +1,102 @@
+appId: com.bradlopez13.casa
+# Runs even when the flow fails: an emulator left offline would break every later flow.
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Vera owns "Piso Vera", empty
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: vera@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# A task for today, sent while online
+- tapOn:
+    id: today.quick-add
+- inputText: Tender la ropa
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Completar «Tender la ropa»
+    timeout: 20000
+
+# Offline: the band says Hoy shows the last it got
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+
+# Ticking it off offline marks it at once, with its undo, and no warning (fase 10e)
+- tapOn: Completar «Tender la ropa»
+- extendedWaitUntil:
+    visible: Hechas hoy
+    timeout: 5000
+- assertVisible: Hecha.
+- assertNotVisible: Sin conexión. Las tareas se marcan con red.
+
+# A new task offline shows at once too
+- tapOn:
+    id: today.quick-add
+- inputText: Poner la lavadora
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Poner la lavadora
+    timeout: 5000
+
+# A cold start offline keeps both, from the device (the cache is written within a second)
+- waitForAnimationToEnd:
+    timeout: 3000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: Poner la lavadora
+    timeout: 30000
+- assertVisible:
+    id: tasks.offline
+# On a small screen the tray sits below the fold: scroll down to it, then back to the door.
+- scrollUntilVisible:
+    element:
+      text: Hechas hoy
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      id: tasks.offline
+    direction: UP
+
+# Back online: the queue goes, the band leaves, and a refresh brings both back from the server
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible:
+      id: tasks.offline
+    timeout: 30000
+- assertNotVisible: No se pudo.*
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 800
+- extendedWaitUntil:
+    visible: Poner la lavadora
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: Hechas hoy
+    direction: DOWN

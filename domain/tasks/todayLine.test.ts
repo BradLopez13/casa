@@ -124,4 +124,34 @@ describe('todayLine', () => {
   it('ignores tasks due later and tasks done on other days', () => {
     expect(line([task({ assigneeId: me, dueOn: '2026-10-10' })], null)).toEqual({ kind: 'empty' });
   });
+
+  describe('a delete still waiting for its «Deshacer»', () => {
+    const deleting = (tasks: TaskItem[], inFlight: TaskItem[], filter: string | null = null) =>
+      todayLine({ tasks, deleting: inFlight, today, userId: me, filter, filterName: 'Segundo' });
+
+    it('the last pending one deleted does not turn the door into «Todo hecho por hoy»', () => {
+      const gone = task({ assigneeId: me });
+      expect(deleting([done({ assigneeId: me })], [gone])).toEqual({
+        kind: 'mine',
+        today: 1,
+        overdue: 0,
+        household: 0,
+      });
+    });
+
+    it('still counts as it was: neither done nor gone', () => {
+      const kept = task({ assigneeId: me });
+      const gone = task({ assigneeId: me });
+      expect(deleting([kept], [gone], me)).toEqual({
+        kind: 'mine',
+        today: 2,
+        overdue: 0,
+        household: null,
+      });
+    });
+
+    it('once confirmed (no longer in flight) the door celebrates', () => {
+      expect(deleting([done({ assigneeId: me })], [])).toEqual({ kind: 'allDone' });
+    });
+  });
 });

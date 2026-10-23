@@ -1,11 +1,11 @@
 import { t } from '@/i18n';
 import type { NoticeAction } from '@/ui/components/Notice';
 import { markHintSeen } from '@/features/hints/hints';
-import type { ToggleVars } from './toggle';
+import type { ToggleRequest } from './queries';
 
 type Args = {
-  /** False when it did not go (offline): the toggle has already said why. */
-  toggle: (vars: ToggleVars) => boolean;
+  /** False when it could not go (a provisional note, no household yet). */
+  toggle: (vars: ToggleRequest) => boolean;
   notify: (message: string, action?: NoticeAction) => void;
   task: { id: string };
 };

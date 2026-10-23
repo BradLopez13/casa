@@ -5,6 +5,7 @@ import {
   dayInSentence,
   dayName,
   doneWhen,
+  dueChipLabel,
   dueLabel,
   longDateLabel,
   overdueLabel,
@@ -22,6 +23,18 @@ describe('dueLabel', () => {
   it('writes a far date with the Spanish month name', () => {
     expect(dueLabel('2026-10-20', today)).toContain('octubre');
     expect(dueLabel('2026-12-24', today)).toContain('diciembre');
+  });
+});
+
+describe('dueChipLabel', () => {
+  const today = '2026-10-22';
+  it('says a date that already went by is past, as the note in the list does (fase 10a)', () =>
+    expect(dueChipLabel('2026-10-18', today)).toBe('domingo, 18 de octubre · pasada'));
+  it('leaves yesterday, today and later as they are', () => {
+    expect(dueChipLabel('2026-10-21', today)).toBe('Ayer');
+    expect(dueChipLabel('2026-10-22', today)).toBe('Hoy');
+    expect(dueChipLabel('2026-10-30', today)).toBe('viernes, 30 de octubre');
+    expect(dueChipLabel(null, today)).toBe('Sin fecha');
   });
 });
 

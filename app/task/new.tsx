@@ -5,7 +5,7 @@ import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
 import { markFresh } from '@/features/tasks/freshIds';
-import { dueParam } from '@/features/tasks/dueParam';
+import { assigneeParam, dueParam } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation } from '@/features/tasks/queries';
@@ -41,7 +41,7 @@ function NewTaskScreen() {
   const initial: TaskInput = {
     title: '',
     room: null,
-    assigneeId: params.assignee ?? null,
+    assigneeId: assigneeParam(params.assignee),
     dueOn: dueParam(params.due, today),
     recurrence: null,
   };

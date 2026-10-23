@@ -9,10 +9,12 @@ import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { TallyView } from '@/features/tasks/components/Tally';
 import { TemplatesCard } from '@/features/tasks/components/TemplatesCard';
 import { TaskRow, TaskRowSeparator, taskRowKey } from '@/features/tasks/components/TaskRow';
+import { HelpLink } from '@/features/settings/HelpLink';
 import { IdeasButton } from '@/features/tasks/components/TaskScreenPieces';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { todaySections, type TaskListRow, type TaskListSection } from '@/features/tasks/sections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
+import { useDeletingTasks } from '@/features/tasks/queries';
 import { doneEmpty, todayCards, todayPanes, type TodayCards } from '@/features/tasks/todayPanes';
 import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
@@ -58,14 +60,18 @@ export default function TodayScreen() {
 
   // The door counts the whole household, so the line can say what is left for everyone else.
   const tasks = tasksQuery.data;
+  // A delete whose «Deshacer» is still up is not celebrated (DESIGN.md, fase 10a).
+  const deleting = useDeletingTasks(membership?.householdId);
   const line = useMemo(
-    () => todayLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
-    [tasks, today, userId, assigneeId, filterName],
+    () =>
+      todayLine({ tasks: tasks ?? [], deleting, today, userId, filter: assigneeId, filterName }),
+    [tasks, deleting, today, userId, assigneeId, filterName],
   );
   const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
   const cards = todayCards({
     loaded: tasksQuery.isSuccess,
-    taskCount: tasksQuery.data?.length ?? 0,
+    // What is being deleted still counts until its «Deshacer» goes.
+    taskCount: (tasksQuery.data?.length ?? 0) + deleting.length,
     memberCount: members.length,
     listEmpty: sections.length === 0,
   });
@@ -92,9 +98,11 @@ export default function TodayScreen() {
     line.kind === 'allDone' ||
     line.kind === 'nothingMine' ||
     (line.kind === 'person' && line.count === 0);
-  const nothing = doorSaysNothing ? null : (
-    <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
-  );
+  // Nor while a delete waits for its «Deshacer»: the door still counts that task.
+  const nothing =
+    doorSaysNothing || deleting.length > 0 ? null : (
+      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('today.nothing')}</Text>
+    );
 
   const quickAdd = (
     <QuickAdd
@@ -182,6 +190,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
                   {members.length === 1 ? invite : nothing}
                   {/* The templates card already offers them. */}
                   {cards.templates ? null : <IdeasButton />}
+                  <HelpLink entry="tabs" testID="today.help" />
                 </View>
               }
             />
@@ -260,6 +269,7 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
                   <View style={{ gap: space(4) }}>
                     {nothing}
                     {cards.templates ? null : <IdeasButton />}
+                    <HelpLink entry="tabs" testID="today.help" />
                   </View>
                 }
               />

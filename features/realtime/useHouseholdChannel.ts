@@ -48,8 +48,8 @@ export function useHouseholdChannel(householdId: string | undefined): void {
     // A key with its own mutation in flight would overwrite the optimistic state; the
     // mutation refreshes it when it settles.
     const isBusy = (key: QueryKey) => {
-      if (key[0] === 'tasks')
-        return queryClient.isMutating({ mutationKey: ['tasks', 'toggle'] }) > 0;
+      // Every queued task change (create, complete, reopen), not only the toggle (fase 10e).
+      if (key[0] === 'tasks') return queryClient.isMutating({ mutationKey: ['tasks'] }) > 0;
       if (key[0] === 'shopping') return queryClient.isMutating({ mutationKey: ['shopping'] }) > 0;
       return false;
     };

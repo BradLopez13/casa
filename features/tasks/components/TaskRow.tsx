@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
-import type { ToggleVars } from '@/features/tasks/toggle';
+import { useUnsentTasks, type ToggleRequest } from '@/features/tasks/queries';
 import { useHint } from '@/features/hints/hints';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { FirstUseHint } from '@/ui/components/FirstUseHint';
@@ -19,7 +19,7 @@ type Props = {
   names: Map<string, string>;
   userId: string | null;
   isBusy: (id: string) => boolean;
-  toggle: (vars: ToggleVars) => boolean;
+  toggle: (vars: ToggleRequest) => boolean;
   /** No side padding, for a pane whose container already brings the gutter. */
   flush?: boolean;
   /** The list's first row: it carries the box hint, then the swipe one, until each is used. */
@@ -45,7 +45,16 @@ export function TaskRow({
   // One hint over the list at a time: the box first, then the swipe.
   const hint =
     !first || row.kind !== 'note' ? null : boxHint ? 'complete' : swipeHint ? 'swipe' : null;
-  const openTask = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
+  const unsent = useUnsentTasks();
+  // A note created here and still waiting for the connection is not on the server yet: its sheet
+  // waits until it is (fase 10e). Ticking it off still works: it queues behind its create.
+  const openTask = (id: string) => {
+    if (unsent.has(id)) {
+      notify(t('tasks.unsent'));
+      return;
+    }
+    router.push({ pathname: '/task/[id]', params: { id } });
+  };
   return (
     <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
       {hint === null ? null : (
@@ -74,6 +83,7 @@ export function TaskRow({
           today={today}
           mark={row.task.assigneeId ? marks.get(row.task.assigneeId) : undefined}
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
+          mine={row.task.assigneeId !== null && row.task.assigneeId === userId}
           busy={isBusy(row.task.id)}
           // Tapping the box or swiping completes the same way, and reopening too: all offer «Deshacer».
           onToggle={() =>

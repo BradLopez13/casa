@@ -10,6 +10,15 @@ export function dueLabel(dueOn: string | null, today: string): string {
   return longDateLabel(dueOn);
 }
 
+/**
+ * The date on the task sheet's magnet: as `dueLabel`, and a date before yesterday says it went by
+ * («domingo, 18 de octubre · pasada»), as the note in the list says «Pendiente desde» (fase 10a).
+ */
+export function dueChipLabel(dueOn: string | null, today: string): string {
+  if (dueOn === null || dueOn >= addDays(today, -1)) return dueLabel(dueOn, today);
+  return t('tasks.due.past', { date: longDateLabel(dueOn) });
+}
+
 /** "jueves, 9 de octubre" / "Thursday, October 9". */
 export function longDateLabel(iso: string): string {
   return toLocalDate(iso).toLocaleDateString(locale, {

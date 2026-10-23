@@ -155,7 +155,7 @@ export function ShoppingRow({
     ? ({
         accessible: true,
         accessibilityRole: 'checkbox',
-        accessibilityState: { checked: true },
+        'aria-checked': true,
         accessibilityLabel: boughtRowLabel({
           name: item.name,
           quantity: item.quantity,
@@ -195,7 +195,7 @@ export function ShoppingRow({
         accessibilityLabel={t(bought ? 'shopping.a11y.unmark' : 'shopping.a11y.mark', {
           name: item.name,
         })}
-        accessibilityState={{ checked: bought }}
+        aria-checked={bought}
         // A bought row speaks as a whole (boughtA11y): its parts stay out of the reader's way.
         accessible={!bought}
         importantForAccessibility={bought ? 'no-hide-descendants' : 'auto'}

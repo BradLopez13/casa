@@ -17,18 +17,26 @@ import {
   buildShoppingMutationDefaults,
   countsAsUnsent,
   NETWORK_RETRIES,
-  persistBuster,
-  persistDehydrateOptions,
   resumeShoppingQueue,
   shoppingQueryOptions,
-  shouldPersistMutation,
-  shouldPersistQuery,
   quantityKey,
   type AddVars,
   type BoughtVars,
   type QuantityVars,
 } from './offline';
+import {
+  persistBuster,
+  persistDehydrateOptions,
+  shouldPersistMutation,
+  shouldPersistQuery,
+} from '@/features/offline/persistence';
 
+// The persistence covers the task queue too: its requests stay out of these tests.
+vi.mock('@/features/tasks/api', () => ({
+  createTask: vi.fn(),
+  completeTask: vi.fn(),
+  reopenTask: vi.fn(),
+}));
 vi.mock('./api', () => ({
   addShoppingItem: vi.fn(),
   setItemBought: vi.fn(),
@@ -85,23 +93,26 @@ afterEach(() => {
 });
 
 describe('shouldPersistQuery', () => {
-  it('keeps the shopping list, its history, the membership and the members', () => {
+  it('keeps the shopping list, its history, the tasks, the membership and the members', () => {
     expect(shouldPersistQuery(['shopping', 'h'])).toBe(true);
     expect(shouldPersistQuery(['shopping-history', 'h'])).toBe(true);
     expect(shouldPersistQuery(['membership'])).toBe(true);
     expect(shouldPersistQuery(['members', 'h'])).toBe(true);
     expect(shouldPersistQuery(['shopping-resolved', 'h'])).toBe(true);
-    expect(shouldPersistQuery(['tasks', 'h'])).toBe(false);
+    // Fase 10e: an offline cold start shows the tasks as they were.
+    expect(shouldPersistQuery(['tasks', 'h'])).toBe(true);
     expect(shouldPersistQuery(['invites', 'h'])).toBe(false);
   });
 });
 
 describe('shouldPersistMutation', () => {
-  it('keeps only the queued shopping mutations, whose functions are registered at start', () => {
+  it('keeps only the queued mutations, whose functions are registered at start', () => {
     expect(shouldPersistMutation(addKey)).toBe(true);
     expect(shouldPersistMutation(boughtKey)).toBe(true);
     expect(shouldPersistMutation(['shopping', 'edit'])).toBe(false);
-    expect(shouldPersistMutation(['tasks', 'toggle'])).toBe(false);
+    expect(shouldPersistMutation(['tasks', 'toggle'])).toBe(true);
+    expect(shouldPersistMutation(['tasks', 'create'])).toBe(true);
+    expect(shouldPersistMutation(['tasks', 'skip'])).toBe(false);
     expect(shouldPersistMutation(undefined)).toBe(false);
   });
 
@@ -116,8 +127,8 @@ describe('shouldPersistMutation', () => {
 
 describe('persistBuster', () => {
   it('ties the cache to the app version, the cache schema and the user', () => {
-    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1:v2');
-    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon:v2');
+    expect(persistBuster('1.0.0', 'u1')).toBe('1.0.0:u1:v3');
+    expect(persistBuster('1.0.0', null)).toBe('1.0.0:anon:v3');
   });
 
   it('discards a cache written before shopping lost its categories', () => {
@@ -296,7 +307,8 @@ describe('restart', () => {
     const after = restart(before.queryClient);
     expect(list(after.queryClient)?.map((i) => i.id)).toEqual(['a']);
     expect(after.queryClient.getQueryData(['membership'])).toEqual({ householdId: 'h' });
-    expect(after.queryClient.getQueryData(['tasks', 'h'])).toBeUndefined();
+    // Fase 10e: the tasks come back too, so an offline cold start shows them.
+    expect(after.queryClient.getQueryData(['tasks', 'h'])).toEqual([]);
     const restored = after.queryClient.getMutationCache().getAll();
     expect(restored.map((m) => m.state.variables)).toEqual([
       milk,

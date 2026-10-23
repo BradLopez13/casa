@@ -3,7 +3,13 @@
 /** How long a request to Supabase may go unanswered before it counts as no connection. */
 export const REQUEST_TIMEOUT_MS = 15_000;
 
-const UNTIMED = /\/rpc\/delete_account\b/;
+/**
+ * Deleting the account removes a lot and may take longer, but not for ever: with a dead connection
+ * the screen used to stay on «borrando» (fase 10e).
+ */
+export const DELETE_ACCOUNT_TIMEOUT_MS = 90_000;
+
+const DELETE_ACCOUNT = /\/rpc\/delete_account\b/;
 
 function timeoutError(): Error {
   return Object.assign(new Error('signal timed out'), { name: 'TimeoutError' });
@@ -18,14 +24,14 @@ function timeoutError(): Error {
 export function withTimeout(base: typeof fetch, ms = REQUEST_TIMEOUT_MS): typeof fetch {
   return (input, init) => {
     // Deleting the account may take longer and must not be reported as failed while it goes on.
-    if (UNTIMED.test(String(input instanceof Request ? input.url : input)))
-      return base(input, init);
+    const url = String(input instanceof Request ? input.url : input);
+    const limit = DELETE_ACCOUNT.test(url) ? DELETE_ACCOUNT_TIMEOUT_MS : ms;
     const controller = new AbortController();
     const own = init?.signal;
     const follow = () => controller.abort(own?.reason);
     if (own?.aborted) follow();
     else own?.addEventListener('abort', follow);
-    const timer = setTimeout(() => controller.abort(timeoutError()), ms);
+    const timer = setTimeout(() => controller.abort(timeoutError()), limit);
     return base(input, { ...init, signal: controller.signal }).finally(() => {
       clearTimeout(timer);
       own?.removeEventListener('abort', follow);

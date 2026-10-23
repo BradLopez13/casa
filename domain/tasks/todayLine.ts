@@ -5,7 +5,7 @@ export type TodayLine =
   | { kind: 'empty' }
   | { kind: 'allDone' }
   /**
-   * `today` is what is due today and `overdue` what waits from other days, so the door can tell
+   * `today` is what is due today and `overdue` what waits from earlier days, so the door can tell
    * them apart; `household` is what is left for the whole home, or null when the filter is
    * already "Tú".
    */
@@ -17,6 +17,11 @@ export type TodayLine =
 type Input = {
   /** Every task of the household, not only the filtered ones. */
   tasks: TaskItem[];
+  /**
+   * Tasks deleted on screen whose «Deshacer» is still up. They count as they were, neither done
+   * nor gone, so the door never celebrates a delete that may yet be undone.
+   */
+  deleting?: readonly TaskItem[];
   today: string;
   userId: string | null;
   /** The selected member, or null for everyone. */
@@ -25,8 +30,16 @@ type Input = {
   filterName: string;
 };
 
-export function todayLine({ tasks, today, userId, filter, filterName }: Input): TodayLine {
-  const { overdue, dueToday, doneToday } = selectToday(tasks, today);
+export function todayLine({
+  tasks,
+  deleting = [],
+  today,
+  userId,
+  filter,
+  filterName,
+}: Input): TodayLine {
+  const counted = deleting.length === 0 ? tasks : [...tasks, ...deleting];
+  const { overdue, dueToday, doneToday } = selectToday(counted, today);
   const pending = [...overdue, ...dueToday];
   if (pending.length === 0) return doneToday.length > 0 ? { kind: 'allDone' } : { kind: 'empty' };
 

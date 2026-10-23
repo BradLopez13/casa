@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import {
   Platform,
@@ -19,6 +20,7 @@ import {
   type QuickSpanKind,
 } from '@/domain/tasks/quick-parse';
 import { markHintSeen, useHint } from '@/features/hints/hints';
+import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers } from '@/features/households/queries';
 import { locale, t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -27,16 +29,16 @@ import { FirstUseHint } from '@/ui/components/FirstUseHint';
 import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
+import { useDoorCompact } from '@/ui/components/doorContext';
 import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
-import { createTask, newTaskId } from '../api';
-import { taskErrorMessage } from '../errors';
+import { newTaskId } from '../api';
 import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { hintName, quickHintSegments } from '../quickHint';
-import { useTaskMutation } from '../queries';
+import { buildCreateOptions } from '../create';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
@@ -95,11 +97,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   // Kinds dismissed for the text being typed; forgotten when the field empties.
   const [disabled, setDisabled] = useState<ReadonlySet<QuickSpanKind>>(() => new Set());
   const input = useRef<TextInput>(null);
-  // The text as of the last keystroke, read when a failed create puts its words back.
+  // The text as of the last keystroke: what Enter sends, and what a failed create puts back.
   const latest = useRef('');
-  // Set synchronously, so a second Enter before the next render cannot send twice. Cleared when
-  // the create itself ends, not when the list refetch that follows it does.
-  const inFlight = useRef(false);
   const look = buttonLook('primary', 'default', 'enabled', colors);
   const ctx = useMemo<QuickAddContext>(
     () => ({
@@ -118,21 +117,25 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
   const { fontScale } = useWindowDimensions();
   const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
+  // In a compact door (a phone on its side) the field shares a narrow column: the example is a
+  // short one, on one line, so it is never cut half way (fase 10a).
+  const inCompactDoor = useDoorCompact();
   const example = useMemo(() => {
-    const name = hintName(ctx.members, assigneeId);
-    const sentence =
-      name === null ? t('tasks.quickHint.exampleAlone') : t('tasks.quickHint.example', { name });
+    const name = inCompactDoor ? null : hintName(ctx.members, assigneeId);
+    // In the compact door even «Regar mañana cada 2 días» ran past the column on the .51 on its
+    // side: a shorter example that still underlines what the field understands.
+    const sentence = inCompactDoor
+      ? t('tasks.quickHint.exampleShort')
+      : name === null
+        ? t('tasks.quickHint.exampleAlone')
+        : t('tasks.quickHint.example', { name });
     return { sentence, segments: quickHintSegments(sentence, ctx) };
-  }, [ctx, assigneeId]);
-  const create = useTaskMutation(
-    async ({ id, task }: { id: string; task: NonNullable<ReturnType<typeof quickAddInput>> }) => {
-      try {
-        return await createTask(id, householdId as string, task);
-      } finally {
-        inFlight.current = false;
-      }
-    },
-  );
+  }, [ctx, assigneeId, inCompactDoor]);
+  // Queued like a shopping add (fase 10e): the note shows at once, and without a connection it
+  // waits and goes when the connection is back. A final error says so from the queue itself.
+  const queryClient = useQueryClient();
+  const { userId } = useSession();
+  const create = useMutation(buildCreateOptions(queryClient, notify));
 
   const changeText = (next: string) => {
     latest.current = next;
@@ -141,39 +144,37 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   };
 
   const send = () => {
-    const task = quickAddInput(text, assigneeId, dueOn, ctx);
+    // What the field holds right now, not as of the last render: the field empties below at once,
+    // so a second Enter before the next render finds it empty and sends nothing twice.
+    const typed = latest.current;
+    const task = quickAddInput(typed, assigneeId, dueOn, ctx);
     // An empty field is not an error: it just stays.
-    if (task === null || householdId === undefined || inFlight.current) return;
-    inFlight.current = true;
-    if (parse.spans.length > 0) markHintSeen('quickAdd');
+    if (task === null || householdId === undefined) return;
+    if (quickParse(typed, ctx).spans.length > 0) markHintSeen('quickAdd');
     // Cleared at once, so the next task can be typed while this one saves; put back on error.
-    const typed = text;
     const dismissed = disabled;
     changeText('');
     const id = newTaskId();
     // Created here: its note lands with the pin choreography when it shows up in the list.
     markFresh(id);
     create.mutate(
-      { id, task },
+      { id, householdId, userId, input: task },
       {
-        onSuccess: () => {
-          input.current?.focus();
-          void haptic('rigid');
-          // The field just empties: with a screen reader, say what was added.
-          announce(t('tasks.a11y.added', { title: task.title }));
-        },
-        onError: (error) => {
-          // What was typed comes back, with its dismissed chips, only if nothing was typed since;
-          // the notice carries the error.
+        onError: () => {
+          // What was typed comes back, with its dismissed chips, only if nothing was typed since.
           if (latest.current === '') {
             latest.current = typed;
             setText(typed);
             setDisabled(dismissed);
           }
-          notify(taskErrorMessage(error));
         },
       },
     );
+    // The note is already in the list: the next task can be typed at once.
+    input.current?.focus();
+    void haptic('rigid');
+    // The field just empties: with a screen reader, say what was added.
+    announce(t('tasks.a11y.added', { title: task.title }));
   };
 
   // The chip's words go back into the title; the kind stays off until the field empties.
@@ -217,6 +218,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             submitBehavior="submit"
             autoCapitalize="sentences"
             autoCorrect={false}
+            // A task title, not a name or an address: no autofill suggestions over the field.
+            autoComplete="off"
             placeholder={placeholder}
             // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
             // el miércoles…») wrapped and was cut, or ran under the «+».
@@ -257,6 +260,7 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
         <FirstUseHint
           testID={`${testID}.hint`}
           door
+          numberOfLines={inCompactDoor ? 1 : undefined}
           readerText={`${t('tasks.quickHint.lead')} ${example.sentence}`}
           text={
             <>
