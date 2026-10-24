@@ -4,6 +4,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
 import { pressedOpacity } from '../buttonLook';
 import { magnetCheckStyle, type MagnetCheck } from '../magnetCheck';
+import { magnetDrop } from '../magnetDrop';
 import { positEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import {
@@ -74,7 +75,7 @@ export function Magnet({
         justifyContent: 'center',
         backgroundColor: fill,
         ...(empty && !filledCheck ? { borderWidth: 1.5, borderColor: colors.outline } : {}),
-        // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
+        // Inner 1 dp ring (border-box sizing keeps the outer diameter).
         ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
           : {}),
@@ -125,8 +126,24 @@ export function Magnet({
     </View>
   );
 
+  const drop = magnetDrop(colors, raised);
   const lifted = raised ? (
     <View style={{ borderRadius: diameter / 2, backgroundColor: fill, ...shadows.magnetAmbient }}>
+      {/* Dark only: the shadow the slate hides, drawn as a disc just under the magnet. */}
+      {drop ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: drop.offset,
+            left: 0,
+            width: diameter,
+            height: diameter,
+            borderRadius: diameter / 2,
+            backgroundColor: drop.color,
+          }}
+        />
+      ) : null}
       {disc}
     </View>
   ) : (
