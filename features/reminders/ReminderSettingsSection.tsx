@@ -173,7 +173,8 @@ export function ReminderSettingsSection() {
           testID="settings.reminders.toggle"
           accessibilityLabel={t('settings.remindersToggle')}
           value={state.disabled ? state.value : on || asking}
-          disabled={asking || state.disabled}
+          disabled={state.disabled}
+          busy={asking}
           onValueChange={toggle}
         />
       </View>

@@ -18,8 +18,8 @@ export type MagnetSwitchLook = {
 /**
  * How a switch is drawn (fase 10f): a magnet that sticks when on. On, the slate magnet
  * (`selection`) with the bell in `onSelection` and its shadow; off, the bare `outline` ring, flat,
- * with the crossed bell in `muted`; paused (the phone has notifications off, or a save is on its
- * way), the same ring dashed. State reads by fill, glyph and relief, not by colour alone, and each
+ * with the crossed bell in `muted`; paused (the phone has notifications off), the same ring dashed.
+ * A switch that is only busy (asking the phone, saving) keeps the look of its value. State reads by fill, glyph and relief, not by colour alone, and each
  * part is at least 3:1 on the page and on a note.
  */
 export function magnetSwitchLook(

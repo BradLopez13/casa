@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MagnetSwitch } from './MagnetSwitch';
 
-function renderSwitch(value: boolean, disabled = false) {
+function renderSwitch(value: boolean, disabled = false, busy = false) {
   const onValueChange = vi.fn();
   render(
     <MagnetSwitch
@@ -10,6 +10,7 @@ function renderSwitch(value: boolean, disabled = false) {
       accessibilityLabel="Avisarme de mis tareas"
       value={value}
       disabled={disabled}
+      busy={busy}
       onValueChange={onValueChange}
     />,
   );
@@ -46,5 +47,19 @@ describe('MagnetSwitch', () => {
       (node) => getComputedStyle(node).borderTopStyle === 'dashed',
     );
     expect(dashed).toBe(true);
+  });
+
+  // Asking the phone or saving is not paused: the switch keeps its value's look and waits.
+  it('busy, keeps its look, never dashed, and ignores taps', () => {
+    const { sw, onValueChange } = renderSwitch(true, false, true);
+    expect(sw.getAttribute('aria-busy')).toBe('true');
+    expect(sw.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(sw);
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(sw.querySelector('[data-icon="bell"]')).not.toBeNull();
+    const dashed = [...sw.querySelectorAll('div')].some(
+      (node) => getComputedStyle(node).borderTopStyle === 'dashed',
+    );
+    expect(dashed).toBe(false);
   });
 });

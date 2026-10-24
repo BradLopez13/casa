@@ -40,7 +40,7 @@ export function BrandPlate() {
   );
 }
 
-/** A section of Ajustes, held on the page as a note. */
+/** Your account's note while the members load, before your magnet is known (fase 10f). */
 export function Note({ children }: { children: ReactNode }) {
   const { colors, radii, shadows, noteEdge, space } = useTheme();
   return (

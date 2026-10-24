@@ -69,7 +69,8 @@ export function HouseholdNoticesSection() {
           testID="settings.push.task-assigned"
           accessibilityLabel={t('settings.pushTaskAssigned')}
           value={taskState.value}
-          disabled={busy || taskState.disabled}
+          disabled={taskState.disabled}
+          busy={busy}
           onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
         />
       </View>
@@ -84,7 +85,8 @@ export function HouseholdNoticesSection() {
           testID="settings.push.member-joined"
           accessibilityLabel={t('settings.pushMemberJoined')}
           value={joinedState.value}
-          disabled={busy || joinedState.disabled}
+          disabled={joinedState.disabled}
+          busy={busy}
           onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
         />
       </View>

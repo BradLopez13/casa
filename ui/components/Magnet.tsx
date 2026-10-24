@@ -180,6 +180,8 @@ export function Magnet({
         testID={testID}
         onPress={onPress}
         hitSlop={slop}
+        // Pressed, the magnet fades as one piece: in dark its drawn drop does not show through.
+        needsOffscreenAlphaCompositing
         accessibilityRole={accessibilityRole}
         accessibilityLabel={accessibilityLabel}
         aria-selected={selectable ? selected : undefined}
