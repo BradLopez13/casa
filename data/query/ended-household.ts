@@ -1,15 +1,18 @@
 import type { QueryClient } from '@tanstack/react-query';
 
+const HOUSEHOLD_MUTATIONS: ReadonlySet<unknown> = new Set(['shopping', 'tasks']);
+
 const HOUSEHOLD_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping',
   'shopping-history',
   'shopping-resolved',
   'members',
+  'tasks',
 ]);
 
 /**
- * The households with data kept for them: their shopping list, history or members, or a
- * queued shopping change.
+ * The households with data kept for them: their shopping list, history, tasks or members, or a
+ * queued shopping or task change.
  */
 export function cachedHouseholdIds(queryClient: QueryClient): string[] {
   const ids = new Set<string>();
@@ -17,7 +20,10 @@ export function cachedHouseholdIds(queryClient: QueryClient): string[] {
     const [kind, householdId] = query.queryKey;
     if (HOUSEHOLD_QUERIES.has(kind) && typeof householdId === 'string') ids.add(householdId);
   }
-  for (const mutation of queryClient.getMutationCache().findAll({ mutationKey: ['shopping'] })) {
+  const mutations = queryClient.getMutationCache().getAll();
+  for (const mutation of mutations.filter((m) =>
+    HOUSEHOLD_MUTATIONS.has(m.options.mutationKey?.[0]),
+  )) {
     const householdId = (mutation.state.variables as { householdId?: unknown } | undefined)
       ?.householdId;
     if (typeof householdId === 'string') ids.add(householdId);

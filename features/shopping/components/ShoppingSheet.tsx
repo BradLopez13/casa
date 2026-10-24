@@ -12,7 +12,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { MemberMark } from '@/domain/members/marks';
-import { iconFor } from '@/domain/shopping/icons';
+import { FALLBACK_ICON, iconFor } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { useHint } from '@/features/hints/hints';
@@ -42,10 +42,21 @@ const { hang: HANG, firstRowInset: FIRST_ROW_INSET } = hangingMagnet(
 
 /**
  * The slate magnet that holds the note, half over its top edge near the left corner. Decorative
- * chrome in `selection`, so the «+» of the field stays the screen's one pósit.
+ * chrome in `selection`, so the «+» of the field stays the screen's one pósit. It carries the
+ * basket, the tab's own glyph, with or without products: a note with no product is still the
+ * shopping note (DESIGN.md, fase 10a).
  */
 function HangingMagnet({ left }: { left: number }) {
   const { colors } = useTheme();
+  const basket = (
+    <MaterialCommunityIcons
+      name={FALLBACK_ICON as Glyph}
+      size={Math.round(magnetSizes.md * 0.5)}
+      color={colors.onSelection}
+      accessible={false}
+      importantForAccessibility="no"
+    />
+  );
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left, zIndex: 1 }}>
       <Magnet
@@ -54,7 +65,7 @@ function HangingMagnet({ left }: { left: number }) {
         initial=""
         color="teal"
         accessibilityLabel=""
-        glyph={{ node: null, fill: colors.selection }}
+        glyph={{ node: basket, fill: colors.selection }}
       />
     </View>
   );
@@ -233,12 +244,10 @@ export function ShoppingSheet({
                   <Animated.View
                     entering={reduceMotion ? undefined : FadeIn.duration(FADE_MS)}
                     exiting={reduceMotion ? undefined : FadeOut.duration(FADE_MS)}
+                    // «Vaciar bolsa» goes under the heading as a quiet tertiary: beside it, at
+                    // ×1.6 it was the biggest thing on Compra (fase 10a).
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: space(3),
+                      alignItems: 'flex-start',
                       paddingHorizontal: space(4),
                       paddingTop: space(4),
                       paddingBottom: space(2),
@@ -248,7 +257,7 @@ export function ShoppingSheet({
                       testID="shopping.bought.toggle"
                       accessibilityRole="button"
                       accessibilityLabel={boughtTitleLabel(bought.length)}
-                      accessibilityState={{ expanded: !boughtCollapsed }}
+                      aria-expanded={!boughtCollapsed}
                       onPress={() => setBoughtCollapsed((c) => !c)}
                       style={({ pressed }) => ({
                         flexDirection: 'row',
@@ -270,7 +279,9 @@ export function ShoppingSheet({
                     <Button
                       testID="shopping.clear"
                       title={t('shopping.clear')}
-                      variant="secondary"
+                      variant="tertiary"
+                      width="hug"
+                      flush
                       icon={actionIcons.delete}
                       disabled={!online}
                       loading={clearing}

@@ -50,7 +50,7 @@ export function DoneNote({ task, mark, name, byYou, today, onReopen }: Props) {
         testID={`done-tray.${task.id}`}
         onPress={() => onReopen(task)}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: true }}
+        aria-checked={true}
         accessibilityLabel={label}
         style={{
           flexDirection: 'row',

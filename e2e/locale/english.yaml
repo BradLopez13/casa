@@ -28,7 +28,7 @@ appId: com.bradlopez13.casa
 
 # The Today tab and the quick add speak English
 - assertVisible: Today
-- assertVisible: Add a task for today…
+- assertVisible: Task for you, today…
 
 - tapOn:
     id: today.quick-add

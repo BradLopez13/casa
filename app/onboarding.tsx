@@ -46,7 +46,7 @@ function RoomToggle({
     <Pressable
       testID={`onboarding.room.${room}`}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
+      aria-checked={checked}
       accessibilityLabel={label}
       onPress={onToggle}
       style={({ pressed }) => ({

@@ -59,7 +59,8 @@ export function SocialButtons() {
           testID="auth-google"
           accessibilityRole="button"
           accessibilityLabel={t('auth.social.google')}
-          accessibilityState={{ disabled: busy !== null, busy: busy === 'google' }}
+          aria-disabled={busy !== null}
+          aria-busy={busy === 'google'}
           disabled={busy !== null}
           onPress={() =>
             void run('google', async () => {

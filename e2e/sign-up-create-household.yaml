@@ -89,7 +89,7 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible:
       id: settings.household-name
-      text: Hogar Piso Zoe
+      text: Piso Zoe
     timeout: 20000
 
 # Settings -> members -> copy link -> pending invite -> revoke
@@ -120,7 +120,7 @@ appId: com.bradlopez13.casa
       - tapOn:
           id: members\.revoke\..*
       - extendedWaitUntil:
-          visible: No hay invitaciones pendientes.
+          visible: Nadie invitado ahora mismo.
           timeout: 10000
 - assertNotVisible: Revocar
 

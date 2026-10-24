@@ -47,6 +47,8 @@ type Props = {
   today: string;
   mark: MemberMark | undefined;
   assigneeName: string | undefined;
+  /** The task is the viewer's, so the reader says «tuya». */
+  mine?: boolean;
   busy: boolean;
   onToggle: () => void;
   /** Swipe right to complete; the caller offers the undo. */
@@ -63,6 +65,7 @@ export function TaskNote({
   today,
   mark,
   assigneeName,
+  mine = false,
   busy,
   onToggle,
   onComplete,
@@ -105,7 +108,7 @@ export function TaskNote({
 
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
-  const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName);
+  const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName, mine);
 
   const swipeable = useRef<SwipeableMethods>(null);
   const canSwipe = !done && !provisional && !busy && !!onComplete;
@@ -154,7 +157,8 @@ export function TaskNote({
         ...noteEdge,
       }}
     >
-      {/* The magnet only says whose task it is; the box on the right completes it. */}
+      {/* The magnet only says whose task it is; the box on the right completes it. The reader
+          hears whose it is in the note's own label, right after the title. */}
       <Animated.View style={[{ marginLeft: -magnetSizes.md / 2 }, magnetStyle]}>
         <Magnet
           size="md"
@@ -200,7 +204,7 @@ export function TaskNote({
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint={provisional ? undefined : t('tasks.a11y.edit')}
-            accessibilityState={{ disabled: provisional }}
+            aria-disabled={provisional}
             accessibilityActions={
               canSwipe
                 ? [{ name: 'complete', label: t('tasks.a11y.complete', { title: task.title }) }]
@@ -246,7 +250,9 @@ export function TaskNote({
             accessibilityLabel={t(done ? 'tasks.a11y.reopen' : 'tasks.a11y.complete', {
               title: task.title,
             })}
-            accessibilityState={{ checked: done, disabled: busy, busy }}
+            aria-checked={done}
+            aria-disabled={busy}
+            aria-busy={busy}
             style={{
               minWidth: MIN_TOUCH,
               minHeight: MIN_TOUCH,

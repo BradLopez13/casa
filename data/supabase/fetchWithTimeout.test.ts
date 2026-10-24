@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { REQUEST_TIMEOUT_MS, withTimeout } from './fetchWithTimeout';
+import { REQUEST_TIMEOUT_MS, DELETE_ACCOUNT_TIMEOUT_MS, withTimeout } from './fetchWithTimeout';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -24,7 +24,7 @@ describe('withTimeout', () => {
     await failed;
   });
 
-  it('leaves deleting the account without a time limit', async () => {
+  it('gives deleting the account a long limit of its own, not the usual one (fase 10e)', async () => {
     vi.useFakeTimers();
     let signal: AbortSignal | null | undefined;
     const base = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
@@ -34,6 +34,9 @@ describe('withTimeout', () => {
     void withTimeout(base)('https://x.test/rest/v1/rpc/delete_account');
     await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS * 2);
     expect(signal?.aborted ?? false).toBe(false);
+    await vi.advanceTimersByTimeAsync(DELETE_ACCOUNT_TIMEOUT_MS);
+    expect(signal?.aborted).toBe(true);
+    expect(DELETE_ACCOUNT_TIMEOUT_MS).toBe(90_000);
   });
 
   it('lets an answer in time through', async () => {

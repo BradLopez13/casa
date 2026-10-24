@@ -1,4 +1,5 @@
 import type { DefaultOptions } from '@tanstack/react-query';
+import { retryOnceOnline } from './retry';
 
 /**
  * A load stays fresh for a minute, so returning to the app or to a tab does not refetch it: the
@@ -10,10 +11,11 @@ const STALE_TIME_MS = 60_000;
 
 /**
  * The app's query and mutation defaults. Offline, everything fails fast with NETWORK and shows
- * its error, as before the connection was tracked: only shopping opts into waiting for it (its
- * list and history, and the queue of adds and boughts).
+ * its error, and a failed load is not tried again without a connection: with a slow one, a retry
+ * after a 15 s timeout doubled the wait (fase 10e). The lists kept on the device (shopping, tasks)
+ * load offline first, and their queues wait for the connection.
  */
 export const appQueryDefaults: DefaultOptions = {
-  queries: { retry: 1, networkMode: 'always', staleTime: STALE_TIME_MS },
+  queries: { retry: retryOnceOnline, networkMode: 'always', staleTime: STALE_TIME_MS },
   mutations: { networkMode: 'always' },
 };

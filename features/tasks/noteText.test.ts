@@ -24,7 +24,15 @@ describe('noteText', () => {
   it('has no repeat part for a one-off task', () => {
     const text = noteText(base, TODAY, 'Ana');
     expect(text.repeat).toBeNull();
-    expect(text.label).toBe('Regar las plantas, Ana, Cocina, Hoy');
+    // Whose it is, as a short part right after the title (fase 10d).
+    expect(text.label).toBe('Regar las plantas, de Ana, Cocina, Hoy');
+  });
+
+  it('says whose it is in a short part: «de Ana», «tuya», or nobody', () => {
+    expect(noteText(base, TODAY, 'Ana').owner).toBe('de Ana');
+    expect(noteText(base, TODAY, 'Tú', true).owner).toBe('tuya');
+    expect(noteText(base, TODAY, 'Tú', true).label).toBe('Regar las plantas, tuya, Cocina, Hoy');
+    expect(noteText(base, TODAY, undefined).owner).toBeNull();
   });
 
   it('appends the rule to the label of a recurring task', () => {

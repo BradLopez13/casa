@@ -1,5 +1,8 @@
-/** Air between the bottom of the magnet and the first checkbox. */
-const CLEARANCE = 4;
+/**
+ * Air between the bottom of the magnet and the first checkbox: at 4 dp the magnet looked as if it
+ * sat on the circle (crítica del 22 de octubre), so the gap is wide enough to read as air.
+ */
+const CLEARANCE = 10;
 const GRID = 4;
 
 /**

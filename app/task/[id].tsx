@@ -13,7 +13,13 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { deleteWithUndo } from '@/features/tasks/deferredDelete';
-import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
+import {
+  useSkipTask,
+  useTaskMutation,
+  useTasks,
+  useToggleTask,
+  useUnsentTasks,
+} from '@/features/tasks/queries';
 import { invalidateIfStale } from '@/features/tasks/toggle';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { markFresh } from '@/features/tasks/freshIds';
@@ -63,6 +69,7 @@ function EditTaskScreen() {
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const skip = useSkipTask(householdId);
   const toggler = useToggleTask(householdId, userId);
+  const unsent = useUnsentTasks();
   const close = useCloseModal('/today');
   // Completing, reopening or deleting from the form closes it, but only after a render that marks the form
   // busy: closing in the same tick let the discard guard ask over a task already toggled.
@@ -105,7 +112,14 @@ function EditTaskScreen() {
   const failure = skip.error ?? save.error;
   // Saving or skipping locks the other, and a success keeps both locked while closing.
   const busy =
-    save.isPending || save.isSuccess || skip.isPending || skip.isSuccess || toggling || toggled;
+    save.isPending ||
+    save.isSuccess ||
+    skip.isPending ||
+    skip.isSuccess ||
+    toggling ||
+    toggled ||
+    // Opened by a link while its create still waits: nothing to edit on the server yet.
+    unsent.has(task.id);
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&

@@ -25,7 +25,7 @@ describe('endedHouseholdIds', () => {
 });
 
 describe('cachedHouseholdIds', () => {
-  it('lists each household with shopping data, members or a queued shopping change', () => {
+  it('lists each household with shopping data, tasks, members or a queued change', () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(['shopping', 'h'], []);
     queryClient.setQueryData(['shopping-history', 'h'], []);
@@ -35,7 +35,11 @@ describe('cachedHouseholdIds', () => {
     queryClient.getMutationCache().build(queryClient, { mutationKey: ['shopping', 'add'] }, {
       variables: { householdId: 'q' },
     } as never);
-    expect(cachedHouseholdIds(queryClient).sort()).toEqual(['h', 'k', 'q']);
+    // Fase 10e: the tasks and their queue are kept on the device too.
+    queryClient.getMutationCache().build(queryClient, { mutationKey: ['tasks', 'toggle'] }, {
+      variables: { householdId: 'z' },
+    } as never);
+    expect(cachedHouseholdIds(queryClient).sort()).toEqual(['h', 'k', 'q', 't', 'z']);
   });
 
   it('ignores the queries built before there was a household', () => {

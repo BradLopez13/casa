@@ -20,6 +20,7 @@
         "monochromeImage": "./assets/images/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "allowBackup": false,
       "package": "com.bradlopez13.casa"
     },
     "web": {

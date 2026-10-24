@@ -12,9 +12,9 @@ describe('hangingMagnet', () => {
     expect(hang).toBe(magnetSizes.md / 2);
   });
 
-  it('keeps the first checkbox clear of the magnet', () => {
+  it('keeps the first checkbox clear of the magnet, with air that shows (fase 10a)', () => {
     const checkTop = firstRowInset + (ROW - CHECK) / 2;
-    expect(checkTop).toBeGreaterThanOrEqual(magnetSizes.md / 2 + 4);
+    expect(checkTop).toBeGreaterThanOrEqual(magnetSizes.md / 2 + 10);
   });
 
   it('keeps the inset on the 4 dp grid', () => {

@@ -1,0 +1,109 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Uma owns "Piso Uma", empty
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: uma@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# A task for today, from the quick add
+- tapOn:
+    id: today.quick-add
+- inputText: Barrer el pasillo
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Barrer el pasillo
+    timeout: 20000
+
+# Complete it, then undo: it is pending again
+- tapOn: Completar «Barrer el pasillo»
+- extendedWaitUntil:
+    visible:
+      id: notice.undo
+    timeout: 5000
+- assertVisible: Hecha.
+- tapOn:
+    id: notice.undo
+- extendedWaitUntil:
+    visible: Completar «Barrer el pasillo»
+    timeout: 20000
+- assertNotVisible: Hechas hoy
+
+# Complete it again and reopen it from the tray, then undo the reopen: done again
+- tapOn: Completar «Barrer el pasillo»
+- extendedWaitUntil:
+    visible: Hechas hoy
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible:
+      id: notice.undo
+    timeout: 15000
+- tapOn: Reabrir «Barrer el pasillo».*
+- extendedWaitUntil:
+    visible: Reabierta.
+    timeout: 5000
+- tapOn:
+    id: notice.undo
+- extendedWaitUntil:
+    visible: Reabrir «Barrer el pasillo».*
+    timeout: 20000
+
+# Reopen it for good, then delete it from its sheet and undo: it comes back, and stays
+- extendedWaitUntil:
+    notVisible:
+      id: notice.undo
+    timeout: 15000
+- tapOn: Reabrir «Barrer el pasillo».*
+- extendedWaitUntil:
+    visible: Completar «Barrer el pasillo»
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible:
+      id: notice.undo
+    timeout: 15000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: Barrer el pasillo
+      - extendedWaitUntil:
+          visible:
+            id: task-form.title
+          timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: task-form.delete
+- tapOn:
+    id: task-form.delete
+- extendedWaitUntil:
+    visible: Tarea borrada.
+    timeout: 5000
+# While the undo is up the door does not celebrate a delete (fase 10a)
+- assertNotVisible: Todo hecho por hoy.
+- tapOn:
+    id: notice.undo
+- extendedWaitUntil:
+    visible: Completar «Barrer el pasillo»
+    timeout: 20000
+# Past the undo window the refetch keeps it: the delete never went
+- extendedWaitUntil:
+    notVisible: Tarea borrada.
+    timeout: 15000
+- assertVisible: Completar «Barrer el pasillo»

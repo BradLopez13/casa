@@ -1,6 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { router } from 'expo-router';
 import TodayScreen from '@/app/(tabs)/today';
 import { AppError } from '@/data/supabase/errors';
 import { addDays, localDateIso } from '@/domain/tasks/dates';
@@ -10,8 +11,9 @@ import { membersKey, membershipKey } from '@/features/households/keys';
 import { useHint, type HintId } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
-import { listTasks } from './api';
+import { createTask, listTasks } from './api';
 import { TaskFilterProvider } from './filter';
+import { deleteWithUndo, showTask } from './deferredDelete';
 import { tasksKey } from './queries';
 
 vi.mock('@/features/auth/SessionProvider', () => ({
@@ -28,6 +30,7 @@ vi.mock('@/ui/a11y', async (importOriginal) => ({
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api')>()),
   listTasks: vi.fn(),
+  createTask: vi.fn(),
 }));
 
 const today = localDateIso(new Date());
@@ -80,13 +83,19 @@ function renderToday(tasks?: TaskItem[]) {
   );
 }
 
+/** The window at `width` × `height`: react-native-web measures the document element. */
+function windowSize(width: number, height: number) {
+  const root = document.documentElement;
+  Object.defineProperty(root, 'clientWidth', { value: width, configurable: true });
+  Object.defineProperty(root, 'clientHeight', { value: height, configurable: true });
+  act(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
 /** A phone held upright: one column, so the door sits in the refreshing list with its handle. */
 function phoneSize() {
-  // react-native-web measures the document element, which jsdom leaves at 0 x 0.
-  const root = document.documentElement;
-  Object.defineProperty(root, 'clientWidth', { value: 400, configurable: true });
-  Object.defineProperty(root, 'clientHeight', { value: 860, configurable: true });
-  window.dispatchEvent(new Event('resize'));
+  windowSize(400, 860);
 }
 
 /** Which hints this device has not used yet. */
@@ -126,6 +135,8 @@ describe('Hoy', () => {
 
   it('shows the load error with its retry when the tasks never loaded', async () => {
     vi.mocked(listTasks).mockRejectedValue(new AppError('NETWORK'));
+    // Offline the load is tried once and not again (fase 10e): the error shows at once.
+    onlineManager.setOnline(false);
     renderToday();
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe(t('tasks.errors.NETWORK'));
@@ -148,6 +159,7 @@ describe('Hoy', () => {
 
   it('shows what the quick add understands while the field is empty', () => {
     hintsOpen('quickAdd');
+    phoneSize();
     renderToday([]);
     const hint = screen.getByTestId('today.quick-add.hint');
     // The example uses someone of the household.
@@ -156,18 +168,68 @@ describe('Hoy', () => {
     expect(screen.queryByTestId('today.quick-add.hint')).toBeNull();
   });
 
+  it('in a compact door (a phone on its side) the example is a short one, whole on one line', () => {
+    hintsOpen('quickAdd');
+    windowSize(817, 375);
+    renderToday([]);
+    const hint = screen.getByTestId('today.quick-add.hint');
+    expect(hint.textContent).toContain(t('tasks.quickHint.exampleShort'));
+    expect(hint.textContent).not.toContain('@');
+    expect(getComputedStyle(hint).textOverflow).toBe('ellipsis');
+  });
+
+  it('does not celebrate the last pending task deleted while its «Deshacer» is up', () => {
+    phoneSize();
+    renderToday([task('Fregar', {}), task('Barrer', { completedAt: new Date().toISOString() })]);
+    act(() =>
+      deleteWithUndo({
+        id: 'Fregar',
+        remove: () => new Promise(() => undefined),
+        notify: () => undefined,
+        ms: null,
+        schedule: () => () => undefined,
+        watchBackground: () => () => undefined,
+      }),
+    );
+    expect(screen.queryByTestId('task-note.Fregar')).toBeNull();
+    expect(screen.queryByText(t('today.line.allDone'))).toBeNull();
+    expect(screen.queryByText(t('today.nothing'))).toBeNull();
+    // Undone: the task is back and the door still counts it.
+    act(() => showTask('Fregar'));
+    expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
+    expect(screen.queryByText(t('today.line.allDone'))).toBeNull();
+  });
+
+  it('links an empty Hoy to the help, on the entry that tells Hoy from Tareas (fase 10d)', () => {
+    renderToday([]);
+    fireEvent.click(screen.getByTestId('today.help'));
+    expect(vi.mocked(router.push)).toHaveBeenCalledWith('/help?entry=tabs');
+  });
+
+  it('two quick taps on «+» send the task once (fase 10e)', async () => {
+    vi.mocked(createTask).mockResolvedValue('x');
+    renderToday([]);
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    const add = screen.getByTestId('today.quick-add.submit');
+    fireEvent.click(add);
+    fireEvent.click(add);
+    // The note is there at once, before the server answers.
+    expect(await screen.findByText('Regar')).toBeTruthy();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(createTask).toHaveBeenCalledTimes(1);
+  });
+
   it('offers task ideas when there is nothing to do today', () => {
     renderToday([task('Planchar', { dueOn: addDays(today, 3) })]);
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();
   });
 
-  it('offline, the box says so before touching the task', () => {
+  it('offline, the box marks the task at once and offers «Deshacer», as the shopping does', () => {
     renderToday([task('Fregar', {})]);
     onlineManager.setOnline(false);
     fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
-    expect(screen.getByText(t('tasks.completeOffline'))).toBeTruthy();
-    expect(screen.queryByText(t('tasks.done'))).toBeNull();
-    expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
+    // Sent when the connection is back (fase 10e): no warning, the usual notice.
+    expect(screen.getByText(t('tasks.done'))).toBeTruthy();
   });
 
   it('keeps the door handle hint back while the box one shows', () => {

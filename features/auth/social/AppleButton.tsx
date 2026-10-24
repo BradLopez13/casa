@@ -21,7 +21,8 @@ export function AppleButton({ busy, disabled, dimmed, onPress }: Props) {
       testID="auth-apple"
       accessibilityRole="button"
       accessibilityLabel={t('auth.social.apple')}
-      accessibilityState={{ disabled, busy }}
+      aria-disabled={disabled}
+      aria-busy={busy}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({

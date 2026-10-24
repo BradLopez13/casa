@@ -1,0 +1,84 @@
+appId: com.bradlopez13.casa
+---
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+# Hugo owns "Piso Hugo", with nothing in it
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: hugo@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# Writing a task with a date uses the quick add as it teaches: its hint goes
+- extendedWaitUntil:
+    visible:
+      id: today.quick-add.hint
+    timeout: 10000
+- tapOn:
+    id: today.quick-add
+- inputText: Regar mañana
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    notVisible:
+      id: today.quick-add.hint
+    timeout: 10000
+
+# Nothing left for today: the empty Hoy links to the help, on the entry about Hoy and Tareas
+- scrollUntilVisible:
+    element:
+      id: today.help
+- tapOn:
+    id: today.help
+- extendedWaitUntil:
+    visible: Cómo funciona Nido
+    timeout: 10000
+- assertVisible:
+    id: help.tabs
+- tapOn:
+    id: help.back
+
+# From Ajustes, the whole help, down to «Volver a ver las pistas»
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      id: settings.help
+- tapOn:
+    id: settings.help
+- extendedWaitUntil:
+    visible: Cómo funciona Nido
+    timeout: 10000
+- assertVisible: Los imanes son personas
+- scrollUntilVisible:
+    element:
+      id: help.again
+- tapOn:
+    id: help.again
+- extendedWaitUntil:
+    visible: Las pistas vuelven a salir donde hacen falta.
+    timeout: 5000
+- tapOn:
+    id: help.back
+
+# Back in Hoy the quick add's hint is there again
+- tapOn:
+    id: tab.today
+- extendedWaitUntil:
+    visible:
+      id: today.quick-add.hint
+    timeout: 10000

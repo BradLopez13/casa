@@ -262,7 +262,8 @@ export default function MembersScreen() {
       ) : null}
       {error ? <ErrorText testID="members.error">{error}</ErrorText> : null}
 
-      {heading('members.pendingTitle')}
+      {/* With none, one sentence says so; a title over it only repeated it (fase 10a). */}
+      {invites.data?.length === 0 ? null : heading('members.pendingTitle')}
       <PendingInvites
         invites={invites}
         copyLink={copyLink}

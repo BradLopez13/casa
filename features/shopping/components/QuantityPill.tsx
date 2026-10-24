@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { AccessibilityInfo, Pressable, Text } from 'react-native';
+import { AccessibilityInfo, Pressable, Text, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { canStep, quantityStep, stepQuantity } from '@/domain/shopping/quantity';
 import { markHintSeen } from '@/features/hints/hints';
@@ -58,6 +58,7 @@ export function QuantityPill({
   const { colors, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const notify = useNotice();
+  const { fontScale } = useWindowDimensions();
   const [draft, setDraft] = useState<string | null>(quantity);
   const unsaved = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,7 +182,7 @@ export function QuantityPill({
           disabled={!enabled}
           accessibilityRole="button"
           accessibilityLabel={t(delta === 1 ? 'shopping.quantity.more' : 'shopping.quantity.less')}
-          accessibilityState={{ disabled: !enabled }}
+          aria-disabled={!enabled}
           style={({ pressed }) => ({
             width: MIN_TOUCH,
             height: MIN_TOUCH,
@@ -241,21 +242,25 @@ export function QuantityPill({
         testID={`shopping.item.${itemId}.quantity`}
         onPress={press}
         hitSlop={{ top: (MIN_TOUCH - PILL_HEIGHT) / 2, bottom: (MIN_TOUCH - PILL_HEIGHT) / 2 }}
-        accessibilityRole={steppable ? 'adjustable' : 'button'}
+        // Adjustable on every row (fase 10d): a quantity that cannot step («un poco») opens the
+        // item's sheet on a swipe, as a tap does.
+        accessibilityRole="adjustable"
         accessibilityLabel={label}
         accessibilityHint={steppable ? undefined : t('shopping.a11y.edit')}
-        accessibilityActions={
-          steppable ? [{ name: 'increment' }, { name: 'decrement' }] : undefined
-        }
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(event) => {
-          if (event.nativeEvent.actionName === 'increment') adjust(1);
-          if (event.nativeEvent.actionName === 'decrement') adjust(-1);
+          const { actionName } = event.nativeEvent;
+          if (actionName !== 'increment' && actionName !== 'decrement') return;
+          if (!steppable) onEdit();
+          else adjust(actionName === 'increment' ? 1 : -1);
         }}
         style={({ pressed }) => ({
           minHeight: PILL_HEIGHT,
           minWidth: MIN_TOUCH,
+          flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
+          gap: space(1),
           paddingHorizontal: space(3),
           borderRadius: radii.pill,
           borderWidth: 1,
@@ -263,8 +268,20 @@ export function QuantityPill({
           opacity: pressedOpacity(pressed),
         })}
       >
+        {/* The scale of the product sheet, before the value: the same piece in the list and in the
+            sheet, so «—» reads as «no quantity» and never as a «−» that removes (fase 10a). */}
+        <Ionicons
+          name="scale-outline"
+          // Grows with the value beside it, so at ×1.6 it is not a speck next to «—».
+          size={Math.round(14 * Math.min(fontScale, 2))}
+          color={colors.muted}
+          accessible={false}
+          importantForAccessibility="no"
+        />
         <Text
+          numberOfLines={1}
           style={{
+            flexShrink: 1,
             color: quantity === null ? colors.muted : colors.ink,
             fontSize: 15,
             fontVariant: ['tabular-nums'],

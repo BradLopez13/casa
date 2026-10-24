@@ -12,14 +12,17 @@ export function ErrorText({
 }: {
   children: string;
   testID?: string;
-  /** Under a field whose label already reads the error: announced, but not a focus stop of its own. */
+  /**
+   * Under a field whose label already reads the error: neither announced nor a focus stop of its
+   * own, so the reader does not say it twice (fase 10e).
+   */
   inField?: boolean;
 }) {
   const { colors, space } = useTheme();
   // role="alert" is not spoken on iOS, so announce each new message on both platforms.
   useEffect(() => {
-    if (children) AccessibilityInfo.announceForAccessibility(children);
-  }, [children]);
+    if (children && !inField) AccessibilityInfo.announceForAccessibility(children);
+  }, [children, inField]);
   return (
     <View
       accessibilityElementsHidden={inField}

@@ -5,7 +5,7 @@ import { membershipKey } from '@/features/households/keys';
 
 /**
  * The on-device copy of the query cache: the shopping list, its history and its queue, the
- * membership and the members.
+ * tasks and their queue, the membership and the members.
  */
 export const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
@@ -18,15 +18,23 @@ export function forgetCachedData(queryClient: QueryClient): void {
   void persister.removeClient();
 }
 
-/** Removes one household's shopping data, members and queued shopping changes (or every household's). */
+/**
+ * Removes one household's shopping data, tasks, members and queued changes (or every
+ * household's): a queue left for a household the user left would only fail, one notice each.
+ */
 function removeHouseholdData(queryClient: QueryClient, householdId?: string): void {
   const scoped = (kind: string) => (householdId === undefined ? [kind] : [kind, householdId]);
   queryClient.removeQueries({ queryKey: scoped('shopping') });
   queryClient.removeQueries({ queryKey: scoped('shopping-history') });
   queryClient.removeQueries({ queryKey: scoped('shopping-resolved') });
   queryClient.removeQueries({ queryKey: scoped('members') });
+  queryClient.removeQueries({ queryKey: scoped('tasks') });
   const mutations = queryClient.getMutationCache();
-  for (const mutation of mutations.findAll({ mutationKey: ['shopping'] })) {
+  const queued = [
+    ...mutations.findAll({ mutationKey: ['shopping'] }),
+    ...mutations.findAll({ mutationKey: ['tasks'] }),
+  ];
+  for (const mutation of queued) {
     const variables = mutation.state.variables as { householdId?: unknown } | undefined;
     if (householdId === undefined || variables?.householdId === householdId) {
       mutations.remove(mutation);

@@ -29,7 +29,7 @@ export function RoomPicker({ value, onChange }: Props) {
             key={room}
             testID={`task-form.room.${room}`}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
             accessibilityLabel={t(`rooms.${room}`)}
             onPress={() => onChange(selected ? null : room)}
             style={({ pressed }) => ({

@@ -1,6 +1,6 @@
 import { Children, type ReactNode } from 'react';
 import { Platform, Text, View } from 'react-native';
-import { DOOR_MAX_SCALE } from '../door';
+import { DOOR_HEADLINE_MAX_SCALE } from '../door';
 import { useTheme } from '../theme';
 import { displayFont } from '../tokens';
 import { useDoorCompact, useDoorType } from './doorContext';
@@ -58,8 +58,9 @@ export function DoorControls({ children, row = false }: { children: ReactNode; r
 
 /**
  * A door headline in the display face (Rounded 800, 32 on 38; 24 in a compact door), with its
- * count a point larger in the same colour. It grows with the phone's text size up to the door's
- * cap (`DOOR_MAX_SCALE`), so enlarged text never pushes the list off the screen.
+ * count a point larger in the same colour. It grows with the phone's text size up to its own cap
+ * (`DOOR_HEADLINE_MAX_SCALE`, a step above the rest of the door), so enlarged text never pushes the
+ * list off the screen nor leaves the headline smaller than a note's title.
  */
 export function DoorHeadline({
   text,
@@ -79,7 +80,7 @@ export function DoorHeadline({
   return (
     <Text
       testID={testID}
-      maxFontSizeMultiplier={DOOR_MAX_SCALE}
+      maxFontSizeMultiplier={DOOR_HEADLINE_MAX_SCALE}
       style={{
         color: colors.ink,
         fontFamily: displayFont,

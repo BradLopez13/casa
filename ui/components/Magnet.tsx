@@ -162,11 +162,8 @@ export function Magnet({
         hitSlop={slop}
         accessibilityRole={accessibilityRole}
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={
-          selectable
-            ? { selected, ...(accessibilityRole === 'radio' ? { checked: selected } : null) }
-            : undefined
-        }
+        aria-selected={selectable ? selected : undefined}
+        aria-checked={selectable && accessibilityRole === 'radio' ? selected : undefined}
         style={({ pressed }) => ({ opacity: pressedOpacity(pressed) })}
       >
         {ringed}
@@ -180,7 +177,7 @@ export function Magnet({
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
       accessibilityLabel={decorative ? undefined : accessibilityLabel}
-      accessibilityState={!decorative && selectable ? { selected } : undefined}
+      aria-selected={!decorative && selectable ? selected : undefined}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
     >
