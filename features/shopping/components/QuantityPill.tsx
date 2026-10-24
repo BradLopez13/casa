@@ -20,8 +20,8 @@ export const CLOSE_AFTER_MS = 4000;
  * The least width of the quantity's column at the note's right margin (fase 10f): every short
  * quantity starts on the same vertical, as a note written in the margin. Grows with the text.
  */
-export const QUANTITY_COLUMN = 72;
-// What a pill with no quantity says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
+export const QUANTITY_COLUMN = 84;
+// What a quantity with none says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
 // words: the screen reader hears «sin cantidad».
 const NO_QUANTITY = '—';
 
@@ -208,7 +208,7 @@ export function QuantityPill({
       <Animated.View
         entering={fade}
         testID={`shopping.item.${itemId}.quantity.stepper`}
-        // Like the closed pill, it never takes more than half the row, so the name stays.
+        // Like the closed quantity, it never takes more than half the row, so the name stays.
         style={{
           flexShrink: 1,
           maxWidth: '50%',
@@ -265,7 +265,9 @@ export function QuantityPill({
           flexDirection: 'row',
           alignItems: 'center',
           gap: space(1),
-          paddingHorizontal: space(2),
+          // Room before the value only: it ends on the row's own margin, where the open stepper's
+          // edge sits too.
+          paddingLeft: space(3),
           opacity: pressedOpacity(pressed),
         })}
       >

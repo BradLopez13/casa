@@ -100,7 +100,7 @@ describe('Compra', () => {
     expect(screen.getByTestId('shopping.door-line').textContent).toContain('1');
   });
 
-  it('each row’s quantity pill carries the scale before its value', () => {
+  it('each row’s quantity carries the scale before its value', () => {
     renderShopping([item('Leche'), item('Pan', { quantity: '2' })]);
     for (const id of ['Leche', 'Pan']) {
       const pill = screen.getByTestId(`shopping.item.${id}.quantity`);

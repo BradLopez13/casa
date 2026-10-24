@@ -39,7 +39,7 @@ type Props = {
   eyebrow: string;
   /**
    * What the eyebrow adds after a « · », in its own style (Hoy: the date, fase 10f): the long form,
-   * or the short one in a compact door, where the long one wraps.
+   * or the short one in a compact door or wherever the long one would wrap. Read long.
    */
   eyebrowDetail?: { long: string; short: string };
   /**
@@ -129,13 +129,27 @@ export function DoorHeader({
   const [content, setContent] = useState(0);
   const overflows = door.compact && viewport > 0 && content > viewport + 1;
 
-  const detail = eyebrowDetail ? (door.compact ? eyebrowDetail.short : eyebrowDetail.long) : null;
-  // One line on one axis: the date is part of the label, not an aside in another style.
+  // A long date that would wrap the label (a long month on a narrow phone, a larger text) gives
+  // way to the short one, as in a compact door. Once short, it stays short for that date.
+  const [wrapped, setWrapped] = useState<string | null>(null);
+  const shortened = eyebrowDetail !== undefined && wrapped === eyebrowDetail.long;
+  const detail = eyebrowDetail
+    ? door.compact || shortened
+      ? eyebrowDetail.short
+      : eyebrowDetail.long
+    : null;
+  // One line on one axis: the date is part of the label, not an aside in another style. The reader
+  // always hears the long date; abbreviations read badly.
   const eyebrowRow = (
     <Text
       accessibilityRole="header"
-      accessibilityLabel={detail ? `${eyebrow}, ${detail}` : undefined}
+      accessibilityLabel={eyebrowDetail ? `${eyebrow}, ${eyebrowDetail.long}` : undefined}
       maxFontSizeMultiplier={DOOR_MAX_SCALE}
+      onTextLayout={(event) => {
+        if (eyebrowDetail && detail === eyebrowDetail.long && event.nativeEvent.lines.length > 1) {
+          setWrapped(eyebrowDetail.long);
+        }
+      }}
       style={{
         marginBottom: space(1),
         color: colors.muted,
@@ -145,7 +159,8 @@ export function DoorHeader({
         textTransform: 'uppercase',
       }}
     >
-      {detail ? `${eyebrow} · ${detail}` : eyebrow}
+      {/* A no-break space: the label never breaks right after «HOY ·». */}
+      {detail ? `${eyebrow}\u00A0· ${detail}` : eyebrow}
     </Text>
   );
   const headline =

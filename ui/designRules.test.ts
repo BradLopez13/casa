@@ -285,7 +285,7 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
 
   // Fase 10a: the quantity reads the same in the list and in the product sheet, with the scale
   // before its value, so «—» never looks like a «−».
-  it('the quantity pill carries the scale of the product sheet', () => {
+  it('the quantity carries the scale of the product sheet', () => {
     expect(read('app/shopping/[id].tsx')).toMatch(/glyph="scale-outline"/);
     expect(read('features/shopping/components/QuantityPill.tsx')).toMatch(/name="scale-outline"/);
   });

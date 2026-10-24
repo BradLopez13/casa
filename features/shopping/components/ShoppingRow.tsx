@@ -103,7 +103,7 @@ export function ShoppingRow({
     onToggle();
   };
 
-  // The quantity has its own stop (the pill), so the name says only the name.
+  // The quantity has its own stop, so the name says only the name.
   const label = item.name;
   const nameStyle = {
     flex: 1,

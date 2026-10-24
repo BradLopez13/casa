@@ -216,7 +216,7 @@ export function ShoppingSheet({
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
           <>
-            {/* Over the note, at the pills' side, until a quantity is first changed. */}
+            {/* Over the note, at the quantities' side, until a quantity is first changed. */}
             {index === 0 && pendingCount > 0 && quantityHint ? (
               <View
                 style={[

@@ -130,7 +130,7 @@ describe('Hoy', () => {
     const header = screen.getByRole('heading', {
       name: `${t('today.title')}, ${longDateLabel(today)}`,
     });
-    expect(header.textContent).toBe(`${t('today.title')} · ${longDateLabel(today)}`);
+    expect(header.textContent).toBe(`${t('today.title')}\u00A0· ${longDateLabel(today)}`);
   });
 
   it('keeps a task done today out of what is left', () => {
