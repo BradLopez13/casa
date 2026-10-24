@@ -180,6 +180,9 @@ describe('Recuperar contraseña: el código y la contraseña nueva', () => {
     expect(resend().getAttribute('aria-label')).toBe('Reenviar en 60 s');
     fireEvent.click(resend());
     expect(requestPasswordReset).toHaveBeenCalledTimes(1);
+    // The countdown's interval is armed in a passive effect; under load it could still be pending
+    // when the clock moved, and the minute went by with no interval to see it (flaky in CI).
+    await act(async () => {});
     act(() => {
       vi.advanceTimersByTime(60_000);
     });
