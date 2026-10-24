@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { markHintSeen } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
-import { QuantityPill } from './QuantityPill';
+import { QUANTITY_COLUMN, QuantityPill } from './QuantityPill';
 
 vi.mock('@/features/hints/hints', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/hints/hints')>()),
@@ -61,6 +61,17 @@ describe('QuantityPill', () => {
     });
     // react-native-web draws «adjustable» as a slider.
     expect(roles).toEqual(['slider', 'slider', 'slider']);
+  });
+
+  // Fase 10f: a line of the ruled note, not a kit pill; every quantity starts on the same vertical.
+  it('is a note at the right margin: no pill edge, a column of one width, a full touch height', () => {
+    for (const quantity of [null, '2']) {
+      const style = getComputedStyle(renderPill(quantity).pill);
+      expect(parseFloat(style.borderTopWidth || '0')).toBe(0);
+      expect(style.minWidth).toBe(`${QUANTITY_COLUMN}px`);
+      expect(style.minHeight).toBe('44px');
+      cleanup();
+    }
   });
 
   it('shows the quantity there is', () => {

@@ -55,8 +55,9 @@ type Props = {
 };
 
 /**
- * One item on the sheet: a round checkbox, the product icon, the name (opens a pending one) and
- * its quantity: a pill that steps on a pending item, plain text on a bought one.
+ * One item on the sheet: on the ruled note, a line with its round checkbox at the left margin, the
+ * product icon, the name (opens a pending one) and its quantity written at the right margin, which
+ * steps; on a bought one, plain text.
  */
 export function ShoppingRow({
   item,
