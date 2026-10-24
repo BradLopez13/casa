@@ -1,6 +1,6 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AppError } from '@/data/supabase/errors';
+import { AppError as AppErrorClass, type AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import {
   addKey,
@@ -11,7 +11,8 @@ import {
   type BoughtVars,
   type QuantityVars,
 } from './offline';
-import { withQueuedShopping } from './pending';
+import { addShoppingItem } from './api';
+import { pendingShopping, withQueuedShopping } from './pending';
 
 vi.mock('./api', () => ({
   addShoppingItem: vi.fn(),
@@ -80,5 +81,63 @@ describe('withQueuedShopping (fase 10e)', () => {
     await vi.waitFor(() => expect(queryClient.isMutating()).toBe(3));
     const other = [{ ...bread, id: 'x' }];
     expect(withQueuedShopping(queryClient, 'other', other)).toBe(other);
+  });
+
+  it('lands a queued change on the row another member already added with the same name', async () => {
+    const queryClient = queued();
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(3));
+    // Someone else's «Leche» is on the server already: the queued add will merge into it.
+    const theirs: ShoppingItem = {
+      ...bread,
+      id: 'b',
+      name: 'Leche',
+      normalizedName: 'leche',
+      createdBy: 'other',
+    };
+    const shown = withQueuedShopping(queryClient, 'h', [bread, theirs]);
+    expect(shown.map((i) => i.id)).toEqual(['p', 'b']);
+    // The quantity queued on our «Leche» shows on theirs.
+    expect(shown.find((i) => i.id === 'b')?.quantity).toBe('2');
+  });
+
+  describe('a change that ends while the list is being fetched', () => {
+    function oneAdd(result: 'ok' | 'fail') {
+      const queryClient = new QueryClient();
+      queryClient.mount();
+      const defaults = buildShoppingMutationDefaults(queryClient, vi.fn());
+      queryClient.setMutationDefaults(addKey, { ...defaults.add, retry: false });
+      vi.mocked(addShoppingItem).mockImplementation(() =>
+        result === 'ok' ? Promise.resolve('a') : Promise.reject(new AppErrorClass('UNKNOWN')),
+      );
+      queryClient.setQueryData<ShoppingItem[]>(['shopping', 'h'], [bread]);
+      onlineManager.setOnline(false);
+      void new MutationObserver<string, AppError, AddVars>(queryClient, { mutationKey: addKey })
+        .mutate(milk)
+        .catch(() => undefined);
+      return queryClient;
+    }
+
+    it('still shows an add that reached the server after the list was read', async () => {
+      const queryClient = oneAdd('ok');
+      await vi.waitFor(() => expect(queryClient.isMutating()).toBe(1));
+      // The fetch starts with the add still queued...
+      const before = pendingShopping(queryClient);
+      // ...and the add lands while it runs: the list read before it has no «Leche».
+      onlineManager.setOnline(true);
+      await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+      const shown = withQueuedShopping(queryClient, 'h', [bread], before);
+      expect(shown.map((i) => i.name)).toEqual(['Pan', 'Leche']);
+    });
+
+    it('does not bring back an add that failed meanwhile', async () => {
+      const queryClient = oneAdd('fail');
+      await vi.waitFor(() => expect(queryClient.isMutating()).toBe(1));
+      const before = pendingShopping(queryClient);
+      onlineManager.setOnline(true);
+      await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+      expect(withQueuedShopping(queryClient, 'h', [bread], before).map((i) => i.name)).toEqual([
+        'Pan',
+      ]);
+    });
   });
 });
