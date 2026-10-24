@@ -54,7 +54,7 @@ type Props = {
   error: string | null;
   onCancel: () => void;
   onSave: (input: TaskInput) => void;
-  /** A task being created: the title takes the focus and the day picker starts open. */
+  /** A task being created: the title takes the focus and Save works as soon as it has one. */
   isNew: boolean;
   /** Secondary actions at the foot, above Save ("Marcar como hecha", "Saltar esta vez"). */
   footer?: ReactNode;
@@ -303,16 +303,13 @@ export function TaskForm({
                   open={open}
                   onOpen={toggle}
                   repeatEditable={repeatEditable}
-                  // The open picker, right under its magnet, measured as one block so it scrolls
-                  // into view whole.
+                  // The open picker, right under its magnet; the two are measured as one block so
+                  // the magnet and its picker scroll into view whole.
+                  openRef={picker}
+                  onOpenLayout={() => show(picker.current)}
                   picker={
                     open !== null ? (
-                      <View
-                        key={open}
-                        ref={picker}
-                        onLayout={() => show(picker.current)}
-                        style={{ paddingBottom: space(3) }}
-                      >
+                      <View key={open} style={{ paddingBottom: space(3) }}>
                         {open === 'room' ? (
                           <RoomPicker
                             value={values.room}

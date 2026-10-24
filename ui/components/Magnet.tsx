@@ -59,7 +59,7 @@ export function Magnet({
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
-  // The chip-sized magnet sits inside a pill and stays flat.
+  // The small magnet sits inside a row (shopping, a done note) and stays flat.
   const look = check ? magnetCheckStyle(colors) : null;
   const filledCheck = look !== null;
   const raised = !empty && size !== 'sm';

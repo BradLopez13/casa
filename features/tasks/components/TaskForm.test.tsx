@@ -123,7 +123,7 @@ describe('TaskForm', () => {
     const fields = [
       ['room', 'taskForm.roomLabel', t('rooms.kitchen')],
       ['assignee', 'taskForm.assigneeLabel', t('taskForm.nobody')],
-      ['repeat', 'taskForm.repeatLabel', t('taskForm.noRepeat')],
+      ['repeat', 'taskForm.repeatField', t('taskForm.noRepeat')],
     ] as const;
     for (const [field, label, value] of fields) {
       const magnet = screen.getByTestId(`task-form.prop.${field}`);
@@ -147,6 +147,10 @@ describe('TaskForm', () => {
     renderForm({ initial: { ...blank, title: 'Barrer' } });
     fireEvent.click(screen.getByTestId('task-form.prop.room'));
     expect(screen.getByTestId('task-form.prop.room').getAttribute('aria-expanded')).toBe('true');
+    // Open reads by shape too: in dark `ink` and `selection` are the same chalk.
+    expect(
+      screen.getByTestId('task-form.prop.room').querySelector('[data-icon="chevron-up"]'),
+    ).not.toBeNull();
     const picker = screen.getByTestId('task-form.room.kitchen');
     const after = (a: Element, b: Element) =>
       (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
