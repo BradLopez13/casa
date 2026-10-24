@@ -68,3 +68,17 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible: 'Cantidad de Huevos: 2'
     timeout: 20000
+
+# The same quantity opens again after its stepper closed (on Android it was left disabled once
+# React reused the «−» button for it, fase 10f)
+- tapOn:
+    id: shopping.item.*.quantity
+- extendedWaitUntil:
+    visible:
+      id: shopping.item.*.quantity.stepper
+    timeout: 5000
+- tapOn:
+    id: shopping.item.*.quantity.more
+- extendedWaitUntil:
+    visible: 'Cantidad de Huevos: 3'
+    timeout: 15000

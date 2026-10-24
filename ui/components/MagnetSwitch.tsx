@@ -1,4 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useEffect, useRef } from 'react';
 import { Pressable, View, type SwitchProps } from 'react-native';
 import { magnetSwitchLook } from '../magnetSwitchLook';
 import { haptic } from '../motion';
@@ -23,8 +24,8 @@ type Props = Pick<SwitchProps, 'value' | 'disabled' | 'onValueChange' | 'testID'
  * A switch drawn as a magnet that sticks when it is on (fase 10f, `magnetSwitchLook`): the slate
  * magnet with a bell, with the magnet's material (shadow, ring and, in dark, its drawn drop), or
  * the bare ring with the crossed bell; dashed while paused. To a screen reader it is the system
- * switch: its role, its label and `aria-checked`. 44 dp to the touch through `hitSlop`. Sticking
- * it on is the `rigid` buzz of putting a magnet up.
+ * switch: its role, its label and `aria-checked`. 44 dp to the touch through `hitSlop`. A tap is
+ * the `light` buzz; the magnet sticking (on) is the `rigid` one.
  */
 export function MagnetSwitch({
   value = false,
@@ -35,6 +36,13 @@ export function MagnetSwitch({
 }: Props) {
   const { colors } = useTheme();
   const look = magnetSwitchLook(value, colors, !!disabled);
+  // The `rigid` buzz when the magnet actually sticks (the value turns on), not on the tap: a phone
+  // that refuses notifications leaves it off, and it must not have buzzed «stuck».
+  const was = useRef(value);
+  useEffect(() => {
+    if (value && !was.current) void haptic('rigid');
+    was.current = value;
+  }, [value]);
   const glyph = (
     <MaterialCommunityIcons
       name={look.glyph}
@@ -54,7 +62,7 @@ export function MagnetSwitch({
       disabled={disabled || busy}
       hitSlop={SLOP}
       onPress={() => {
-        void haptic(value ? 'light' : 'rigid');
+        void haptic('light');
         void onValueChange?.(!value);
       }}
     >

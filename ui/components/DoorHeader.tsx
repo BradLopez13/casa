@@ -106,7 +106,7 @@ export function DoorHeader({
   const insets = useSafeAreaInsets();
   const layout = useLayout();
   const door = useDoor();
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, width: windowWidth } = useWindowDimensions();
   const type = door.type;
   const { rail, contentMax, gutter } = layout;
   // Beside the rail, the rail already takes the left inset (a landscape notch).
@@ -130,9 +130,11 @@ export function DoorHeader({
   const overflows = door.compact && viewport > 0 && content > viewport + 1;
 
   // A long date that would wrap the label (a long month on a narrow phone, a larger text) gives
-  // way to the short one, as in a compact door. Once short, it stays short for that date.
+  // way to the short one, as in a compact door. It stays short for that date, width and text size;
+  // a wider window or a smaller text tries the long one again.
+  const fit = eyebrowDetail ? `${eyebrowDetail.long}@${windowWidth}@${fontScale}` : null;
   const [wrapped, setWrapped] = useState<string | null>(null);
-  const shortened = eyebrowDetail !== undefined && wrapped === eyebrowDetail.long;
+  const shortened = fit !== null && wrapped === fit;
   const detail = eyebrowDetail
     ? door.compact || shortened
       ? eyebrowDetail.short
@@ -147,7 +149,7 @@ export function DoorHeader({
       maxFontSizeMultiplier={DOOR_MAX_SCALE}
       onTextLayout={(event) => {
         if (eyebrowDetail && detail === eyebrowDetail.long && event.nativeEvent.lines.length > 1) {
-          setWrapped(eyebrowDetail.long);
+          setWrapped(fit);
         }
       }}
       style={{

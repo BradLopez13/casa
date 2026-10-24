@@ -172,7 +172,9 @@ export function ReminderSettingsSection() {
         <MagnetSwitch
           testID="settings.reminders.toggle"
           accessibilityLabel={t('settings.remindersToggle')}
-          value={state.disabled ? state.value : on || asking}
+          // While the phone asks, the switch waits busy at its value: it sticks (and buzzes) only
+          // once the permission is granted.
+          value={state.disabled ? state.value : on}
           disabled={state.disabled}
           busy={asking}
           onValueChange={toggle}
