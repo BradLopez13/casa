@@ -64,6 +64,17 @@ describe('Ajustes', () => {
     expect(screen.queryByTestId('settings.offline')).toBeNull();
   });
 
+  // Fase 10f: no white cards with switches; each note is held by the magnet of what it holds.
+  it('holds every note with the magnet of what it holds, and your account with yours', () => {
+    renderSettings(members);
+    for (const glyph of ['account-group-outline', 'alarm', 'home-outline', 'help-circle-outline']) {
+      expect(document.querySelector(`[data-icon="${glyph}"]`)).not.toBeNull();
+    }
+    expect(screen.getByTestId('settings.account').textContent).toContain('A');
+    // The magnet already says what the row is: the row keeps only its chevron.
+    expect(screen.getByTestId('settings.members').querySelectorAll('[data-icon]').length).toBe(1);
+  });
+
   it('when the members fail, says what happened and what to do, and retries', async () => {
     vi.mocked(listMembers).mockRejectedValueOnce(new AppError('NETWORK'));
     renderSettings();

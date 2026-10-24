@@ -32,6 +32,17 @@ import { useTheme } from '@/ui/theme';
 import { displayFontBold } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
 
+/**
+ * The magnet that holds each note of Ajustes, the glyph of what it holds (fase 10f): no white
+ * cards with switches. Your account is held by your own magnet.
+ */
+const GLYPHS: Record<Exclude<SettingsGroup, 'account'>, string> = {
+  members: 'account-group-outline',
+  reminders: 'alarm',
+  notices: 'home-outline',
+  help: 'help-circle-outline',
+};
+
 export default function SettingsScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
@@ -65,11 +76,10 @@ export default function SettingsScreen() {
     switch (key) {
       case 'members':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.members }} side="left">
             <ListRow
               testID="settings.members"
               title={t('settings.members')}
-              icon={actionIcons.people}
               onPress={() => router.push('/household/members')}
             />
             <Button
@@ -79,30 +89,29 @@ export default function SettingsScreen() {
               variant={editing ? 'secondary' : 'primary'}
               onPress={() => router.push('/household/members')}
             />
-          </Note>
+          </PinnedNote>
         );
       case 'reminders':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.reminders }} side="left">
             <ReminderSettingsSection />
-          </Note>
+          </PinnedNote>
         );
       case 'notices':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.notices }} side="left">
             <HouseholdNoticesSection />
-          </Note>
+          </PinnedNote>
         );
       case 'help':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.help }} side="left">
             <ListRow
               testID="settings.help"
               title={t('settings.help')}
-              icon={actionIcons.help}
               onPress={() => router.push('/help')}
             />
-          </Note>
+          </PinnedNote>
         );
       case 'account': {
         const mark = userId ? marks.get(userId) : undefined;

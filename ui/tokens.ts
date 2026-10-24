@@ -60,10 +60,6 @@ export type Palette = {
   rule: string;
   /** Field borders and the empty magnet's ring: at least 3:1 on every ground. */
   outline: string;
-  /** The filled track of a switch that is on: at least 3:1 on page and note, and under the thumb. */
-  toggleOn: string;
-  /** The thumb of a switch, light in both themes so on and off keep one polarity. */
-  toggleThumb: string;
   /** Initials on a magnet: the deepest slate, readable on every magnet colour. */
   magnetInk: string;
   /** Soft translucent ring around a magnet to keep its edge on the ground; 'transparent' for none. */
@@ -116,8 +112,6 @@ export const palettes: Record<Scheme, Palette> = {
     hairline: '#E3E7E3',
     rule: 'rgba(46,59,65,0.13)',
     outline: '#69757A',
-    toggleOn: '#2E3B41',
-    toggleThumb: '#F3F4F0',
     magnetInk: '#151B1E',
     magnetRing: 'rgba(21,27,30,0.35)',
     magnetHighlight: 'rgba(255,255,255,0.28)',
@@ -163,8 +157,6 @@ export const palettes: Record<Scheme, Palette> = {
     hairline: '#2C383E',
     rule: '#2C383E',
     outline: '#7F8B90',
-    toggleOn: '#6A8590',
-    toggleThumb: '#F3F4F0',
     magnetInk: '#151B1E',
     // The pastel on the slate note needs its edge too, darker than the ground (fase 10f).
     magnetRing: 'rgba(8,12,14,0.45)',

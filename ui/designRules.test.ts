@@ -182,7 +182,8 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   // «Discontinuo es en pausa»: a dashed edge says paused (a switch the phone turned off), and
   // only the switch sets a border style. An unticked box or an unassigned magnet is a solid ring.
   const DASHED: Record<string, string> = {
-    'ui/components/Toggle.tsx': 'a switch in pausa',
+    'ui/components/MagnetSwitch.tsx': 'a switch in pausa',
+    'ui/components/MagnetSwitch.test.tsx': 'checks that paused switch',
   };
   it('dashed only where it means paused', () => {
     const found = offenders(
@@ -318,5 +319,16 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   // puts them in the DOM, where the render tests see them.
   it('control states use aria-* props, never accessibilityState', () => {
     expect(offenders(sources, (line) => /\baccessibilityState\b/.test(line))).toEqual([]);
+  });
+
+  // Fase 10f: away from the door the identity is the fridge's too. The shopping rows are lines of
+  // the ruled note, a property is a magnet (never a kit chip), a switch is a magnet that sticks,
+  // and Hoy's date is part of the door's label.
+  it('keeps the secondary identity of fase 10f', () => {
+    expect(sources.filter((f) => /\bPropertyChip\b/.test(read(f)))).toEqual([]);
+    expect(sources.filter((f) => /components\/Toggle['"]/.test(read(f)))).toEqual([]);
+    expect(read('features/shopping/components/ShoppingSheet.tsx')).toMatch(/colors\.rule\b/);
+    expect(read('app/(tabs)/today.tsx')).toMatch(/eyebrowDetail=/);
+    expect(read('ui/components/DoorHeader.tsx')).not.toMatch(/\btrailing\b/);
   });
 });

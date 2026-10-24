@@ -8,7 +8,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { Toggle } from '@/ui/components/Toggle';
+import { MagnetSwitch } from '@/ui/components/MagnetSwitch';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
 import { permissionView } from './permissionView';
@@ -65,7 +65,7 @@ export function HouseholdNoticesSection() {
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushTaskAssigned')}
         </Text>
-        <Toggle
+        <MagnetSwitch
           testID="settings.push.task-assigned"
           accessibilityLabel={t('settings.pushTaskAssigned')}
           value={taskState.value}
@@ -80,7 +80,7 @@ export function HouseholdNoticesSection() {
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.pushMemberJoined')}
         </Text>
-        <Toggle
+        <MagnetSwitch
           testID="settings.push.member-joined"
           accessibilityLabel={t('settings.pushMemberJoined')}
           value={joinedState.value}
