@@ -130,6 +130,8 @@ export function PropertyMagnet({
       onPress={onPress}
       style={({ pressed }) => ({
         minHeight: PROPERTY_ROW,
+        // Air between lines, so at a large text two magnets' words never touch.
+        paddingVertical: space(1),
         flexDirection: 'row',
         alignItems: 'center',
         gap: space(3),

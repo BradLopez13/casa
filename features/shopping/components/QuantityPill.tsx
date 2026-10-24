@@ -21,6 +21,7 @@ export const CLOSE_AFTER_MS = 4000;
  * quantity starts on the same vertical, as a note written in the margin. Grows with the text.
  */
 export const QUANTITY_COLUMN = 84;
+const QUANTITY_COLUMN_MAX_SCALE = 1.3;
 // What a quantity with none says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
 // words: the screen reader hears «sin cantidad».
 const NO_QUANTITY = '—';
@@ -268,7 +269,9 @@ export function QuantityPill({
         // A column of one width at the margin, the whole touch target tall: no edge around it.
         style={({ pressed }) => ({
           minHeight: MIN_TOUCH,
-          minWidth: Math.round(QUANTITY_COLUMN * Math.min(fontScale, 2)),
+          // Grows with the text only up to ×1.3: at ×1.6 a wider column broke «Tomates» mid-word on
+          // the .51; a longer value still widens it.
+          minWidth: Math.round(QUANTITY_COLUMN * Math.min(fontScale, QUANTITY_COLUMN_MAX_SCALE)),
           flexDirection: 'row',
           alignItems: 'center',
           gap: space(1),
