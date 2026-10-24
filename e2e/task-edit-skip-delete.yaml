@@ -50,6 +50,10 @@ appId: com.bradlopez13.casa
 - eraseText: 40
 - inputText: Regar los cactus
 - hideKeyboard
+# The property magnets go one per line (fase 10f): the repeat one is the last.
+- scrollUntilVisible:
+    element:
+      id: task-form.prop.repeat
 - tapOn:
     id: task-form.prop.repeat
 - scrollUntilVisible:

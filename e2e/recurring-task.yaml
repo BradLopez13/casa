@@ -42,6 +42,10 @@ appId: com.bradlopez13.casa
             id: task-form.title
           timeout: 5000
 # The repeat magnet opens its own picker in the form.
+# The property magnets go one per line (fase 10f): the repeat one is the last.
+- scrollUntilVisible:
+    element:
+      id: task-form.prop.repeat
 - tapOn:
     id: task-form.prop.repeat
 - scrollUntilVisible:
