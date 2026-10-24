@@ -206,6 +206,9 @@ export function QuantityPill({
     };
     return (
       <Animated.View
+        // Its own key, as the closed quantity's: without them React reused the disabled «−» button
+        // for the closed quantity, and Android kept it disabled (seen on the .51).
+        key="stepper"
         entering={fade}
         testID={`shopping.item.${itemId}.quantity.stepper`}
         // Like the closed quantity, it never takes more than half the row, so the name stays.
@@ -242,7 +245,11 @@ export function QuantityPill({
   }
 
   return (
-    <Animated.View entering={fade} style={{ flexShrink: 1, maxWidth: '50%', marginLeft: space(2) }}>
+    <Animated.View
+      key="quantity"
+      entering={fade}
+      style={{ flexShrink: 1, maxWidth: '50%', marginLeft: space(2) }}
+    >
       <Pressable
         testID={`shopping.item.${itemId}.quantity`}
         onPress={press}
