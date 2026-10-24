@@ -309,7 +309,7 @@ export function TaskForm({
                   onOpenLayout={() => show(picker.current)}
                   picker={
                     open !== null ? (
-                      <View key={open} style={{ paddingBottom: space(3) }}>
+                      <View key={open} style={{ paddingTop: space(2), paddingBottom: space(3) }}>
                         {open === 'room' ? (
                           <RoomPicker
                             value={values.room}
