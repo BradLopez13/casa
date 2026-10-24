@@ -8,6 +8,7 @@ import {
   dueChipLabel,
   dueLabel,
   longDateLabel,
+  shortDateLabel,
   overdueLabel,
   skippedNotice,
 } from './labels';
@@ -51,6 +52,11 @@ describe('overdueLabel', () => {
 describe('longDateLabel', () => {
   it('writes weekday, day and month', () =>
     expect(longDateLabel('2026-10-09')).toBe('viernes, 9 de octubre'));
+});
+
+describe('shortDateLabel', () => {
+  it('writes the short weekday, day and short month, for a compact door', () =>
+    expect(shortDateLabel('2026-10-24')).toBe('sáb, 24 oct'));
 });
 
 describe('dayHeading', () => {

@@ -37,8 +37,11 @@ type Props = {
    * screen readers.
    */
   eyebrow: string;
-  /** At the right of the eyebrow's row (Hoy: the date). */
-  trailing?: ReactNode;
+  /**
+   * What the eyebrow adds after a « · », in its own style (Hoy: the date, fase 10f): the long form,
+   * or the short one in a compact door, where the long one wraps.
+   */
+  eyebrowDetail?: { long: string; short: string };
   /**
    * The door's headline. A string is drawn in the display face (`DoorHeadline`); a node is drawn
    * as is (Hoy: the today line; Ajustes: your magnet and editable name).
@@ -88,7 +91,7 @@ const STRIP_MIN = 360;
  */
 export function DoorHeader({
   eyebrow,
-  trailing,
+  eyebrowDetail,
   heading,
   headingNumber,
   headingText,
@@ -126,32 +129,24 @@ export function DoorHeader({
   const [content, setContent] = useState(0);
   const overflows = door.compact && viewport > 0 && content > viewport + 1;
 
+  const detail = eyebrowDetail ? (door.compact ? eyebrowDetail.short : eyebrowDetail.long) : null;
+  // One line on one axis: the date is part of the label, not an aside in another style.
   const eyebrowRow = (
-    <View
+    <Text
+      accessibilityRole="header"
+      accessibilityLabel={detail ? `${eyebrow}, ${detail}` : undefined}
+      maxFontSizeMultiplier={DOOR_MAX_SCALE}
       style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        columnGap: space(3),
         marginBottom: space(1),
+        color: colors.muted,
+        fontFamily: displayFontBold,
+        fontSize: type.eyebrow,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
       }}
     >
-      <Text
-        accessibilityRole="header"
-        maxFontSizeMultiplier={DOOR_MAX_SCALE}
-        style={{
-          color: colors.muted,
-          fontFamily: displayFontBold,
-          fontSize: type.eyebrow,
-          letterSpacing: 1.5,
-          textTransform: 'uppercase',
-        }}
-      >
-        {eyebrow}
-      </Text>
-      {trailing}
-    </View>
+      {detail ? `${eyebrow} · ${detail}` : eyebrow}
+    </Text>
   );
   const headline =
     typeof heading === 'string' ? (
