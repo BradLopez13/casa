@@ -244,6 +244,7 @@
   "taskForm.delete": "Delete task",
   "taskForm.close": "Close",
   "taskForm.repeatLabel": "Repeats",
+  "taskForm.repeatField": "Repeat",
   "taskForm.repeat.none": "No",
   "taskForm.repeat.daily": "Every day",
   "taskForm.repeat.weekly": "Every week",

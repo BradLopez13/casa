@@ -28,6 +28,15 @@ export function longDateLabel(iso: string): string {
   });
 }
 
+/** "sáb, 24 oct" / "Sat, Oct 24": the date of a compact door, where the long one wraps. */
+export function shortDateLabel(iso: string): string {
+  return toLocalDate(iso).toLocaleDateString(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 /** What a screen reader says for a day cell of the form: the whole date, today named first. */
 export function dayCellLabel(iso: string, today: string): string {
   const date = longDateLabel(iso);

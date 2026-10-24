@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ReactNode, Ref } from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { recurrenceLabel } from '@/domain/recurrence/label';
@@ -8,10 +8,10 @@ import { dueChipLabel } from '@/domain/tasks/labels';
 import type { Room } from '@/domain/tasks/rooms';
 import { t } from '@/i18n';
 import { buttonLook, pressedOpacity } from '@/ui/buttonLook';
-import { glyphSize } from '@/ui/glyphSize';
 import { Magnet } from '@/ui/components/Magnet';
+import { glyphSize } from '@/ui/glyphSize';
 import { useTheme } from '@/ui/theme';
-import { MIN_TOUCH } from '@/ui/tokens';
+import { magnetSizes } from '@/ui/tokens';
 import type { FormField } from './formState';
 
 type Props = {
@@ -20,11 +20,19 @@ type Props = {
   due: string | null;
   repeat: RecurrenceRule | null;
   today: string;
-  /** The magnet whose picker is showing, drawn selected. */
+  /** The magnet whose picker is showing, drawn open. */
   open: FormField | null;
   onOpen: (field: FormField) => void;
   /** False on a completed or skipped occurrence: the repeat magnet shows its rule but waits. */
   repeatEditable: boolean;
+  /** The open magnet's picker, drawn right under it. */
+  picker?: ReactNode;
+  /**
+   * The open magnet and its picker as one block, measured on layout so the form scrolls the whole
+   * of it into view: a tall picker never pushes its own magnet off the top.
+   */
+  openRef?: Ref<View>;
+  onOpenLayout?: () => void;
 };
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -36,13 +44,24 @@ const GLYPHS: Record<FormField, IconName> = {
   due: 'calendar-outline',
   repeat: 'repeat-outline',
 };
-const GLYPH_SIZE = 16;
+/** The open magnet's `ink` ring and the air between it and the disc. */
+const OPEN_RING = 2.5;
+// As the selection ring of a magnet: in dark the drawn drop (2 dp) never touches the ring.
+const RING_GAP = 3;
+/** A property line: the disc in its ring, and room for the two lines of text beside it. */
+const PROPERTY_ROW = 52;
 
 /**
- * A property magnet: a pill with its glyph and its value, which opens what changes it. Shared by
- * the task form (estancia, persona, fecha, repetición) and the product sheet (cantidad).
+ * A property magnet (fase 10f): the shape of the note's magnet, a disc with its glyph, and beside
+ * it the field's name over its value; the whole line opens what changes it. With a value the disc
+ * is the slate magnet (slate is what you chose); with none it is the bare ring, value muted. Open,
+ * an `ink` ring goes round the disc, never `selection` (open is not chosen); its room is always
+ * kept, so opening moves nothing. The chevron at the end says open or closed by shape, since in
+ * dark `ink` and `selection` are the same chalk and the person's magnet in the picker below is
+ * ringed as chosen. Shared by the task form (estancia, persona, fecha, repetición) and the product
+ * sheet (cantidad).
  */
-export function PropertyChip({
+export function PropertyMagnet({
   testID,
   glyph,
   label,
@@ -52,7 +71,7 @@ export function PropertyChip({
   onPress,
   children,
   spoken,
-  muted = false,
+  empty = false,
 }: {
   testID: string;
   glyph: IconName;
@@ -61,18 +80,44 @@ export function PropertyChip({
   open: boolean;
   disabled?: boolean;
   onPress: () => void;
+  /** A magnet of its own in place of the glyph's (whoever does the task). */
   children?: ReactNode;
   /** Read instead of «label, value» when the value already says what it is. */
   spoken?: string;
-  /** The value is a placeholder («—»): drawn in `muted`, as an empty quantity pill. */
-  muted?: boolean;
+  /** No value («Sin estancia», «—»): the bare ring, and the value in `muted`. */
+  empty?: boolean;
 }) {
-  const { colors, radii, space } = useTheme();
-  // One selected style (§14.1): `selection` means chosen, so the open magnet is not filled with it; it
-  // takes a heavier `ink` border on the note. A magnet that cannot open fades its label: dashed is paused.
-  const off = buttonLook('secondary', 'default', 'disabled', colors);
-  // The glyph grows with the label beside it.
+  const { colors, space } = useTheme();
   const { fontScale } = useWindowDimensions();
+  // A magnet that cannot open fades as a disabled control does: its `outline` ring stays whole and
+  // only its glyph and words fade; dashed is paused, never this.
+  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const fade = { opacity: disabled ? off.labelOpacity : 1 };
+  const bare = empty || disabled;
+  const disc = children ?? (
+    <Magnet
+      testID={`${testID}.disc`}
+      size="md"
+      variant={bare ? 'empty' : 'filled'}
+      decorative
+      initial=""
+      color="teal"
+      accessibilityLabel=""
+      glyph={{
+        node: (
+          <Ionicons
+            name={glyph}
+            size={Math.round(magnetSizes.md * 0.5)}
+            color={disabled ? off.foreground : bare ? colors.muted : colors.onSelection}
+            style={fade}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+        ),
+        fill: colors.selection,
+      }}
+    />
+  );
   return (
     <Pressable
       testID={testID}
@@ -84,45 +129,53 @@ export function PropertyChip({
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: MIN_TOUCH,
+        minHeight: PROPERTY_ROW,
+        // Air between lines, so at a large text two magnets' words never touch.
+        paddingVertical: space(1),
         flexDirection: 'row',
         alignItems: 'center',
-        gap: space(2),
-        // The open border is 1 dp thicker each side; the padding gives it back, so the pill keeps its width.
-        paddingHorizontal: space(4) - (open ? 1 : 0),
-        borderRadius: radii.pill,
-        borderWidth: open ? 2.5 : 1.5,
-        borderColor: disabled ? off.border : open ? colors.ink : colors.outline,
-        backgroundColor: disabled ? off.fill : colors.note,
+        gap: space(3),
         opacity: pressedOpacity(pressed),
       })}
     >
-      {children ?? (
+      <View
+        style={{
+          padding: RING_GAP,
+          borderWidth: OPEN_RING,
+          borderRadius: (magnetSizes.md + 2 * (RING_GAP + OPEN_RING)) / 2,
+          borderColor: open ? colors.ink : 'transparent',
+        }}
+      >
+        {disc}
+      </View>
+      <View style={[{ flex: 1 }, fade]}>
+        <Text style={{ color: colors.muted, fontSize: 13 }}>{label}</Text>
+        <Text
+          style={{
+            color: disabled ? off.foreground : empty ? colors.muted : colors.ink,
+            fontSize: 17,
+            // One weight open or closed, so opening does not change the text's width; an empty
+            // value is lighter, as the example of an empty title.
+            fontWeight: empty ? '400' : '500',
+          }}
+        >
+          {value}
+        </Text>
+      </View>
+      {disabled ? null : (
         <Ionicons
-          name={glyph}
-          size={glyphSize(GLYPH_SIZE, fontScale)}
-          color={disabled ? off.foreground : colors.muted}
-          style={{ opacity: disabled ? off.labelOpacity : 1 }}
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={glyphSize(18, fontScale)}
+          color={colors.muted}
           accessible={false}
           importantForAccessibility="no"
         />
       )}
-      <Text
-        style={{
-          color: disabled ? off.foreground : muted ? colors.muted : colors.ink,
-          opacity: disabled ? off.labelOpacity : 1,
-          fontSize: 15,
-          // One weight in both states, so opening does not change the text's width.
-          fontWeight: '600',
-        }}
-      >
-        {value}
-      </Text>
     </Pressable>
   );
 }
 
-function Chip({
+function Property({
   field,
   onOpen,
   ...rest
@@ -135,9 +188,10 @@ function Chip({
   onOpen: (field: FormField) => void;
   children?: ReactNode;
   spoken?: string;
+  empty?: boolean;
 }) {
   return (
-    <PropertyChip
+    <PropertyMagnet
       testID={`task-form.prop.${field}`}
       glyph={GLYPHS[field]}
       onPress={() => onOpen(field)}
@@ -147,9 +201,10 @@ function Chip({
 }
 
 /**
- * The row of property magnets under the title of the task form: each shows its glyph and its
- * field's current value («Cocina», «Tú», «Hoy», «No se repite») and opens that field's picker,
- * one at a time. Whoever does it shows their magnet in place of the person glyph.
+ * The property magnets under the title of the task form, one per line as magnets on a fridge
+ * (fase 10f): each names its field over its current value («Estancia · Cocina», «Quién · Tú»,
+ * «Cuándo · Hoy», «Repetir · No se repite») and opens that field's picker right under it, one at
+ * a time. Whoever does it shows their magnet in place of the person glyph.
  */
 export function PropertyMagnets({
   room,
@@ -160,50 +215,80 @@ export function PropertyMagnets({
   open,
   onOpen,
   repeatEditable,
+  picker,
+  openRef,
+  onOpenLayout,
 }: Props) {
-  const { space } = useTheme();
+  // A repeat that cannot change never shows as open, even when Save points at it.
+  const shown = open === 'repeat' && !repeatEditable ? null : open;
+  /** A magnet, with its picker under it in one measured block when it is the open one. */
+  const line = (field: FormField, magnet: ReactNode) =>
+    shown === field ? (
+      <View key={field} ref={openRef} onLayout={onOpenLayout}>
+        {magnet}
+        {picker}
+      </View>
+    ) : (
+      <View key={field}>{magnet}</View>
+    );
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
-      <Chip
-        field="room"
-        label={t('taskForm.roomLabel')}
-        value={room === null ? t('taskForm.noRoom') : t(`rooms.${room}`)}
-        open={open === 'room'}
-        onOpen={onOpen}
-      />
-      <Chip
-        field="assignee"
-        label={t('taskForm.assigneeLabel')}
-        value={assignee === null ? t('taskForm.nobody') : assignee.name}
-        open={open === 'assignee'}
-        onOpen={onOpen}
-      >
-        {assignee !== null ? (
-          <Magnet
-            initial={assignee.mark.initial}
-            color={assignee.mark.color}
-            size="sm"
-            decorative
-            accessibilityLabel={assignee.name}
-          />
-        ) : null}
-      </Chip>
-      <Chip
-        field="due"
-        label={t('taskForm.dueLabel')}
-        value={dueChipLabel(due, today)}
-        open={open === 'due'}
-        onOpen={onOpen}
-      />
-      <Chip
-        field="repeat"
-        label={t('taskForm.repeatLabel')}
-        value={repeat === null ? t('taskForm.noRepeat') : recurrenceLabel(repeat)}
-        spoken={repeat === null ? t('taskForm.noRepeat') : undefined}
-        open={open === 'repeat'}
-        disabled={!repeatEditable}
-        onOpen={onOpen}
-      />
+    <View>
+      {line(
+        'room',
+        <Property
+          field="room"
+          label={t('taskForm.roomLabel')}
+          value={room === null ? t('taskForm.noRoom') : t(`rooms.${room}`)}
+          empty={room === null}
+          open={shown === 'room'}
+          onOpen={onOpen}
+        />,
+      )}
+      {line(
+        'assignee',
+        <Property
+          field="assignee"
+          label={t('taskForm.assigneeLabel')}
+          value={assignee === null ? t('taskForm.nobody') : assignee.name}
+          empty={assignee === null}
+          open={shown === 'assignee'}
+          onOpen={onOpen}
+        >
+          {assignee !== null ? (
+            <Magnet
+              initial={assignee.mark.initial}
+              color={assignee.mark.color}
+              size="md"
+              decorative
+              accessibilityLabel={assignee.name}
+            />
+          ) : null}
+        </Property>,
+      )}
+      {line(
+        'due',
+        <Property
+          field="due"
+          label={t('taskForm.dueLabel')}
+          value={dueChipLabel(due, today)}
+          empty={due === null}
+          open={shown === 'due'}
+          onOpen={onOpen}
+        />,
+      )}
+      {line(
+        'repeat',
+        <Property
+          field="repeat"
+          label={t('taskForm.repeatField')}
+          value={repeat === null ? t('taskForm.noRepeat') : recurrenceLabel(repeat)}
+          spoken={repeat === null ? t('taskForm.noRepeat') : undefined}
+          empty={repeat === null}
+          open={shown === 'repeat'}
+          disabled={!repeatEditable}
+          onOpen={onOpen}
+        />,
+      )}
     </View>
   );
 }

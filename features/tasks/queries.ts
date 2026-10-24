@@ -23,7 +23,7 @@ import {
 
 import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
-import { withQueued } from './pending';
+import { pendingTasks, withQueued } from './pending';
 import { CREATE_KEY, type CreateVars } from './create';
 
 export { tasksKey };
@@ -36,7 +36,11 @@ function sinceIso(): string {
 
 /** The server's list, with what the queue still holds laid on top (`withQueued`). */
 async function loadTasks(queryClient: QueryClient, householdId: string): Promise<TaskItem[]> {
-  return withQueued(queryClient, householdId, await listTasks(householdId, sinceIso()));
+  // Taken before the request: a change that lands while it runs is in neither the list it reads
+  // nor the queue once it answers.
+  const before = pendingTasks(queryClient);
+  const tasks = await listTasks(householdId, sinceIso());
+  return withQueued(queryClient, householdId, tasks, before);
 }
 
 export function useTasks(householdId: string | undefined) {

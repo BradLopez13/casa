@@ -188,9 +188,10 @@ export function ShoppingSheet({
       borderLeftWidth: edge,
       borderRightWidth: edge,
       borderTopWidth: firstCell ? edge : 0,
-      // Every ruled row ends in its hairline, so the lines survive virtualisation.
+      // Every pending row is a line of the ruled note and ends in its rule (`rule`, which shows on
+      // the pósit where `hairline` did not), so the lines survive virtualisation (fase 10f).
       borderBottomWidth: lastCell ? edge : ruled ? 1 : 0,
-      ...(ruled && !lastCell ? { borderBottomColor: colors.hairline } : null),
+      ...(ruled && !lastCell ? { borderBottomColor: colors.rule } : null),
       borderTopLeftRadius: firstCell ? radii.note : 0,
       borderTopRightRadius: firstCell ? radii.note : 0,
       borderBottomLeftRadius: lastCell ? radii.note : 0,
@@ -215,7 +216,7 @@ export function ShoppingSheet({
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         renderItem={({ item: row, index }) => (
           <>
-            {/* Over the note, at the pills' side, until a quantity is first changed. */}
+            {/* Over the note, at the quantities' side, until a quantity is first changed. */}
             {index === 0 && pendingCount > 0 && quantityHint ? (
               <View
                 style={[

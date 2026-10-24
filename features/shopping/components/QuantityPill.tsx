@@ -16,8 +16,13 @@ export const SAVE_AFTER_MS = 700;
 /** And closes on its own after this long untouched. */
 export const CLOSE_AFTER_MS = 4000;
 
-const PILL_HEIGHT = 30;
-// What a pill with no quantity says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
+/**
+ * The least width of the quantity's column at the note's right margin (fase 10f): every short
+ * quantity starts on the same vertical, as a note written in the margin. Grows with the text.
+ */
+export const QUANTITY_COLUMN = 84;
+const QUANTITY_COLUMN_MAX_SCALE = 1.3;
+// What a quantity with none says (DESIGN.md: «—», never a «1» that looks real). A glyph, not
 // words: the screen reader hears «sin cantidad».
 const NO_QUANTITY = '—';
 
@@ -39,8 +44,9 @@ type Props = {
 };
 
 /**
- * The quantity of a pending item, at the end of its row: «2», «1 kg», or a quiet «—» when there
- * is none (counting from it, the stepper starts at 1). A tap turns it into «− n +»; each tap shows at once and the value saves after a pause.
+ * The quantity of a pending item, written at the right margin of its line on the ruled note: «2»,
+ * «1 kg», or a quiet «—» when there is none (counting from it, the stepper starts at 1), with no
+ * pill around it (fase 10f). A tap turns it into «− n +»; each tap shows at once and the value saves after a pause.
  * With a screen reader it is adjustable: swipe up or down to change it without opening anything.
  */
 export function QuantityPill({
@@ -201,9 +207,12 @@ export function QuantityPill({
     };
     return (
       <Animated.View
+        // Its own key, as the closed quantity's: without them React reused the disabled «−» button
+        // for the closed quantity, and Android kept it disabled (seen on the .51).
+        key="stepper"
         entering={fade}
         testID={`shopping.item.${itemId}.quantity.stepper`}
-        // Like the closed pill, it never takes more than half the row, so the name stays.
+        // Like the closed quantity, it never takes more than half the row, so the name stays.
         style={{
           flexShrink: 1,
           maxWidth: '50%',
@@ -237,11 +246,14 @@ export function QuantityPill({
   }
 
   return (
-    <Animated.View entering={fade} style={{ flexShrink: 1, maxWidth: '50%', marginLeft: space(2) }}>
+    <Animated.View
+      key="quantity"
+      entering={fade}
+      style={{ flexShrink: 1, maxWidth: '50%', marginLeft: space(2) }}
+    >
       <Pressable
         testID={`shopping.item.${itemId}.quantity`}
         onPress={press}
-        hitSlop={{ top: (MIN_TOUCH - PILL_HEIGHT) / 2, bottom: (MIN_TOUCH - PILL_HEIGHT) / 2 }}
         // Adjustable on every row (fase 10d): a quantity that cannot step («un poco») opens the
         // item's sheet on a swipe, as a tap does.
         accessibilityRole="adjustable"
@@ -254,17 +266,18 @@ export function QuantityPill({
           if (!steppable) onEdit();
           else adjust(actionName === 'increment' ? 1 : -1);
         }}
+        // A column of one width at the margin, the whole touch target tall: no edge around it.
         style={({ pressed }) => ({
-          minHeight: PILL_HEIGHT,
-          minWidth: MIN_TOUCH,
+          minHeight: MIN_TOUCH,
+          // Grows with the text only up to ×1.3: at ×1.6 a wider column broke «Tomates» mid-word on
+          // the .51; a longer value still widens it.
+          minWidth: Math.round(QUANTITY_COLUMN * Math.min(fontScale, QUANTITY_COLUMN_MAX_SCALE)),
           flexDirection: 'row',
-          justifyContent: 'center',
           alignItems: 'center',
           gap: space(1),
-          paddingHorizontal: space(3),
-          borderRadius: radii.pill,
-          borderWidth: 1,
-          borderColor: quantity === null ? colors.hairline : colors.outline,
+          // Room before the value only: it ends on the row's own margin, where the open stepper's
+          // edge sits too.
+          paddingLeft: space(3),
           opacity: pressedOpacity(pressed),
         })}
       >

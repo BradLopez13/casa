@@ -24,7 +24,7 @@ import {
   type QuantityContext,
   type QuantityVars,
 } from './offline';
-import { withQueuedShopping } from './pending';
+import { pendingShopping, withQueuedShopping } from './pending';
 
 export const shoppingKey = (householdId: string | undefined) => ['shopping', householdId] as const;
 export const shoppingHistoryKey = (householdId: string | undefined) =>
@@ -35,12 +35,13 @@ export function useShoppingItems(householdId: string | undefined) {
   return useQuery({
     queryKey: shoppingKey(householdId),
     // What the queue still holds goes on top of what the server sends (`withQueuedShopping`).
-    queryFn: async () =>
-      withQueuedShopping(
-        queryClient,
-        householdId as string,
-        await listShoppingItems(householdId as string),
-      ),
+    queryFn: async () => {
+      // Taken before the request: a change that lands while it runs is in neither the list it
+      // reads nor the queue once it answers.
+      const before = pendingShopping(queryClient);
+      const items = await listShoppingItems(householdId as string);
+      return withQueuedShopping(queryClient, householdId as string, items, before);
+    },
     enabled: householdId !== undefined,
     ...shoppingQueryOptions,
   });

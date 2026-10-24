@@ -4,6 +4,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import type { MagnetColor } from '@/domain/members/marks';
 import { pressedOpacity } from '../buttonLook';
 import { magnetCheckStyle, type MagnetCheck } from '../magnetCheck';
+import { magnetDrop } from '../magnetDrop';
 import { positEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import {
@@ -31,7 +32,10 @@ type Props = {
   decorative?: boolean;
   /** A ticked box: the magnet fills with the accent and shows the check. Unticked boxes leave it out. */
   check?: MagnetCheck;
-  /** Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member colour. */
+  /**
+   * Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member
+   * colour. An empty magnet draws it inside its bare ring (a property with no value, fase 10f).
+   */
   glyph?: { node: ReactNode; fill: string };
 };
 
@@ -55,11 +59,11 @@ export function Magnet({
   const { colors, shadows } = useTheme();
   const diameter = magnetSizes[size];
   const empty = variant === 'empty';
-  // The chip-sized magnet sits inside a pill and stays flat.
+  // The small magnet sits inside a row (shopping, a done note) and stays flat.
   const look = check ? magnetCheckStyle(colors) : null;
   const filledCheck = look !== null;
   const raised = !empty && size !== 'sm';
-  const fill = look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]);
+  const fill = look?.fill ?? (empty ? 'transparent' : (glyph?.fill ?? colors.magnet[color]));
   // Two stacked Views: Android allows one elevation per View, so ambient outside, contact inside.
   const depth = raised ? shadows.magnet : null;
   const showHighlight = raised && !glyph;
@@ -74,7 +78,7 @@ export function Magnet({
         justifyContent: 'center',
         backgroundColor: fill,
         ...(empty && !filledCheck ? { borderWidth: 1.5, borderColor: colors.outline } : {}),
-        // Inner 1 dp ring (border-box sizing keeps the outer diameter); dark has none.
+        // Inner 1 dp ring (border-box sizing keeps the outer diameter).
         ...(!empty && !filledCheck && colors.magnetRing !== 'transparent'
           ? { borderWidth: 1, borderColor: colors.magnetRing }
           : {}),
@@ -98,7 +102,7 @@ export function Magnet({
           }}
         />
       ) : null}
-      {glyph && !empty && !filledCheck ? glyph.node : null}
+      {glyph && !filledCheck ? glyph.node : null}
       {empty || filledCheck || glyph ? null : (
         <Text
           maxFontSizeMultiplier={1.6}
@@ -125,8 +129,24 @@ export function Magnet({
     </View>
   );
 
+  const drop = magnetDrop(colors, raised);
   const lifted = raised ? (
     <View style={{ borderRadius: diameter / 2, backgroundColor: fill, ...shadows.magnetAmbient }}>
+      {/* Dark only: the shadow the slate hides, drawn as a disc just under the magnet. */}
+      {drop ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: drop.offset,
+            left: 0,
+            width: diameter,
+            height: diameter,
+            borderRadius: diameter / 2,
+            backgroundColor: drop.color,
+          }}
+        />
+      ) : null}
       {disc}
     </View>
   ) : (
@@ -160,6 +180,8 @@ export function Magnet({
         testID={testID}
         onPress={onPress}
         hitSlop={slop}
+        // Pressed, the magnet fades as one piece: in dark its drawn drop does not show through.
+        needsOffscreenAlphaCompositing
         accessibilityRole={accessibilityRole}
         accessibilityLabel={accessibilityLabel}
         aria-selected={selectable ? selected : undefined}

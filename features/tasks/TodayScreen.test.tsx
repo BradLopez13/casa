@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import TodayScreen from '@/app/(tabs)/today';
 import { AppError } from '@/data/supabase/errors';
 import { addDays, localDateIso } from '@/domain/tasks/dates';
+import { longDateLabel } from '@/domain/tasks/labels';
 import type { TaskItem } from '@/domain/tasks/views';
 import type { Member, Membership } from '@/features/households/api';
 import { membersKey, membershipKey } from '@/features/households/keys';
@@ -120,6 +121,16 @@ describe('Hoy', () => {
     expect(screen.getByTestId('task-note.Barrer')).toBeTruthy();
     expect(screen.queryByTestId('task-note.Planchar')).toBeNull();
     expect(screen.getByTestId('today.door-line').textContent).not.toBe('');
+  });
+
+  // Fase 10f: the date is part of the door's label, in its style, not a muted aside at the right.
+  it('says the date inside the door label, read as one header', () => {
+    phoneSize();
+    renderToday([]);
+    const header = screen.getByRole('heading', {
+      name: `${t('today.title')}, ${longDateLabel(today)}`,
+    });
+    expect(header.textContent).toBe(`${t('today.title')}\u00A0· ${longDateLabel(today)}`);
   });
 
   it('keeps a task done today out of what is left', () => {

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, type ReactElement, type ReactNode } from 'react';
-import { SectionList, Text, View, type TextStyle } from 'react-native';
-import { longDateLabel } from '@/domain/tasks/labels';
+import { SectionList, Text, View } from 'react-native';
+import { longDateLabel, shortDateLabel } from '@/domain/tasks/labels';
 import { todayLine } from '@/domain/tasks/todayLine';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
@@ -20,7 +20,6 @@ import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
-import { DOOR_MAX_SCALE } from '@/ui/door';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -52,11 +51,6 @@ export default function TodayScreen() {
   const screen = useTaskScreen();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
-  const dateStyle: TextStyle = {
-    color: colors.muted,
-    fontSize: 14,
-    fontVariant: ['tabular-nums'],
-  };
 
   // The door counts the whole household, so the line can say what is left for everyone else.
   const tasks = tasksQuery.data;
@@ -117,11 +111,7 @@ export default function TodayScreen() {
     <>
       <DoorHeader
         eyebrow={t('today.title')}
-        trailing={
-          <Text style={dateStyle} maxFontSizeMultiplier={DOOR_MAX_SCALE}>
-            {longDateLabel(today)}
-          </Text>
-        }
+        eyebrowDetail={{ long: longDateLabel(today), short: shortDateLabel(today) }}
         heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
         quickAdd={quickAdd}
       >

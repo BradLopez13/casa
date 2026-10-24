@@ -5,6 +5,16 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { CREATE_KEY, draftItem, type CreateVars } from './create';
 import { TOGGLE_KEY, type ToggleVars } from './toggle';
 
+type TaskMutation = ReturnType<ReturnType<QueryClient['getMutationCache']>['getAll']>[number];
+
+/** The task changes still queued, oldest first: take them before a fetch begins. */
+export function pendingTasks(queryClient: QueryClient): TaskMutation[] {
+  return queryClient
+    .getMutationCache()
+    .findAll({ mutationKey: ['tasks'], status: 'pending' })
+    .sort((a, b) => a.mutationId - b.mutationId);
+}
+
 /**
  * The household's tasks as the server sent them, with what is still queued here laid on top, in
  * the order it was done: a note created offline stays, a note ticked off offline stays ticked.
@@ -16,11 +26,19 @@ export function withQueued(
   queryClient: QueryClient,
   householdId: string,
   tasks: TaskItem[],
+  /**
+   * What was queued when the fetch began (`pendingTasks`): a change that reached the server while
+   * the list was being read is not in that list, and no longer pending either. Those that failed
+   * meanwhile are left out: their rollback already ran.
+   */
+  earlier: readonly TaskMutation[] = [],
 ): TaskItem[] {
-  const queued = queryClient
-    .getMutationCache()
-    .findAll({ mutationKey: ['tasks'], status: 'pending' })
-    .sort((a, b) => a.mutationId - b.mutationId);
+  const byId = new Map<number, TaskMutation>();
+  for (const mutation of earlier) {
+    if (mutation.state.status !== 'error') byId.set(mutation.mutationId, mutation);
+  }
+  for (const mutation of pendingTasks(queryClient)) byId.set(mutation.mutationId, mutation);
+  const queued = [...byId.values()].sort((a, b) => a.mutationId - b.mutationId);
   let out = tasks;
   for (const mutation of queued) {
     const kind = mutation.options.mutationKey?.[1];

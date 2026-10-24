@@ -244,6 +244,7 @@
   "taskForm.delete": "Borrar tarea",
   "taskForm.close": "Cerrar",
   "taskForm.repeatLabel": "Se repite",
+  "taskForm.repeatField": "Repetir",
   "taskForm.repeat.none": "No",
   "taskForm.repeat.daily": "Cada día",
   "taskForm.repeat.weekly": "Cada semana",

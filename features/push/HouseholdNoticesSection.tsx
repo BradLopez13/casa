@@ -8,7 +8,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
-import { Toggle } from '@/ui/components/Toggle';
+import { MagnetSwitch } from '@/ui/components/MagnetSwitch';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, MIN_TOUCH } from '@/ui/tokens';
 import { permissionView } from './permissionView';
@@ -28,7 +28,9 @@ export function HouseholdNoticesSection() {
   const [asking, setAsking] = useState(false);
 
   const prefs = prefsQuery.data;
-  const busy = !prefs || save.isPending;
+  // Saving keeps each switch's look; until the prefs load there is no state to show at all (an
+  // «on» or a dashed ring would both say something the app does not know).
+  const busy = save.isPending;
   const view = permissionView(permission);
   const taskAssigned = prefs?.taskAssigned ?? true;
   const memberJoined = prefs?.memberJoined ?? true;
@@ -61,35 +63,41 @@ export function HouseholdNoticesSection() {
       >
         {t('settings.push')}
       </Text>
-      <View style={row}>
-        <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
-          {t('settings.pushTaskAssigned')}
-        </Text>
-        <Toggle
-          testID="settings.push.task-assigned"
-          accessibilityLabel={t('settings.pushTaskAssigned')}
-          value={taskState.value}
-          disabled={busy || taskState.disabled}
-          onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
-        />
-      </View>
-      {taskState.caption ? (
-        <Text style={{ color: colors.muted, fontSize: 13 }}>{taskState.caption}</Text>
-      ) : null}
-      <View style={row}>
-        <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
-          {t('settings.pushMemberJoined')}
-        </Text>
-        <Toggle
-          testID="settings.push.member-joined"
-          accessibilityLabel={t('settings.pushMemberJoined')}
-          value={joinedState.value}
-          disabled={busy || joinedState.disabled}
-          onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
-        />
-      </View>
-      {joinedState.caption ? (
-        <Text style={{ color: colors.muted, fontSize: 13 }}>{joinedState.caption}</Text>
+      {prefs ? (
+        <>
+          <View style={row}>
+            <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
+              {t('settings.pushTaskAssigned')}
+            </Text>
+            <MagnetSwitch
+              testID="settings.push.task-assigned"
+              accessibilityLabel={t('settings.pushTaskAssigned')}
+              value={taskState.value}
+              disabled={taskState.disabled}
+              busy={busy}
+              onValueChange={(value) => save.mutate({ taskAssigned: value, memberJoined })}
+            />
+          </View>
+          {taskState.caption ? (
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{taskState.caption}</Text>
+          ) : null}
+          <View style={row}>
+            <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
+              {t('settings.pushMemberJoined')}
+            </Text>
+            <MagnetSwitch
+              testID="settings.push.member-joined"
+              accessibilityLabel={t('settings.pushMemberJoined')}
+              value={joinedState.value}
+              disabled={joinedState.disabled}
+              busy={busy}
+              onValueChange={(value) => save.mutate({ taskAssigned, memberJoined: value })}
+            />
+          </View>
+          {joinedState.caption ? (
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{joinedState.caption}</Text>
+          ) : null}
+        </>
       ) : null}
       {error ? (
         <ErrorText testID="settings.push.error">{settingsErrorMessage(error)}</ErrorText>

@@ -29,8 +29,22 @@ import { ListRow } from '@/ui/components/ListRow';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
-import { displayFontBold } from '@/ui/tokens';
+import { displayFontBold, magnetSizes } from '@/ui/tokens';
 import { useLayout } from '@/ui/useLayout';
+
+/**
+ * The magnet that holds each note of Ajustes, the glyph of what it holds (fase 10f): no white
+ * cards with switches. Your account is held by your own magnet.
+ */
+/** Where the paper of every note starts: past the half of its magnet that hangs outside it. */
+const HANG = magnetSizes.md / 2;
+
+const GLYPHS: Record<Exclude<SettingsGroup, 'account'>, string> = {
+  members: 'account-group-outline',
+  reminders: 'alarm',
+  notices: 'home-outline',
+  help: 'help-circle-outline',
+};
 
 export default function SettingsScreen() {
   const { colors, space } = useTheme();
@@ -65,11 +79,10 @@ export default function SettingsScreen() {
     switch (key) {
       case 'members':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.members }} side="left">
             <ListRow
               testID="settings.members"
               title={t('settings.members')}
-              icon={actionIcons.people}
               onPress={() => router.push('/household/members')}
             />
             <Button
@@ -79,30 +92,29 @@ export default function SettingsScreen() {
               variant={editing ? 'secondary' : 'primary'}
               onPress={() => router.push('/household/members')}
             />
-          </Note>
+          </PinnedNote>
         );
       case 'reminders':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.reminders }} side="left">
             <ReminderSettingsSection />
-          </Note>
+          </PinnedNote>
         );
       case 'notices':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.notices }} side="left">
             <HouseholdNoticesSection />
-          </Note>
+          </PinnedNote>
         );
       case 'help':
         return (
-          <Note>
+          <PinnedNote pin={{ glyph: GLYPHS.help }} side="left">
             <ListRow
               testID="settings.help"
               title={t('settings.help')}
-              icon={actionIcons.help}
               onPress={() => router.push('/help')}
             />
-          </Note>
+          </PinnedNote>
         );
       case 'account': {
         const mark = userId ? marks.get(userId) : undefined;
@@ -141,12 +153,17 @@ export default function SettingsScreen() {
           </>
         );
         // Your account is a small note held by your own magnet; until the members load, a plain one.
+        // Both keep the paper's left edge where the other notes have it.
         return mark ? (
-          <PinnedNote testID="settings.account" pin={{ mark }} side="left" size="sm">
-            {account}
-          </PinnedNote>
+          <View style={{ paddingLeft: HANG - magnetSizes.sm / 2 }}>
+            <PinnedNote testID="settings.account" pin={{ mark }} side="left" size="sm">
+              {account}
+            </PinnedNote>
+          </View>
         ) : (
-          <Note>{account}</Note>
+          <View style={{ paddingLeft: HANG }}>
+            <Note>{account}</Note>
+          </View>
         );
       }
     }
@@ -157,18 +174,24 @@ export default function SettingsScreen() {
       {/* Without the members the door has no name and Borrar waits: say so, and let it retry. A
           failed refetch over members already shown changes nothing. */}
       {first && members.isError && !members.data ? (
-        <LoadError
-          testID="settings.members-error"
-          message={t('members.loadError')}
-          retrying={members.isFetching}
-          onRetry={() => void members.refetch()}
-        />
+        <View style={{ paddingLeft: HANG }}>
+          <LoadError
+            testID="settings.members-error"
+            message={t('members.loadError')}
+            retrying={members.isFetching}
+            onRetry={() => void members.refetch()}
+          />
+        </View>
       ) : null}
       {groups.map((key) => (
         <Fragment key={key}>
           {/* One notice for both phone notes: before Recordatorios, which also heads the right
               pane in two columns. */}
-          {key === 'reminders' ? <NotificationsOffBand denied={notificationsOff} /> : null}
+          {key === 'reminders' ? (
+            <View style={{ paddingLeft: HANG }}>
+              <NotificationsOffBand denied={notificationsOff} />
+            </View>
+          ) : null}
           <View>{group(key)}</View>
         </Fragment>
       ))}

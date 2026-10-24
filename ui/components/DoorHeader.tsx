@@ -37,8 +37,11 @@ type Props = {
    * screen readers.
    */
   eyebrow: string;
-  /** At the right of the eyebrow's row (Hoy: the date). */
-  trailing?: ReactNode;
+  /**
+   * What the eyebrow adds after a « · », in its own style (Hoy: the date, fase 10f): the long form,
+   * or the short one in a compact door or wherever the long one would wrap. Read long.
+   */
+  eyebrowDetail?: { long: string; short: string };
   /**
    * The door's headline. A string is drawn in the display face (`DoorHeadline`); a node is drawn
    * as is (Hoy: the today line; Ajustes: your magnet and editable name).
@@ -88,7 +91,7 @@ const STRIP_MIN = 360;
  */
 export function DoorHeader({
   eyebrow,
-  trailing,
+  eyebrowDetail,
   heading,
   headingNumber,
   headingText,
@@ -103,7 +106,7 @@ export function DoorHeader({
   const insets = useSafeAreaInsets();
   const layout = useLayout();
   const door = useDoor();
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, width: windowWidth } = useWindowDimensions();
   const type = door.type;
   const { rail, contentMax, gutter } = layout;
   // Beside the rail, the rail already takes the left inset (a landscape notch).
@@ -126,32 +129,41 @@ export function DoorHeader({
   const [content, setContent] = useState(0);
   const overflows = door.compact && viewport > 0 && content > viewport + 1;
 
+  // A long date that would wrap the label (a long month on a narrow phone, a larger text) gives
+  // way to the short one, as in a compact door. It stays short for that date, width and text size;
+  // a wider window or a smaller text tries the long one again.
+  const fit = eyebrowDetail ? `${eyebrowDetail.long}@${windowWidth}@${fontScale}` : null;
+  const [wrapped, setWrapped] = useState<string | null>(null);
+  const shortened = fit !== null && wrapped === fit;
+  const detail = eyebrowDetail
+    ? door.compact || shortened
+      ? eyebrowDetail.short
+      : eyebrowDetail.long
+    : null;
+  // One line on one axis: the date is part of the label, not an aside in another style. The reader
+  // always hears the long date; abbreviations read badly.
   const eyebrowRow = (
-    <View
+    <Text
+      accessibilityRole="header"
+      accessibilityLabel={eyebrowDetail ? `${eyebrow}, ${eyebrowDetail.long}` : undefined}
+      maxFontSizeMultiplier={DOOR_MAX_SCALE}
+      onTextLayout={(event) => {
+        if (eyebrowDetail && detail === eyebrowDetail.long && event.nativeEvent.lines.length > 1) {
+          setWrapped(fit);
+        }
+      }}
       style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        columnGap: space(3),
         marginBottom: space(1),
+        color: colors.muted,
+        fontFamily: displayFontBold,
+        fontSize: type.eyebrow,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
       }}
     >
-      <Text
-        accessibilityRole="header"
-        maxFontSizeMultiplier={DOOR_MAX_SCALE}
-        style={{
-          color: colors.muted,
-          fontFamily: displayFontBold,
-          fontSize: type.eyebrow,
-          letterSpacing: 1.5,
-          textTransform: 'uppercase',
-        }}
-      >
-        {eyebrow}
-      </Text>
-      {trailing}
-    </View>
+      {/* A no-break space: the label never breaks right after «HOY ·». */}
+      {detail ? `${eyebrow}\u00A0· ${detail}` : eyebrow}
+    </Text>
   );
   const headline =
     typeof heading === 'string' ? (

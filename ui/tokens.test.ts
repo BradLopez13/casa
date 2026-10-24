@@ -116,3 +116,16 @@ describe('highContrast', () => {
     expect(highContrast.dark.accentEdge).toBeUndefined();
   });
 });
+
+describe('identidad secundaria (fase 10f)', () => {
+  it('gives the magnets a drawn drop and an inner ring in dark only', () => {
+    expect(palettes.light.magnetDrop).toBe('transparent');
+    expect(palettes.dark.magnetDrop).toBe('rgba(8,12,14,0.75)');
+    expect(palettes.dark.magnetRing).toBe('rgba(8,12,14,0.45)');
+  });
+
+  it('rules the shopping note with a line that shows on the pósit paper', () => {
+    expect(palettes.light.rule).toBe('rgba(46,59,65,0.13)');
+    expect(palettes.dark.rule).toBe(palettes.dark.hairline);
+  });
+});

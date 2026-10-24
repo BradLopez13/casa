@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAGNET_COLORS } from '@/domain/members/marks';
 import { contrastRatio, hueDistance } from './contrast';
-import { toggleLook } from './toggleLook';
+import { magnetSwitchLook } from './magnetSwitchLook';
 import { palettes, shadows, type Scheme } from './tokens';
 
 const AA_TEXT = 4.5;
@@ -122,28 +122,17 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
   const grounds = { page: p.page, note: p.note };
 
   // WCAG 1.4.11: the parts that show a switch and its state need 3:1 against what is around them.
-  it.each(Object.entries(grounds))('off: track, edge and thumb ring on %s', (_, ground) => {
-    const off = toggleLook(false, p, ground);
-    expect(off.track).toBe(ground);
-    expect(contrastRatio(off.trackBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    // The light thumb may vanish on a light ground; its `outline` ring carries it.
-    expect(contrastRatio(off.thumbBorder, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(off.check).toBe(false);
+  it.each(Object.entries(grounds))('off: the ring and the crossed bell on %s', (_, ground) => {
+    const off = magnetSwitchLook(false, p);
+    expect(off.fill).toBe('transparent');
+    expect(contrastRatio(off.edge, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(off.glyphColor, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 
-  it.each(Object.entries(grounds))('on: filled track on %s, thumb on the track', (_, ground) => {
-    const on = toggleLook(true, p, ground);
-    expect(on.track).toBe(p.toggleOn);
-    expect(contrastRatio(on.track, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrastRatio(on.thumb, on.track)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(on.check).toBe(true);
-  });
-
-  it('one polarity: the thumb is light, on and off, and only on fills the track', () => {
-    expect(toggleLook(true, p, p.page).thumb).toBe(p.toggleThumb);
-    expect(toggleLook(false, p, p.page).thumb).toBe(p.toggleThumb);
-    expect(p.toggleThumb).toBe('#F3F4F0');
-    expect(toggleLook(false, p, p.page).track).toBe(p.page);
+  it.each(Object.entries(grounds))('on: the magnet on %s, the bell on the magnet', (_, ground) => {
+    const on = magnetSwitchLook(true, p);
+    expect(contrastRatio(on.fill, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(on.glyphColor, on.fill)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 });
 

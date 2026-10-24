@@ -4,7 +4,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import type { ReminderSettings } from '@/domain/reminders/settings';
 import { useSession } from '@/features/auth/SessionProvider';
 import { t } from '@/i18n';
-import { Toggle } from '@/ui/components/Toggle';
+import { MagnetSwitch } from '@/ui/components/MagnetSwitch';
 import { useTheme } from '@/ui/theme';
 import { displayFontBold, INLINE_PILL_HEIGHT, MIN_TOUCH } from '@/ui/tokens';
 import { switchState } from '@/features/push/permissionState';
@@ -169,11 +169,14 @@ export function ReminderSettingsSection() {
         <Text style={{ color: colors.ink, fontSize: 16, flexShrink: 1 }}>
           {t('settings.remindersToggle')}
         </Text>
-        <Toggle
+        <MagnetSwitch
           testID="settings.reminders.toggle"
           accessibilityLabel={t('settings.remindersToggle')}
-          value={state.disabled ? state.value : on || asking}
-          disabled={asking || state.disabled}
+          // While the phone asks, the switch waits busy at its value: it sticks (and buzzes) only
+          // once the permission is granted.
+          value={state.disabled ? state.value : on}
+          disabled={state.disabled}
+          busy={asking}
           onValueChange={toggle}
         />
       </View>
