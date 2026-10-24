@@ -303,55 +303,64 @@ export function TaskForm({
                   open={open}
                   onOpen={toggle}
                   repeatEditable={repeatEditable}
-                />
-                {/* The open picker, measured as one block so it scrolls into view whole. */}
-                {open !== null ? (
-                  <View key={open} ref={picker} onLayout={() => show(picker.current)}>
-                    {open === 'room' ? (
-                      <RoomPicker
-                        value={values.room}
-                        onChange={(room) => choose('room', { room })}
-                      />
-                    ) : null}
-                    {open === 'assignee' ? (
-                      <AssigneePicker
-                        value={values.assigneeId}
-                        members={members}
-                        marks={marks}
-                        userId={userId}
-                        onChange={(assigneeId) => {
-                          if (assigneeId !== values.assigneeId) choose('assignee', { assigneeId });
-                        }}
-                      />
-                    ) : null}
-                    {open === 'due' ? (
-                      <DayCells
-                        value={values.dueOn}
-                        today={today}
-                        onChange={setDueOn}
-                        noneDisabled={repeating}
-                        past={pastDue}
-                      />
-                    ) : null}
-                    {open === 'repeat' && repeatEditable ? (
-                      <View style={{ gap: space(3) }}>
-                        <RecurrencePicker
-                          value={values.recurrence}
-                          dueOn={values.dueOn ?? today}
-                          onChange={setRecurrence}
-                        />
-                        {nextDate !== null ? (
-                          <Text
-                            testID="task-form.repeat.next"
-                            style={{ color: colors.muted, fontSize: 13 }}
-                          >
-                            {t('taskForm.repeatNext', { date: nextDate })}
-                          </Text>
+                  // The open picker, right under its magnet, measured as one block so it scrolls
+                  // into view whole.
+                  picker={
+                    open !== null ? (
+                      <View
+                        key={open}
+                        ref={picker}
+                        onLayout={() => show(picker.current)}
+                        style={{ paddingBottom: space(3) }}
+                      >
+                        {open === 'room' ? (
+                          <RoomPicker
+                            value={values.room}
+                            onChange={(room) => choose('room', { room })}
+                          />
+                        ) : null}
+                        {open === 'assignee' ? (
+                          <AssigneePicker
+                            value={values.assigneeId}
+                            members={members}
+                            marks={marks}
+                            userId={userId}
+                            onChange={(assigneeId) => {
+                              if (assigneeId !== values.assigneeId)
+                                choose('assignee', { assigneeId });
+                            }}
+                          />
+                        ) : null}
+                        {open === 'due' ? (
+                          <DayCells
+                            value={values.dueOn}
+                            today={today}
+                            onChange={setDueOn}
+                            noneDisabled={repeating}
+                            past={pastDue}
+                          />
+                        ) : null}
+                        {open === 'repeat' && repeatEditable ? (
+                          <View style={{ gap: space(3) }}>
+                            <RecurrencePicker
+                              value={values.recurrence}
+                              dueOn={values.dueOn ?? today}
+                              onChange={setRecurrence}
+                            />
+                            {nextDate !== null ? (
+                              <Text
+                                testID="task-form.repeat.next"
+                                style={{ color: colors.muted, fontSize: 13 }}
+                              >
+                                {t('taskForm.repeatNext', { date: nextDate })}
+                              </Text>
+                            ) : null}
+                          </View>
                         ) : null}
                       </View>
-                    ) : null}
-                  </View>
-                ) : null}
+                    ) : null
+                  }
+                />
               </View>
               {dangerZone}
             </FocusRevealContext.Provider>

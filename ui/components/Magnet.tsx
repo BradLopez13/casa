@@ -32,7 +32,10 @@ type Props = {
   decorative?: boolean;
   /** A ticked box: the magnet fills with the accent and shows the check. Unticked boxes leave it out. */
   check?: MagnetCheck;
-  /** Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member colour. */
+  /**
+   * Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member
+   * colour. An empty magnet draws it inside its bare ring (a property with no value, fase 10f).
+   */
   glyph?: { node: ReactNode; fill: string };
 };
 
@@ -60,7 +63,7 @@ export function Magnet({
   const look = check ? magnetCheckStyle(colors) : null;
   const filledCheck = look !== null;
   const raised = !empty && size !== 'sm';
-  const fill = look?.fill ?? glyph?.fill ?? (empty ? 'transparent' : colors.magnet[color]);
+  const fill = look?.fill ?? (empty ? 'transparent' : (glyph?.fill ?? colors.magnet[color]));
   // Two stacked Views: Android allows one elevation per View, so ambient outside, contact inside.
   const depth = raised ? shadows.magnet : null;
   const showHighlight = raised && !glyph;
@@ -99,7 +102,7 @@ export function Magnet({
           }}
         />
       ) : null}
-      {glyph && !empty && !filledCheck ? glyph.node : null}
+      {glyph && !filledCheck ? glyph.node : null}
       {empty || filledCheck || glyph ? null : (
         <Text
           maxFontSizeMultiplier={1.6}

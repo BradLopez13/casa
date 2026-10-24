@@ -116,4 +116,41 @@ describe('TaskForm', () => {
     save();
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  // Fase 10f: the properties are magnets aligned on the note, not kit pills.
+  it('shows each property as a magnet with its field named over its value', () => {
+    renderForm({ initial: { ...blank, title: 'Barrer', room: 'kitchen' } });
+    const fields = [
+      ['room', 'taskForm.roomLabel', t('rooms.kitchen')],
+      ['assignee', 'taskForm.assigneeLabel', t('taskForm.nobody')],
+      ['repeat', 'taskForm.repeatLabel', t('taskForm.noRepeat')],
+    ] as const;
+    for (const [field, label, value] of fields) {
+      const magnet = screen.getByTestId(`task-form.prop.${field}`);
+      expect(magnet.textContent).toBe(`${t(label)}${value}`);
+      expect(magnet.getAttribute('aria-expanded')).toBe('false');
+    }
+  });
+
+  it('fills the magnet of a property that has a value, and leaves an empty one a bare ring', () => {
+    renderForm({ initial: { ...blank, title: 'Barrer', room: 'kitchen' } });
+    // The disc's fill, wherever the magnet draws it inside its frame.
+    const fill = (field: string) =>
+      [...screen.getByTestId(`task-form.prop.${field}.disc`).querySelectorAll('div')]
+        .map((node) => getComputedStyle(node).backgroundColor)
+        .includes('rgb(46, 59, 65)');
+    expect(fill('room')).toBe(true);
+    expect(fill('repeat')).toBe(false);
+  });
+
+  it('opens a property’s picker right under its magnet, before the next one', () => {
+    renderForm({ initial: { ...blank, title: 'Barrer' } });
+    fireEvent.click(screen.getByTestId('task-form.prop.room'));
+    expect(screen.getByTestId('task-form.prop.room').getAttribute('aria-expanded')).toBe('true');
+    const picker = screen.getByTestId('task-form.room.kitchen');
+    const after = (a: Element, b: Element) =>
+      (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    expect(after(screen.getByTestId('task-form.prop.room'), picker)).toBe(true);
+    expect(after(picker, screen.getByTestId('task-form.prop.assignee'))).toBe(true);
+  });
 });

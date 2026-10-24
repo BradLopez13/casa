@@ -27,7 +27,7 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
 import { PinnedNote } from '@/ui/components/PinnedNote';
-import { PropertyChip } from '@/features/tasks/components/PropertyMagnets';
+import { PropertyMagnet } from '@/features/tasks/components/PropertyMagnets';
 import { Screen } from '@/ui/components/Screen';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
@@ -260,7 +260,8 @@ function EditForm({
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
               {/* The same clean note as a task: the product's icon is the magnet that holds it, the
-                  name is its title, the quantity a property magnet that opens a short field. */}
+                  name is its title, the quantity the same property magnet as a task's, which opens a short
+                  field (fase 10f). */}
               <PinnedNote pin={{ glyph: iconFor(item.normalizedName) }} side="top">
                 <TextField
                   ref={nameRef}
@@ -277,22 +278,20 @@ function EditForm({
                     ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
                   }}
                 />
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                  <PropertyChip
-                    testID="shopping.edit.quantity-chip"
-                    glyph="scale-outline"
-                    label={t('shopping.edit.quantityLabel')}
-                    value={quantity.trim() === '' ? NO_QUANTITY : quantity.trim()}
-                    spoken={
-                      quantity.trim() === ''
-                        ? t('shopping.edit.quantityNone')
-                        : `${t('shopping.edit.quantityLabel')}, ${quantity.trim()}`
-                    }
-                    muted={quantity.trim() === ''}
-                    open={quantityShown}
-                    onPress={() => (quantityOpen ? closeQuantity() : setQuantityOpen(true))}
-                  />
-                </View>
+                <PropertyMagnet
+                  testID="shopping.edit.quantity-chip"
+                  glyph="scale-outline"
+                  label={t('shopping.edit.quantityLabel')}
+                  value={quantity.trim() === '' ? NO_QUANTITY : quantity.trim()}
+                  spoken={
+                    quantity.trim() === ''
+                      ? t('shopping.edit.quantityNone')
+                      : `${t('shopping.edit.quantityLabel')}, ${quantity.trim()}`
+                  }
+                  empty={quantity.trim() === ''}
+                  open={quantityShown}
+                  onPress={() => (quantityOpen ? closeQuantity() : setQuantityOpen(true))}
+                />
                 {/* A short field keeps its label: it is what tells it from the title above. */}
                 {quantityShown ? (
                   <TextField

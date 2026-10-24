@@ -107,6 +107,8 @@ describe('Hoja de producto', () => {
     const chip = screen.getByTestId('shopping.edit.quantity-chip');
     expect(chip.getAttribute('aria-label')).toBe(`${t('shopping.edit.quantityLabel')}, 2`);
     expect(chip.querySelector('[data-icon="scale-outline"]')).not.toBeNull();
+    // Fase 10f: the same property magnet as the task's, its field named over the value.
+    expect(chip.textContent).toBe(`${t('shopping.edit.quantityLabel')}2`);
   });
 
   it('opens with Guardar disabled, and enables it once the name changes', () => {
