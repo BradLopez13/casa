@@ -2,7 +2,8 @@ import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-qu
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TaskItem } from '@/domain/tasks/views';
 import { buildCreateOptions, type CreateVars } from './create';
-import { withQueued } from './pending';
+import { createTask } from './api';
+import { pendingTasks, withQueued } from './pending';
 import { buildToggleOptions } from './toggle';
 
 vi.mock('./api', () => ({ createTask: vi.fn(), completeTask: vi.fn(), reopenTask: vi.fn() }));
@@ -73,5 +74,21 @@ describe('withQueued (fase 10e)', () => {
     await vi.waitFor(() => expect(queryClient.isMutating()).toBe(2));
     const other = [{ ...base, id: 'x' }];
     expect(withQueued(queryClient, 'other', other)).toBe(other);
+  });
+
+  it('still shows a create that reached the server after the list was read', async () => {
+    const queryClient = new QueryClient();
+    queryClient.mount();
+    vi.mocked(createTask).mockResolvedValue('n');
+    queryClient.setQueryData<TaskItem[]>(['tasks', 'h'], [base]);
+    onlineManager.setOnline(false);
+    void new MutationObserver(queryClient, buildCreateOptions(queryClient, vi.fn()))
+      .mutate(created)
+      .catch(() => undefined);
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(1));
+    const before = pendingTasks(queryClient);
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
+    expect(withQueued(queryClient, 'h', [base], before).map((t) => t.id)).toEqual(['a', 'n']);
   });
 });
