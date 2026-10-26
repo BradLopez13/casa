@@ -53,7 +53,16 @@ export function withQueued(
       const target = out.find((task) => task.id === vars.id);
       // Already as the toggle leaves it (the server got it first): nothing to lay on.
       if (!target || (target.completedAt !== null) === vars.done) continue;
-      out = applyToggle(out, vars.id, vars.done, vars.userId, at.toISOString(), localDateIso(at));
+      // The time of the tap (bloque 11), or the queueing for a toggle from an older build.
+      const tapped = vars.at === undefined ? at : new Date(vars.at);
+      out = applyToggle(
+        out,
+        vars.id,
+        vars.done,
+        vars.userId,
+        tapped.toISOString(),
+        localDateIso(tapped),
+      );
     }
   }
   return out;

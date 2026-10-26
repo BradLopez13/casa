@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(14);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 
@@ -12,12 +12,12 @@ values ('00000000-0000-0000-0000-0000000000a1', :'ana', 'owner');
 insert into public.task_series (id, household_id, title, created_by)
 select ('00000000-0000-0000-0000-0000000000e' || i)::uuid,
        '00000000-0000-0000-0000-0000000000a1', 'Tarea ' || i, :'ana'
-from generate_series(1, 6) as i;
+from generate_series(1, 7) as i;
 insert into public.task_occurrences (id, series_id, household_id)
 select ('00000000-0000-0000-0000-0000000000f' || i)::uuid,
        ('00000000-0000-0000-0000-0000000000e' || i)::uuid,
        '00000000-0000-0000-0000-0000000000a1'
-from generate_series(1, 6) as i;
+from generate_series(1, 7) as i;
 insert into public.task_series (id, household_id, title, recurrence_rule, created_by)
 values ('00000000-0000-0000-0000-0000000000e9', '00000000-0000-0000-0000-0000000000a1',
         'Diaria', '{"kind":"interval","every":1}', :'ana');
@@ -71,6 +71,18 @@ select is(
   (select completed_at from public.task_occurrences where id = '00000000-0000-0000-0000-0000000000f5'),
   now(),
   'a clock a little ahead is clamped to now'
+);
+
+-- Too old to trust, with its own old day: it still closes, on today, at now.
+select lives_ok(
+  $$select public.complete_task('00000000-0000-0000-0000-0000000000f7',
+      ((now() - interval '10 days') at time zone 'utc')::date, now() - interval '10 days')$$,
+  'a tap too old to trust is not refused for its old day'
+);
+select is(
+  (select completed_at from public.task_occurrences where id = '00000000-0000-0000-0000-0000000000f7'),
+  now(),
+  'and closes at now'
 );
 
 -- An older build sends no time.

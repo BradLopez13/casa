@@ -1,5 +1,6 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
 import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import type { AppError } from '@/data/supabase/errors';
 import type { TaskInput } from '@/domain/tasks/input';
 import type { TaskItem } from '@/domain/tasks/views';
@@ -54,7 +55,10 @@ export function buildCreateOptions(
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
-    mutationFn: ({ id, householdId, input }) => createTask(id, householdId, input),
+    mutationFn: async ({ id, householdId, input, userId }) => {
+      assertQueuedBy(userId);
+      return createTask(id, householdId, input);
+    },
     onMutate: async (vars) => {
       const key = tasksKey(vars.householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -69,6 +73,7 @@ export function buildCreateOptions(
     // A new id is never on the server before its create: the note goes, also for a create
     // restored after a restart, which has no context.
     onError: async (error, { id, householdId }) => {
+      if (droppedOnSignOut(error)) return;
       queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
         current?.filter((task) => task.id !== id),
       );

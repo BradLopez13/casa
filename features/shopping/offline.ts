@@ -1,4 +1,5 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
+import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
@@ -30,6 +31,8 @@ export type QuantityVars = {
   householdId: string;
   name: string;
   quantity: string | null;
+  /** Who changed it: the change goes as them or not at all (`assertQueuedBy`). */
+  userId?: string;
 };
 export type QuantityContext = { previous: ShoppingItem | undefined };
 
@@ -160,8 +163,10 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
-    mutationFn: ({ id, householdId, name, quantity }) =>
-      addShoppingItem(id, householdId, name, quantity),
+    mutationFn: async ({ id, householdId, name, quantity, userId }) => {
+      assertQueuedBy(userId);
+      return addShoppingItem(id, householdId, name, quantity);
+    },
     onMutate: async (vars) => {
       const { id, householdId } = vars;
       const key = listKey(householdId);
@@ -184,7 +189,8 @@ export function buildShoppingMutationDefaults(
       });
     },
     // Offline the mutation pauses instead of failing, so this is a final error.
-    onError: (_error, { id, householdId, name }, context) => {
+    onError: (error, { id, householdId, name }, context) => {
+      if (droppedOnSignOut(error)) return;
       if (context?.added) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
           current?.filter((i) => i.id !== id),
@@ -201,8 +207,10 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
-    mutationFn: ({ id, householdId, bought: value }) =>
-      setItemBought(resolve(householdId, id), value),
+    mutationFn: async ({ id, householdId, bought: value, userId }) => {
+      assertQueuedBy(userId);
+      return setItemBought(resolve(householdId, id), value);
+    },
     onMutate: async ({ id, householdId, bought: value, userId }) => {
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -214,7 +222,8 @@ export function buildShoppingMutationDefaults(
       return { previous };
     },
     // Roll back only this item's bought state: other changes in flight keep theirs.
-    onError: (_error, { id, householdId }, context) => {
+    onError: (error, { id, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const key = listKey(householdId);
       const target = resolve(householdId, id);
       const previous = context?.previous;
@@ -243,7 +252,8 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity: value }) => {
+    mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
+      assertQueuedBy(userId);
       const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone before its turn: nothing left to change.
       const item = queryClient
@@ -265,6 +275,7 @@ export function buildShoppingMutationDefaults(
     },
     // Roll back only this item's quantity: other changes in flight keep theirs.
     onError: (error, { id, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const previous = context?.previous;
       if (previous) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>

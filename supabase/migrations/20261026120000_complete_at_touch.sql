@@ -6,7 +6,8 @@
 -- last seven days and never in the future (a clock a few minutes ahead is clamped to now);
 -- anything else, or no p_at (an older build), is now() as before. Without a time zone in the
 -- profile, p_today is checked within one day of p_at's UTC date instead of now's, so a tap
--- queued last night still passes when it arrives this morning.
+-- queued last night still passes when it arrives this morning; a tap too old to trust closes
+-- on the server's day rather than being refused.
 
 drop function public.complete_task(uuid, date);
 drop function private.close_occurrence(uuid, date, boolean);
@@ -29,14 +30,15 @@ declare
   v_tz text;
   v_today date;
   v_at timestamptz := now();
+  v_trusted boolean := p_at is not null
+    and p_at >= now() - interval '7 days'
+    and p_at <= now() + interval '5 minutes';
 begin
   if v_user is null then
     raise exception 'NOT_AUTHENTICATED' using errcode = 'P0001';
   end if;
 
-  if p_at is not null
-     and p_at >= now() - interval '7 days'
-     and p_at <= now() + interval '5 minutes' then
+  if v_trusted then
     v_at := least(p_at, now());
   end if;
 
@@ -44,6 +46,8 @@ begin
 
   if v_tz is not null then
     v_today := private.today_for(v_user, v_at);
+  elsif p_at is not null and not v_trusted then
+    v_today := (now() at time zone 'utc')::date;
   else
     if p_today is null or abs(p_today - (v_at at time zone 'utc')::date) > 1 then
       raise exception 'INVALID_TODAY' using errcode = 'P0001';

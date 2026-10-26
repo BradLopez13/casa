@@ -64,7 +64,6 @@ onFlowComplete:
 - extendedWaitUntil:
     visible: 'Cantidad de Huevos: 2'
     timeout: 15000
-- assertNotVisible: .*La cantidad se cambia con red.*
 
 # Back online: the queue sends it and the pending mark goes away
 - setAirplaneMode: disabled

@@ -159,10 +159,6 @@ export function useToggleTask(
 export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;
 
 /**
- * The tasks created here whose create still waits in the queue: they exist only on this phone,
- * so editing, skipping or deleting them would reach a server that does not know them yet.
- */
-/**
  * The tasks with a change waiting for the connection (a create, a complete or a reopen): their
  * done note says «Sin enviar», as a shopping row does (bloque 11). Only while it waits: a change on
  * its way with a connection would flash the mark on every tap.
@@ -179,6 +175,10 @@ export function useWaitingTasks(): ReadonlySet<string> {
   return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
 }
 
+/**
+ * The tasks created here whose create still waits in the queue: they exist only on this phone,
+ * so editing, skipping or deleting them would reach a server that does not know them yet.
+ */
 export function useUnsentTasks(): ReadonlySet<string> {
   const ids = useMutationState({
     filters: { mutationKey: CREATE_KEY, status: 'pending' },

@@ -6,6 +6,7 @@ import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
 import { markFresh } from './freshIds';
@@ -86,10 +87,12 @@ export function buildToggleOptions(
     retryDelay: retryDelayOnNetwork,
     // The moment and the day of the tap: the note keeps its time when it arrives, and the server
     // moves a recurring task on from the day it was marked (bloque 11).
-    mutationFn: ({ id, done, at }) =>
-      done
+    mutationFn: async ({ id, done, at, userId }) => {
+      assertQueuedBy(userId);
+      return done
         ? completeTask(id, localDateIso(at === undefined ? new Date() : new Date(at)), at)
-        : reopenTask(id),
+        : reopenTask(id);
+    },
     onMutate: async ({ id, done, householdId, userId, at }) => {
       const key = tasksKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -106,6 +109,7 @@ export function buildToggleOptions(
     },
     // Roll back only this task and its next occurrence: other toggles in flight keep theirs.
     onError: async (error, { id, done, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const previous = context?.previous;
       const successor = context?.successor;
       // A later toggle of this task still queued (its «Deshacer») already set what it should

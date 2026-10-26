@@ -6,14 +6,20 @@ import { toAppError, type AppError } from '@/data/supabase/errors';
 export const NETWORK_RETRY_MAX_MS = 60_000;
 
 /**
- * A queued change that never reached the server is retried for as long as it takes (retries pause
- * while offline). A connection that hangs without failing (a captive portal, a weak signal in the
- * supermarket) used to spend ten tries in about five minutes and drop the change (bloque 11, T1):
- * a change waits in its queue, and the ones behind it wait with it, rather than being lost. Any
- * answer from the server is final, so only the network keeps a change alive.
+ * How many tries a change that never reached the server gets: a week at a try a minute, the same
+ * week the server trusts the time of a tap queued offline (`complete_task`'s `p_at`).
  */
-export const retryOnNetwork = (_failureCount: number, error: AppError) =>
-  toAppError(error).code === 'NETWORK';
+export const NETWORK_RETRY_LIMIT = (7 * 24 * 60 * 60_000) / NETWORK_RETRY_MAX_MS;
+
+/**
+ * A queued change that never reached the server is retried for up to a week (retries pause while
+ * offline, so a phone without a connection waits as long as it takes). A connection that hangs
+ * without failing (a captive portal, a weak signal in the supermarket) used to spend ten tries in
+ * about five minutes and drop the change (bloque 11, T1); a week keeps it, and still frees the
+ * queue behind it if one request never gets through. Any answer from the server is final.
+ */
+export const retryOnNetwork = (failureCount: number, error: AppError) =>
+  failureCount < NETWORK_RETRY_LIMIT && toAppError(error).code === 'NETWORK';
 
 /** Each try waits twice as long as the last, from 1 s up to a minute. */
 export const retryDelayOnNetwork = (failureCount: number) =>

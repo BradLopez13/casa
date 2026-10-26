@@ -1,5 +1,6 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setSessionUser } from '@/data/query/sessionUser';
 import { AppError } from '@/data/supabase/errors';
 import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, reopenTask } from './api';
@@ -88,6 +89,21 @@ describe('the time of the tap (bloque 11)', () => {
     onlineManager.setOnline(true);
     await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
     expect(completeTask).toHaveBeenCalledWith('a', '2026-10-26', tapped);
+  });
+});
+
+describe('after a sign-out (bloque 11)', () => {
+  afterEach(() => {
+    setSessionUser(undefined);
+  });
+
+  it('never sends a change queued by someone else, and says nothing to the next person', async () => {
+    setSessionUser('someone-else');
+    const { queryClient, notify, run } = setup();
+    queryClient.setQueryData(key, [a]);
+    await run({ id: 'a', done: true }).catch(() => undefined);
+    expect(completeTask).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 });
 

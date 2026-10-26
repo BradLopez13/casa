@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '@/data/supabase/errors';
-import { NETWORK_RETRY_MAX_MS, retryDelayOnNetwork, retryOnNetwork } from './retry';
+import {
+  NETWORK_RETRY_LIMIT,
+  NETWORK_RETRY_MAX_MS,
+  retryDelayOnNetwork,
+  retryOnNetwork,
+} from './retry';
 
 describe('retryOnNetwork', () => {
   // Bloque 11 (T1): a connection that hangs without failing (a captive portal, a weak signal) used
   // to spend ten retries in about five minutes and drop the change. A change that never reached
   // the server is never given up on.
-  it('never gives up on a change that did not reach the server', () => {
+  it('keeps a change that did not reach the server for a week of tries', () => {
     expect(retryOnNetwork(0, new AppError('NETWORK'))).toBe(true);
     expect(retryOnNetwork(10, new AppError('NETWORK'))).toBe(true);
-    expect(retryOnNetwork(1000, new AppError('NETWORK'))).toBe(true);
+    expect(retryOnNetwork(NETWORK_RETRY_LIMIT - 1, new AppError('NETWORK'))).toBe(true);
+    // A request that never gets through frees the queue behind it after a week.
+    expect(retryOnNetwork(NETWORK_RETRY_LIMIT, new AppError('NETWORK'))).toBe(false);
+    expect(NETWORK_RETRY_LIMIT).toBe(10_080);
   });
 
   it('takes any answer from the server as final', () => {
