@@ -39,8 +39,8 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   // The notice just appeared: the next content size carries its padding, and that is when the
   // list knows how far to move.
   const pending = useRef(false);
-  // Where the list was before the nudge, where the nudge takes it, and whether it has got there.
-  const nudged = useRef<{ from: number; to: number; arrived: boolean } | null>(null);
+  // Where the list was before the nudge and where the nudge takes it.
+  const nudged = useRef<{ from: number; to: number } | null>(null);
   // Someone dragged the list while the notice was up: where it is now is theirs.
   const touched = useRef(false);
   // The room at the end as laid out now: it lasts as long as the notice.
@@ -91,44 +91,42 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
     (_width: number, height: number) => {
       content.current = height;
       const was = nudged.current;
-      if (was !== null) {
-        // While the notice lasts the list may change under it (another note done, a refetch):
-        // the room at the end follows, so where the nudge goes stays reachable.
-        // Laid out heights come in fractions of a dp: only a list that came out short asks for
-        // more room, and the room is rounded up, or it would never be «the same» (seen on the .51).
-        const needed = Math.ceil(Math.max(0, was.to - (height - room - viewport.current)));
-        if (needed > room + ROOM_SLACK) {
-          setEndPadding(needed);
+      if (was === null) {
+        if (!pending.current) {
+          // The room an earlier notice asked for goes with it.
+          if (!shown && endPadding !== 0) setEndPadding(0);
           return;
         }
-        if (!was.arrived && !touched.current) {
-          was.arrived = true;
-          scrollTo(was.to);
-        }
-        return;
+        pending.current = false;
       }
-      if (!pending.current) {
-        // The room an earlier notice asked for goes with it.
-        if (!shown && endPadding !== 0) setEndPadding(0);
-        return;
-      }
-      pending.current = false;
+      // Worked out again from where the list was each time it changes while the notice lasts:
+      // a note moving between sections, another one done, a refetch. Reopening from the tray
+      // shrinks the list right after the notice shows, and then nothing needs moving any more.
+      const from = was?.from ?? offset.current;
       const scroll = noticeScroll({
-        offset: offset.current,
+        offset: from,
         viewport: viewport.current,
         content: height - room,
         basePadding,
         door: { height: door.current, slack: DOOR_SLACK },
       });
-      if (scroll === null) return;
-      const arrived = Math.ceil(scroll.extra) <= room + ROOM_SLACK;
-      nudged.current = { from: offset.current, to: scroll.to, arrived };
-      // A new room is laid out first; the list moves once it is there.
-      if (!arrived) {
-        setEndPadding(Math.ceil(scroll.extra));
+      if (scroll === null) {
+        nudged.current = null;
+        if (was !== null && !touched.current && Math.abs(offset.current - from) > 1) {
+          scrollTo(from);
+        }
         return;
       }
-      scrollTo(scroll.to);
+      nudged.current = { from, to: scroll.to };
+      // Laid out heights come in fractions of a dp: the room is rounded up and only grows when
+      // the list came out short, or it would never be «the same» (seen on the .51). The list
+      // moves once the room it needs is there.
+      const needed = Math.ceil(scroll.extra);
+      if (needed > room + ROOM_SLACK) {
+        setEndPadding(needed);
+        return;
+      }
+      if (!touched.current && Math.abs(offset.current - scroll.to) > 1) scrollTo(scroll.to);
     },
     [basePadding, endPadding, room, shown, scrollTo],
   );
