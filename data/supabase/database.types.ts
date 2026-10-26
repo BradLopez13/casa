@@ -278,7 +278,7 @@ isOneToOne: false
                            },
 "preview_invite":
 { Args: { "p_token": string }; Returns: {
-              "already_member": boolean,"household_name": string,"inviter_name": string,"member_count": number
+              "already_member": boolean,"household_id": string,"household_name": string,"inviter_name": string,"member_count": number
             }[]
                            },
 "register_push_token":

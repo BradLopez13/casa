@@ -132,12 +132,19 @@ begin
 end;
 $$;
 
--- preview_invite also says whether you are already in that household, so the invitation can
--- say so before you tap Unirme. Its result type changes, hence drop and create.
+-- preview_invite also says whether you are already in that household, and which one it is, so
+-- the invitation can say so and take you there instead of offering to join. Only the token's
+-- holder learns the id. Its result type changes, hence drop and create.
 drop function public.preview_invite(text);
 
 create function public.preview_invite(p_token text)
-returns table (household_name text, inviter_name text, member_count int, already_member boolean)
+returns table (
+  household_name text,
+  inviter_name text,
+  member_count int,
+  already_member boolean,
+  household_id uuid
+)
 language plpgsql
 stable
 security definer
@@ -185,7 +192,8 @@ begin
       where m.household_id = v_invite.household_id
         and m.user_id = (select auth.uid())
         and m.left_at is null
-    );
+    ),
+    v_invite.household_id;
 end;
 $$;
 

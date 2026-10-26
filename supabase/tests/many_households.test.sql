@@ -122,9 +122,9 @@ select tests.authenticate_as(:'hijo');
 select token as tok_a1 from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
 
 select is(
-  (select already_member from public.preview_invite(:'tok_a1')),
-  true,
-  'preview_invite says you are already in that household'
+  (select already_member::text || ' ' || household_id from public.preview_invite(:'tok_a1')),
+  'true 00000000-0000-0000-0000-0000000000a1',
+  'preview_invite says you are already in that household, and which it is'
 );
 
 select tests.authenticate_as(:'vecina');
