@@ -167,15 +167,14 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           <>
             {/* Measured so the nudge never leaves it cut under the status bar. */}
             <View onLayout={nudge.onDoorLayout}>{door}</View>
-            {/* On a phone on its side the door holds the field, and the pills with it. */}
-            {holdsQuickAdd && pillsInDoor ? null : (
-              <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
-                {holdsQuickAdd ? null : (
-                  <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
-                )}
-                {pillsInDoor ? null : pills}
-              </View>
-            )}
+            <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
+              {/* On a phone on its side the door holds the field. */}
+              {holdsQuickAdd ? null : (
+                <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
+              )}
+              {/* At large text, upright, the pills are in the door beside the magnets. */}
+              {pillsInDoor ? null : pills}
+            </View>
           </>
         }
         // The catalogue waits at the end of Todas: a way to find more, not a layer before the

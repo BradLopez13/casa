@@ -3,7 +3,7 @@ import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
-import { DOOR_MAX_SCALE, stripInDoor } from '../door';
+import { DOOR_MAX_SCALE, LARGE_TEXT, stripInDoor } from '../door';
 import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import { displayFontBold, MIN_TOUCH } from '../tokens';
@@ -71,9 +71,9 @@ type Props = {
    */
   quickAdd?: ReactNode;
   /**
-   * Tareas' day pills. Drawn only where `stripInDoor` brings them in (a compact door in one
-   * column), beside the controls' magnets (under them when there is no room). Anywhere else the
-   * screen draws them at the head of its list.
+   * Tareas' day pills. Drawn only where `stripInDoor` brings them in (a compact door on a phone
+   * held upright), beside the controls' magnets (under them when there is no room). Anywhere else
+   * the screen draws them at the head of its list.
    */
   strip?: ReactNode;
 };
@@ -107,7 +107,7 @@ export function DoorHeader({
   secondary,
   secondaryTestID,
   children,
-  below: belowProp,
+  below,
   quickAdd,
   strip: stripProp,
 }: Props) {
@@ -129,7 +129,10 @@ export function DoorHeader({
   const refreshOpen = useHint('refresh');
   const boxOpen = useHint('complete');
   const quickAddOpen = useHint('quickAdd');
-  const refreshHint = refreshOpen && !boxOpen && !quickAddOpen && handle;
+  // From ×1.3 the quick add's example keeps quiet beside notes (`quickHintShown`): waiting for it
+  // there would keep the handle's hint back for good.
+  const quickAddWaits = quickAddOpen && fontScale < LARGE_TEXT;
+  const refreshHint = refreshOpen && !boxOpen && !quickAddWaits && handle;
   const right = gutter;
 
   // Only a compact door that cannot fit its content scrolls; otherwise its scroll stays off so a
@@ -250,7 +253,6 @@ export function DoorHeader({
     // The day pills, when they come in, go beside the magnets, where the row has room left: the
     // door does not grow for them (bloque 11).
     const aside = stripProp && stripInDoor(door) ? stripProp : null;
-    const below = belowProp;
     // The strip's cells grow with the text (up to the door's cap); past that width the quick add
     // takes a line of its own under the strip.
     const stripMin = STRIP_MIN * Math.min(Math.max(fontScale, 1), DOOR_MAX_SCALE);
@@ -328,7 +330,7 @@ export function DoorHeader({
                           rowGap: space(2),
                         }}
                       >
-                        {children}
+                        <View style={{ flexShrink: 1, maxWidth: '100%' }}>{children}</View>
                         <View
                           style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: ASIDE_MIN }}
                         >
@@ -396,7 +398,7 @@ export function DoorHeader({
         <View style={column}>
           {hierarchy}
           {children ? <View style={{ marginTop: space(5) }}>{children}</View> : null}
-          {belowProp ? <View style={{ marginTop: space(4) }}>{belowProp}</View> : null}
+          {below ? <View style={{ marginTop: space(4) }}>{below}</View> : null}
           {refreshHint ? (
             <View style={{ marginTop: space(4) }}>
               <FirstUseHint

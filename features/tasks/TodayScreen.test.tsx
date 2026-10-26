@@ -264,6 +264,21 @@ describe('Hoy', () => {
     expect(screen.queryByTestId('door.refresh-hint')).toBeNull();
   });
 
+  it('with large text, the door handle hint does not wait for a quick add hint kept quiet', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.3 }));
+    // A tall one-column window: at ×1.3 its door is still the full one, with the handle.
+    windowSize(600, 1100);
+    hintsOpen('refresh', 'quickAdd');
+    renderToday([task('Fregar', {})]);
+    expect(screen.getByTestId('door.refresh-hint')).toBeTruthy();
+    scale.mockRestore();
+    phoneSize();
+  });
+
   it('with large text and an empty list, the quick add hint comes back', async () => {
     const { Dimensions } = await import('react-native');
     const get = Dimensions.get.bind(Dimensions);

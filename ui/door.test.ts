@@ -194,14 +194,11 @@ describe('stripInDoor', () => {
     expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1.3))).toBe(true);
   });
 
-  it('brings them into the door of a phone on its side, above the quick add it holds', () => {
-    expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1))).toBe(true);
-  });
-
   it('leaves them in the list under a full door and above two panes', () => {
     expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1))).toBe(false);
     expect(stripInDoor(doorFor(layoutFor(1143, 686), 686))).toBe(false);
-    // On its side at large text the quick add goes to the list: the pills go with it.
+    // On its side the controls sit beside the headline, with no room left for the pills.
+    expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1))).toBe(false);
     expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1.6))).toBe(false);
   });
 });
