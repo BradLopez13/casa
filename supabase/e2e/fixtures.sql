@@ -23,6 +23,9 @@
 --   wanda@e2e.dev = Wanda, owner of "Piso Wanda", with Xavi (xavi@e2e.dev) (leave-household)
 --   yago@e2e.dev  = Yago, owner of "Piso Yago" (quantity)
 --   hugo@e2e.dev  = Hugo, owner of "Piso Hugo" (help)
+--   zoe@e2e.dev   = Zoe, owner of "Piso Zoe" (several-households: creates a second household,
+--                   switches, invites, sees its licence and joins Yoli's with JOIN_TOKEN)
+--   yoli@e2e.dev  = Yoli, owner of "Piso Yoli" (several-households)
 -- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
 -- The sign-up path itself stays covered by sign-up-create-household, forgot-password and
 -- invite-link-signed-out.
@@ -31,6 +34,7 @@
 --   VALID_TOKEN    = a1 x 24
 --   EXPIRED_TOKEN  = b2 x 24 (expired)
 --   DEEPLINK_TOKEN = c3 x 24
+--   JOIN_TOKEN     = d4 x 24 (to "Piso Yoli", for Zoe, who already has a household)
 
 -- A user GoTrue can sign in: password hash, confirmed email, email identity and the token
 -- columns GoTrue scans as non-null strings. The profile comes from the handle_new_user trigger.
@@ -136,5 +140,17 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('vera@e2e.dev', 'Vera'), 'Piso Vera');
   perform pg_temp.e2e_household(pg_temp.e2e_user('yago@e2e.dev', 'Yago'), 'Piso Yago');
   perform pg_temp.e2e_household(pg_temp.e2e_user('hugo@e2e.dev', 'Hugo'), 'Piso Hugo');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('zoe@e2e.dev', 'Zoe'), 'Piso Zoe');
+  declare
+    v_yoli uuid := pg_temp.e2e_user('yoli@e2e.dev', 'Yoli');
+  begin
+    insert into public.household_invites (household_id, token_hash, created_by, expires_at)
+    values (
+      pg_temp.e2e_household(v_yoli, 'Piso Yoli'),
+      encode(extensions.digest(repeat('d4', 24), 'sha256'), 'hex'),
+      v_yoli,
+      now() + interval '30 days'
+    );
+  end;
 end
 $$;
