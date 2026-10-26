@@ -33,8 +33,13 @@ export function shouldPersistMutation(mutationKey: MutationKey | undefined): boo
  * add or a create is idempotent by id, a bought or a toggle sets an absolute value.
  */
 export const persistDehydrateOptions: DehydrateOptions = {
+  // A list whose last refresh failed (offline) keeps its data: it is kept too, or the next cold
+  // start without a connection would find it gone (bloque 12: the household list after a
+  // switch offline).
   shouldDehydrateQuery: (query) =>
-    shouldPersistQuery(query.queryKey) && query.state.status === 'success',
+    shouldPersistQuery(query.queryKey) &&
+    (query.state.status === 'success' ||
+      (query.state.status === 'error' && query.state.data !== undefined)),
   shouldDehydrateMutation: (mutation) =>
     mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey),
 };
