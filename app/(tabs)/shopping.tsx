@@ -1,6 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import { ActivityIndicator, ScrollView, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
@@ -14,6 +21,8 @@ import {
 } from '@/features/shopping/components/AddItemField';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
+import { toAppError } from '@/data/supabase/errors';
+import { shouldShowStaleBand } from '@/features/tasks/staleBand';
 import {
   BoughtTitle,
   EmptyList,
@@ -33,6 +42,7 @@ import {
 } from '@/features/shopping/queries';
 import {
   listTopStep,
+  shoppingPaneMode,
   shoppingPanes,
   shoppingState,
   type ShoppingState,
@@ -46,10 +56,12 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { useNotice } from '@/ui/components/Notice';
 import { TwoPane } from '@/ui/components/TwoPane';
-import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+import { useNoticeNudge } from '@/ui/useNoticeNudge';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
+import type { SheetRow } from '@/features/shopping/sheetRows';
 import { actionIcons } from '@/ui/actionIcons';
 import { announce } from '@/ui/a11y';
 
@@ -68,7 +80,8 @@ type ShoppingParts = {
   /** Error, loading or empty, ready to place; null once there are rows. */
   stateView: ReactNode;
   sheet: SheetProps;
-  online: boolean;
+  /** The offline band shows: no connection, or a refresh that could not reach the server. */
+  band: boolean;
   /** The door around what each layout puts on it (the field in one column, nothing on two). */
   door: (children: ReactNode) => ReactElement;
   pulling: boolean;
@@ -91,6 +104,15 @@ export default function ShoppingScreen() {
   const setQuantity = useSetQuantity();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
+  // The same band as Hoy and Tareas, also on a Wi-Fi with no internet (bloque 11, N15).
+  const band = shouldShowStaleBand(
+    {
+      hasData: itemsQuery.data !== undefined,
+      isRefetchError: itemsQuery.isRefetchError,
+      errorIsNetwork: toAppError(itemsQuery.error).code === 'NETWORK',
+    },
+    online,
+  );
   // Only the pull gesture shows the refresh indicator, not background refetches.
   const [pulling, setPulling] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
@@ -130,7 +152,13 @@ export default function ShoppingScreen() {
   const changeQuantity = (item: ShoppingItem, quantity: string | null) => {
     if (householdId === undefined || quantity === item.quantity) return;
     // The registered default rolls back and explains a failure, even after this screen is gone.
-    setQuantity.mutate({ id: item.id, householdId, name: item.name, quantity });
+    setQuantity.mutate({
+      id: item.id,
+      householdId,
+      name: item.name,
+      quantity,
+      userId: userId ?? undefined,
+    });
   };
 
   // «Vaciar bolsa» is routine, so it asks nothing: the bag empties at once with «Deshacer», and
@@ -193,7 +221,7 @@ export default function ShoppingScreen() {
         <ErrorText>{shoppingErrorMessage(itemsQuery.error)}</ErrorText>
         <Button
           title={t('errors.retry')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.retry}
           loading={itemsQuery.isFetching}
           onPress={() => void itemsQuery.refetch()}
@@ -237,7 +265,7 @@ export default function ShoppingScreen() {
       onClear: clear,
       onQuantity: changeQuantity,
     },
-    online,
+    band,
     door,
     pulling,
     refresh: () => void refresh(),
@@ -245,7 +273,11 @@ export default function ShoppingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
-      {paneMode(layout) === 'split' ? <ShoppingSplit {...parts} /> : <ShoppingStack {...parts} />}
+      {shoppingPaneMode(layout) === 'split' ? (
+        <ShoppingSplit {...parts} />
+      ) : (
+        <ShoppingStack {...parts} />
+      )}
     </View>
   );
 }
@@ -261,19 +293,29 @@ function ShoppingStack({
   state,
   stateView,
   sheet,
-  online,
+  band,
   door,
   pulling,
   refresh,
 }: ShoppingParts) {
   const { space } = useTheme();
   const column = useOneColumn();
+  // «Bolsa vaciada. Deshacer» keeps its room at the end and never covers the last line, as on Hoy
+  // (bloque 11, A4).
+  const endPadding = useListEndPadding();
+  const listRef = useRef<FlatList<SheetRow>>(null);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.scrollToOffset({ offset: y, animated }),
+  );
   const header = (
     <>
-      {door(<AddItemField entry={entry} />)}
-      {online ? null : <OfflineBand />}
+      {/* Measured so the nudge never leaves it cut under the status bar. */}
+      <View onLayout={nudge.onDoorLayout}>
+        {door(<AddItemField entry={entry} />)}
+        {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+      </View>
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
-      <View style={[column, { paddingTop: space(listTopStep(online)) }]}>{stateView}</View>
+      <View style={[column, { paddingTop: space(listTopStep(!band)) }]}>{stateView}</View>
     </>
   );
   return (
@@ -284,7 +326,9 @@ function ShoppingStack({
         column={column}
         pending={state === 'list' ? pending : NO_ITEMS}
         bought={state === 'list' ? bought : NO_ITEMS}
-        contentContainerStyle={{ paddingBottom: space(10) }}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
+        listRef={listRef}
+        listProps={nudge.listProps}
         {...sheet}
       />
     </FridgeRefresh>
@@ -304,22 +348,32 @@ function ShoppingSplit({
   state,
   stateView,
   sheet,
-  online,
+  band,
   door,
   pulling,
   refresh,
 }: ShoppingParts) {
   const { colors, space } = useTheme();
   const refreshControl = usePaneRefreshControl(pulling, refresh);
+  const endPadding = useListEndPadding();
+  // The notice («Bolsa vaciada. Deshacer») floats over the left pane on a phone on its side: the
+  // pane moves its last line clear of it, as one column does (seen on the .51). The door is
+  // fixed above the panes, so there is no door in the pane to keep whole.
+  const leftRef = useRef<ScrollView>(null);
+  const leftNudge = useNoticeNudge((y, animated) => leftRef.current?.scrollTo({ y, animated }));
   const panes = shoppingPanes(state, pending.length, bought.length);
-  const pane = { paddingTop: space(listTopStep(online)), gap: space(5) };
+  const pane = { paddingTop: space(listTopStep(!band)), gap: space(5) };
 
   return (
     <TwoPane
+      mode="split"
+      leftRef={leftRef}
+      leftScrollProps={leftNudge.listProps}
+      leftEndPadding={leftNudge.endPadding}
       header={
         <>
           {door(null)}
-          {online ? null : <OfflineBand />}
+          {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
         </>
       }
       leftTestID="shopping.pane.pending"
@@ -327,7 +381,8 @@ function ShoppingSplit({
       rightTestID="shopping.pane.bought"
       refreshControl={refreshControl}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: space(10) }}
+      // The notice keeps its room at the end of each pane, so no line stays under it.
+      contentContainerStyle={{ paddingBottom: endPadding }}
       left={
         <View style={pane}>
           <AddItemField entry={entry} />

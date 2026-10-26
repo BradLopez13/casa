@@ -50,7 +50,7 @@ export function SocialButtons() {
   const look = GOOGLE_LOOK[scheme];
   // While the other provider signs in, this one waits as an empty pill with a faded label.
   const waiting = busy !== null && busy !== 'google';
-  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const off = buttonLook('outlined', 'default', 'disabled', colors);
 
   return (
     <View style={{ gap: space(3) }}>

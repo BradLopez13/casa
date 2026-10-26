@@ -1,60 +1,148 @@
-import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
-import type {
-  LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  SectionList,
-} from 'react-native';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useNoticeShown } from './components/noticeContext';
-import { noticeNudge } from './noticeClearance';
+import { NOTICE_CLEARANCE, noticeScroll, wholeDoor } from './noticeClearance';
+import { useReduceMotion } from './a11y';
+import { DOOR_HANDLE_OVERHANG } from './tokens';
 import { useBaseListEndPadding } from './useTabBarClearance';
 
 /** Enough scroll events to know where the list is, without reporting every pixel. */
 const SCROLL_THROTTLE_MS = 100;
+/** Room added at the end beyond what the move needs, for the fractions of a dp in layout. */
+const ROOM_SLACK = 1;
+/** The door's top padding under the status bar (8 dp compact, 12 full): moving less cuts nothing. */
+const DOOR_SLACK = 8;
 
 /**
  * Keeps a tab list's last note in view when a notice pill appears over it («Hecha. Deshacer»
  * drawn on the note just completed). The list grows by the pill's room (`useListEndPadding`);
- * once that new size is laid out, the list scrolls by what the pill had hidden, and no more.
- * Spread the returned props on the `SectionList`.
+ * once that new size is laid out, the list scrolls by what the pill had hidden, and no more,
+ * unless that would leave the door cut under the status bar: then it moves the door out whole,
+ * with room added at the list's end while the notice lasts if the list is too short to get there
+ * (`endPadding`). When the notice goes, a list nobody touched goes back to where it was; one that
+ * was touched stays, unless the shrinking end would clip it into a cut door, and then the door
+ * comes back whole (DESIGN.md, «la puerta nunca se ve partida»).
+ *
+ * The door must be the first thing in the list's header. `scrollList` moves the list (a
+ * SectionList through its scroll responder, a FlatList with `scrollToOffset`). Spread `listProps`
+ * on the list, put `onDoorLayout` on the view around the door and add `endPadding` to the list's
+ * bottom padding.
  */
-export function useNoticeNudge<ItemT, SectionT>(
-  listRef: RefObject<SectionList<ItemT, SectionT> | null>,
-) {
+export function useNoticeNudge(scrollList: (y: number, animated: boolean) => void) {
   const shown = useNoticeShown();
   const basePadding = useBaseListEndPadding();
+  const reduceMotion = useReduceMotion();
+  const [endPadding, setEndPadding] = useState(0);
   const offset = useRef(0);
   const viewport = useRef(0);
+  const content = useRef(0);
+  const door = useRef(0);
   // The notice just appeared: the next content size carries its padding, and that is when the
   // list knows how far to move.
   const pending = useRef(false);
+  // Where the list was before the nudge and where the nudge takes it.
+  const nudged = useRef<{ from: number; to: number } | null>(null);
+  // Someone dragged the list while the notice was up: where it is now is theirs.
+  const touched = useRef(false);
+  // The room at the end as laid out now: it lasts as long as the notice.
+  const room = shown ? endPadding : 0;
+
+  // What the callbacks and the hide read, as they are at that moment.
+  const latest = useRef({ endPadding, scrollList, reduceMotion });
+  useLayoutEffect(() => {
+    latest.current = { endPadding, scrollList, reduceMotion };
+  });
+  const scrollTo = useCallback((y: number) => {
+    latest.current.scrollList(y, !latest.current.reduceMotion);
+  }, []);
+
   useLayoutEffect(() => {
     pending.current = shown;
-  }, [shown]);
+    if (shown) {
+      touched.current = false;
+      return;
+    }
+    const was = nudged.current;
+    nudged.current = null;
+    if (was === null) return;
+    // The end is about to lose the pill's room and any extra: the list must not be clipped into
+    // a cut door by it.
+    const shrunk = content.current - NOTICE_CLEARANCE - latest.current.endPadding;
+    const target = wholeDoor({
+      offset: touched.current ? offset.current : was.from,
+      furthest: Math.max(0, shrunk - viewport.current),
+      door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
+    });
+    if (Math.abs(target - offset.current) > 1) scrollTo(target);
+  }, [shown, scrollTo]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offset.current = e.nativeEvent.contentOffset.y;
   }, []);
+  const onScrollBeginDrag = useCallback(() => {
+    touched.current = true;
+  }, []);
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     viewport.current = e.nativeEvent.layout.height;
   }, []);
+  const onDoorLayout = useCallback((e: LayoutChangeEvent) => {
+    door.current = e.nativeEvent.layout.height;
+  }, []);
   const onContentSizeChange = useCallback(
     (_width: number, height: number) => {
-      if (!pending.current) return;
-      pending.current = false;
-      const nudge = noticeNudge({
-        offset: offset.current,
+      content.current = height;
+      const was = nudged.current;
+      if (was === null) {
+        if (!pending.current) {
+          // The room an earlier notice asked for goes with it.
+          if (!shown && endPadding !== 0) setEndPadding(0);
+          return;
+        }
+        pending.current = false;
+      }
+      // Worked out again from where the list was each time it changes while the notice lasts:
+      // a note moving between sections, another one done, a refetch. Reopening from the tray
+      // shrinks the list right after the notice shows, and then nothing needs moving any more.
+      const from = was?.from ?? offset.current;
+      const scroll = noticeScroll({
+        offset: from,
         viewport: viewport.current,
-        content: height,
+        content: height - room,
         basePadding,
+        // Out whole means the handle too, which sits on the door's edge (seen on the .51).
+        door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
       });
-      if (nudge === 0) return;
-      listRef.current
-        ?.getScrollResponder()
-        ?.scrollTo({ y: offset.current + nudge, animated: true });
+      if (scroll === null) {
+        nudged.current = null;
+        if (was !== null && !touched.current && Math.abs(offset.current - from) > 1) {
+          scrollTo(from);
+        }
+        return;
+      }
+      nudged.current = { from, to: scroll.to };
+      // Laid out heights come in fractions of a dp: the room is rounded up with a dp to spare and
+      // only grows when the list came out short, or it would never be «the same» (seen on the
+      // .51). The list moves once the room it needs is there.
+      const needed = Math.ceil(scroll.extra);
+      if (needed > room) {
+        // A dp to spare, so the list is never clipped just short of the door's edge.
+        setEndPadding(needed + ROOM_SLACK);
+        return;
+      }
+      if (!touched.current && Math.abs(offset.current - scroll.to) > 1) scrollTo(scroll.to);
     },
-    [basePadding, listRef],
+    [basePadding, endPadding, room, shown, scrollTo],
   );
 
-  return { onScroll, scrollEventThrottle: SCROLL_THROTTLE_MS, onLayout, onContentSizeChange };
+  return {
+    listProps: {
+      onScroll,
+      onScrollBeginDrag,
+      scrollEventThrottle: SCROLL_THROTTLE_MS,
+      onLayout,
+      onContentSizeChange,
+    },
+    onDoorLayout,
+    endPadding: room,
+  };
 }

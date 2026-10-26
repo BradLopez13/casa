@@ -5,7 +5,8 @@ import { localDateIso } from '@/domain/tasks/dates';
 import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
-import { retryOnNetwork } from '@/data/query/retry';
+import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
 import { markFresh } from './freshIds';
@@ -13,9 +14,17 @@ import { tasksKey } from './keys';
 
 /**
  * One complete or reopen. The household and the person ride with it, so a toggle queued offline
- * still knows where to land after a restart (fase 10e).
+ * still knows where to land after a restart (fase 10e), and so does the moment of the tap (`at`,
+ * bloque 11): a task marked without a connection keeps that time when it arrives. A toggle
+ * restored from an older build has none and goes as of its sending.
  */
-export type ToggleVars = { id: string; done: boolean; householdId: string; userId: string };
+export type ToggleVars = {
+  id: string;
+  done: boolean;
+  householdId: string;
+  userId: string;
+  at?: string;
+};
 type Context = { previous: TaskItem | undefined; successor: TaskItem | undefined };
 
 export const TOGGLE_KEY = ['tasks', 'toggle'] as const;
@@ -75,16 +84,22 @@ export function buildToggleOptions(
     scope: TASKS_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
-    // The day it is sent: the server moves a recurring task on from the date it is marked.
-    mutationFn: ({ id, done }) =>
-      done ? completeTask(id, localDateIso(new Date())) : reopenTask(id),
-    onMutate: async ({ id, done, householdId, userId }) => {
+    retryDelay: retryDelayOnNetwork,
+    // The moment and the day of the tap: the note keeps its time when it arrives, and the server
+    // moves a recurring task on from the day it was marked (bloque 11).
+    mutationFn: async ({ id, done, at, userId }) => {
+      assertQueuedBy(userId);
+      return done
+        ? completeTask(id, localDateIso(at === undefined ? new Date() : new Date(at)), at)
+        : reopenTask(id);
+    },
+    onMutate: async ({ id, done, householdId, userId, at }) => {
       const key = tasksKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
       const tasks = queryClient.getQueryData<TaskItem[]>(key);
       const previous = tasks?.find((task) => task.id === id);
       const successor = tasks?.find((task) => task.generatedFrom === id);
-      const now = new Date();
+      const now = at === undefined ? new Date() : new Date(at);
       queryClient.setQueryData<TaskItem[]>(key, (current) =>
         current
           ? applyToggle(current, id, done, userId, now.toISOString(), localDateIso(now))
@@ -94,6 +109,7 @@ export function buildToggleOptions(
     },
     // Roll back only this task and its next occurrence: other toggles in flight keep theirs.
     onError: async (error, { id, done, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const previous = context?.previous;
       const successor = context?.successor;
       // A later toggle of this task still queued (its «Deshacer») already set what it should
@@ -140,5 +156,7 @@ export function runToggle(
   // Completed here: its note lands in the tray with the pin choreography.
   if (vars.done) markFresh(vars.id, 'done');
   // The notice already carries the error (onError): nothing else waits on this promise.
-  new MutationObserver(queryClient, options).mutate(vars).catch(() => undefined);
+  new MutationObserver(queryClient, options)
+    .mutate({ ...vars, at: vars.at ?? new Date().toISOString() })
+    .catch(() => undefined);
 }

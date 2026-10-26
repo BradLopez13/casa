@@ -77,7 +77,7 @@ function MembershipError({
         <Button
           testID="membership.retry"
           title={t('errors.retry')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.retry}
           loading={retrying}
           onPress={onRetry}

@@ -46,10 +46,6 @@ export type Palette = {
   onTabBarMuted: string;
   /** The hairline along the top of the tab bar, the door's bottom edge. */
   tabBarEdge: string;
-  /** Fill of the secondary button: a quiet tint that sits on the page, with cobalt text on top. */
-  tonal: string;
-  /** Edge of the secondary pill, for when its fill alone does not show against the ground. */
-  tonalEdge: string;
   /** Only for overdue tasks and irreversible actions, always next to the written word. */
   red: string;
   /** Text and icons on a red fill (the destructive primary button). */
@@ -105,8 +101,6 @@ export const palettes: Record<Scheme, Palette> = {
     onTabBar: '#1E2A2F',
     onTabBarMuted: '#505C63',
     tabBarEdge: 'rgba(30,42,47,0.12)',
-    tonal: '#C3CDCA',
-    tonalEdge: '#69757A',
     red: '#A8342A',
     onRed: '#FFFFFF',
     hairline: '#E3E7E3',
@@ -150,8 +144,6 @@ export const palettes: Record<Scheme, Palette> = {
     onTabBar: '#F3F4F0',
     onTabBarMuted: 'rgba(243,244,240,0.8)',
     tabBarEdge: 'rgba(243,244,240,0.12)',
-    tonal: '#34444B',
-    tonalEdge: '#34444B',
     red: '#F08A80',
     onRed: '#151B1E',
     hairline: '#2C383E',
@@ -231,6 +223,9 @@ export const INLINE_PILL_HEIGHT = 36;
 
 /** Width of the edge on every primary (pósit) button. */
 export const PRIMARY_EDGE = 1.5;
+
+/** How far the door's handle reaches past its bottom edge: it sits on the edge. */
+export const DOOR_HANDLE_OVERHANG = 2;
 
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;

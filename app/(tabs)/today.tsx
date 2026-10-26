@@ -80,7 +80,7 @@ export default function TodayScreen() {
         testID="today.invite"
         title={t('today.empty.cta')}
         // The quick add is this screen's pósit: inviting stays secondary.
-        variant="secondary"
+        variant="outlined"
         icon={actionIcons.invite}
         onPress={() => router.push('/household/members')}
       />
@@ -105,6 +105,7 @@ export default function TodayScreen() {
       assigneeId={userId}
       dueOn={today}
       placeholder={t('today.quickAdd')}
+      hasNotes={sections.length > 0}
     />
   );
   const door = (
@@ -144,25 +145,28 @@ export default function TodayScreen() {
  */
 function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
-  const listStyle = { paddingBottom: useListEndPadding() };
+  const endPadding = useListEndPadding();
   const column = useOneColumn();
   const { holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // «Hecha. Deshacer» must not cover the note it speaks of.
-  const nudge = useNoticeNudge(listRef);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.getScrollResponder()?.scrollTo({ y, animated }),
+  );
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
         ref={listRef}
-        {...nudge}
+        {...nudge.listProps}
         keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <>
-            {door}
+            {/* Measured so the nudge never leaves it cut under the status bar. */}
+            <View onLayout={nudge.onDoorLayout}>{door}</View>
             {/* On a phone on its side the door holds the field. */}
             {holdsQuickAdd ? null : (
               <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
@@ -207,7 +211,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
           </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
-        contentContainerStyle={listStyle}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
       />
     </FridgeRefresh>
   );

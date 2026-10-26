@@ -47,8 +47,6 @@ type Props = {
   icon: ProductIcon;
   /** This row's quantity stepper is the open one. */
   quantityOpen: boolean;
-  /** Quantities change online only. */
-  online: boolean;
   onQuantityOpen: () => void;
   onQuantityClose: () => void;
   onQuantity: (quantity: string | null) => void;
@@ -71,7 +69,6 @@ export function ShoppingRow({
   onOpen,
   icon,
   quantityOpen,
-  online,
   onQuantityOpen,
   onQuantityClose,
   onQuantity,
@@ -244,7 +241,6 @@ export function ShoppingRow({
           name={item.name}
           quantity={item.quantity}
           open={quantityOpen}
-          online={online}
           onOpen={onQuantityOpen}
           onClose={onQuantityClose}
           onCommit={onQuantity}

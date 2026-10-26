@@ -1,3 +1,17 @@
+import type { Layout } from '@/ui/layout';
+import { paneMode, type PaneMode } from '@/ui/panes';
+
+/**
+ * Compra's layout: two panes wherever the app has them, and also on a phone on its side, where one
+ * column showed three lines and left the bag out of view (bloque 11): the note on the left, the
+ * bag on the right, under the compact door.
+ */
+export function shoppingPaneMode(
+  layout: Pick<Layout, 'twoPane' | 'shortHeight' | 'landscape'>,
+): PaneMode {
+  return layout.shortHeight && layout.landscape ? 'split' : paneMode(layout);
+}
+
 /** What the list area shows: a load error with nothing cached, loading, an empty list, or rows. */
 export type ShoppingState = 'error' | 'loading' | 'empty' | 'list';
 

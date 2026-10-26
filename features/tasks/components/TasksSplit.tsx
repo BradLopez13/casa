@@ -80,7 +80,7 @@ export function TasksSplit({
       }
       right={
         <>
-          <DayQuickAdd screen={screen} day={day} />
+          <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
           {sections.length > 0 ? (
             <>
               <TaskSections sections={sections} {...rows} />

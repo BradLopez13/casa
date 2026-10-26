@@ -1,4 +1,5 @@
 import {
+  onlineManager,
   useMutation,
   useMutationState,
   useQuery,
@@ -6,7 +7,7 @@ import {
   type MutateOptions,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
@@ -25,6 +26,7 @@ import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
 import { pendingTasks, withQueued } from './pending';
 import { CREATE_KEY, type CreateVars } from './create';
+import { isQueuedTaskMutation } from './offline';
 
 export { tasksKey };
 
@@ -156,6 +158,28 @@ export function useToggleTask(
 
 /** What a screen asks for: the household and the person come from the hook. */
 export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;
+
+/**
+ * The tasks with a change waiting for the connection (a create, a complete or a reopen): their
+ * done note says «Sin enviar», as a shopping row does (bloque 11). Only while it waits: a change on
+ * its way with a connection would flash the mark on every tap.
+ */
+export function useWaitingTasks(): ReadonlySet<string> {
+  const ids = useMutationState({
+    filters: {
+      status: 'pending',
+      // Paused also means waiting its turn in the queue's scope: only without a connection is
+      // it waiting for the connection.
+      predicate: (m) =>
+        m.state.isPaused &&
+        !onlineManager.isOnline() &&
+        isQueuedTaskMutation(m.options.mutationKey),
+    },
+    select: (m) => (m.state.variables as { id?: string } | undefined)?.id ?? '',
+  });
+  const key = ids.filter((id) => id !== '').join('\n');
+  return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
+}
 
 /**
  * The tasks created here whose create still waits in the queue: they exist only on this phone,

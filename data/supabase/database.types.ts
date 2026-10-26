@@ -209,7 +209,7 @@ isOneToOne: false
 { Args: { "p_household_id": string }; Returns: undefined
                            },
 "complete_task":
-{ Args: { "p_id": string,"p_today": string }; Returns: undefined
+{ Args: { "p_at"?: string,"p_id": string,"p_today": string }; Returns: undefined
                            },
 "create_household":
 { Args: { "p_name": string }; Returns: string

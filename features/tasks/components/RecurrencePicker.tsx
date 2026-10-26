@@ -135,7 +135,7 @@ function StepButton({
 }) {
   const { colors, radii } = useTheme();
   // At its limit the step keeps its solid outline and fades its sign: dashed is paused.
-  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const off = buttonLook('outlined', 'default', 'disabled', colors);
   return (
     <Pressable
       testID={testID}

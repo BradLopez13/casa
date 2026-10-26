@@ -36,10 +36,23 @@ const members: Member[] = [
 ];
 
 /** Ajustes with the membership cached; `cached` members, or loaded through `listMembers`. */
-function renderSettings(cached?: Member[]) {
+function renderSettings(cached?: Member[], queued = 0) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
+  // Changes waiting for the connection, as the shopping queue leaves them.
+  if (queued > 0) onlineManager.setOnline(false);
+  for (let i = 0; i < queued; i += 1) {
+    void queryClient
+      .getMutationCache()
+      .build(queryClient, {
+        mutationKey: ['shopping', 'add'],
+        networkMode: 'online',
+        mutationFn: () => Promise.resolve(),
+      })
+      .execute({ id: `q${i}` })
+      .catch(() => undefined);
+  }
   queryClient.setQueryData(membershipKey, membership);
   if (cached) queryClient.setQueryData(membersKey('h'), cached);
   render(
@@ -57,6 +70,25 @@ beforeEach(() => {
 });
 
 describe('Ajustes', () => {
+  // Bloque 11 (T2): signing out wipes the queue from the phone, so it says so first.
+  it('signing out with changes not sent yet says they would be lost, and offers to wait', async () => {
+    renderSettings(members, 2);
+    fireEvent.click(screen.getByTestId('settings.sign-out'));
+    expect(await screen.findByText(t('auth.signOutUnsent', { count: 2 }))).toBeTruthy();
+    expect(screen.getByTestId('members.confirm').getAttribute('aria-label')).toBe(
+      t('auth.signOutAnyway'),
+    );
+    expect(screen.getByTestId('members.cancel').getAttribute('aria-label')).toBe(
+      t('auth.signOutWait'),
+    );
+  });
+
+  it('signing out with nothing waiting asks as always', () => {
+    renderSettings(members);
+    fireEvent.click(screen.getByTestId('settings.sign-out'));
+    expect(screen.getByText(t('auth.signOutMessage'))).toBeTruthy();
+  });
+
   it('with the household loaded, Borrar mi cuenta is there with no excuse and no band', () => {
     renderSettings(members);
     expect(screen.queryByTestId('settings.members-error')).toBeNull();

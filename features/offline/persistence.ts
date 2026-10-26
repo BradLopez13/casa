@@ -20,7 +20,7 @@ export function shouldPersistQuery(queryKey: QueryKey): boolean {
   return PERSISTED_QUERIES.has(queryKey[0]);
 }
 
-/** Only the queued shopping and task mutations survive a restart. */
+/** Only the queued shopping (add, bought, quantity) and task mutations survive a restart. */
 export function shouldPersistMutation(mutationKey: MutationKey | undefined): boolean {
   return isQueuedShoppingMutation(mutationKey) || isQueuedTaskMutation(mutationKey);
 }

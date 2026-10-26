@@ -2,16 +2,28 @@
 import { onlineManager } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 
-/** How many times a queued change is resent when the request never reached the server. */
-export const NETWORK_RETRIES = 10;
+/** The longest wait between two tries of a change that has not reached the server. */
+export const NETWORK_RETRY_MAX_MS = 60_000;
 
 /**
- * A request that never reached the server is retried (retries pause while offline), with the
- * default backoff capped at 30 s. The cap keeps one stuck change from holding its queue, and with
- * it every later change, forever. Any other error is final.
+ * How many tries a change that never reached the server gets: a week at a try a minute, the same
+ * week the server trusts the time of a tap queued offline (`complete_task`'s `p_at`).
+ */
+export const NETWORK_RETRY_LIMIT = (7 * 24 * 60 * 60_000) / NETWORK_RETRY_MAX_MS;
+
+/**
+ * A queued change that never reached the server is retried for up to a week (retries pause while
+ * offline, so a phone without a connection waits as long as it takes). A connection that hangs
+ * without failing (a captive portal, a weak signal in the supermarket) used to spend ten tries in
+ * about five minutes and drop the change (bloque 11, T1); a week keeps it, and still frees the
+ * queue behind it if one request never gets through. Any answer from the server is final.
  */
 export const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRIES && toAppError(error).code === 'NETWORK';
+  failureCount < NETWORK_RETRY_LIMIT && toAppError(error).code === 'NETWORK';
+
+/** Each try waits twice as long as the last, from 1 s up to a minute. */
+export const retryDelayOnNetwork = (failureCount: number) =>
+  Math.min(1000 * 2 ** failureCount, NETWORK_RETRY_MAX_MS);
 
 /** A failed load is tried once more, and not at all without a connection (fase 10e). */
 export const retryOnceOnline = (failureCount: number) =>

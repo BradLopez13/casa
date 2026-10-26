@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { listTopStep, shoppingPanes, shoppingState } from './shoppingPanes';
+import { layoutFor } from '@/ui/layout';
+import { listTopStep, shoppingPaneMode, shoppingPanes, shoppingState } from './shoppingPanes';
 
 describe('shoppingState', () => {
   it('shows the error only while nothing has loaded', () => {
@@ -59,5 +60,18 @@ describe('listTopStep', () => {
   it('closes up under the offline band', () => {
     expect(listTopStep(true)).toBe(6);
     expect(listTopStep(false)).toBe(2);
+  });
+});
+
+// Bloque 11 (11.5): on a phone on its side Compra showed three lines and the bag fell out of view.
+describe('shoppingPaneMode', () => {
+  it('puts the bag beside the note on a phone on its side', () => {
+    expect(shoppingPaneMode(layoutFor(817, 375))).toBe('split');
+    expect(shoppingPaneMode(layoutFor(932, 430))).toBe('split');
+  });
+
+  it('keeps one column on a phone held upright, and two panes where there always were', () => {
+    expect(shoppingPaneMode(layoutFor(375, 817))).toBe('stack');
+    expect(shoppingPaneMode(layoutFor(1280, 800))).toBe('split');
   });
 });

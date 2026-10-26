@@ -1,4 +1,5 @@
 import { quickParse, type QuickParseContext } from '@/domain/tasks/quick-parse';
+import { LARGE_TEXT } from '@/ui/door';
 
 /** A run of the hint's example: `known` when the quick add would pick it out. */
 export type HintSegment = { text: string; known: boolean };
@@ -30,4 +31,23 @@ export function hintName(
 ): string | null {
   const other = members.find((m) => m.id !== userId) ?? members[0];
   return other?.name.trim().split(/\s+/)[0] ?? null;
+}
+
+/**
+ * Whether the quick add's example shows under the empty field. At the default text it shows until
+ * used. From ×1.3 two lines of example cost the second note in view (bloque 11): it keeps quiet
+ * while the list has notes, whatever hint the list has, and comes back with the list empty, where
+ * it is the only one. It is always in «Cómo funciona Nido».
+ */
+export function quickHintShown({
+  open,
+  fontScale,
+  hasNotes,
+}: {
+  open: boolean;
+  fontScale: number;
+  hasNotes: boolean;
+}): boolean {
+  if (!open) return false;
+  return fontScale < LARGE_TEXT || !hasNotes;
 }

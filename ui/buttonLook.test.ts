@@ -40,23 +40,14 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
     expect(contrastRatio(p.ink, p.taskNote)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('disables an outlined button like a secondary one', () => {
+  it('disables an outlined button like a primary one', () => {
     expect(buttonLook('outlined', 'default', 'disabled', p)).toEqual(
-      buttonLook('secondary', 'default', 'disabled', p),
+      buttonLook('primary', 'default', 'disabled', p),
     );
   });
 
   it('never makes an outlined button destructive', () => {
     expect(() => buttonLook('outlined', 'destructive', 'enabled', p)).toThrow();
-  });
-
-  it('draws a secondary button as a tonal pill with its edge', () => {
-    expect(buttonLook('secondary', 'default', 'enabled', p)).toEqual({
-      fill: p.tonal,
-      border: p.tonalEdge,
-      foreground: p.cobalt,
-      labelOpacity: 1,
-    });
   });
 
   it('draws a tertiary button as bare text', () => {
@@ -74,7 +65,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
     });
   });
 
-  it.each(['primary', 'secondary'] as const)(
+  it.each(['primary', 'outlined'] as const)(
     'draws a disabled %s as an empty pill with a solid edge and a faded label',
     (variant) => {
       // Dashed means paused (a switch the phone turned off), never disabled.
@@ -96,7 +87,7 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
     });
   });
 
-  it.each(['primary', 'secondary', 'tertiary'] as const)(
+  it.each(['primary', 'outlined', 'tertiary'] as const)(
     'keeps the look of enabled while a %s is busy',
     (variant) => {
       expect(buttonLook(variant, 'default', 'busy', p)).toEqual(
@@ -104,10 +95,6 @@ describe.each<Scheme>(['light', 'dark'])('buttonLook (%s)', (scheme) => {
       );
     },
   );
-
-  it('refuses a destructive secondary button', () => {
-    expect(() => buttonLook('secondary', 'destructive', 'enabled', p)).toThrow();
-  });
 
   it.each([p.page, p.door, p.note])('disabled text stays readable on %s', (ground) => {
     // The faded label, as it lands on the ground, still reads.
@@ -121,7 +108,7 @@ describe('buttonMetrics', () => {
   it('underlines only the tertiary label', () => {
     expect(buttonMetrics('tertiary').underline).toBe(true);
     expect(buttonMetrics('primary').underline).toBe(false);
-    expect(buttonMetrics('secondary').underline).toBe(false);
+    expect(buttonMetrics('outlined').underline).toBe(false);
   });
 
   it('sizes each level', () => {
@@ -133,7 +120,7 @@ describe('buttonMetrics', () => {
       iconSize: 20,
       underline: false,
     });
-    expect(buttonMetrics('secondary')).toEqual({
+    expect(buttonMetrics('outlined')).toEqual({
       minHeight: 44,
       fontSize: 15,
       paddingV: 10,

@@ -91,7 +91,7 @@ export function PropertyMagnet({
   const { fontScale } = useWindowDimensions();
   // A magnet that cannot open fades as a disabled control does: its `outline` ring stays whole and
   // only its glyph and words fade; dashed is paused, never this.
-  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const off = buttonLook('outlined', 'default', 'disabled', colors);
   const fade = { opacity: disabled ? off.labelOpacity : 1 };
   const bare = empty || disabled;
   const disc = children ?? (

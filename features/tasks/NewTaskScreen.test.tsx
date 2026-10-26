@@ -71,6 +71,7 @@ function renderNew() {
       </NoticeProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 const titleField = () => screen.getByTestId<HTMLInputElement>('task-form.title');
@@ -85,23 +86,26 @@ beforeEach(() => {
 });
 
 describe('Nueva tarea', () => {
-  it('opens empty, with Guardar and Cancelar named and Guardar ready', () => {
+  it('opens empty, with Guardar and Cancelar named and Guardar waiting for a title', () => {
     renderNew();
     expect(screen.getAllByText(t('taskForm.newTitle')).length).toBeGreaterThan(0);
     expect(titleField().value).toBe('');
     expect(titleField().getAttribute('placeholder')).toBe(t('taskForm.titlePlaceholder'));
-    const save = screen.getByRole('button', { name: t('taskForm.save') });
-    expect(save.getAttribute('aria-disabled')).not.toBe('true');
+    // A pósit that does nothing contradicts «pósit es hacer» (bloque 11): it waits, saying why.
+    const save = screen.getByTestId('task-form.save');
+    expect(save.getAttribute('aria-disabled')).toBe('true');
+    expect(save.getAttribute('aria-label')).toBe(
+      `${t('taskForm.save')}. ${t('taskForm.titleRequired')}`,
+    );
     expect(screen.getByRole('button', { name: t('taskForm.cancel') })).toBeTruthy();
     // A new task has nothing to complete, skip or delete.
     expect(screen.queryByTestId('task-form.delete')).toBeNull();
     expect(screen.queryByTestId('task-form.complete')).toBeNull();
   });
 
-  it('without a title, does not save and says why', () => {
+  it('without a title, does not save', () => {
     renderNew();
     fireEvent.click(screen.getByTestId('task-form.save'));
-    expect(screen.getByTestId('task-form.error').textContent).toBe(t('taskForm.titleRequired'));
     expect(createTask).not.toHaveBeenCalled();
   });
 
@@ -113,6 +117,32 @@ describe('Nueva tarea', () => {
     expect(vi.mocked(createTask).mock.calls[0]?.[1]).toBe('h');
     expect(vi.mocked(createTask).mock.calls[0]?.[2]).toMatchObject({ title: 'Regar' });
     await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
+  });
+
+  // Bloque 11: the «+» of Tareas' «Todas» opens it without a date.
+  it('opened for no day starts the task without a date', () => {
+    nav.params = { due: 'none' };
+    renderNew();
+    expect(screen.getByTestId('task-form.prop.due').textContent).toContain(t('tasks.due.none'));
+    nav.params = {};
+  });
+
+  // Bloque 11 (T6): the form now has a way in, so it queues like the quick add: offline it closes
+  // at once with the note on the list, and the create waits for the connection.
+  it('offline, saves into the queue and closes at once', async () => {
+    onlineManager.setOnline(false);
+    const queryClient = renderNew();
+    fireEvent.change(titleField(), { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('task-form.save'));
+    await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
+    expect(createTask).not.toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(
+        queryClient.getQueryData<{ title: string }[]>(tasksKey('h'))?.map((task) => task.title),
+      ).toEqual(['Regar']),
+    );
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
   });
 
   it('a link that names someone and a day starts the task for them that day', async () => {

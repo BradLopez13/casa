@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { forgetCachedData } from '@/data/query/persist';
+import { setSessionUser } from '@/data/query/sessionUser';
 import { supabase } from '@/data/supabase/client';
 import { setTelemetryUser } from '@/data/telemetry/sentry';
 
@@ -21,6 +22,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const userId = session?.user.id ?? null;
       setTelemetryUser(userId);
+      // A change queued by whoever signed out is never sent as the next person (bloque 11).
+      setSessionUser(userId);
       setState((prev) => {
         const status = userId ? 'signed-in' : 'signed-out';
         return prev.status === status && prev.userId === userId ? prev : { status, userId };

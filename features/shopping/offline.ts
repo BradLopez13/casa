@@ -1,5 +1,6 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
-import { offlineFirstQueryOptions, retryOnNetwork } from '@/data/query/retry';
+import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
@@ -30,6 +31,8 @@ export type QuantityVars = {
   householdId: string;
   name: string;
   quantity: string | null;
+  /** Who changed it: the change goes as them or not at all (`assertQueuedBy`). */
+  userId?: string;
 };
 export type QuantityContext = { previous: ShoppingItem | undefined };
 
@@ -43,14 +46,17 @@ export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: b
 }
 
 /**
- * The queued shopping mutations, add and bought: theirs are the only shopping mutation functions
- * registered (as defaults) before the cache is restored, so only they survive a restart
- * (`features/offline/persistence.ts`).
+ * The queued shopping mutations, add, bought and the quantity: theirs are the only shopping
+ * mutation functions registered (as defaults) before the cache is restored, so only they survive
+ * a restart (`features/offline/persistence.ts`). A quantity is an absolute value, so sending it
+ * again is safe (bloque 11: offline it was queued but lost on a restart).
  */
 export function isQueuedShoppingMutation(mutationKey: MutationKey | undefined): boolean {
   return (
     mutationKey?.[0] === 'shopping' &&
-    (mutationKey[1] === addKey[1] || mutationKey[1] === boughtKey[1])
+    (mutationKey[1] === addKey[1] ||
+      mutationKey[1] === boughtKey[1] ||
+      mutationKey[1] === quantityKey[1])
   );
 }
 
@@ -116,8 +122,6 @@ export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Prom
 /** The shopping list and its history load offline first (`offlineFirstQueryOptions`). */
 export const shoppingQueryOptions = offlineFirstQueryOptions;
 
-export { NETWORK_RETRIES } from '@/data/query/retry';
-
 export function buildShoppingMutationDefaults(
   queryClient: QueryClient,
   notify: (message: string) => void,
@@ -158,8 +162,11 @@ export function buildShoppingMutationDefaults(
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
     retry: retryOnNetwork,
-    mutationFn: ({ id, householdId, name, quantity }) =>
-      addShoppingItem(id, householdId, name, quantity),
+    retryDelay: retryDelayOnNetwork,
+    mutationFn: async ({ id, householdId, name, quantity, userId }) => {
+      assertQueuedBy(userId);
+      return addShoppingItem(id, householdId, name, quantity);
+    },
     onMutate: async (vars) => {
       const { id, householdId } = vars;
       const key = listKey(householdId);
@@ -182,7 +189,8 @@ export function buildShoppingMutationDefaults(
       });
     },
     // Offline the mutation pauses instead of failing, so this is a final error.
-    onError: (_error, { id, householdId, name }, context) => {
+    onError: (error, { id, householdId, name }, context) => {
+      if (droppedOnSignOut(error)) return;
       if (context?.added) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>
           current?.filter((i) => i.id !== id),
@@ -198,8 +206,11 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
-    mutationFn: ({ id, householdId, bought: value }) =>
-      setItemBought(resolve(householdId, id), value),
+    retryDelay: retryDelayOnNetwork,
+    mutationFn: async ({ id, householdId, bought: value, userId }) => {
+      assertQueuedBy(userId);
+      return setItemBought(resolve(householdId, id), value);
+    },
     onMutate: async ({ id, householdId, bought: value, userId }) => {
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -211,7 +222,8 @@ export function buildShoppingMutationDefaults(
       return { previous };
     },
     // Roll back only this item's bought state: other changes in flight keep theirs.
-    onError: (_error, { id, householdId }, context) => {
+    onError: (error, { id, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const key = listKey(householdId);
       const target = resolve(householdId, id);
       const previous = context?.previous;
@@ -231,14 +243,17 @@ export function buildShoppingMutationDefaults(
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
 
-  // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Online
-  // only and not persisted, like the other edits, but retried when the request never got there.
+  // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Without a
+  // connection it waits in the queue like an add or a bought, and is kept on the device with it
+  // (bloque 11: «sin red, lo cotidiano se encola»).
   const quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext> = {
     mutationKey: quantityKey,
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity: value }) => {
+    retryDelay: retryDelayOnNetwork,
+    mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
+      assertQueuedBy(userId);
       const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone before its turn: nothing left to change.
       const item = queryClient
@@ -260,6 +275,7 @@ export function buildShoppingMutationDefaults(
     },
     // Roll back only this item's quantity: other changes in flight keep theirs.
     onError: (error, { id, householdId }, context) => {
+      if (droppedOnSignOut(error)) return;
       const previous = context?.previous;
       if (previous) {
         queryClient.setQueryData<ShoppingItem[]>(listKey(householdId), (current) =>

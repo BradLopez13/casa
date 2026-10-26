@@ -256,7 +256,7 @@ function CreateStep({ onCreated }: { onCreated: () => void }) {
       <Button
         testID="onboarding.join"
         title={t('onboarding.join')}
-        variant="secondary"
+        variant="outlined"
         icon={actionIcons.join}
         width="full"
         onPress={submitJoin}

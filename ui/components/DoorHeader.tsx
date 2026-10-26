@@ -3,7 +3,7 @@ import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
-import { DOOR_MAX_SCALE } from '../door';
+import { DOOR_MAX_SCALE, LARGE_TEXT, stripInDoor } from '../door';
 import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import { displayFontBold, MIN_TOUCH } from '../tokens';
@@ -70,10 +70,18 @@ type Props = {
    * (`Door.holdsQuickAdd`, a phone on its side); anywhere else the screen draws it under the door.
    */
   quickAdd?: ReactNode;
+  /**
+   * Tareas' day pills. Drawn only where `stripInDoor` brings them in (a compact door on a phone
+   * held upright), beside the controls' magnets (under them when there is no room). Anywhere else
+   * the screen draws them at the head of its list.
+   */
+  strip?: ReactNode;
 };
 
 /** Below this the children wrap under the headline instead of squeezing beside it. */
 const COMPACT_CHILDREN_MIN = 240;
+/** Two day pills beside the magnets; with less room the pills go under them. */
+const ASIDE_MIN = 150;
 /** Seven one-line day cells («lun 18») side by side: below this the quick add wraps under them. */
 const STRIP_MIN = 360;
 
@@ -101,6 +109,7 @@ export function DoorHeader({
   children,
   below,
   quickAdd,
+  strip: stripProp,
 }: Props) {
   const { colors, radii, space } = useTheme();
   const insets = useSafeAreaInsets();
@@ -120,7 +129,10 @@ export function DoorHeader({
   const refreshOpen = useHint('refresh');
   const boxOpen = useHint('complete');
   const quickAddOpen = useHint('quickAdd');
-  const refreshHint = refreshOpen && !boxOpen && !quickAddOpen && handle;
+  // From ×1.3 the quick add's example keeps quiet beside notes (`quickHintShown`): waiting for it
+  // there would keep the handle's hint back for good.
+  const quickAddWaits = quickAddOpen && fontScale < LARGE_TEXT;
+  const refreshHint = refreshOpen && !boxOpen && !quickAddWaits && handle;
   const right = gutter;
 
   // Only a compact door that cannot fit its content scrolls; otherwise its scroll stays off so a
@@ -238,6 +250,9 @@ export function DoorHeader({
     // On a phone on its side the quick add comes into the door: beside the strip when there is
     // one (Tareas), under the controls otherwise (Hoy).
     const inDoor = door.holdsQuickAdd && quickAdd ? quickAdd : null;
+    // The day pills, when they come in, go beside the magnets, where the row has room left: the
+    // door does not grow for them (bloque 11).
+    const aside = stripProp && stripInDoor(door) ? stripProp : null;
     // The strip's cells grow with the text (up to the door's cap); past that width the quick add
     // takes a line of its own under the strip.
     const stripMin = STRIP_MIN * Math.min(Math.max(fontScale, 1), DOOR_MAX_SCALE);
@@ -305,7 +320,26 @@ export function DoorHeader({
                       minWidth: COMPACT_CHILDREN_MIN,
                     }}
                   >
-                    {children}
+                    {aside ? (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                          columnGap: space(4),
+                          rowGap: space(2),
+                        }}
+                      >
+                        <View style={{ flexShrink: 1, maxWidth: '100%' }}>{children}</View>
+                        <View
+                          style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: ASIDE_MIN }}
+                        >
+                          {aside}
+                        </View>
+                      </View>
+                    ) : (
+                      children
+                    )}
                     {inDoor && !below ? (
                       <View style={{ marginTop: children ? space(2) : 0 }}>{inDoor}</View>
                     ) : null}

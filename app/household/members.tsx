@@ -231,7 +231,7 @@ export default function MembersScreen() {
     <Button
       testID="members.copy-link"
       title={t('members.copyLink')}
-      variant="secondary"
+      variant="outlined"
       icon={actionIcons.copyLink}
       width="hug"
       loading={action === 'copy'}

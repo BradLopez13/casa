@@ -48,3 +48,25 @@ appId: com.bradlopez13.casa
     visible: Para hoy
     timeout: 20000
 - assertVisible: Completar «Regar las plantas»
+
+# With the field empty, the «+» opens the full form for today and for me (bloque 11)
+- tapOn:
+    id: today.quick-add.submit
+- extendedWaitUntil:
+    visible:
+      id: task-form.title
+    timeout: 10000
+- assertVisible: Nueva tarea
+# The form starts with the context: today, and for me
+- assertVisible:
+    id: task-form.prop.due
+    text: 'Cuándo, Hoy'
+- assertVisible:
+    id: task-form.prop.assignee
+    text: '.*Tú.*'
+- tapOn:
+    id: task-form.cancel
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 10000

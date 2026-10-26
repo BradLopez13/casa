@@ -122,13 +122,11 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
 
   it('counts the default and conditional primaries', () => {
     expect(primaries('<Button title="a" />\n<Button title="b" variant="tertiary" />')).toBe(1);
-    expect(primaries("<Button\n  title=\"a\"\n  variant={x ? 'secondary' : 'primary'}\n/>")).toBe(
-      1,
-    );
+    expect(primaries("<Button\n  title=\"a\"\n  variant={x ? 'outlined' : 'primary'}\n/>")).toBe(1);
     expect(primaries('<Button title="a" />\n<Button title="b" variant="primary" />')).toBe(2);
     expect(primaries("buttonLook('primary', 'default', 'idle', colors)")).toBe(1);
     // The arrow in onPress does not cut the tag before its variant.
-    expect(primaries('<Button onPress={() => go()} variant="secondary" />')).toBe(0);
+    expect(primaries('<Button onPress={() => go()} variant="outlined" />')).toBe(0);
     expect(primaries('<Button onPress={() => go()} title="a" />')).toBe(1);
   });
 
@@ -170,12 +168,13 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect([...headed, ...titled]).toEqual([]);
   });
 
-  // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is secondary,
-  // or the red primary when it destroys.
+  // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is the
+  // outlined secondary, or the red primary when it destroys, with Cancelar outlined then.
   it('the confirm dialog never draws the pósit', () => {
     const text = read('ui/components/ConfirmDialog.tsx');
     expect(text).not.toMatch(/variant="primary"/);
-    expect(text).toMatch(/variant=\{content\.destructive \? 'primary' : 'secondary'\}/);
+    expect(text).toMatch(/variant=\{content\.destructive \? 'primary' : 'outlined'\}/);
+    expect(text).toMatch(/variant=\{content\.destructive \? 'outlined' : 'tertiary'\}/);
     expect(text).toMatch(/tone=\{content\.destructive \? 'destructive' : 'default'\}/);
   });
 
@@ -277,10 +276,13 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(offenders(sources, (line) => /glyph=\{\{\s*node:\s*null/.test(line))).toEqual([]);
   });
 
-  // Fase 10a: in every edit sheet Save waits dimmed until something changes.
-  it('edit sheets keep Save dimmed until something changes', () => {
+  // Fase 10a, widened in bloque 11: in every sheet with Save, Save waits dimmed until there is
+  // something to save (a change in an edit sheet, a title in a new task).
+  it('sheets with Save keep it dimmed until there is something to save', () => {
     expect(read('app/shopping/[id].tsx')).toMatch(/canSave = [^;]*\bdirty\b/);
-    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(/disabled=\{!isNew && !dirty\}/);
+    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(
+      /disabled=\{!hasTitle \|\| \(!isNew && !dirty\)\}/,
+    );
   });
 
   // Fase 10a: the quantity reads the same in the list and in the product sheet, with the scale
@@ -330,5 +332,33 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(read('features/shopping/components/ShoppingSheet.tsx')).toMatch(/colors\.rule\b/);
     expect(read('app/(tabs)/today.tsx')).toMatch(/eyebrowDetail=/);
     expect(read('ui/components/DoorHeader.tsx')).not.toMatch(/\btrailing\b/);
+  });
+
+  // Bloque 11 (11.3): what looks off is off. The tonal pill read as disabled on paper, in a note
+  // and in a dialog, so the secondary action always has an edge (`outlined`) and the tonal is gone.
+  it('no tonal secondary: a secondary action has an edge', () => {
+    expect(offenders(sources, (line) => /['"]secondary['"]/.test(line))).toEqual([]);
+    expect(read('ui/tokens.ts')).not.toMatch(/\btonal\b/);
+    expect(read('app/household/members.tsx')).toMatch(/variant="outlined"/);
+  });
+
+  // Bloque 11 (11.1): the door is never seen cut. A list that moves for a notice measures its door
+  // and takes the room the move needs, and the status bar's veil fades out instead of slicing
+  // through whatever scrolls under it.
+  it('never leaves the door cut under the status bar', () => {
+    const nudging = sources.filter((f) => /useNoticeNudge\(/.test(read(f)));
+    expect(nudging.length).toBeGreaterThan(0);
+    for (const file of nudging) {
+      // The measured view holds the door (`{door…}`) and opens the list's header (`ListHeaderComponent`
+      // or Compra's `header`): the door starts at the list's top.
+      expect(read(file), file).toMatch(
+        /(ListHeaderComponent=\{|const header = \()\s*<>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<View onLayout=\{nudge\.onDoorLayout\}>\s*\{door/,
+      );
+      expect(read(file), file).toMatch(/nudge\.endPadding/);
+    }
+    // Compra's measured `header` is the list's header.
+    expect(read('app/(tabs)/shopping.tsx')).toMatch(/header=\{header\}/);
+    expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);
+    expect(read('ui/components/FridgeRefresh.tsx')).toMatch(/height: VEIL_FADE/);
   });
 });

@@ -6,7 +6,6 @@ import { canStep, quantityStep, stepQuantity } from '@/domain/shopping/quantity'
 import { markHintSeen } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
-import { useNotice } from '@/ui/components/Notice';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
@@ -32,7 +31,6 @@ type Props = {
   quantity: string | null;
   /** The sheet keeps one stepper open at a time. */
   open: boolean;
-  online: boolean;
   onOpen: () => void;
   onClose: () => void;
   /** A new quantity to save; the screen skips it when it is the one already there. */
@@ -54,7 +52,6 @@ export function QuantityPill({
   name,
   quantity,
   open,
-  online,
   onOpen,
   onClose,
   onCommit,
@@ -63,7 +60,6 @@ export function QuantityPill({
 }: Props) {
   const { colors, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
-  const notify = useNotice();
   const { fontScale } = useWindowDimensions();
   const [draft, setDraft] = useState<string | null>(quantity);
   const unsaved = useRef(false);
@@ -151,20 +147,13 @@ export function QuantityPill({
       onEdit();
       return;
     }
-    if (!online) {
-      notify(t('shopping.quantity.offline'));
-      return;
-    }
+    // Without a connection it changes all the same: the save waits in the queue (bloque 11).
     markHintSeen('quantity');
     onOpen();
   };
 
   // A screen reader changes it in place, one swipe at a time, and hears the new value.
   const adjust = (delta: 1 | -1) => {
-    if (!online) {
-      notify(t('shopping.quantity.offline'));
-      return;
-    }
     if (!canStep(quantity, delta)) return;
     markHintSeen('quantity');
     const next = stepQuantity(quantity, delta);

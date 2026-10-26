@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DOOR_HEADLINE_MAX_SCALE, DOOR_MAX_SCALE, DOOR_TYPE, doorFor } from './door';
+import { DOOR_HEADLINE_MAX_SCALE, DOOR_MAX_SCALE, DOOR_TYPE, doorFor, stripInDoor } from './door';
 import { layoutFor } from './layout';
 
 describe('DOOR_TYPE', () => {
@@ -180,5 +180,25 @@ describe('doorFor', () => {
     const noteTitle = 17 * 2;
     expect(DOOR_TYPE.compact.heading * DOOR_HEADLINE_MAX_SCALE).toBeGreaterThan(noteTitle);
     expect(DOOR_TYPE.full.heading * DOOR_HEADLINE_MAX_SCALE).toBeGreaterThan(noteTitle);
+  });
+});
+
+describe('stripInDoor', () => {
+  // Bloque 11 (11.2): at ×1.6 on the .51 the quick add, its hint and the day pills stacked about
+  // 250 dp between the door and the first note, so two notes of four lines (a title on two, the
+  // room, «De días anteriores» on two) no longer fitted. With the hint quiet and the pills beside
+  // the magnets only the quick add stays above the first note.
+  it('brings the day pills into the compact door of a phone held upright at large text', () => {
+    expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1.6))).toBe(true);
+    expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 2))).toBe(true);
+    expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1.3))).toBe(true);
+  });
+
+  it('leaves them in the list under a full door and above two panes', () => {
+    expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1))).toBe(false);
+    expect(stripInDoor(doorFor(layoutFor(1143, 686), 686))).toBe(false);
+    // On its side the controls sit beside the headline, with no room left for the pills.
+    expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1))).toBe(false);
+    expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1.6))).toBe(false);
   });
 });

@@ -156,10 +156,29 @@ describe('Compra', () => {
   it('offline, shows the band and keeps the list; «Vaciar bolsa» waits for the connection', () => {
     onlineManager.setOnline(false);
     renderShopping([item('Pan', { boughtAt: '2026-10-21T08:00:00.000Z', boughtBy: 'me' })]);
+    // The same words as Hoy and Tareas (bloque 11, N15).
     expect(screen.getByTestId('shopping.offline').getAttribute('aria-label')).toBe(
-      t('shopping.offline'),
+      t('offline.showingLast'),
     );
-    expect(screen.getByTestId('shopping.clear').getAttribute('aria-disabled')).toBe('true');
+    const clear = screen.getByTestId('shopping.clear');
+    expect(clear.getAttribute('aria-disabled')).toBe('true');
+    // What looks off says why it waits (bloque 11), on screen and to the reader.
+    expect(screen.getByTestId('shopping.clear-why').textContent).toBe(t('shopping.clearNeedsNet'));
+    expect(clear.getAttribute('aria-label')).toBe(
+      `${t('shopping.clear')}. ${t('shopping.clearWaits')}`,
+    );
+  });
+
+  // Bloque 11 (11.5): on a phone on its side the bag goes beside the note, in view.
+  it('on a phone on its side, puts the bag beside the note', () => {
+    windowSize(817, 375);
+    renderShopping([
+      item('Leche'),
+      item('Pan', { boughtAt: '2026-10-21T08:00:00.000Z', boughtBy: 'me' }),
+    ]);
+    expect(screen.getByTestId('shopping.pane.pending')).toBeTruthy();
+    expect(screen.getByTestId('shopping.pane.bought')).toBeTruthy();
+    windowSize(400, 860);
   });
 
   it('online, there is no offline band', () => {

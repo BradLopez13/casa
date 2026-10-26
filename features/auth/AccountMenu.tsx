@@ -102,7 +102,8 @@ export function AccountMenu({
             <Button
               testID="account-menu.close"
               title={t('account.close')}
-              variant="secondary"
+              // Closing the menu is quieter than what the menu offers.
+              variant="tertiary"
               width="full"
               onPress={close}
             />

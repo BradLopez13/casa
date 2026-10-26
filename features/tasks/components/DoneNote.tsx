@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -19,11 +20,13 @@ type Props = {
   byYou: boolean;
   /** YYYY-MM-DD, to say "ayer" or the date for a task done another day. */
   today: string;
+  /** Marked without a connection and still waiting to be sent (bloque 11). */
+  unsent: boolean;
   onReopen: (task: TaskItem) => void;
 };
 
 /** A finished task as a compact note; its filled magnet hangs on the left edge and tapping reopens it. */
-export function DoneNote({ task, mark, name, byYou, today, onReopen }: Props) {
+export function DoneNote({ task, mark, name, byYou, today, unsent, onReopen }: Props) {
   const { colors, noteEdge, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   // Only a task completed in this session arrives; the rest of the tray is simply there.
@@ -38,7 +41,9 @@ export function DoneNote({ task, mark, name, byYou, today, onReopen }: Props) {
     : name
       ? t('tasks.a11y.reopenBy', { title: task.title, name })
       : t('tasks.a11y.reopen', { title: task.title });
-  const label = when === null ? reopen : `${reopen}, ${when}`;
+  const label = [reopen, when, unsent ? t('shopping.pending').toLowerCase() : null]
+    .filter((part) => part !== null)
+    .join(', ');
   return (
     <Animated.View
       // It arrives from the list on the same spring the note left it with.
@@ -109,6 +114,20 @@ export function DoneNote({ task, mark, name, byYou, today, onReopen }: Props) {
               {when}
             </Text>
           )}
+          {/* The same mark as a shopping row waiting for the connection; the time it shows is
+              the tap's, and it stays when the change arrives. Always in the tree, folded to no
+              width when sent: inserting it into a note that is still laying itself out (a tap
+              right after a quick add) crashed Fabric's mounting on Android. */}
+          <View
+            testID={unsent ? `done-tray.${task.id}.pending` : undefined}
+            accessible={unsent}
+            accessibilityElementsHidden={!unsent}
+            importantForAccessibility={unsent ? 'yes' : 'no-hide-descendants'}
+            accessibilityLabel={unsent ? t('shopping.pending') : undefined}
+            style={{ alignSelf: 'center', width: unsent ? 16 : 0, overflow: 'hidden' }}
+          >
+            <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
+          </View>
         </View>
       </Pressable>
     </Animated.View>

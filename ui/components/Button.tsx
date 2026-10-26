@@ -18,9 +18,9 @@ type Props = {
   testID?: string;
   loading?: boolean;
   disabled?: boolean;
-  /** primary: the one main action. secondary: a tonal pill. tertiary: bare text. */
+  /** primary: the one main action. outlined: the secondary one, with an edge. tertiary: text. */
   variant?: ButtonVariant;
-  /** destructive swaps cobalt for red; not available on secondary. */
+  /** destructive swaps cobalt for red; not available on outlined. */
   tone?: ButtonTone;
   /** Drawn before the label; hidden from screen readers, which hear the title. */
   icon?: ActionIcon;
@@ -30,6 +30,11 @@ type Props = {
   flush?: boolean;
   /** `menuitem` inside a menu (`MemberMenu`); a button anywhere else. */
   role?: 'button' | 'menuitem';
+  /**
+   * What a disabled button waits for, said after its title («Guardar. Escribe qué hay que
+   * hacer»): what looks off says why (bloque 11).
+   */
+  waitingFor?: string;
 };
 
 export function Button({
@@ -44,6 +49,7 @@ export function Button({
   width = 'hug',
   flush = false,
   role = 'button',
+  waitingFor,
 }: Props) {
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -61,14 +67,12 @@ export function Button({
       <Pressable
         testID={testID}
         accessibilityRole={role}
-        accessibilityLabel={title}
+        accessibilityLabel={disabled && waitingFor ? `${title}. ${waitingFor}` : title}
         aria-disabled={inactive}
         aria-busy={loading}
         disabled={inactive}
         onPress={onPress}
-        hitSlop={
-          variant === 'secondary' || variant === 'outlined' ? { top: 2, bottom: 2 } : undefined
-        }
+        hitSlop={variant === 'outlined' ? { top: 2, bottom: 2 } : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({

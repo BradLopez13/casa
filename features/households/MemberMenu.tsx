@@ -117,7 +117,8 @@ export function MemberMenu({ userId, name, onMakeOwner, onRemove }: Props) {
             <Button
               testID={`members.menu.${userId}.close`}
               title={t('account.close')}
-              variant="secondary"
+              // Closing the menu is quieter than what the menu offers.
+              variant="tertiary"
               width="full"
               onPress={close}
             />

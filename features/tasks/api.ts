@@ -105,8 +105,38 @@ export async function deleteTask(id: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('delete_task', { p_id: id }));
 }
 
-export async function completeTask(id: string, today: string): Promise<void> {
+/**
+ * Marks a task done as of `at`, the moment of the tap (bloque 11), on the caller's `today`. A
+ * database without that migration answers that no such function takes `p_at` (PostgREST
+ * PGRST202): then it goes as before, timed on arrival.
+ */
+export async function completeTask(id: string, today: string, at?: string): Promise<void> {
+  if (at !== undefined) {
+    const result = await callOrNetwork(
+      supabase.rpc('complete_task', { p_id: id, p_today: today, p_at: at }),
+    );
+    if (!isMissingSignature(result.error)) {
+      if (result.error) throw toAppError(result.error);
+      return;
+    }
+  }
   await unwrapMaybe(supabase.rpc('complete_task', { p_id: id, p_today: today }));
+}
+
+/** PostgREST's answer when no function matches the arguments sent. */
+function isMissingSignature(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'PGRST202'
+  );
+}
+
+/** The result of a call, or the AppError of a request that failed to go. */
+async function callOrNetwork<D>(promise: Result<D>): Promise<{ data: D; error: unknown }> {
+  try {
+    return await promise;
+  } catch (e) {
+    throw toAppError(e);
+  }
 }
 
 export async function skipTask(id: string, today: string): Promise<void> {

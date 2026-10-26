@@ -230,6 +230,27 @@ describe('Hoy', () => {
     expect(createTask).toHaveBeenCalledTimes(1);
   });
 
+  // Bloque 11 (11.6): with the field empty the «+» opens the full form, for today and for you.
+  it('with the field empty, the «+» opens the new task form for today and for you', () => {
+    vi.mocked(router.push).mockClear();
+    renderToday([task('Fregar', {})]);
+    const add = screen.getByTestId('today.quick-add.submit');
+    expect(add.getAttribute('aria-label')).toBe(t('tasks.a11y.addMore'));
+    fireEvent.click(add);
+    expect(vi.mocked(router.push)).toHaveBeenCalledWith({
+      pathname: '/task/new',
+      params: { due: today, assignee: 'me' },
+    });
+  });
+
+  it('with something typed, the «+» adds it and is named so', () => {
+    renderToday([task('Fregar', {})]);
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    expect(screen.getByTestId('today.quick-add.submit').getAttribute('aria-label')).toBe(
+      t('tasks.a11y.addButton'),
+    );
+  });
+
   it('offers task ideas when there is nothing to do today', () => {
     renderToday([task('Planchar', { dueOn: addDays(today, 3) })]);
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();
@@ -241,6 +262,17 @@ describe('Hoy', () => {
     fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
     // Sent when the connection is back (fase 10e): no warning, the usual notice.
     expect(screen.getByText(t('tasks.done'))).toBeTruthy();
+  });
+
+  it('offline, the done note says it is not sent yet, as a shopping row does (bloque 11)', async () => {
+    renderToday([task('Fregar', {})]);
+    onlineManager.setOnline(false);
+    fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
+    const mark = await screen.findByTestId('done-tray.Fregar.pending');
+    expect(mark.getAttribute('aria-label')).toBe(t('shopping.pending'));
+    expect(screen.getByTestId('done-tray.Fregar').getAttribute('aria-label')).toContain(
+      t('shopping.pending').toLowerCase(),
+    );
   });
 
   it('keeps the door handle hint back while the box one shows', () => {
@@ -264,7 +296,34 @@ describe('Hoy', () => {
     expect(screen.queryByTestId('door.refresh-hint')).toBeNull();
   });
 
-  it('with large text, the quick add hint waits for the list one', async () => {
+  it('with large text, the door handle hint does not wait for a quick add hint kept quiet', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.3 }));
+    // A tall one-column window: at ×1.3 its door is still the full one, with the handle.
+    windowSize(600, 1100);
+    hintsOpen('refresh', 'quickAdd');
+    renderToday([task('Fregar', {})]);
+    expect(screen.getByTestId('door.refresh-hint')).toBeTruthy();
+    scale.mockRestore();
+    phoneSize();
+  });
+
+  it('with large text and an empty list, the quick add hint comes back', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.6 }));
+    hintsOpen('quickAdd', 'complete');
+    renderToday([]);
+    expect(screen.getByTestId('today.quick-add.hint')).toBeTruthy();
+    scale.mockRestore();
+  });
+
+  it('with large text and notes, the quick add hint keeps quiet', async () => {
     const { Dimensions } = await import('react-native');
     const get = Dimensions.get.bind(Dimensions);
     const scale = vi

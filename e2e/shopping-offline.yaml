@@ -52,6 +52,19 @@ onFlowComplete:
     id: shopping.item.*.pending
 - hideKeyboard
 
+# Change its quantity offline (bloque 11): it changes at once and waits in the queue
+- tapOn:
+    id: shopping.item.*.quantity
+- extendedWaitUntil:
+    visible:
+      id: shopping.item.*.quantity.stepper
+    timeout: 5000
+- tapOn:
+    id: shopping.item.*.quantity.more
+- extendedWaitUntil:
+    visible: 'Cantidad de Huevos: 2'
+    timeout: 15000
+
 # Back online: the queue sends it and the pending mark goes away
 - setAirplaneMode: disabled
 - extendedWaitUntil:
@@ -71,4 +84,7 @@ onFlowComplete:
     duration: 800
 - extendedWaitUntil:
     visible: Huevos
+    timeout: 20000
+- extendedWaitUntil:
+    visible: 'Cantidad de Huevos: 2'
     timeout: 20000

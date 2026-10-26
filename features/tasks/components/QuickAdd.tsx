@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   Platform,
@@ -30,18 +31,21 @@ import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
 import { useDoorCompact } from '@/ui/components/doorContext';
-import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
 import { newTaskId } from '../api';
 import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
-import { hintName, quickHintSegments } from '../quickHint';
+import { hintName, quickHintSegments, quickHintShown } from '../quickHint';
 import { buildCreateOptions } from '../create';
+import { NO_DATE } from '../dueParam';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
+/** A second tap on the «+» within this opens no second form. */
+const OPEN_FORM_GUARD_MS = 1000;
 const CHIP_HEIGHT = 32;
 
 const KIND_ICONS = {
@@ -56,6 +60,13 @@ type Props = {
   assigneeId: string | null;
   dueOn: string | null;
   placeholder: string;
+  /** Whether the list under it shows notes: from ×1.3 the example then keeps quiet. */
+  hasNotes: boolean;
+  /**
+   * Who the full form starts with when the «+» opens it from an empty field: by default the
+   * person the field writes for; Tareas passes null (bloque 11).
+   */
+  formAssigneeId?: string | null;
   testID: string;
 };
 
@@ -87,7 +98,16 @@ function chipLabel(
  * chip leaves those words in the title. Anything not written lands on the given day for the given
  * person, and the field stays ready for the next one.
  */
-export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }: Props) {
+export function QuickAdd({
+  householdId,
+  assigneeId,
+  dueOn,
+  placeholder,
+  hasNotes,
+  formAssigneeId = assigneeId,
+  testID,
+}: Props) {
+  const router = useRouter();
   const { colors, radii, space } = useTheme();
   const notify = useNotice();
   const today = useToday();
@@ -112,11 +132,9 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const parse = useMemo(() => quickParse(text, ctx), [text, ctx]);
   // Until a task goes in with something the field understood, the empty field shows an example.
   const quickAddOpen = useHint('quickAdd');
-  const boxOpen = useHint('complete');
-  const swipeOpen = useHint('swipe');
-  // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
+  // With large text it keeps quiet while there are notes: two of them in view come first.
   const { fontScale } = useWindowDimensions();
-  const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
+  const hintOpen = quickHintShown({ open: quickAddOpen, fontScale, hasNotes });
   // In a compact door (a phone on its side) the field shares a narrow column: the example is a
   // short one, on one line, so it is never cut half way (fase 10a).
   const inCompactDoor = useDoorCompact();
@@ -141,6 +159,18 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
     latest.current = next;
     setText(next);
     if (next.trim() === '') setDisabled(new Set());
+  };
+
+  // With the field empty the «+» opens the full form, with the day and the person of the context:
+  // the form had no way in, and the button did nothing (bloque 11).
+  const openedAt = useRef(-Infinity);
+  const openForm = () => {
+    const now = Date.now();
+    if (now - openedAt.current < OPEN_FORM_GUARD_MS) return;
+    openedAt.current = now;
+    const params: { due: string; assignee?: string } = { due: dueOn ?? NO_DATE };
+    if (formAssigneeId !== null) params.assignee = formAssigneeId;
+    router.push({ pathname: '/task/new', params });
   };
 
   const send = () => {
@@ -221,8 +251,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
             // A task title, not a name or an address: no autofill suggestions over the field.
             autoComplete="off"
             placeholder={placeholder}
-            // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
-            // el miércoles…») wrapped and was cut, or ran under the «+».
+            // One line under the door, capped like it: at ×2 the placeholder («Tarea para ti, el
+            // miércoles…») wrapped and was cut, or ran under the «+».
             maxFontSizeMultiplier={DOOR_MAX_SCALE}
             accessibilityLabel={placeholder}
             placeholderTextColor={colors.muted}
@@ -236,10 +266,10 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
         <Pressable
           testID={`${testID}.submit`}
           accessibilityRole="button"
-          accessibilityLabel={t('tasks.a11y.addButton')}
+          accessibilityLabel={t(text.trim() === '' ? 'tasks.a11y.addMore' : 'tasks.a11y.addButton')}
           // The circle is 40 dp inside the pill; the slop brings the touch area to 44 dp.
           hitSlop={space(1)}
-          onPress={send}
+          onPress={() => (latest.current.trim() === '' ? openForm() : send())}
           style={({ pressed }) => ({
             width: ADD_SIZE,
             height: ADD_SIZE,

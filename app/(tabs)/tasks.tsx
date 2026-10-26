@@ -19,6 +19,7 @@ import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
+import { stripInDoor } from '@/ui/door';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
@@ -109,13 +110,28 @@ export default function TasksScreen() {
  */
 function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }: TasksParts) {
   const { space } = useTheme();
-  const listStyle = { paddingBottom: useListEndPadding() };
+  const endPadding = useListEndPadding();
   const column = useOneColumn();
-  const { holdsQuickAdd } = useDoor();
+  const doorLook = useDoor();
+  const { holdsQuickAdd } = doorLook;
+  // In a compact door the pills come in, so only the quick add stands above the first note.
+  const pillsInDoor = stripInDoor(doorLook);
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
+  const pills = (
+    <DayPills
+      days={strip}
+      today={today}
+      chosen={day}
+      names={screen.names}
+      onSelect={chooseDay}
+      bleed={pillsInDoor ? 'right' : 'both'}
+    />
+  );
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // «Hecha. Deshacer» must not cover the note it speaks of.
-  const nudge = useNoticeNudge(listRef);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.getScrollResponder()?.scrollTo({ y, animated }),
+  );
 
   const door = (
     <>
@@ -123,7 +139,8 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
         eyebrow={t('tasks.title')}
         heading={t('tasks.allHeadline')}
         secondary={doorLine}
-        quickAdd={<DayQuickAdd screen={screen} day={day} />}
+        quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
+        strip={pills}
       >
         <MemberFilter
           members={members}
@@ -143,24 +160,22 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
         ref={listRef}
-        {...nudge}
+        {...nudge.listProps}
         keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <>
-            {door}
+            {/* Measured so the nudge never leaves it cut under the status bar. */}
+            <View onLayout={nudge.onDoorLayout}>{door}</View>
             <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
               {/* On a phone on its side the door holds the field. */}
-              {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={day} />}
-              <DayPills
-                days={strip}
-                today={today}
-                chosen={day}
-                names={screen.names}
-                onSelect={chooseDay}
-              />
+              {holdsQuickAdd ? null : (
+                <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
+              )}
+              {/* At large text, upright, the pills are in the door beside the magnets. */}
+              {pillsInDoor ? null : pills}
             </View>
           </>
         }
@@ -213,7 +228,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
-        contentContainerStyle={listStyle}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
       />
     </FridgeRefresh>
   );

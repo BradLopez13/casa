@@ -92,6 +92,7 @@ export function TaskForm({
   const { colors, radii, noteEdge, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
+  const twoColumns = density.columns === 2;
   const { scroll, reveal, show } = useRevealFocusedField();
   const more = useMoreBelow();
   const picker = useRef<View>(null);
@@ -118,6 +119,7 @@ export function TaskForm({
   const [opened] = useState(initial);
   const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
   const dirty = isDirty(opened, typed) || isDirty(opened, values);
+  const hasTitle = values.title.trim() !== '';
   const { requestClose, dialog } = useDiscardGuard({ dirty, onCancel, busy: saving });
   const [triedSave, setTriedSave] = useState(false);
   const titleRef = useRef<TextInput>(null);
@@ -207,6 +209,51 @@ export function TaskForm({
   // as on the shopping sheet.
   const hasEdge = noteEdge.borderWidth > 0;
 
+  // The open magnet's picker: right under its magnet, or under both columns on a phone on its
+  // side, where the magnets' column was too narrow for a week of days (bloque 11).
+  const pickerNode =
+    open !== null ? (
+      <View key={open} style={{ paddingTop: space(2), paddingBottom: space(3) }}>
+        {open === 'room' ? (
+          <RoomPicker value={values.room} onChange={(room) => choose('room', { room })} />
+        ) : null}
+        {open === 'assignee' ? (
+          <AssigneePicker
+            value={values.assigneeId}
+            members={members}
+            marks={marks}
+            userId={userId}
+            onChange={(assigneeId) => {
+              if (assigneeId !== values.assigneeId) choose('assignee', { assigneeId });
+            }}
+          />
+        ) : null}
+        {open === 'due' ? (
+          <DayCells
+            value={values.dueOn}
+            today={today}
+            onChange={setDueOn}
+            noneDisabled={repeating}
+            past={pastDue}
+          />
+        ) : null}
+        {open === 'repeat' && repeatEditable ? (
+          <View style={{ gap: space(3) }}>
+            <RecurrencePicker
+              value={values.recurrence}
+              dueOn={values.dueOn ?? today}
+              onChange={setRecurrence}
+            />
+            {nextDate !== null ? (
+              <Text testID="task-form.repeat.next" style={{ color: colors.muted, fontSize: 13 }}>
+                {t('taskForm.repeatNext', { date: nextDate })}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    ) : null;
+
   return (
     <>
       <SafeAreaView edges={edges} style={[fill, { backgroundColor: colors.page }]}>
@@ -246,6 +293,8 @@ export function TaskForm({
           >
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
+              {/* On a phone on its side the title and the properties go side by side: in one
+                  column the sheet showed the title and a single property (bloque 11). */}
               <View
                 style={{
                   padding: space(4),
@@ -256,108 +305,90 @@ export function TaskForm({
                   borderColor: hasEdge ? noteEdge.borderColor : colors.hairline,
                 }}
               >
-                <View style={{ gap: space(2) }}>
-                  <TextField
-                    ref={titleRef}
-                    bare
-                    testID="task-form.title"
-                    label={t('taskForm.titleLabel')}
-                    placeholder={t('taskForm.titlePlaceholder')}
-                    value={typed.title}
-                    onChangeText={(text) =>
-                      setTyped((current) => ({ ...current, title: oneLineTitle(text) }))
-                    }
-                    // On a short window the keyboard would hide the rest of the note, so there
-                    // the field waits for a tap.
-                    autoFocus={isNew && density.autoFocusTitle}
-                    maxLength={200}
-                    // A task title: no autofill suggestions over the note.
-                    autoComplete="off"
-                    returnKeyType="done"
-                    // Wraps instead of scrolling sideways: with large text a long title showed only
-                    // its end. Return still submits, so a title never gets a line break.
-                    multiline
-                    submitBehavior="blurAndSubmit"
-                    // The keyboard's check mark takes the same path as Save.
-                    onSubmitEditing={() => {
-                      if (!saving) save();
-                    }}
-                    error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
-                    inputStyle={{
-                      // The example («Sacar la basura») at the regular weight, so it never
-                      // reads as a title already typed.
-                      fontFamily: typed.title === '' ? displayFontRegular : displayFontBold,
-                      fontSize: TITLE_SIZE,
-                      ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
-                    }}
-                  />
-                  {/* Right under the title, so the empty-title message is seen where it is fixed. */}
-                  {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
+                <View
+                  testID="task-form.columns"
+                  style={{
+                    gap: space(4),
+                    ...(twoColumns
+                      ? { flexDirection: 'row', alignItems: 'flex-start', columnGap: space(5) }
+                      : null),
+                  }}
+                >
+                  <View style={{ gap: space(2), ...(twoColumns ? { flex: 1 } : null) }}>
+                    <TextField
+                      ref={titleRef}
+                      bare
+                      testID="task-form.title"
+                      label={t('taskForm.titleLabel')}
+                      placeholder={t('taskForm.titlePlaceholder')}
+                      value={typed.title}
+                      onChangeText={(text) =>
+                        setTyped((current) => ({ ...current, title: oneLineTitle(text) }))
+                      }
+                      // On a short window the keyboard would hide the rest of the note, so there
+                      // the field waits for a tap.
+                      autoFocus={isNew && density.autoFocusTitle}
+                      maxLength={200}
+                      // A task title: no autofill suggestions over the note.
+                      autoComplete="off"
+                      returnKeyType="done"
+                      // Wraps instead of scrolling sideways: with large text a long title showed only
+                      // its end. Return still submits, so a title never gets a line break.
+                      multiline
+                      submitBehavior="blurAndSubmit"
+                      // The keyboard's check mark takes the same path as Save.
+                      onSubmitEditing={() => {
+                        if (!saving) save();
+                      }}
+                      error={titleInvalid ? t('tasks.errors.INVALID_TITLE') : undefined}
+                      inputStyle={{
+                        // The example («Sacar la basura») at the regular weight, so it never
+                        // reads as a title already typed.
+                        fontFamily: typed.title === '' ? displayFontRegular : displayFontBold,
+                        fontSize: TITLE_SIZE,
+                        ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
+                      }}
+                    />
+                    {/* Right under the title, so the empty-title message is seen where it is fixed. */}
+                    {shownError ? (
+                      <ErrorText testID="task-form.error">{shownError}</ErrorText>
+                    ) : null}
+                    {/* Words that all went to the properties («mañana») leave no title: what Save
+                      waits for is said here, where it is fixed (the reader hears it on Save). */}
+                    {!shownError && !hasTitle && typed.title.trim() !== '' ? (
+                      <Text
+                        testID="task-form.title-why"
+                        importantForAccessibility="no"
+                        accessibilityElementsHidden
+                        style={{ color: colors.muted, fontSize: 14 }}
+                      >
+                        {t('taskForm.titleRequired')}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={twoColumns ? { flex: 1.4 } : undefined}>
+                    <PropertyMagnets
+                      room={values.room}
+                      assignee={assignee}
+                      due={values.dueOn}
+                      repeat={values.recurrence}
+                      today={today}
+                      open={open}
+                      onOpen={toggle}
+                      repeatEditable={repeatEditable}
+                      // The open picker, right under its magnet; the two are measured as one block so
+                      // the magnet and its picker scroll into view whole.
+                      openRef={twoColumns ? undefined : picker}
+                      onOpenLayout={twoColumns ? undefined : () => show(picker.current)}
+                      picker={twoColumns ? null : pickerNode}
+                    />
+                  </View>
                 </View>
-                <PropertyMagnets
-                  room={values.room}
-                  assignee={assignee}
-                  due={values.dueOn}
-                  repeat={values.recurrence}
-                  today={today}
-                  open={open}
-                  onOpen={toggle}
-                  repeatEditable={repeatEditable}
-                  // The open picker, right under its magnet; the two are measured as one block so
-                  // the magnet and its picker scroll into view whole.
-                  openRef={picker}
-                  onOpenLayout={() => show(picker.current)}
-                  picker={
-                    open !== null ? (
-                      <View key={open} style={{ paddingTop: space(2), paddingBottom: space(3) }}>
-                        {open === 'room' ? (
-                          <RoomPicker
-                            value={values.room}
-                            onChange={(room) => choose('room', { room })}
-                          />
-                        ) : null}
-                        {open === 'assignee' ? (
-                          <AssigneePicker
-                            value={values.assigneeId}
-                            members={members}
-                            marks={marks}
-                            userId={userId}
-                            onChange={(assigneeId) => {
-                              if (assigneeId !== values.assigneeId)
-                                choose('assignee', { assigneeId });
-                            }}
-                          />
-                        ) : null}
-                        {open === 'due' ? (
-                          <DayCells
-                            value={values.dueOn}
-                            today={today}
-                            onChange={setDueOn}
-                            noneDisabled={repeating}
-                            past={pastDue}
-                          />
-                        ) : null}
-                        {open === 'repeat' && repeatEditable ? (
-                          <View style={{ gap: space(3) }}>
-                            <RecurrencePicker
-                              value={values.recurrence}
-                              dueOn={values.dueOn ?? today}
-                              onChange={setRecurrence}
-                            />
-                            {nextDate !== null ? (
-                              <Text
-                                testID="task-form.repeat.next"
-                                style={{ color: colors.muted, fontSize: 13 }}
-                              >
-                                {t('taskForm.repeatNext', { date: nextDate })}
-                              </Text>
-                            ) : null}
-                          </View>
-                        ) : null}
-                      </View>
-                    ) : null
-                  }
-                />
+                {twoColumns && pickerNode !== null ? (
+                  <View ref={picker} onLayout={() => show(picker.current)}>
+                    {pickerNode}
+                  </View>
+                ) : null}
               </View>
               {dangerZone}
             </FocusRevealContext.Provider>
@@ -384,9 +415,11 @@ export function TaskForm({
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
-              // Editing: nothing to save until something changed, so Save waits faded (the
-              // contract's disabled look) instead of inviting a tap that does nothing.
-              disabled={!isNew && !dirty}
+              // Nothing to save yet (no title, or an edit with nothing changed): Save waits faded
+              // (the contract's disabled look) instead of inviting a tap that does nothing, and
+              // says what it waits for when it is the title.
+              disabled={!hasTitle || (!isNew && !dirty)}
+              waitingFor={hasTitle ? undefined : t('taskForm.titleRequired')}
               loading={saving}
               width={density.footRow ? 'hug' : 'full'}
             />

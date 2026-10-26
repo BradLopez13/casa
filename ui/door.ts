@@ -108,3 +108,15 @@ export function doorFor(
     beside,
   };
 }
+
+/**
+ * Whether Tareas' day pills come into the door (bloque 11): only in a compact door on a phone held
+ * upright (large text), where they sit beside the filter's magnets, so only the quick add stands
+ * between the door and the first note. Where the door lays its controls beside the headline (a
+ * phone on its side, above two panes) the controls' column has no room left for them: beside
+ * three magnets they wrapped and the door, capped at 40 %, had to scroll. There, and under a full
+ * door, they stay at the head of the list.
+ */
+export function stripInDoor(door: Door): boolean {
+  return door.compact && !door.beside;
+}
