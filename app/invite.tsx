@@ -21,6 +21,7 @@ import {
   useInvitePreview,
 } from '@/features/households/queries';
 import { inviteErrorKey } from '@/features/households/errors';
+import { leaveToHome } from '@/features/households/leaveToHome';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { BrandHeader } from '@/ui/components/BrandHeader';
@@ -151,14 +152,14 @@ export default function InviteScreen() {
     }
     setPhase('busy');
     await clearPending.mutateAsync().catch(() => undefined);
-    router.replace('/');
+    leaveToHome(router);
     return true;
   }
 
   async function onContinue() {
     before.current = null;
     if (await leaveIfMember()) return;
-    router.replace('/');
+    leaveToHome(router);
   }
 
   async function onSignOut() {
@@ -182,7 +183,7 @@ export default function InviteScreen() {
       return;
     }
     // Root lets the guard pick /today (it returns null for member + invite by design).
-    router.replace('/');
+    leaveToHome(router);
   }
 
   async function dismiss() {

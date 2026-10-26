@@ -9,6 +9,7 @@ import { AccountMenu } from '@/features/auth/AccountMenu';
 import { useSession } from '@/features/auth/SessionProvider';
 import { createHousehold, setHouseholdRooms } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
+import { leaveToHome } from '@/features/households/leaveToHome';
 import { householdNameSchema } from '@/features/households/schemas';
 import { householdsKey, membershipKey, setActiveHousehold } from '@/features/households/queries';
 import { t } from '@/i18n';
@@ -149,7 +150,7 @@ function RoomsStep({ householdId, another }: { householdId: string; another: boo
         onSuccess: () => {
           void queryClient.invalidateQueries({ queryKey: householdsKey });
           const refetched = queryClient.invalidateQueries({ queryKey: membershipKey });
-          if (another) void refetched.finally(() => router.replace('/today'));
+          if (another) void refetched.finally(() => leaveToHome(router, '/today'));
         },
         onError: (e) => {
           switch (e.code) {
