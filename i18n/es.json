@@ -367,6 +367,7 @@
   "shopping.boughtTitle": "En la bolsa ({n})",
   "shopping.clear": "Vaciar bolsa",
   "shopping.cleared": "Bolsa vaciada.",
+  "shopping.clearNeedsNet": "Vaciar la bolsa necesita red.",
   "shopping.undoClear": "Deshacer",
   "shopping.offline": "Sin conexión",
   "offline.back": "Conexión recuperada.",

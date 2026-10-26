@@ -285,9 +285,21 @@ export function ShoppingSheet({
                       flush
                       icon={actionIcons.delete}
                       disabled={!online}
+                      waitingFor={t('shopping.clearNeedsNet')}
                       loading={clearing}
                       onPress={onClear}
                     />
+                    {/* What looks off says why it waits (bloque 11). */}
+                    {online ? null : (
+                      <Text
+                        testID="shopping.clear-why"
+                        importantForAccessibility="no"
+                        accessibilityElementsHidden
+                        style={{ color: colors.muted, fontSize: 14 }}
+                      >
+                        {t('shopping.clearNeedsNet')}
+                      </Text>
+                    )}
                   </Animated.View>
                 ) : (
                   <ShoppingRow

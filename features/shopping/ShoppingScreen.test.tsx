@@ -159,7 +159,13 @@ describe('Compra', () => {
     expect(screen.getByTestId('shopping.offline').getAttribute('aria-label')).toBe(
       t('shopping.offline'),
     );
-    expect(screen.getByTestId('shopping.clear').getAttribute('aria-disabled')).toBe('true');
+    const clear = screen.getByTestId('shopping.clear');
+    expect(clear.getAttribute('aria-disabled')).toBe('true');
+    // What looks off says why it waits (bloque 11), on screen and to the reader.
+    expect(screen.getByTestId('shopping.clear-why').textContent).toBe(t('shopping.clearNeedsNet'));
+    expect(clear.getAttribute('aria-label')).toBe(
+      `${t('shopping.clear')}. ${t('shopping.clearNeedsNet')}`,
+    );
   });
 
   it('online, there is no offline band', () => {
