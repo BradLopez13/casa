@@ -79,6 +79,13 @@ describe('TaskForm', () => {
     expect(screen.getByTestId('task-form.save').getAttribute('aria-disabled')).not.toBe('true');
   });
 
+  it('keeps Save dimmed on an edited task whose title was cleared', () => {
+    const initial: TaskInput = { ...blank, title: 'Barrer', dueOn: '2026-10-25' };
+    renderForm({ initial, isNew: false, title: t('taskForm.editTitle') });
+    fireEvent.change(titleField(), { target: { value: '' } });
+    expect(screen.getByTestId('task-form.save').getAttribute('aria-disabled')).toBe('true');
+  });
+
   it('says why a task that repeats has no «Sin fecha»', () => {
     renderForm({
       initial: {

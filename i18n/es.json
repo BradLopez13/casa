@@ -367,6 +367,7 @@
   "shopping.clear": "Vaciar bolsa",
   "shopping.cleared": "Bolsa vaciada.",
   "shopping.clearNeedsNet": "Vaciar la bolsa necesita red.",
+  "shopping.clearWaits": "Necesita red.",
   "shopping.undoClear": "Deshacer",
   "shopping.offline": "Sin conexión",
   "offline.back": "Conexión recuperada.",

@@ -12,7 +12,7 @@ export type NoteText = {
   label: string;
   /**
    * Whose it is, as a short part right after the title: «de Ana», «tuya» (fase 10d), or null with
-   * nobody, when the label says «Sin responsable». The magnet itself stays silent.
+   * nobody, when the label says «Sin asignar». The magnet itself stays silent.
    */
   owner: string | null;
 };

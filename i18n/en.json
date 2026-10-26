@@ -367,6 +367,7 @@
   "shopping.clear": "Empty the bag",
   "shopping.cleared": "Bag emptied.",
   "shopping.clearNeedsNet": "Emptying the bag needs a connection.",
+  "shopping.clearWaits": "Needs a connection.",
   "shopping.undoClear": "Undo",
   "shopping.offline": "No connection",
   "offline.back": "Back online.",

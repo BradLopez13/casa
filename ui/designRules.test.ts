@@ -281,7 +281,7 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   it('sheets with Save keep it dimmed until there is something to save', () => {
     expect(read('app/shopping/[id].tsx')).toMatch(/canSave = [^;]*\bdirty\b/);
     expect(read('features/tasks/components/TaskForm.tsx')).toMatch(
-      /disabled=\{isNew \? !hasTitle : !dirty\}/,
+      /disabled=\{!hasTitle \|\| \(!isNew && !dirty\)\}/,
     );
   });
 

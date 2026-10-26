@@ -285,7 +285,7 @@ export function ShoppingSheet({
                       flush
                       icon={actionIcons.delete}
                       disabled={!online}
-                      waitingFor={t('shopping.clearNeedsNet')}
+                      waitingFor={t('shopping.clearWaits')}
                       loading={clearing}
                       onPress={onClear}
                     />

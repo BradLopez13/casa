@@ -294,6 +294,18 @@ export function TaskForm({
                   />
                   {/* Right under the title, so the empty-title message is seen where it is fixed. */}
                   {shownError ? <ErrorText testID="task-form.error">{shownError}</ErrorText> : null}
+                  {/* Words that all went to the properties («mañana») leave no title: what Save
+                      waits for is said here, where it is fixed (the reader hears it on Save). */}
+                  {!shownError && !hasTitle && typed.title.trim() !== '' ? (
+                    <Text
+                      testID="task-form.title-why"
+                      importantForAccessibility="no"
+                      accessibilityElementsHidden
+                      style={{ color: colors.muted, fontSize: 14 }}
+                    >
+                      {t('taskForm.titleRequired')}
+                    </Text>
+                  ) : null}
                 </View>
                 <PropertyMagnets
                   room={values.room}
@@ -385,11 +397,11 @@ export function TaskForm({
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
-              // Nothing to save yet (a new task without a title, an edit with nothing changed):
-              // Save waits faded (the contract's disabled look) instead of inviting a tap that
-              // does nothing. A new task says what it waits for.
-              disabled={isNew ? !hasTitle : !dirty}
-              waitingFor={isNew ? t('taskForm.titleRequired') : undefined}
+              // Nothing to save yet (no title, or an edit with nothing changed): Save waits faded
+              // (the contract's disabled look) instead of inviting a tap that does nothing, and
+              // says what it waits for when it is the title.
+              disabled={!hasTitle || (!isNew && !dirty)}
+              waitingFor={hasTitle ? undefined : t('taskForm.titleRequired')}
               loading={saving}
               width={density.footRow ? 'hug' : 'full'}
             />
