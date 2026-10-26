@@ -44,6 +44,11 @@ type Props = {
 };
 
 const SLIDE = { duration: MAX_MS, easing: Easing.out(Easing.exp) };
+/**
+ * How far the status bar's enamel fades out over the list: what scrolls under it never ends in a
+ * hard cut through its letters (DESIGN.md, «la puerta nunca se ve partida»).
+ */
+export const VEIL_FADE = 8;
 
 function useRefreshAnnouncement(refreshing: boolean) {
   const was = useRef(refreshing);
@@ -225,6 +230,13 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           height: insets.top,
           backgroundColor: colors.door,
         }}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        colors={[colors.door, `${colors.door}00`]}
+        style={{ position: 'absolute', top: insets.top, left: 0, right: 0, height: VEIL_FADE }}
       />
     </View>
   );

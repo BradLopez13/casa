@@ -144,7 +144,7 @@ export default function TodayScreen() {
  */
 function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
   const { space } = useTheme();
-  const listStyle = { paddingBottom: useListEndPadding() };
+  const endPadding = useListEndPadding();
   const column = useOneColumn();
   const { holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery } = screen;
@@ -155,14 +155,15 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
         ref={listRef}
-        {...nudge}
+        {...nudge.listProps}
         keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <>
-            {door}
+            {/* Measured so the nudge never leaves it cut under the status bar. */}
+            <View onLayout={nudge.onDoorLayout}>{door}</View>
             {/* On a phone on its side the door holds the field. */}
             {holdsQuickAdd ? null : (
               <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
@@ -207,7 +208,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
           </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
-        contentContainerStyle={listStyle}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
       />
     </FridgeRefresh>
   );

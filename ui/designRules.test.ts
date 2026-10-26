@@ -331,4 +331,18 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(read('app/(tabs)/today.tsx')).toMatch(/eyebrowDetail=/);
     expect(read('ui/components/DoorHeader.tsx')).not.toMatch(/\btrailing\b/);
   });
+
+  // Bloque 11 (11.1): the door is never seen cut. A list that moves for a notice measures its door
+  // and takes the room the move needs, and the status bar's veil fades out instead of slicing
+  // through whatever scrolls under it.
+  it('never leaves the door cut under the status bar', () => {
+    const nudging = sources.filter((f) => /useNoticeNudge\(/.test(read(f)));
+    expect(nudging.length).toBeGreaterThan(0);
+    for (const file of nudging) {
+      expect(read(file), file).toMatch(/onLayout=\{nudge\.onDoorLayout\}/);
+      expect(read(file), file).toMatch(/nudge\.endPadding/);
+    }
+    expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);
+    expect(read('ui/components/FridgeRefresh.tsx')).toMatch(/height: VEIL_FADE/);
+  });
 });

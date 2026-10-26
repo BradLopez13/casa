@@ -109,7 +109,7 @@ export default function TasksScreen() {
  */
 function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }: TasksParts) {
   const { space } = useTheme();
-  const listStyle = { paddingBottom: useListEndPadding() };
+  const endPadding = useListEndPadding();
   const column = useOneColumn();
   const { holdsQuickAdd } = useDoor();
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
@@ -143,14 +143,15 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList
         ref={listRef}
-        {...nudge}
+        {...nudge.listProps}
         keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={taskRowKey}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <>
-            {door}
+            {/* Measured so the nudge never leaves it cut under the status bar. */}
+            <View onLayout={nudge.onDoorLayout}>{door}</View>
             <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
               {/* On a phone on its side the door holds the field. */}
               {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={day} />}
@@ -213,7 +214,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           </View>
         )}
         ItemSeparatorComponent={TaskRowSeparator}
-        contentContainerStyle={listStyle}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
       />
     </FridgeRefresh>
   );
