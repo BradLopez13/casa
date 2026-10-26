@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import en from '@/i18n/en.json';
 import es from '@/i18n/es.json';
-import { hintName, quickHintSegments } from './quickHint';
+import { hintName, quickHintSegments, quickHintShown } from './quickHint';
 
 const members = [
   { id: 'me', name: 'Ana López' },
@@ -51,5 +51,27 @@ describe('hintName', () => {
   it('falls back to the person themself, and to nobody before the members load', () => {
     expect(hintName([{ id: 'me', name: 'Ana López' }], 'me')).toBe('Ana');
     expect(hintName([], 'me')).toBeNull();
+  });
+});
+
+describe('quickHintShown', () => {
+  const open = { open: true };
+
+  it('shows under the empty field at the default text, notes or not', () => {
+    expect(quickHintShown({ ...open, fontScale: 1, hasNotes: true })).toBe(true);
+    expect(quickHintShown({ ...open, fontScale: 1, hasNotes: false })).toBe(true);
+  });
+
+  it('keeps quiet from ×1.3 while the list has notes, so two of them fit (bloque 11)', () => {
+    expect(quickHintShown({ ...open, fontScale: 1.3, hasNotes: true })).toBe(false);
+    expect(quickHintShown({ ...open, fontScale: 1.6, hasNotes: true })).toBe(false);
+  });
+
+  it('comes back with the list empty, where it is the only hint', () => {
+    expect(quickHintShown({ ...open, fontScale: 1.6, hasNotes: false })).toBe(true);
+  });
+
+  it('never shows once used', () => {
+    expect(quickHintShown({ ...open, open: false, fontScale: 1, hasNotes: false })).toBe(false);
   });
 });

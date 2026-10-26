@@ -30,14 +30,14 @@ import { useNotice } from '@/ui/components/Notice';
 import { haptic } from '@/ui/motion';
 import { useTheme } from '@/ui/theme';
 import { useDoorCompact } from '@/ui/components/doorContext';
-import { DOOR_MAX_SCALE, LARGE_TEXT } from '@/ui/door';
+import { DOOR_MAX_SCALE } from '@/ui/door';
 import { MIN_TOUCH } from '@/ui/tokens';
 import { announce } from '@/ui/a11y';
 import { positEdge } from '@/ui/positEdge';
 import { newTaskId } from '../api';
 import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
-import { hintName, quickHintSegments } from '../quickHint';
+import { hintName, quickHintSegments, quickHintShown } from '../quickHint';
 import { buildCreateOptions } from '../create';
 import { useToday } from '../useToday';
 
@@ -56,6 +56,8 @@ type Props = {
   assigneeId: string | null;
   dueOn: string | null;
   placeholder: string;
+  /** Whether the list under it shows notes: from ×1.3 the example then keeps quiet. */
+  hasNotes: boolean;
   testID: string;
 };
 
@@ -87,7 +89,7 @@ function chipLabel(
  * chip leaves those words in the title. Anything not written lands on the given day for the given
  * person, and the field stays ready for the next one.
  */
-export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }: Props) {
+export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, hasNotes, testID }: Props) {
   const { colors, radii, space } = useTheme();
   const notify = useNotice();
   const today = useToday();
@@ -112,11 +114,9 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, testID }
   const parse = useMemo(() => quickParse(text, ctx), [text, ctx]);
   // Until a task goes in with something the field understood, the empty field shows an example.
   const quickAddOpen = useHint('quickAdd');
-  const boxOpen = useHint('complete');
-  const swipeOpen = useHint('swipe');
-  // With large text two hints leave no note in view: the list's (box, then swipe) goes first.
+  // With large text it keeps quiet while there are notes: two of them in view come first.
   const { fontScale } = useWindowDimensions();
-  const hintOpen = quickAddOpen && (fontScale < LARGE_TEXT || (!boxOpen && !swipeOpen));
+  const hintOpen = quickHintShown({ open: quickAddOpen, fontScale, hasNotes });
   // In a compact door (a phone on its side) the field shares a narrow column: the example is a
   // short one, on one line, so it is never cut half way (fase 10a).
   const inCompactDoor = useDoorCompact();

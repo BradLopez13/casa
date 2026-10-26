@@ -123,7 +123,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
         eyebrow={t('tasks.title')}
         heading={t('tasks.allHeadline')}
         secondary={doorLine}
-        quickAdd={<DayQuickAdd screen={screen} day={day} />}
+        quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
       >
         <MemberFilter
           members={members}
@@ -154,7 +154,9 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
             <View onLayout={nudge.onDoorLayout}>{door}</View>
             <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
               {/* On a phone on its side the door holds the field. */}
-              {holdsQuickAdd ? null : <DayQuickAdd screen={screen} day={day} />}
+              {holdsQuickAdd ? null : (
+                <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
+              )}
               <DayPills
                 days={strip}
                 today={today}

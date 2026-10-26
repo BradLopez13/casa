@@ -17,7 +17,15 @@ import { useTheme } from '@/ui/theme';
  * The field for the chosen day: Hoy and Mañana read as words, any other day as its name. No day
  * (Todas) adds the task undated.
  */
-export function DayQuickAdd({ screen, day }: { screen: Screen; day: string | null }) {
+export function DayQuickAdd({
+  screen,
+  day,
+  hasNotes,
+}: {
+  screen: Screen;
+  day: string | null;
+  hasNotes: boolean;
+}) {
   const { today, userId, membership } = screen;
   const placeholder =
     day === null
@@ -34,6 +42,7 @@ export function DayQuickAdd({ screen, day }: { screen: Screen; day: string | nul
       assigneeId={userId}
       dueOn={day}
       placeholder={placeholder}
+      hasNotes={hasNotes}
     />
   );
 }

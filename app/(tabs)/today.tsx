@@ -105,6 +105,7 @@ export default function TodayScreen() {
       assigneeId={userId}
       dueOn={today}
       placeholder={t('today.quickAdd')}
+      hasNotes={sections.length > 0}
     />
   );
   const door = (
