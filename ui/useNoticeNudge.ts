@@ -7,6 +7,8 @@ import { useBaseListEndPadding } from './useTabBarClearance';
 
 /** Enough scroll events to know where the list is, without reporting every pixel. */
 const SCROLL_THROTTLE_MS = 100;
+/** Room at the end that differs by less than this is the same room. */
+const ROOM_SLACK = 1;
 /** The door's top padding under the status bar (8 dp compact, 12 full): moving less cuts nothing. */
 const DOOR_SLACK = 8;
 
@@ -92,8 +94,10 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
       if (was !== null) {
         // While the notice lasts the list may change under it (another note done, a refetch):
         // the room at the end follows, so where the nudge goes stays reachable.
-        const needed = Math.max(0, was.to - (height - room - viewport.current));
-        if (needed !== room) {
+        // Laid out heights come in fractions of a dp: only a list that came out short asks for
+        // more room, and the room is rounded up, or it would never be «the same» (seen on the .51).
+        const needed = Math.ceil(Math.max(0, was.to - (height - room - viewport.current)));
+        if (needed > room + ROOM_SLACK) {
           setEndPadding(needed);
           return;
         }
@@ -117,11 +121,11 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         door: { height: door.current, slack: DOOR_SLACK },
       });
       if (scroll === null) return;
-      const arrived = scroll.extra === room;
+      const arrived = Math.ceil(scroll.extra) <= room + ROOM_SLACK;
       nudged.current = { from: offset.current, to: scroll.to, arrived };
       // A new room is laid out first; the list moves once it is there.
       if (!arrived) {
-        setEndPadding(scroll.extra);
+        setEndPadding(Math.ceil(scroll.extra));
         return;
       }
       scrollTo(scroll.to);
