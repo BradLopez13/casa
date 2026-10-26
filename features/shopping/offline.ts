@@ -1,5 +1,5 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
-import { offlineFirstQueryOptions, retryOnNetwork } from '@/data/query/retry';
+import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
@@ -119,8 +119,6 @@ export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Prom
 /** The shopping list and its history load offline first (`offlineFirstQueryOptions`). */
 export const shoppingQueryOptions = offlineFirstQueryOptions;
 
-export { NETWORK_RETRIES } from '@/data/query/retry';
-
 export function buildShoppingMutationDefaults(
   queryClient: QueryClient,
   notify: (message: string) => void,
@@ -161,6 +159,7 @@ export function buildShoppingMutationDefaults(
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
     retry: retryOnNetwork,
+    retryDelay: retryDelayOnNetwork,
     mutationFn: ({ id, householdId, name, quantity }) =>
       addShoppingItem(id, householdId, name, quantity),
     onMutate: async (vars) => {
@@ -201,6 +200,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
+    retryDelay: retryDelayOnNetwork,
     mutationFn: ({ id, householdId, bought: value }) =>
       setItemBought(resolve(householdId, id), value),
     onMutate: async ({ id, householdId, bought: value, userId }) => {
@@ -242,6 +242,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
+    retryDelay: retryDelayOnNetwork,
     mutationFn: async ({ id, householdId, name, quantity: value }) => {
       const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone before its turn: nothing left to change.

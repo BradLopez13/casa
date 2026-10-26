@@ -243,6 +243,17 @@ describe('Hoy', () => {
     expect(screen.getByText(t('tasks.done'))).toBeTruthy();
   });
 
+  it('offline, the done note says it is not sent yet, as a shopping row does (bloque 11)', async () => {
+    renderToday([task('Fregar', {})]);
+    onlineManager.setOnline(false);
+    fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
+    const mark = await screen.findByTestId('done-tray.Fregar.pending');
+    expect(mark.getAttribute('aria-label')).toBe(t('shopping.pending'));
+    expect(screen.getByTestId('done-tray.Fregar').getAttribute('aria-label')).toContain(
+      t('shopping.pending').toLowerCase(),
+    );
+  });
+
   it('keeps the door handle hint back while the box one shows', () => {
     phoneSize();
     hintsOpen('refresh', 'complete');

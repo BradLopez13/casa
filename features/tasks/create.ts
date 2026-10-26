@@ -1,5 +1,5 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
-import { retryOnNetwork } from '@/data/query/retry';
+import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import type { TaskInput } from '@/domain/tasks/input';
 import type { TaskItem } from '@/domain/tasks/views';
@@ -53,6 +53,7 @@ export function buildCreateOptions(
     scope: TASKS_SCOPE,
     networkMode: 'online',
     retry: retryOnNetwork,
+    retryDelay: retryDelayOnNetwork,
     mutationFn: ({ id, householdId, input }) => createTask(id, householdId, input),
     onMutate: async (vars) => {
       const key = tasksKey(vars.householdId);

@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appQueryDefaults } from '@/data/query/defaults';
+import { retryDelayOnNetwork } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
@@ -16,7 +17,6 @@ import {
   boughtKey,
   buildShoppingMutationDefaults,
   countsAsUnsent,
-  NETWORK_RETRIES,
   resumeShoppingQueue,
   shoppingQueryOptions,
   quantityKey,
@@ -233,17 +233,18 @@ describe('buildShoppingMutationDefaults', () => {
     expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche». Inténtalo de nuevo.');
   });
 
-  it('retries network errors a bounded number of times', () => {
+  it('keeps retrying network errors, waiting longer each time (bloque 11, T1)', () => {
     const { defaults } = setup();
     const retry = defaults.add.retry as (count: number, error: AppError) => boolean;
     expect(retry(0, new AppError('NETWORK'))).toBe(true);
-    expect(retry(NETWORK_RETRIES - 1, new AppError('NETWORK'))).toBe(true);
-    expect(retry(NETWORK_RETRIES, new AppError('NETWORK'))).toBe(false);
+    expect(retry(100, new AppError('NETWORK'))).toBe(true);
     expect(retry(0, new AppError('INVALID_ITEM_NAME'))).toBe(false);
     expect(defaults.bought.retry).toBe(defaults.add.retry);
+    expect(defaults.quantity.retry).toBe(defaults.add.retry);
+    expect(defaults.add.retryDelay).toBe(retryDelayOnNetwork);
   });
 
-  it('reverts and explains a network error once the retries run out', async () => {
+  it('reverts and explains a network error when it is final', async () => {
     const { queryClient, notify } = setup();
     queryClient.setQueryData(key, []);
     vi.mocked(addShoppingItem).mockRejectedValue(new AppError('NETWORK'));

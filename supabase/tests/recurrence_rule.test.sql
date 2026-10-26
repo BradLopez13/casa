@@ -82,7 +82,7 @@ select ok(
 );
 
 select ok(
-  not has_function_privilege('authenticated', 'private.close_occurrence(uuid, date, boolean)', 'execute'),
+  not has_function_privilege('authenticated', 'private.close_occurrence(uuid, date, boolean, timestamptz)', 'execute'),
   'authenticated cannot execute close_occurrence'
 );
 

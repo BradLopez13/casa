@@ -14,6 +14,8 @@ import {
 } from '@/features/shopping/components/AddItemField';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
+import { toAppError } from '@/data/supabase/errors';
+import { shouldShowStaleBand } from '@/features/tasks/staleBand';
 import {
   BoughtTitle,
   EmptyList,
@@ -68,7 +70,8 @@ type ShoppingParts = {
   /** Error, loading or empty, ready to place; null once there are rows. */
   stateView: ReactNode;
   sheet: SheetProps;
-  online: boolean;
+  /** The offline band shows: no connection, or a refresh that could not reach the server. */
+  band: boolean;
   /** The door around what each layout puts on it (the field in one column, nothing on two). */
   door: (children: ReactNode) => ReactElement;
   pulling: boolean;
@@ -91,6 +94,15 @@ export default function ShoppingScreen() {
   const setQuantity = useSetQuantity();
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
+  // The same band as Hoy and Tareas, also on a Wi-Fi with no internet (bloque 11, N15).
+  const band = shouldShowStaleBand(
+    {
+      hasData: itemsQuery.data !== undefined,
+      isRefetchError: itemsQuery.isRefetchError,
+      errorIsNetwork: toAppError(itemsQuery.error).code === 'NETWORK',
+    },
+    online,
+  );
   // Only the pull gesture shows the refresh indicator, not background refetches.
   const [pulling, setPulling] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
@@ -237,7 +249,7 @@ export default function ShoppingScreen() {
       onClear: clear,
       onQuantity: changeQuantity,
     },
-    online,
+    band,
     door,
     pulling,
     refresh: () => void refresh(),
@@ -261,7 +273,7 @@ function ShoppingStack({
   state,
   stateView,
   sheet,
-  online,
+  band,
   door,
   pulling,
   refresh,
@@ -271,9 +283,9 @@ function ShoppingStack({
   const header = (
     <>
       {door(<AddItemField entry={entry} />)}
-      {online ? null : <OfflineBand />}
+      {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
-      <View style={[column, { paddingTop: space(listTopStep(online)) }]}>{stateView}</View>
+      <View style={[column, { paddingTop: space(listTopStep(!band)) }]}>{stateView}</View>
     </>
   );
   return (
@@ -304,7 +316,7 @@ function ShoppingSplit({
   state,
   stateView,
   sheet,
-  online,
+  band,
   door,
   pulling,
   refresh,
@@ -312,14 +324,14 @@ function ShoppingSplit({
   const { colors, space } = useTheme();
   const refreshControl = usePaneRefreshControl(pulling, refresh);
   const panes = shoppingPanes(state, pending.length, bought.length);
-  const pane = { paddingTop: space(listTopStep(online)), gap: space(5) };
+  const pane = { paddingTop: space(listTopStep(!band)), gap: space(5) };
 
   return (
     <TwoPane
       header={
         <>
           {door(null)}
-          {online ? null : <OfflineBand />}
+          {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
         </>
       }
       leftTestID="shopping.pane.pending"

@@ -156,8 +156,9 @@ describe('Compra', () => {
   it('offline, shows the band and keeps the list; «Vaciar bolsa» waits for the connection', () => {
     onlineManager.setOnline(false);
     renderShopping([item('Pan', { boughtAt: '2026-10-21T08:00:00.000Z', boughtBy: 'me' })]);
+    // The same words as Hoy and Tareas (bloque 11, N15).
     expect(screen.getByTestId('shopping.offline').getAttribute('aria-label')).toBe(
-      t('shopping.offline'),
+      t('offline.showingLast'),
     );
     const clear = screen.getByTestId('shopping.clear');
     expect(clear.getAttribute('aria-disabled')).toBe('true');

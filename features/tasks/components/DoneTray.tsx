@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskItem } from '@/domain/tasks/views';
 import { DoneNote } from '@/features/tasks/components/DoneNote';
+import { useWaitingTasks } from '@/features/tasks/queries';
 import { useTheme } from '@/ui/theme';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 /** Finished tasks as a stack of compact notes; tapping one reopens it. */
 export function DoneTray({ tasks, marks, names, userId, today, onReopen }: Props) {
   const { space } = useTheme();
+  const waiting = useWaitingTasks();
   return (
     <View style={{ gap: space(2) }}>
       {tasks.map((task) => (
@@ -27,6 +29,7 @@ export function DoneTray({ tasks, marks, names, userId, today, onReopen }: Props
           name={task.completedBy ? names.get(task.completedBy) : undefined}
           byYou={task.completedBy !== null && task.completedBy === userId}
           today={today}
+          unsent={waiting.has(task.id)}
           onReopen={onReopen}
         />
       ))}

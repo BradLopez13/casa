@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { useIsOnline } from '@/data/query/online';
 import { isOwnerAlone } from '@/domain/account/delete';
 import { signOut } from '@/features/auth/api';
+import { useUnsentCount } from '@/features/offline/unsent';
 import { useSession } from '@/features/auth/SessionProvider';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
 import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection';
@@ -61,6 +62,9 @@ export default function SettingsScreen() {
         setConfirmingSignOut(false);
       });
   };
+  // Signing out clears the queue from the phone: with changes still on their way, it says so
+  // and offers to wait (bloque 11, T2).
+  const unsent = useUnsentCount();
   const { userId } = useSession();
   const membership = useMembership().data;
   const members = useMembers(membership?.householdId);
@@ -233,8 +237,16 @@ export default function SettingsScreen() {
       <ConfirmDialog
         visible={confirmingSignOut}
         title={t('auth.signOutTitle')}
-        message={t('auth.signOutMessage')}
-        confirmLabel={t('auth.signOutAction')}
+        message={
+          unsent === 0
+            ? t('auth.signOutMessage')
+            : unsent === 1
+              ? t('auth.signOutUnsentOne')
+              : t('auth.signOutUnsent', { count: unsent })
+        }
+        confirmLabel={unsent === 0 ? t('auth.signOutAction') : t('auth.signOutAnyway')}
+        cancelLabel={unsent === 0 ? undefined : t('auth.signOutWait')}
+        destructive={unsent > 0}
         loading={signingOut}
         onCancel={() => setConfirmingSignOut(false)}
         onConfirm={leave}

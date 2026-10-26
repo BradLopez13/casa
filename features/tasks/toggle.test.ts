@@ -65,6 +65,32 @@ afterEach(() => {
   onlineManager.setOnline(true);
 });
 
+describe('the time of the tap (bloque 11)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('sends the time and day it was marked, not the time it reaches the server', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 26, 23, 50));
+    const tapped = new Date().toISOString();
+    const { queryClient, options } = setup();
+    queryClient.setQueryData(key, [a]);
+    vi.mocked(completeTask).mockResolvedValue(undefined);
+    onlineManager.setOnline(false);
+    runToggle(queryClient, options, vars({ id: 'a', done: true }));
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).toBe(tapped),
+    );
+
+    // The connection is back the next morning.
+    vi.setSystemTime(new Date(2026, 9, 27, 8, 0));
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
+    expect(completeTask).toHaveBeenCalledWith('a', '2026-10-26', tapped);
+  });
+});
+
 describe('buildToggleOptions', () => {
   it('moves the task in the cache before the server answers', async () => {
     const { queryClient, run } = setup();
@@ -92,14 +118,19 @@ describe('buildToggleOptions', () => {
   describe('says which action failed and why', () => {
     const doneA: TaskItem = { ...a, completedAt: '2026-10-09T10:00:00.000Z', completedBy: 'me' };
 
-    it('completing without connection', async () => {
+    // Bloque 11 (T1): a request that does not get through is never final: it is tried again,
+    // the note stays marked and nothing is said, however long the connection takes.
+    it('completing without getting through: keeps trying and says nothing', async () => {
       const { queryClient, notify, run } = setup();
       queryClient.setQueryData(key, [a]);
-      vi.mocked(completeTask).mockRejectedValue(new Error('Network request failed'));
-      await run({ id: 'a', done: true }).catch(() => undefined);
-      expect(notify).toHaveBeenCalledWith(
-        'No se pudo marcar como hecha: sin conexión. Inténtalo cuando vuelva.',
-      );
+      vi.mocked(completeTask)
+        .mockRejectedValueOnce(new Error('Network request failed'))
+        .mockRejectedValueOnce(new Error('Network request failed'))
+        .mockResolvedValueOnce(undefined);
+      await run({ id: 'a', done: true });
+      expect(completeTask).toHaveBeenCalledTimes(3);
+      expect(notify).not.toHaveBeenCalled();
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).not.toBeNull();
     });
 
     it('reopening for an unknown reason', async () => {
@@ -110,11 +141,13 @@ describe('buildToggleOptions', () => {
       expect(notify).toHaveBeenCalledWith('No se pudo reabrir. Inténtalo de nuevo.');
     });
 
-    it('reopening without connection', async () => {
-      const { queryClient, notify, run } = setup();
+    it('reopening without getting through, when the queue gives up anyway (no retries)', async () => {
+      const { queryClient, notify, options } = setup();
       queryClient.setQueryData(key, [doneA]);
       vi.mocked(reopenTask).mockRejectedValue(new AppError('NETWORK'));
-      await run({ id: 'a', done: false }).catch(() => undefined);
+      await new MutationObserver(queryClient, { ...options, retry: false })
+        .mutate(vars({ id: 'a', done: false }))
+        .catch(() => undefined);
       expect(notify).toHaveBeenCalledWith(
         'No se pudo reabrir: sin conexión. Inténtalo cuando vuelva.',
       );
@@ -190,7 +223,7 @@ describe('buildToggleOptions', () => {
       vi.mocked(completeTask).mockReturnValue(d.promise);
       const pending = run({ id: 'r', done: true }).catch(() => undefined);
       await vi.waitFor(() => expect(queryClient.getQueryData<TaskItem[]>(key)).toHaveLength(3));
-      d.reject(new AppError('NETWORK'));
+      d.reject(new AppError('UNKNOWN'));
       await pending;
       expect(queryClient.getQueryData(key)).toEqual([daily, b]);
     });
@@ -302,7 +335,9 @@ describe('without a connection (fase 10e)', () => {
     expect(completeTask).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
     onlineManager.setOnline(true);
-    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledWith('a', expect.any(String)));
+    await vi.waitFor(() =>
+      expect(completeTask).toHaveBeenCalledWith('a', expect.any(String), undefined),
+    );
   });
 
   it('keeps the queued toggles in order: a reopen goes after its complete', async () => {

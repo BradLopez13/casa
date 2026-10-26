@@ -2,16 +2,22 @@
 import { onlineManager } from '@tanstack/react-query';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 
-/** How many times a queued change is resent when the request never reached the server. */
-export const NETWORK_RETRIES = 10;
+/** The longest wait between two tries of a change that has not reached the server. */
+export const NETWORK_RETRY_MAX_MS = 60_000;
 
 /**
- * A request that never reached the server is retried (retries pause while offline), with the
- * default backoff capped at 30 s. The cap keeps one stuck change from holding its queue, and with
- * it every later change, forever. Any other error is final.
+ * A queued change that never reached the server is retried for as long as it takes (retries pause
+ * while offline). A connection that hangs without failing (a captive portal, a weak signal in the
+ * supermarket) used to spend ten tries in about five minutes and drop the change (bloque 11, T1):
+ * a change waits in its queue, and the ones behind it wait with it, rather than being lost. Any
+ * answer from the server is final, so only the network keeps a change alive.
  */
-export const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRIES && toAppError(error).code === 'NETWORK';
+export const retryOnNetwork = (_failureCount: number, error: AppError) =>
+  toAppError(error).code === 'NETWORK';
+
+/** Each try waits twice as long as the last, from 1 s up to a minute. */
+export const retryDelayOnNetwork = (failureCount: number) =>
+  Math.min(1000 * 2 ** failureCount, NETWORK_RETRY_MAX_MS);
 
 /** A failed load is tried once more, and not at all without a connection (fase 10e). */
 export const retryOnceOnline = (failureCount: number) =>
