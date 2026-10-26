@@ -24,6 +24,31 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"household_licenses": {
+                  Row: {
+                    "created_at": string,"current_period_end": string | null,"household_id": string,"paid_by": string | null,"plan": string,"provider": string,"provider_subscription_id": string | null,"status": string,"trial_ends_at": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"current_period_end"?: string | null,"household_id": string,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status": string,"trial_ends_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"current_period_end"?: string | null,"household_id"?: string,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status"?: string,"trial_ends_at"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "household_licenses_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: true
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "household_licenses_paid_by_fkey"
+      columns: ["paid_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["user_id"]
+    }
+                  ]
                 },"household_members": {
                   Row: {
                     "household_id": string,"id": string,"joined_at": string,"left_at": string | null,"role": string,"user_id": string
@@ -200,6 +225,12 @@ isOneToOne: false
 "add_shopping_item":
 { Args: { "p_household_id": string,"p_id": string,"p_name": string,"p_quantity": string }; Returns: string
                            },
+"apply_billing_event":
+{ Args: { "p_household_id": string,"p_paid_by": string,"p_period_end": string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
+                           },
+"billing_enabled":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "claim_push_batch":
 { Args: { "p_limit"?: number }; Returns: {
               "body": string,"data": Json,"id": number,"recipient_id": string,"title": string,"tokens": (string)[]
@@ -240,9 +271,14 @@ isOneToOne: false
 "mark_push_result":
 { Args: { "p_dead_tokens": (string)[],"p_error": string,"p_failed": (number)[],"p_sent": (number)[] }; Returns: undefined
                            },
+"my_households":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "household_id": string,"joined_at": string,"license_ends_at": string,"license_status": string,"licensed": boolean,"member_count": number,"name": string,"role": string,"rooms": (string)[]
+            }[]
+                           },
 "preview_invite":
 { Args: { "p_token": string }; Returns: {
-              "household_name": string,"inviter_name": string,"member_count": number
+              "already_member": boolean,"household_name": string,"inviter_name": string,"member_count": number
             }[]
                            },
 "register_push_token":
@@ -261,6 +297,8 @@ isOneToOne: false
 { Args: { "p_name": string }; Returns: undefined
                            },
 "set_household_rooms":
+{ Args: { "p_household_id": string,"p_rooms": (string)[] }; Returns: undefined
+                           } |
 { Args: { "p_rooms": (string)[] }; Returns: undefined
                            },
 "set_item_bought":
@@ -285,6 +323,9 @@ isOneToOne: false
                            },
 "skip_task":
 { Args: { "p_id": string,"p_today": string }; Returns: undefined
+                           },
+"start_household_checkout":
+{ Args: { "p_household_id": string }; Returns: Json
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
