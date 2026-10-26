@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import type { QueryClient } from '@tanstack/react-query';
-import { membershipKey } from '@/features/households/keys';
+import { pickActive } from '@/features/households/active';
+import { householdsKey, membershipKey } from '@/features/households/keys';
 
 /**
  * The on-device copy of the query cache: the shopping list, its history and its queue, the
@@ -29,6 +30,7 @@ function removeHouseholdData(queryClient: QueryClient, householdId?: string): vo
   queryClient.removeQueries({ queryKey: scoped('shopping-resolved') });
   queryClient.removeQueries({ queryKey: scoped('members') });
   queryClient.removeQueries({ queryKey: scoped('tasks') });
+  queryClient.removeQueries({ queryKey: scoped('license') });
   const mutations = queryClient.getMutationCache();
   const queued = [
     ...mutations.findAll({ mutationKey: ['shopping'] }),
@@ -43,21 +45,31 @@ function removeHouseholdData(queryClient: QueryClient, householdId?: string): vo
 }
 
 /**
- * Leaving or deleting the household: forgets its shopping data and members, in memory and on
- * the device. The membership becomes "no household" at once (a user is in one household at
- * most), so neither the route guard nor a save before the refetch keeps the old one around.
+ * Leaving or deleting a household: forgets its shopping data, tasks, members and queue, in
+ * memory and on the device. The app moves at once to the next household (bloque 12), or to none,
+ * so neither the route guard nor a save before the refetch keeps the old one around. The other
+ * households' data and queues stay: the device copy follows the cache.
  */
-export function forgetHouseholdData(queryClient: QueryClient): void {
-  removeHouseholdData(queryClient);
-  queryClient.setQueryData(membershipKey, null);
-  void persister.removeClient();
+export function forgetHouseholdData<T extends { householdId: string }>(
+  queryClient: QueryClient,
+  householdId: string,
+): T | null {
+  removeHouseholdData(queryClient, householdId);
+  const rest = (queryClient.getQueryData<T[]>(householdsKey) ?? []).filter(
+    (h) => h.householdId !== householdId,
+  );
+  const next = pickActive(rest, null);
+  queryClient.setQueryData(householdsKey, rest);
+  queryClient.setQueryData(membershipKey, next);
+  if (rest.length === 0) void persister.removeClient();
+  return next;
 }
 
 /**
  * A membership that ended from someone else's side (removed, or the household deleted): forgets
- * that household's data, in memory and on the device. The membership is already the new one.
+ * that household's data, in memory and, as the device copy follows the cache, on the device. The
+ * membership is already the new one.
  */
 export function forgetEndedHousehold(queryClient: QueryClient, householdId: string): void {
   removeHouseholdData(queryClient, householdId);
-  void persister.removeClient();
 }

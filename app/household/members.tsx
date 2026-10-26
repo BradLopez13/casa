@@ -13,6 +13,7 @@ import {
   removeMember,
   revokeInvite,
   transferOwnership,
+  type Membership,
 } from '@/features/households/api';
 import { buildInviteUrl } from '@/features/households/invite-link';
 import { MemberRow } from '@/features/households/MemberRow';
@@ -36,6 +37,7 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { LoadError } from '@/ui/components/LoadError';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { useNotice } from '@/ui/components/Notice';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -51,6 +53,7 @@ export default function MembersScreen() {
   const queryClient = useQueryClient();
   const { userId } = useSession();
   const online = useIsOnline();
+  const notify = useNotice();
   const membership = useMembership().data;
   const householdId = membership?.householdId;
   const isOwner = membership?.role === 'owner';
@@ -62,14 +65,21 @@ export default function MembersScreen() {
   const transfer = useHouseholdMutation((id: string) =>
     transferOwnership(householdId as string, id),
   );
-  // Out of the household: its shopping data must not stay on the device.
+  // Out of the household: its data must not stay on the device. With another household left the
+  // app moves to it and says so (bloque 12); with none, the guard takes the person to onboarding.
+  const goToNext = (id: string) => {
+    const next = forgetHouseholdData<Membership>(queryClient, id);
+    if (!next) return;
+    router.replace('/today');
+    notify(t('households.nowIn', { household: next.householdName }));
+  };
   const leave = useHouseholdMutation(async (id: string) => {
     await leaveHousehold(id);
-    forgetHouseholdData(queryClient);
+    goToNext(id);
   });
   const del = useHouseholdMutation(async (id: string) => {
     await deleteHousehold(id);
-    forgetHouseholdData(queryClient);
+    goToNext(id);
   });
   const [pending, setPending] = useState<Pending | null>(null);
   const [error, setError] = useState<string | undefined>();
@@ -163,7 +173,7 @@ export default function MembersScreen() {
     };
     setError(undefined);
     setFooterError(undefined);
-    // After leave/delete the membership refetch makes the route guard send the user to onboarding.
+    // After leave/delete the app shows the next household, or the guard sends the user to onboarding.
     switch (pending.kind) {
       case 'remove':
         if (pending.userId) remove.mutate(pending.userId, done);

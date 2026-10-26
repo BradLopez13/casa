@@ -6,7 +6,7 @@ import { toAppError, type AppErrorCode } from '@/data/supabase/errors';
 import { AccountMenu } from '@/features/auth/AccountMenu';
 import { signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/SessionProvider';
-import { acceptInvite, getMyMembership } from '@/features/households/api';
+import { acceptInvite, type Membership } from '@/features/households/api';
 import { parseInviteToken } from '@/features/households/invite-link';
 import {
   useClearPendingInvite,
@@ -14,7 +14,12 @@ import {
   useSetPendingInvite,
 } from '@/features/households/pending-invite';
 import { invitePreviewText } from '@/features/households/inviteText';
-import { membershipKey, useInvitePreview } from '@/features/households/queries';
+import {
+  householdsKey,
+  membershipQuery,
+  setActiveHousehold,
+  useInvitePreview,
+} from '@/features/households/queries';
 import { inviteErrorKey } from '@/features/households/errors';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -29,6 +34,7 @@ const TERMINAL: ReadonlySet<AppErrorCode> = new Set([
   'INVITE_INVALID',
   'INVITE_EXPIRED',
   'ALREADY_IN_HOUSEHOLD',
+  'ALREADY_A_MEMBER',
 ]);
 
 export default function InviteScreen() {
@@ -83,11 +89,19 @@ export default function InviteScreen() {
     }
   }, [signedOut, token, hasParam, paramToken, setPending, router]);
 
+  // The household the invite leads to, once the preview or the accept says (bloque 12).
+  const invitedId = useRef<string | null>(null);
+  if (preview.data?.householdId) invitedId.current = preview.data.householdId;
+
+  /** The membership, fresh: the household list and the active one. */
+  const fetchMembership = () =>
+    queryClient.fetchQuery({ ...membershipQuery(queryClient, session.userId), staleTime: 0 });
+
   async function accept() {
     if (!token) return;
     setAccepting(true);
     try {
-      await acceptInvite(token);
+      invitedId.current = await acceptInvite(token);
       // Accepted: from here on nothing may turn this into an error. Clear the stored token
       // first (best effort) so the guard's pending-invite rule does not bring us back here.
       setPhase('busy');
@@ -103,25 +117,27 @@ export default function InviteScreen() {
       setFailure({ code, terminal });
       if (terminal) await clearPending.mutateAsync().catch(() => undefined);
       // Refresh membership (best effort) so Continue lands on /today.
-      if (code === 'ALREADY_IN_HOUSEHOLD') {
-        await queryClient
-          .fetchQuery({ queryKey: membershipKey, queryFn: getMyMembership, staleTime: 0 })
-          .catch(() => undefined);
-      }
+      if (code === 'ALREADY_IN_HOUSEHOLD') await fetchMembership().catch(() => undefined);
     } finally {
       setAccepting(false);
     }
   }
 
-  /** Fetches membership fresh; if the user is a member, clears pending and goes to root. */
+  /**
+   * Fetches the membership fresh; if the user is in the invited household (or, on a server
+   * before bloque 12 that does not say which it is, in any), shows it, clears pending and goes
+   * to root.
+   */
   async function leaveIfMember(): Promise<boolean> {
     try {
-      const membership = await queryClient.fetchQuery({
-        queryKey: membershipKey,
-        queryFn: getMyMembership,
-        staleTime: 0,
-      });
+      const membership = await fetchMembership();
       if (!membership) return false;
+      const target = invitedId.current;
+      if (target !== null) {
+        const list = queryClient.getQueryData<Membership[]>(householdsKey) ?? [];
+        if (!list.some((h) => h.householdId === target)) return false;
+        await setActiveHousehold(queryClient, session.userId, target);
+      }
     } catch {
       return false;
     }
@@ -145,13 +161,13 @@ export default function InviteScreen() {
   async function refreshMembershipAndLeave() {
     setPhase('busy');
     try {
+      // The new household is the one this phone shows from now on (bloque 12).
+      if (invitedId.current !== null) {
+        await setActiveHousehold(queryClient, session.userId, invitedId.current);
+      }
       // Fetch (not just invalidate) so a failure is visible here instead of the guard
       // acting on the stale "no household" data.
-      await queryClient.fetchQuery({
-        queryKey: membershipKey,
-        queryFn: getMyMembership,
-        staleTime: 0,
-      });
+      await fetchMembership();
     } catch (e) {
       setRefreshNetwork(toAppError(e).code === 'NETWORK');
       setPhase('failed');
@@ -262,6 +278,24 @@ export default function InviteScreen() {
 
   // A blank moment beats a title that changes under the reader's eyes.
   if (preview.isPending) return null;
+
+  // Already in that household (bloque 12): nothing to accept; it takes the person there.
+  if (preview.data?.alreadyMember) {
+    return (
+      <CenteredCard header={band}>
+        <ScreenTitle>
+          {t('invite.alreadyMember', { household: preview.data.householdName })}
+        </ScreenTitle>
+        <Button
+          testID="invite.go"
+          title={t('invite.goThere')}
+          icon={actionIcons.confirm}
+          width="full"
+          onPress={() => void leaveIfMember()}
+        />
+      </CenteredCard>
+    );
+  }
 
   return (
     <CenteredCard header={band}>

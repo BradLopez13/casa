@@ -1,23 +1,112 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { useSession } from '@/features/auth/SessionProvider';
+import { pickActive, readActiveHousehold, writeActiveHousehold } from './active';
 import {
-  getMyMembership,
+  getHouseholdLicense,
   listActiveInvites,
   listMembers,
+  listMyHouseholds,
   previewInvite,
   setDisplayName,
+  type Membership,
 } from './api';
-import { invitesKey, membersKey, membershipKey } from './keys';
+import { householdsKey, invitesKey, licenseKey, membersKey, membershipKey } from './keys';
 
-export { invitesKey, membersKey, membershipKey };
+export { householdsKey, invitesKey, licenseKey, membersKey, membershipKey };
 
-export function useMembership() {
-  const { status } = useSession();
-  return useQuery({
+/**
+ * Lists the person's households and keeps the active membership in line with it: the same
+ * household with its fresh name, role and licence, or, once it is gone, the next one.
+ */
+async function fetchHouseholds(queryClient: QueryClient): Promise<Membership[]> {
+  const list = await listMyHouseholds();
+  const current = queryClient.getQueryData<Membership | null>(membershipKey);
+  if (current !== undefined) {
+    queryClient.setQueryData(membershipKey, pickActive(list, current?.householdId ?? null));
+  }
+  return list;
+}
+
+/**
+ * The household the app shows (bloque 12): the list, fresh, and the one this phone chose for
+ * this person (`active.ts`), or the first. Null without households.
+ */
+export async function loadActiveMembership(
+  queryClient: QueryClient,
+  userId: string | null,
+): Promise<Membership | null> {
+  const list = await queryClient.fetchQuery({
+    queryKey: householdsKey,
+    queryFn: () => fetchHouseholds(queryClient),
+    staleTime: 0,
+  });
+  return pickActive(list, userId === null ? null : await readActiveHousehold(userId));
+}
+
+/** The active membership's query, also for a screen that needs it fresh (invite, onboarding). */
+export function membershipQuery(queryClient: QueryClient, userId: string | null) {
+  return {
     queryKey: membershipKey,
-    queryFn: getMyMembership,
+    queryFn: () => loadActiveMembership(queryClient, userId),
+  };
+}
+
+/** The active household's membership: what every screen shows. */
+export function useMembership() {
+  const { status, userId } = useSession();
+  const queryClient = useQueryClient();
+  return useQuery({ ...membershipQuery(queryClient, userId), enabled: status === 'signed-in' });
+}
+
+/** Every household the person is in, the oldest membership first. */
+export function useHouseholds() {
+  const { status } = useSession();
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: householdsKey,
+    queryFn: () => fetchHouseholds(queryClient),
     enabled: status === 'signed-in',
+  });
+}
+
+/** Whether the person is in more than one household: the words then say «esta casa». */
+export function useSeveralHouseholds(): boolean {
+  return (useHouseholds().data?.length ?? 0) > 1;
+}
+
+/**
+ * Makes `householdId` the household this phone shows, at once: every screen follows the
+ * membership. The choice is kept on the phone for the next start.
+ */
+export function setActiveHousehold(
+  queryClient: QueryClient,
+  userId: string | null,
+  householdId: string,
+): Promise<void> {
+  const list = queryClient.getQueryData<Membership[]>(householdsKey) ?? [];
+  const next = list.find((h) => h.householdId === householdId);
+  if (next) queryClient.setQueryData(membershipKey, next);
+  return userId === null ? Promise.resolve() : writeActiveHousehold(userId, householdId);
+}
+
+/** Switching household from a screen: «Tus casas», Ajustes or a tapped notice. */
+export function useSwitchHousehold() {
+  const { userId } = useSession();
+  const queryClient = useQueryClient();
+  return useCallback(
+    (householdId: string) => setActiveHousehold(queryClient, userId, householdId),
+    [queryClient, userId],
+  );
+}
+
+/** A household's licence, for its screen. */
+export function useHouseholdLicense(householdId: string | undefined) {
+  return useQuery({
+    queryKey: licenseKey(householdId),
+    queryFn: () => getHouseholdLicense(householdId as string),
+    enabled: householdId !== undefined,
   });
 }
 
@@ -58,6 +147,7 @@ export function useHouseholdMutation<TArgs, TResult>(fn: (args: TArgs) => Promis
   const refresh = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: membershipKey }),
+      queryClient.invalidateQueries({ queryKey: householdsKey }),
       queryClient.invalidateQueries({ queryKey: ['members'] }),
       queryClient.invalidateQueries({ queryKey: ['invites'] }),
     ]);

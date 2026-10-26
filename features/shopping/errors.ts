@@ -7,6 +7,7 @@ const ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
   ITEM_NOT_FOUND: 'shopping.errors.ITEM_NOT_FOUND',
   ITEM_ALREADY_LISTED: 'shopping.errors.ITEM_ALREADY_LISTED',
   NOT_A_MEMBER: 'shopping.errors.NOT_A_MEMBER',
+  LICENSE_REQUIRED: 'errors.LICENSE_REQUIRED',
   NETWORK: 'shopping.errors.NETWORK',
 };
 

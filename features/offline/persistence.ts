@@ -7,6 +7,7 @@ const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping-history',
   'shopping-resolved',
   'membership',
+  'households',
   'members',
   'tasks',
 ]);
@@ -14,7 +15,8 @@ const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
 /**
  * Kept on the device: the shopping list, its history and the queue's resolved ids, the tasks
  * (an offline cold start shows Hoy and Tareas as they were, with the band; fase 10e), plus the
- * membership (an offline cold start gets past the route guard) and the members (the magnets).
+ * membership and the household list (an offline cold start gets past the route guard and can
+ * still switch household; bloque 12) and the members (the magnets).
  */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {
   return PERSISTED_QUERIES.has(queryKey[0]);

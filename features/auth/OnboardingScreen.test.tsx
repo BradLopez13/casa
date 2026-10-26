@@ -6,7 +6,9 @@ import OnboardingScreen from '@/app/onboarding';
 import { AppError } from '@/data/supabase/errors';
 import { ROOMS } from '@/domain/tasks/rooms';
 import { signOut } from '@/features/auth/api';
-import { createHousehold, setHouseholdRooms } from '@/features/households/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createHousehold, listMyHouseholds, setHouseholdRooms } from '@/features/households/api';
+import { NewHouseholdFlow } from '@/features/households/NewHouseholdFlow';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 
@@ -21,19 +23,18 @@ vi.mock('@/features/households/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/households/api')>()),
   createHousehold: vi.fn(),
   setHouseholdRooms: vi.fn(),
+  listMyHouseholds: vi.fn(),
 }));
 
 const TOKEN = 'ab'.repeat(24);
 
-function renderOnboarding() {
+function renderOnboarding(screenNode = <OnboardingScreen />) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <NoticeProvider>
-        <OnboardingScreen />
-      </NoticeProvider>
+      <NoticeProvider>{screenNode}</NoticeProvider>
     </QueryClientProvider>,
   );
 }
@@ -170,7 +171,7 @@ describe('Crear tu hogar: las estancias', () => {
     expect(checks.every((c) => c.getAttribute('aria-checked') === 'true')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.roomsContinue') }));
     await vi.waitFor(() => expect(setHouseholdRooms).toHaveBeenCalled());
-    expect(vi.mocked(setHouseholdRooms).mock.calls[0]?.[0]).toEqual([...ROOMS]);
+    expect(vi.mocked(setHouseholdRooms).mock.calls[0]).toEqual(['h', [...ROOMS]]);
   });
 
   it('saves only the rooms left chosen', async () => {
@@ -180,9 +181,10 @@ describe('Crear tu hogar: las estancias', () => {
     const proceed = screen.getByRole('button', { name: t('onboarding.roomsContinue') });
     fireEvent.click(proceed);
     await vi.waitFor(() => expect(setHouseholdRooms).toHaveBeenCalled());
-    expect(vi.mocked(setHouseholdRooms).mock.calls[0]?.[0]).toEqual(
+    expect(vi.mocked(setHouseholdRooms).mock.calls[0]).toEqual([
+      'h',
       ROOMS.filter((room) => room !== 'laundry'),
-    );
+    ]);
     expect(busy(proceed)).toBe(true);
   });
 
@@ -201,5 +203,43 @@ describe('Crear tu hogar: las estancias', () => {
     fireEvent.click(proceed);
     expect((await screen.findByRole('alert')).textContent).toBe(t('onboarding.errors.NETWORK'));
     expect(busy(proceed)).toBe(false);
+  });
+});
+
+describe('Crear otra casa (bloque 12)', () => {
+  it('is onboarding with «Volver» on the band instead of the account', () => {
+    renderOnboarding(<NewHouseholdFlow another />);
+    expect(screen.getByRole('heading', { name: t('onboarding.anotherTitle') })).toBeTruthy();
+    expect(nameField().value).toBe(t('onboarding.anotherDefaultName'));
+    expect(screen.queryByTestId('account-menu')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: t('onboarding.back') }));
+    expect(router.back).toHaveBeenCalled();
+  });
+
+  it('once its rooms are saved, shows the new household and goes to Hoy', async () => {
+    vi.mocked(createHousehold).mockResolvedValueOnce('h2');
+    vi.mocked(setHouseholdRooms).mockResolvedValueOnce();
+    vi.mocked(listMyHouseholds).mockResolvedValue([]);
+    renderOnboarding(<NewHouseholdFlow another />);
+    fireEvent.change(nameField(), { target: { value: 'Casa de mamá' } });
+    fireEvent.click(createButton());
+    fireEvent.click(await screen.findByRole('button', { name: t('onboarding.roomsContinue') }));
+    await vi.waitFor(() => expect(router.replace).toHaveBeenCalledWith('/today'));
+    expect(vi.mocked(setHouseholdRooms).mock.calls[0]?.[0]).toBe('h2');
+    expect(await AsyncStorage.getItem('casa-active-household-me')).toBe('h2');
+  });
+
+  it('on a server that still allows one household, says so', async () => {
+    vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('ALREADY_IN_HOUSEHOLD'));
+    renderOnboarding(<NewHouseholdFlow another />);
+    fireEvent.click(createButton());
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      t('onboarding.errors.ALREADY_IN_HOUSEHOLD'),
+    );
+  });
+
+  it('opened from «Unirme con un enlace», the link field has the focus', () => {
+    renderOnboarding(<NewHouseholdFlow another focusLink />);
+    expect(document.activeElement).toBe(linkField());
   });
 });

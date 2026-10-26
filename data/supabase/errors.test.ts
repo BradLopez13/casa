@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppError, toAppError } from './errors';
+import { AppError, isMissingOnServer, toAppError } from './errors';
 
 describe('toAppError', () => {
   it('maps a P0001 PostgREST error to its code', () => {
@@ -19,6 +19,32 @@ describe('toAppError', () => {
     'INVALID_PREFS',
   ])('maps task code %s to itself', (code) => {
     expect(toAppError({ code: 'P0001', message: code })).toMatchObject({ code });
+  });
+
+  it('keeps what the server added to the code', () => {
+    const error = toAppError({
+      code: 'P0001',
+      message: 'OWNER_MUST_TRANSFER',
+      details: '["Casa", "Casa de mamá"]',
+    });
+    expect(error).toMatchObject({
+      code: 'OWNER_MUST_TRANSFER',
+      detail: '["Casa", "Casa de mamá"]',
+    });
+  });
+
+  it.each(['ALREADY_A_MEMBER', 'LICENSE_REQUIRED', 'BILLING_DISABLED'])(
+    'maps the household code %s to itself (bloque 12)',
+    (code) => {
+      expect(toAppError({ code: 'P0001', message: code })).toMatchObject({ code });
+    },
+  );
+
+  it('tells a database a migration behind', () => {
+    expect(isMissingOnServer({ code: 'PGRST202', message: 'no function' })).toBe(true);
+    expect(isMissingOnServer({ code: 'PGRST205', message: 'no table' })).toBe(true);
+    expect(isMissingOnServer({ code: 'P0001', message: 'NOT_A_MEMBER' })).toBe(false);
+    expect(isMissingOnServer(null)).toBe(false);
   });
 
   it('maps unknown P0001 messages to UNKNOWN', () => {

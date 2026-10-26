@@ -3,24 +3,28 @@ import { describe, expect, it } from 'vitest';
 import { cachedHouseholdIds, endedHouseholdIds } from './ended-household';
 
 describe('endedHouseholdIds', () => {
-  it('forgets nothing while the membership is still unknown', () => {
+  it('forgets nothing while the households are still unknown', () => {
     expect(endedHouseholdIds(['h'], undefined)).toEqual([]);
   });
 
-  it('forgets nothing while the membership is the cached household', () => {
-    expect(endedHouseholdIds(['h'], { householdId: 'h' })).toEqual([]);
+  it('forgets nothing while the cached household is still one of them', () => {
+    expect(endedHouseholdIds(['h'], [{ householdId: 'h' }])).toEqual([]);
   });
 
-  it('forgets the cached household when the membership is gone', () => {
-    expect(endedHouseholdIds(['h'], null)).toEqual(['h']);
+  it('forgets the cached household when there are none left', () => {
+    expect(endedHouseholdIds(['h'], [])).toEqual(['h']);
   });
 
-  it('forgets the cached household when the membership is another household', () => {
-    expect(endedHouseholdIds(['h', 'k'], { householdId: 'k' })).toEqual(['h']);
+  it('forgets only the household that is no longer in the list', () => {
+    expect(endedHouseholdIds(['h', 'k'], [{ householdId: 'k' }])).toEqual(['h']);
+  });
+
+  it('keeps the data of every household the person is in, whichever is shown (bloque 12)', () => {
+    expect(endedHouseholdIds(['h', 'k'], [{ householdId: 'k' }, { householdId: 'h' }])).toEqual([]);
   });
 
   it('forgets nothing when nothing is cached', () => {
-    expect(endedHouseholdIds([], null)).toEqual([]);
+    expect(endedHouseholdIds([], [])).toEqual([]);
   });
 });
 
