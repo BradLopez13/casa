@@ -7,7 +7,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { ActivityIndicator, Text, View, type FlatList } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
@@ -356,12 +356,20 @@ function ShoppingSplit({
   const { colors, space } = useTheme();
   const refreshControl = usePaneRefreshControl(pulling, refresh);
   const endPadding = useListEndPadding();
+  // The notice («Bolsa vaciada. Deshacer») floats over the left pane on a phone on its side: the
+  // pane moves its last line clear of it, as one column does (seen on the .51). The door is
+  // fixed above the panes, so there is no door in the pane to keep whole.
+  const leftRef = useRef<ScrollView>(null);
+  const leftNudge = useNoticeNudge((y, animated) => leftRef.current?.scrollTo({ y, animated }));
   const panes = shoppingPanes(state, pending.length, bought.length);
   const pane = { paddingTop: space(listTopStep(!band)), gap: space(5) };
 
   return (
     <TwoPane
       mode="split"
+      leftRef={leftRef}
+      leftScrollProps={leftNudge.listProps}
+      leftEndPadding={leftNudge.endPadding}
       header={
         <>
           {door(null)}

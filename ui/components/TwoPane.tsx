@@ -1,7 +1,8 @@
-import { useState, type ReactElement, type ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode, type RefObject } from 'react';
 import {
   Platform,
   ScrollView,
+  StyleSheet,
   View,
   useWindowDimensions,
   type RefreshControlProps,
@@ -66,6 +67,15 @@ type Props = {
   rightLane?: number;
   /** Split or stack, when the screen chooses otherwise than the layout (Compra on its side). */
   mode?: PaneMode;
+  /** Split: the left pane's scroll, so the screen can move it (`useNoticeNudge`). */
+  leftRef?: RefObject<ScrollView | null>;
+  /** Split: what tells `useNoticeNudge` where the left pane is. */
+  leftScrollProps?: Pick<
+    ScrollViewProps,
+    'onScroll' | 'onScrollBeginDrag' | 'scrollEventThrottle' | 'onLayout' | 'onContentSizeChange'
+  >;
+  /** Split: room added at the end of the left pane only (the nudge's). */
+  leftEndPadding?: number;
 };
 
 /**
@@ -92,6 +102,9 @@ export function TwoPane({
   revealFocusedField = false,
   rightLane = 0,
   mode,
+  leftRef,
+  leftScrollProps,
+  leftEndPadding = 0,
 }: Props) {
   const layout = useLayout();
   const flex = paneFlex(wide);
@@ -129,6 +142,11 @@ export function TwoPane({
   }
 
   const gap = paneGap(layout.size);
+  // The left pane keeps the screen's bottom room plus whatever its nudge asks for.
+  const basePad = StyleSheet.flatten(contentContainerStyle)?.paddingBottom;
+  const leftPad = {
+    paddingBottom: (typeof basePad === 'number' ? basePad : 0) + leftEndPadding,
+  };
   const widths = inner === null ? null : paneWidths(inner, gap, wide);
   return (
     <View style={{ flex: 1 }}>
@@ -144,6 +162,8 @@ export function TwoPane({
           style={paneStyle(widths?.left, flex.left)}
           refreshControl={refreshControl}
           {...scrollProps}
+          {...leftScrollProps}
+          contentContainerStyle={[contentContainerStyle, leftPad]}
           {...(revealFocusedField
             ? {
                 ...revealScroll,
@@ -152,6 +172,16 @@ export function TwoPane({
                 automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
               }
             : null)}
+          // The pane answers to both: the focused field's reveal and the notice's nudge.
+          ref={bothRefs(revealScroll.ref, leftRef)}
+          onScroll={(event) => {
+            if (revealFocusedField) revealScroll.onScroll(event);
+            leftScrollProps?.onScroll?.(event);
+          }}
+          onLayout={(event) => {
+            if (revealFocusedField) revealScroll.onLayout(event);
+            leftScrollProps?.onLayout?.(event);
+          }}
         >
           {revealFocusedField ? (
             <FocusRevealContext.Provider value={reveal}>{left}</FocusRevealContext.Provider>
@@ -169,6 +199,13 @@ export function TwoPane({
       </View>
     </View>
   );
+}
+
+/** One ref callback that sets every ref it is given. */
+function bothRefs<T>(...refs: (RefObject<T | null> | undefined)[]): (node: T | null) => void {
+  return (node) => {
+    for (const ref of refs) if (ref) ref.current = node;
+  };
 }
 
 /**
