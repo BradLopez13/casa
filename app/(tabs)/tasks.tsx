@@ -129,7 +129,9 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
   );
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // «Hecha. Deshacer» must not cover the note it speaks of.
-  const nudge = useNoticeNudge(listRef);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.getScrollResponder()?.scrollTo({ y, animated }),
+  );
 
   const door = (
     <>

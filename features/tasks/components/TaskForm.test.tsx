@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MemberMark } from '@/domain/members/marks';
 import type { Member, Membership } from '@/features/households/api';
@@ -44,6 +44,16 @@ function renderForm(props: Partial<Parameters<typeof TaskForm>[0]> = {}) {
   return { onSave, onCancel };
 }
 
+/** The window at `width` × `height`: react-native-web measures the document element. */
+function windowSize(width: number, height: number) {
+  const root = document.documentElement;
+  Object.defineProperty(root, 'clientWidth', { value: width, configurable: true });
+  Object.defineProperty(root, 'clientHeight', { value: height, configurable: true });
+  act(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
 const titleField = () => screen.getByTestId<HTMLInputElement>('task-form.title');
 const save = () => fireEvent.click(screen.getByTestId('task-form.save'));
 
@@ -84,6 +94,20 @@ describe('TaskForm', () => {
     renderForm({ initial, isNew: false, title: t('taskForm.editTitle') });
     fireEvent.change(titleField(), { target: { value: '' } });
     expect(screen.getByTestId('task-form.save').getAttribute('aria-disabled')).toBe('true');
+  });
+
+  // Bloque 11 (11.5): on a phone on its side the sheet left room for the title and one property.
+  it('on a short window lays the title and the properties side by side', () => {
+    windowSize(817, 375);
+    renderForm({ initial: { ...blank, title: 'Barrer' } });
+    expect(getComputedStyle(screen.getByTestId('task-form.note')).flexDirection).toBe('row');
+    windowSize(400, 860);
+  });
+
+  it('upright keeps them one under the other', () => {
+    windowSize(400, 860);
+    renderForm({ initial: { ...blank, title: 'Barrer' } });
+    expect(getComputedStyle(screen.getByTestId('task-form.note')).flexDirection).not.toBe('row');
   });
 
   it('says why a task that repeats has no «Sin fecha»', () => {

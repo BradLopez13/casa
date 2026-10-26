@@ -349,9 +349,10 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const nudging = sources.filter((f) => /useNoticeNudge\(/.test(read(f)));
     expect(nudging.length).toBeGreaterThan(0);
     for (const file of nudging) {
-      // The measured view is the first thing in the header: the door starts at the list's top.
+      // The measured view holds the door (`{door…}`) and opens the list's header (`ListHeaderComponent`
+      // or Compra's `header`): the door starts at the list's top.
       expect(read(file), file).toMatch(
-        /ListHeaderComponent=\{\s*<>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<View onLayout=\{nudge\.onDoorLayout\}>/,
+        /(ListHeaderComponent=\{|const header = \()\s*<>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<View onLayout=\{nudge\.onDoorLayout\}>\s*\{door/,
       );
       expect(read(file), file).toMatch(/nudge\.endPadding/);
     }

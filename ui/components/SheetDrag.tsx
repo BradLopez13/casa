@@ -12,6 +12,7 @@ import { SPRING } from '../motion';
 import { dragOffset, shouldDismiss } from '../sheetDrag';
 import { useReduceMotion, useTheme } from '../theme';
 import { radii } from '../tokens';
+import { useLayout } from '../useLayout';
 
 type Drag = { offset: SharedValue<number>; height: SharedValue<number> };
 
@@ -59,6 +60,9 @@ export function SheetDragArea({
   const drag = useContext(SheetDragContext);
   const reduceMotion = useReduceMotion();
   const { colors, space } = useTheme();
+  // On a short window the grip sits over the header's top edge instead of on a row of its own:
+  // every dp there is a line of the form (bloque 11).
+  const { shortHeight } = useLayout();
   const gesture = useMemo(() => {
     if (drag === null || !enabled) return null;
     const { offset, height } = drag;
@@ -100,9 +104,11 @@ export function SheetDragArea({
             alignSelf: 'center',
             width: 36,
             height: 4,
-            marginTop: space(2),
             borderRadius: radii.pill,
             backgroundColor: colors.outline,
+            ...(shortHeight
+              ? { position: 'absolute', top: space(1), zIndex: 1 }
+              : { marginTop: space(2) }),
           }}
         />
         {children}

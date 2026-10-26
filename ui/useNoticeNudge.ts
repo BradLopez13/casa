@@ -1,10 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import type {
-  LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  SectionList,
-} from 'react-native';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useNoticeShown } from './components/noticeContext';
 import { NOTICE_CLEARANCE, noticeScroll, wholeDoor } from './noticeClearance';
 import { useReduceMotion } from './a11y';
@@ -25,12 +20,12 @@ const DOOR_SLACK = 8;
  * was touched stays, unless the shrinking end would clip it into a cut door, and then the door
  * comes back whole (DESIGN.md, «la puerta nunca se ve partida»).
  *
- * The door must be the first thing in the list's header. Spread `listProps` on the `SectionList`,
- * put `onDoorLayout` on the view around the door and add `endPadding` to the list's bottom padding.
+ * The door must be the first thing in the list's header. `scrollList` moves the list (a
+ * SectionList through its scroll responder, a FlatList with `scrollToOffset`). Spread `listProps`
+ * on the list, put `onDoorLayout` on the view around the door and add `endPadding` to the list's
+ * bottom padding.
  */
-export function useNoticeNudge<ItemT, SectionT>(
-  listRef: RefObject<SectionList<ItemT, SectionT> | null>,
-) {
+export function useNoticeNudge(scrollList: (y: number, animated: boolean) => void) {
   const shown = useNoticeShown();
   const basePadding = useBaseListEndPadding();
   const reduceMotion = useReduceMotion();
@@ -49,18 +44,14 @@ export function useNoticeNudge<ItemT, SectionT>(
   // The room at the end as laid out now: it lasts as long as the notice.
   const room = shown ? endPadding : 0;
 
-  const scrollTo = useCallback(
-    (y: number) => {
-      listRef.current?.getScrollResponder()?.scrollTo({ y, animated: !reduceMotion });
-    },
-    [listRef, reduceMotion],
-  );
-
-  // What the hide reads, as it is at that moment.
-  const latest = useRef({ endPadding, scrollTo });
+  // What the callbacks and the hide read, as they are at that moment.
+  const latest = useRef({ endPadding, scrollList, reduceMotion });
   useLayoutEffect(() => {
-    latest.current = { endPadding, scrollTo };
+    latest.current = { endPadding, scrollList, reduceMotion };
   });
+  const scrollTo = useCallback((y: number) => {
+    latest.current.scrollList(y, !latest.current.reduceMotion);
+  }, []);
 
   useLayoutEffect(() => {
     pending.current = shown;
@@ -79,8 +70,8 @@ export function useNoticeNudge<ItemT, SectionT>(
       furthest: Math.max(0, shrunk - viewport.current),
       door: { height: door.current, slack: DOOR_SLACK },
     });
-    if (Math.abs(target - offset.current) > 1) latest.current.scrollTo(target);
-  }, [shown]);
+    if (Math.abs(target - offset.current) > 1) scrollTo(target);
+  }, [shown, scrollTo]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offset.current = e.nativeEvent.contentOffset.y;

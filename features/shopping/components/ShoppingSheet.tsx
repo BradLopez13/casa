@@ -1,9 +1,11 @@
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type RefObject } from 'react';
 import {
   Pressable,
   StyleSheet,
   Text,
   View,
+  type FlatList,
+  type FlatListProps,
   type RefreshControlProps,
   type StyleProp,
   type ViewStyle,
@@ -104,6 +106,13 @@ type Props = {
   refreshControl?: ReactElement<RefreshControlProps>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   contentInsetAdjustmentBehavior?: 'automatic' | 'scrollableAxes' | 'never' | 'always';
+  /** As the screen's scroller: the list, so the screen can move it (`useNoticeNudge`). */
+  listRef?: RefObject<FlatList<SheetRow> | null>;
+  /** As the screen's scroller: what tells `useNoticeNudge` where the list is. */
+  listProps?: Pick<
+    FlatListProps<SheetRow>,
+    'onScroll' | 'onScrollBeginDrag' | 'scrollEventThrottle' | 'onLayout' | 'onContentSizeChange'
+  >;
 };
 
 /** «En la bolsa (n)»: the heading of the bought rows, also over the empty right pane on two. */
@@ -152,6 +161,8 @@ export function ShoppingSheet({
   refreshControl,
   contentContainerStyle,
   contentInsetAdjustmentBehavior,
+  listRef,
+  listProps,
 }: Props) {
   const { colors, radii, noteEdge, space } = useTheme();
   const reduceMotion = useReduceMotion();
@@ -204,11 +215,16 @@ export function ShoppingSheet({
   return (
     <>
       <Animated.FlatList<SheetRow>
+        ref={listRef}
+        {...listProps}
         data={rows}
         keyExtractor={(row) => row.id}
         scrollEnabled={header !== undefined}
         keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={() => setOpenQuantity(null)}
+        onScrollBeginDrag={(event) => {
+          setOpenQuantity(null);
+          listProps?.onScrollBeginDrag?.(event);
+        }}
         itemLayoutAnimation={layoutTransition(reduceMotion)}
         ListHeaderComponent={header}
         refreshControl={refreshControl}

@@ -151,7 +151,9 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
   const { today, userId, members, tasksQuery } = screen;
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // «Hecha. Deshacer» must not cover the note it speaks of.
-  const nudge = useNoticeNudge(listRef);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.getScrollResponder()?.scrollTo({ y, animated }),
+  );
   return (
     <FridgeRefresh refreshing={screen.pulling} onRefresh={() => void screen.refresh()}>
       <SectionList

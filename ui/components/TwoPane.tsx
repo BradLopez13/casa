@@ -19,6 +19,7 @@ import {
   paneFlex,
   paneMode,
   paneWidths,
+  type PaneMode,
   type WidePane,
 } from '../panes';
 import { useLayout } from '../useLayout';
@@ -63,6 +64,8 @@ type Props = {
    * round "+" of a short window floats there. 0, the default, leaves the frame as it is.
    */
   rightLane?: number;
+  /** Split or stack, when the screen chooses otherwise than the layout (Compra on its side). */
+  mode?: PaneMode;
 };
 
 /**
@@ -88,6 +91,7 @@ export function TwoPane({
   wide,
   revealFocusedField = false,
   rightLane = 0,
+  mode,
 }: Props) {
   const layout = useLayout();
   const flex = paneFlex(wide);
@@ -112,7 +116,7 @@ export function TwoPane({
     contentInsetAdjustmentBehavior,
   };
 
-  if (paneMode(layout) === 'stack') {
+  if ((mode ?? paneMode(layout)) === 'stack') {
     return (
       <ScrollView refreshControl={refreshControl} {...scrollProps}>
         {header}

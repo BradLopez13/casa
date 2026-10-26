@@ -1,6 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import { ActivityIndicator, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
@@ -35,6 +42,7 @@ import {
 } from '@/features/shopping/queries';
 import {
   listTopStep,
+  shoppingPaneMode,
   shoppingPanes,
   shoppingState,
   type ShoppingState,
@@ -48,10 +56,12 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { useNotice } from '@/ui/components/Notice';
 import { TwoPane } from '@/ui/components/TwoPane';
-import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
 import { useOneColumn } from '@/ui/useOneColumn';
+import { useNoticeNudge } from '@/ui/useNoticeNudge';
+import { useListEndPadding } from '@/ui/useTabBarClearance';
+import type { SheetRow } from '@/features/shopping/sheetRows';
 import { actionIcons } from '@/ui/actionIcons';
 import { announce } from '@/ui/a11y';
 
@@ -257,7 +267,11 @@ export default function ShoppingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
-      {paneMode(layout) === 'split' ? <ShoppingSplit {...parts} /> : <ShoppingStack {...parts} />}
+      {shoppingPaneMode(layout) === 'split' ? (
+        <ShoppingSplit {...parts} />
+      ) : (
+        <ShoppingStack {...parts} />
+      )}
     </View>
   );
 }
@@ -280,10 +294,20 @@ function ShoppingStack({
 }: ShoppingParts) {
   const { space } = useTheme();
   const column = useOneColumn();
+  // «Bolsa vaciada. Deshacer» keeps its room at the end and never covers the last line, as on Hoy
+  // (bloque 11, A4).
+  const endPadding = useListEndPadding();
+  const listRef = useRef<FlatList<SheetRow>>(null);
+  const nudge = useNoticeNudge((y, animated) =>
+    listRef.current?.scrollToOffset({ offset: y, animated }),
+  );
   const header = (
     <>
-      {door(<AddItemField entry={entry} />)}
-      {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+      {/* Measured so the nudge never leaves it cut under the status bar. */}
+      <View onLayout={nudge.onDoorLayout}>
+        {door(<AddItemField entry={entry} />)}
+        {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+      </View>
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
       <View style={[column, { paddingTop: space(listTopStep(!band)) }]}>{stateView}</View>
     </>
@@ -296,7 +320,9 @@ function ShoppingStack({
         column={column}
         pending={state === 'list' ? pending : NO_ITEMS}
         bought={state === 'list' ? bought : NO_ITEMS}
-        contentContainerStyle={{ paddingBottom: space(10) }}
+        contentContainerStyle={{ paddingBottom: endPadding + nudge.endPadding }}
+        listRef={listRef}
+        listProps={nudge.listProps}
         {...sheet}
       />
     </FridgeRefresh>
@@ -323,11 +349,13 @@ function ShoppingSplit({
 }: ShoppingParts) {
   const { colors, space } = useTheme();
   const refreshControl = usePaneRefreshControl(pulling, refresh);
+  const endPadding = useListEndPadding();
   const panes = shoppingPanes(state, pending.length, bought.length);
   const pane = { paddingTop: space(listTopStep(!band)), gap: space(5) };
 
   return (
     <TwoPane
+      mode="split"
       header={
         <>
           {door(null)}
@@ -339,7 +367,8 @@ function ShoppingSplit({
       rightTestID="shopping.pane.bought"
       refreshControl={refreshControl}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: space(10) }}
+      // The notice keeps its room at the end of each pane, so no line stays under it.
+      contentContainerStyle={{ paddingBottom: endPadding }}
       left={
         <View style={pane}>
           <AddItemField entry={entry} />

@@ -32,9 +32,16 @@ describe('sheetMargins', () => {
   });
 
   it('gives way to deeper safe-area insets', () => {
-    // A phone on its side: 18 dp would be 5 %, the status bar and the side notch are deeper.
-    const m = sheetMargins(360, 24, { top: 28, right: 0, bottom: 16, left: 48 });
-    expect(m).toEqual({ top: 28, right: 24, bottom: 18, left: 48 });
+    const m = sheetMargins(600, 24, { top: 48, right: 0, bottom: 16, left: 48 });
+    expect(m).toEqual({ top: 48, right: 24, bottom: 30, left: 48 });
+  });
+
+  // Bloque 11 (11.5): on a short window (a phone on its side) the 5 % above and below cost the
+  // form a property: the sheet runs the full height, clear only of the system bars.
+  it('runs the full height of a short window, clear only of the system bars', () => {
+    const m = sheetMargins(375, 24, { top: 28, right: 0, bottom: 16, left: 48 });
+    expect(m).toEqual({ top: 28, right: 24, bottom: 16, left: 48 });
+    expect(sheetMargins(375, 24, none)).toMatchObject({ top: 0, bottom: 0 });
   });
 });
 
@@ -47,6 +54,7 @@ describe('formDensity', () => {
       bottomStep: 8,
       autoFocusTitle: true,
       footRow: false,
+      columns: 1,
     });
     expect(formDensity(layoutFor(1024, 1366)).autoFocusTitle).toBe(true);
   });
@@ -60,5 +68,14 @@ describe('formDensity', () => {
     expect(short.topStep).toBeLessThan(tall.topStep);
     expect(short.gapStep).toBeLessThan(tall.gapStep);
     expect(short.bottomStep).toBeLessThan(tall.bottomStep);
+  });
+
+  // Bloque 11 (11.5): full height still left about 200 dp between the header and the foot on the
+  // .51 on its side, short of the 240 the roadmap asks for: the title and the properties go side
+  // by side there.
+  it('lays the title and the properties in two columns on a short window', () => {
+    expect(formDensity(layoutFor(844, 390)).columns).toBe(2);
+    expect(formDensity(layoutFor(390, 844)).columns).toBe(1);
+    expect(formDensity(layoutFor(1024, 1366)).columns).toBe(1);
   });
 });

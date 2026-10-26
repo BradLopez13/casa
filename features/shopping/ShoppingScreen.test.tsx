@@ -169,6 +169,18 @@ describe('Compra', () => {
     );
   });
 
+  // Bloque 11 (11.5): on a phone on its side the bag goes beside the note, in view.
+  it('on a phone on its side, puts the bag beside the note', () => {
+    windowSize(817, 375);
+    renderShopping([
+      item('Leche'),
+      item('Pan', { boughtAt: '2026-10-21T08:00:00.000Z', boughtBy: 'me' }),
+    ]);
+    expect(screen.getByTestId('shopping.pane.pending')).toBeTruthy();
+    expect(screen.getByTestId('shopping.pane.bought')).toBeTruthy();
+    windowSize(400, 860);
+  });
+
   it('online, there is no offline band', () => {
     renderShopping([item('Leche')]);
     expect(screen.queryByTestId('shopping.offline')).toBeNull();

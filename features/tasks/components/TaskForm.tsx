@@ -92,6 +92,7 @@ export function TaskForm({
   const { colors, radii, noteEdge, space } = useTheme();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
+  const twoColumns = density.columns === 2;
   const { scroll, reveal, show } = useRevealFocusedField();
   const more = useMoreBelow();
   const picker = useRef<View>(null);
@@ -247,17 +248,23 @@ export function TaskForm({
           >
             {/* Every field asks for it on focus, as in CenteredCard. */}
             <FocusRevealContext.Provider value={reveal}>
+              {/* On a phone on its side the title and the properties go side by side: in one
+                  column the sheet showed the title and a single property (bloque 11). */}
               <View
+                testID="task-form.note"
                 style={{
                   padding: space(4),
                   gap: space(4),
+                  ...(twoColumns
+                    ? { flexDirection: 'row', alignItems: 'flex-start', columnGap: space(5) }
+                    : null),
                   borderRadius: radii.note,
                   backgroundColor: colors.note,
                   borderWidth: hasEdge ? noteEdge.borderWidth : StyleSheet.hairlineWidth,
                   borderColor: hasEdge ? noteEdge.borderColor : colors.hairline,
                 }}
               >
-                <View style={{ gap: space(2) }}>
+                <View style={{ gap: space(2), ...(twoColumns ? { flex: 1 } : null) }}>
                   <TextField
                     ref={titleRef}
                     bare
@@ -307,70 +314,72 @@ export function TaskForm({
                     </Text>
                   ) : null}
                 </View>
-                <PropertyMagnets
-                  room={values.room}
-                  assignee={assignee}
-                  due={values.dueOn}
-                  repeat={values.recurrence}
-                  today={today}
-                  open={open}
-                  onOpen={toggle}
-                  repeatEditable={repeatEditable}
-                  // The open picker, right under its magnet; the two are measured as one block so
-                  // the magnet and its picker scroll into view whole.
-                  openRef={picker}
-                  onOpenLayout={() => show(picker.current)}
-                  picker={
-                    open !== null ? (
-                      <View key={open} style={{ paddingTop: space(2), paddingBottom: space(3) }}>
-                        {open === 'room' ? (
-                          <RoomPicker
-                            value={values.room}
-                            onChange={(room) => choose('room', { room })}
-                          />
-                        ) : null}
-                        {open === 'assignee' ? (
-                          <AssigneePicker
-                            value={values.assigneeId}
-                            members={members}
-                            marks={marks}
-                            userId={userId}
-                            onChange={(assigneeId) => {
-                              if (assigneeId !== values.assigneeId)
-                                choose('assignee', { assigneeId });
-                            }}
-                          />
-                        ) : null}
-                        {open === 'due' ? (
-                          <DayCells
-                            value={values.dueOn}
-                            today={today}
-                            onChange={setDueOn}
-                            noneDisabled={repeating}
-                            past={pastDue}
-                          />
-                        ) : null}
-                        {open === 'repeat' && repeatEditable ? (
-                          <View style={{ gap: space(3) }}>
-                            <RecurrencePicker
-                              value={values.recurrence}
-                              dueOn={values.dueOn ?? today}
-                              onChange={setRecurrence}
+                <View style={twoColumns ? { flex: 1.4 } : undefined}>
+                  <PropertyMagnets
+                    room={values.room}
+                    assignee={assignee}
+                    due={values.dueOn}
+                    repeat={values.recurrence}
+                    today={today}
+                    open={open}
+                    onOpen={toggle}
+                    repeatEditable={repeatEditable}
+                    // The open picker, right under its magnet; the two are measured as one block so
+                    // the magnet and its picker scroll into view whole.
+                    openRef={picker}
+                    onOpenLayout={() => show(picker.current)}
+                    picker={
+                      open !== null ? (
+                        <View key={open} style={{ paddingTop: space(2), paddingBottom: space(3) }}>
+                          {open === 'room' ? (
+                            <RoomPicker
+                              value={values.room}
+                              onChange={(room) => choose('room', { room })}
                             />
-                            {nextDate !== null ? (
-                              <Text
-                                testID="task-form.repeat.next"
-                                style={{ color: colors.muted, fontSize: 13 }}
-                              >
-                                {t('taskForm.repeatNext', { date: nextDate })}
-                              </Text>
-                            ) : null}
-                          </View>
-                        ) : null}
-                      </View>
-                    ) : null
-                  }
-                />
+                          ) : null}
+                          {open === 'assignee' ? (
+                            <AssigneePicker
+                              value={values.assigneeId}
+                              members={members}
+                              marks={marks}
+                              userId={userId}
+                              onChange={(assigneeId) => {
+                                if (assigneeId !== values.assigneeId)
+                                  choose('assignee', { assigneeId });
+                              }}
+                            />
+                          ) : null}
+                          {open === 'due' ? (
+                            <DayCells
+                              value={values.dueOn}
+                              today={today}
+                              onChange={setDueOn}
+                              noneDisabled={repeating}
+                              past={pastDue}
+                            />
+                          ) : null}
+                          {open === 'repeat' && repeatEditable ? (
+                            <View style={{ gap: space(3) }}>
+                              <RecurrencePicker
+                                value={values.recurrence}
+                                dueOn={values.dueOn ?? today}
+                                onChange={setRecurrence}
+                              />
+                              {nextDate !== null ? (
+                                <Text
+                                  testID="task-form.repeat.next"
+                                  style={{ color: colors.muted, fontSize: 13 }}
+                                >
+                                  {t('taskForm.repeatNext', { date: nextDate })}
+                                </Text>
+                              ) : null}
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null
+                    }
+                  />
+                </View>
               </View>
               {dangerZone}
             </FocusRevealContext.Provider>
