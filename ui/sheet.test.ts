@@ -77,5 +77,7 @@ describe('formDensity', () => {
     expect(formDensity(layoutFor(844, 390)).columns).toBe(2);
     expect(formDensity(layoutFor(390, 844)).columns).toBe(1);
     expect(formDensity(layoutFor(1024, 1366)).columns).toBe(1);
+    // A short but narrow window (split screen) keeps one column.
+    expect(formDensity(layoutFor(380, 420)).columns).toBe(1);
   });
 });

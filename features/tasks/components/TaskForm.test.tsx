@@ -100,14 +100,21 @@ describe('TaskForm', () => {
   it('on a short window lays the title and the properties side by side', () => {
     windowSize(817, 375);
     renderForm({ initial: { ...blank, title: 'Barrer' } });
-    expect(getComputedStyle(screen.getByTestId('task-form.note')).flexDirection).toBe('row');
+    expect(getComputedStyle(screen.getByTestId('task-form.columns')).flexDirection).toBe('row');
+    // The open picker takes the whole width, under both columns: a week of days fits in a row.
+    fireEvent.click(screen.getByTestId('task-form.prop.due'));
+    const after = (a: Element, b: Element) =>
+      (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    expect(
+      after(screen.getByTestId('task-form.prop.repeat'), screen.getByTestId('task-form.due.none')),
+    ).toBe(true);
     windowSize(400, 860);
   });
 
   it('upright keeps them one under the other', () => {
     windowSize(400, 860);
     renderForm({ initial: { ...blank, title: 'Barrer' } });
-    expect(getComputedStyle(screen.getByTestId('task-form.note')).flexDirection).not.toBe('row');
+    expect(getComputedStyle(screen.getByTestId('task-form.columns')).flexDirection).not.toBe('row');
   });
 
   it('says why a task that repeats has no «Sin fecha»', () => {

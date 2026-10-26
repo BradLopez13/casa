@@ -100,6 +100,7 @@ export function SheetDragArea({
         <View
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
           style={{
             alignSelf: 'center',
             width: 36,

@@ -60,7 +60,7 @@ export type FormDensity = {
  * and the keyboard would cover the rest: there the form closes up and the title waits for a tap
  * before the keyboard comes up. Everywhere else the form keeps its spacing and its autofocus.
  */
-export function formDensity(layout: Pick<Layout, 'shortHeight'>): FormDensity {
+export function formDensity(layout: Pick<Layout, 'shortHeight' | 'landscape'>): FormDensity {
   return layout.shortHeight
     ? {
         headerStep: 1,
@@ -69,7 +69,9 @@ export function formDensity(layout: Pick<Layout, 'shortHeight'>): FormDensity {
         bottomStep: 5,
         autoFocusTitle: false,
         footRow: true,
-        columns: 2,
+        // Side by side only on a phone on its side: a short narrow window (split screen) has no
+        // room for two.
+        columns: layout.landscape ? 2 : 1,
       }
     : {
         headerStep: 2,

@@ -356,6 +356,8 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       );
       expect(read(file), file).toMatch(/nudge\.endPadding/);
     }
+    // Compra's measured `header` is the list's header.
+    expect(read('app/(tabs)/shopping.tsx')).toMatch(/header=\{header\}/);
     expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);
     expect(read('ui/components/FridgeRefresh.tsx')).toMatch(/height: VEIL_FADE/);
   });

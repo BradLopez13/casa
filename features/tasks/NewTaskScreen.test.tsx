@@ -71,6 +71,7 @@ function renderNew() {
       </NoticeProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 const titleField = () => screen.getByTestId<HTMLInputElement>('task-form.title');
@@ -116,6 +117,32 @@ describe('Nueva tarea', () => {
     expect(vi.mocked(createTask).mock.calls[0]?.[1]).toBe('h');
     expect(vi.mocked(createTask).mock.calls[0]?.[2]).toMatchObject({ title: 'Regar' });
     await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
+  });
+
+  // Bloque 11: the «+» of Tareas' «Todas» opens it without a date.
+  it('opened for no day starts the task without a date', () => {
+    nav.params = { due: 'none' };
+    renderNew();
+    expect(screen.getByTestId('task-form.prop.due').textContent).toContain(t('tasks.due.none'));
+    nav.params = {};
+  });
+
+  // Bloque 11 (T6): the form now has a way in, so it queues like the quick add: offline it closes
+  // at once with the note on the list, and the create waits for the connection.
+  it('offline, saves into the queue and closes at once', async () => {
+    onlineManager.setOnline(false);
+    const queryClient = renderNew();
+    fireEvent.change(titleField(), { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('task-form.save'));
+    await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
+    expect(createTask).not.toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(
+        queryClient.getQueryData<{ title: string }[]>(tasksKey('h'))?.map((task) => task.title),
+      ).toEqual(['Regar']),
+    );
+    onlineManager.setOnline(true);
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
   });
 
   it('a link that names someone and a day starts the task for them that day', async () => {

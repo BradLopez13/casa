@@ -1,18 +1,19 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
-import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
+import { newTaskId, type TaskInput } from '@/features/tasks/api';
+import { buildCreateOptions } from '@/features/tasks/create';
 import { markFresh } from '@/features/tasks/freshIds';
 import { assigneeParam, dueParam } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { NO_DATE } from '@/features/tasks/components/QuickAdd';
-import { taskErrorMessage } from '@/features/tasks/errors';
-import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ModalSheet } from '@/ui/components/ModalSheet';
+import { useNotice } from '@/ui/components/Notice';
 import { useCloseModal } from '@/ui/useCloseModal';
 import { announce } from '@/ui/a11y';
 
@@ -35,9 +36,11 @@ function NewTaskScreen() {
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
   // One id per form: a retried or repeated create returns the same task instead of a copy.
   const [id] = useState(newTaskId);
-  const save = useTaskMutation(({ input }: { input: TaskInput }) =>
-    createTask(id, householdId as string, input),
-  );
+  // Queued like the quick add (bloque 11, T6): the note shows at once, without a connection the
+  // create waits for it, and a final error takes the note away and says so.
+  const queryClient = useQueryClient();
+  const notify = useNotice();
+  const create = useMutation(buildCreateOptions(queryClient, notify));
 
   const initial: TaskInput = {
     title: '',
@@ -57,23 +60,17 @@ function NewTaskScreen() {
       marks={marks}
       userId={userId}
       today={today}
-      saving={save.isPending || save.isSuccess}
+      saving={create.isPending || create.isSuccess}
       repeatEditable
-      error={save.error ? taskErrorMessage(save.error) : null}
+      error={null}
       onCancel={close}
       onSave={(input) => {
         if (householdId === undefined) return;
         // Created here: its note lands with the pin choreography on the list behind.
         markFresh(id);
-        save.submit(
-          { input },
-          {
-            onSuccess: () => {
-              announce(t('tasks.a11y.added', { title: input.title }));
-              close();
-            },
-          },
-        );
+        create.mutate({ id, householdId, userId, input });
+        announce(t('tasks.a11y.added', { title: input.title }));
+        close();
       }}
     />
   );
