@@ -7,7 +7,7 @@ import { useBaseListEndPadding } from './useTabBarClearance';
 
 /** Enough scroll events to know where the list is, without reporting every pixel. */
 const SCROLL_THROTTLE_MS = 100;
-/** Room at the end that differs by less than this is the same room. */
+/** Room added at the end beyond what the move needs, for the fractions of a dp in layout. */
 const ROOM_SLACK = 1;
 /** The door's top padding under the status bar (8 dp compact, 12 full): moving less cuts nothing. */
 const DOOR_SLACK = 8;
@@ -118,12 +118,13 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         return;
       }
       nudged.current = { from, to: scroll.to };
-      // Laid out heights come in fractions of a dp: the room is rounded up and only grows when
-      // the list came out short, or it would never be «the same» (seen on the .51). The list
-      // moves once the room it needs is there.
+      // Laid out heights come in fractions of a dp: the room is rounded up with a dp to spare and
+      // only grows when the list came out short, or it would never be «the same» (seen on the
+      // .51). The list moves once the room it needs is there.
       const needed = Math.ceil(scroll.extra);
-      if (needed > room + ROOM_SLACK) {
-        setEndPadding(needed);
+      if (needed > room) {
+        // A dp to spare, so the list is never clipped just short of the door's edge.
+        setEndPadding(needed + ROOM_SLACK);
         return;
       }
       if (!touched.current && Math.abs(offset.current - scroll.to) > 1) scrollTo(scroll.to);
