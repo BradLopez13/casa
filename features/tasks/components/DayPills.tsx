@@ -16,6 +16,11 @@ type Props = {
   chosen: string | null;
   names: Map<string, string>;
   onSelect: (date: string | null) => void;
+  /**
+   * How far the row runs past its column, so a half pill at the edge says there is more: both
+   * sides in the list, only the right one beside the door's magnets, none beside its quick add.
+   */
+  bleed?: 'both' | 'right' | 'none';
 };
 
 /**
@@ -23,7 +28,7 @@ type Props = {
  * that scrolls sideways. It only filters the list; the chosen pill is filled with `selection`,
  * the rest outlined (§14.1, one selected style).
  */
-export function DayPills({ days, today, chosen, names, onSelect }: Props) {
+export function DayPills({ days, today, chosen, names, onSelect, bleed = 'both' }: Props) {
   const { colors, radii, space } = useTheme();
   const reduceMotion = useReduceMotion();
   const pills = dayPills(days, today);
@@ -48,8 +53,15 @@ export function DayPills({ days, today, chosen, names, onSelect }: Props) {
       accessibilityRole="radiogroup"
       accessibilityLabel={t('tasks.pill.label')}
       // The row bleeds past the column so a half pill at the edge says there is more.
-      style={{ marginHorizontal: -space(5) }}
-      contentContainerStyle={{ paddingHorizontal: space(5), gap: space(2) }}
+      style={{
+        marginLeft: bleed === 'both' ? -space(5) : 0,
+        marginRight: bleed === 'none' ? 0 : -space(5),
+      }}
+      contentContainerStyle={{
+        paddingLeft: bleed === 'both' ? space(5) : 0,
+        paddingRight: bleed === 'none' ? 0 : space(5),
+        gap: space(2),
+      }}
     >
       {pills.map((pill) => {
         const selected = pill.date === chosen;

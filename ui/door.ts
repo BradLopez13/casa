@@ -108,3 +108,14 @@ export function doorFor(
     beside,
   };
 }
+
+/**
+ * Whether Tareas' day pills come into the door (bloque 11). In a compact door on a phone held
+ * upright (large text) they sit beside the filter's magnets, where the row has room left, so only
+ * the quick add stands between the door and the first note; on a phone on its side they sit beside
+ * the quick add the door already holds. Under a full door, above two panes, or where the quick add
+ * goes to the list, they stay at the head of the list.
+ */
+export function stripInDoor(door: Door): boolean {
+  return door.compact && (door.holdsQuickAdd || !door.beside);
+}

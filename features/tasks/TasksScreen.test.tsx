@@ -116,6 +116,28 @@ afterEach(() => {
 });
 
 describe('Tareas', () => {
+  // Bloque 11 (11.2): at large text the day pills sit beside the door's magnets, so only the quick
+  // add stands between the door and the first note; at the default text they stay under the field.
+  it('at large text brings the day pills into the compact door, above the quick add', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.6 }));
+    renderTasks([task('Fregar', {})]);
+    const pills = screen.getByTestId('tasks.pill.all');
+    const field = screen.getByTestId('tasks.quick-add');
+    expect(pills.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    scale.mockRestore();
+  });
+
+  it('at the default text keeps the day pills under the quick add', () => {
+    renderTasks([task('Fregar', {})]);
+    const pills = screen.getByTestId('tasks.pill.all');
+    const field = screen.getByTestId('tasks.quick-add');
+    expect(field.compareDocumentPosition(pills) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('the door line starts by saying what the tab is for', () => {
     renderTasks([task('Fregar', {})]);
     const line = screen.getByText((text) => text.startsWith(t('tasks.allLine.purpose')));

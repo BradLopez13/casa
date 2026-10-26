@@ -264,7 +264,19 @@ describe('Hoy', () => {
     expect(screen.queryByTestId('door.refresh-hint')).toBeNull();
   });
 
-  it('with large text, the quick add hint waits for the list one', async () => {
+  it('with large text and an empty list, the quick add hint comes back', async () => {
+    const { Dimensions } = await import('react-native');
+    const get = Dimensions.get.bind(Dimensions);
+    const scale = vi
+      .spyOn(Dimensions, 'get')
+      .mockImplementation((dim) => ({ ...get(dim), fontScale: 1.6 }));
+    hintsOpen('quickAdd', 'complete');
+    renderToday([]);
+    expect(screen.getByTestId('today.quick-add.hint')).toBeTruthy();
+    scale.mockRestore();
+  });
+
+  it('with large text and notes, the quick add hint keeps quiet', async () => {
     const { Dimensions } = await import('react-native');
     const get = Dimensions.get.bind(Dimensions);
     const scale = vi

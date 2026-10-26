@@ -19,6 +19,7 @@ import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
+import { stripInDoor } from '@/ui/door';
 import { paneMode } from '@/ui/panes';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
@@ -111,8 +112,21 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
   const { space } = useTheme();
   const endPadding = useListEndPadding();
   const column = useOneColumn();
-  const { holdsQuickAdd } = useDoor();
+  const doorLook = useDoor();
+  const { holdsQuickAdd } = doorLook;
+  // In a compact door the pills come in, so only the quick add stands above the first note.
+  const pillsInDoor = stripInDoor(doorLook);
   const { today, userId, members, tasksQuery, assigneeId, marks } = screen;
+  const pills = (
+    <DayPills
+      days={strip}
+      today={today}
+      chosen={day}
+      names={screen.names}
+      onSelect={chooseDay}
+      bleed={!pillsInDoor ? 'both' : holdsQuickAdd ? 'none' : 'right'}
+    />
+  );
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);
   // «Hecha. Deshacer» must not cover the note it speaks of.
   const nudge = useNoticeNudge(listRef);
@@ -124,6 +138,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
         heading={t('tasks.allHeadline')}
         secondary={doorLine}
         quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
+        strip={pills}
       >
         <MemberFilter
           members={members}
@@ -152,19 +167,15 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           <>
             {/* Measured so the nudge never leaves it cut under the status bar. */}
             <View onLayout={nudge.onDoorLayout}>{door}</View>
-            <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
-              {/* On a phone on its side the door holds the field. */}
-              {holdsQuickAdd ? null : (
-                <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
-              )}
-              <DayPills
-                days={strip}
-                today={today}
-                chosen={day}
-                names={screen.names}
-                onSelect={chooseDay}
-              />
-            </View>
+            {/* On a phone on its side the door holds the field, and the pills with it. */}
+            {holdsQuickAdd && pillsInDoor ? null : (
+              <View style={[column, { paddingTop: space(4), gap: space(3) }]}>
+                {holdsQuickAdd ? null : (
+                  <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
+                )}
+                {pillsInDoor ? null : pills}
+              </View>
+            )}
           </>
         }
         // The catalogue waits at the end of Todas: a way to find more, not a layer before the
