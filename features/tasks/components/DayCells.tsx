@@ -12,7 +12,7 @@ type Props = {
   value: string | null;
   today: string;
   onChange: (value: string | null) => void;
-  /** Phase 4 hides "Sin fecha" for tasks that must have a date. */
+  /** «Sin fecha» waits faded for a task that must have a date (one that repeats), and says why. */
   noneDisabled?: boolean;
   /**
    * The past date the task was due on when the form opened, if any. It goes first, as «dom 11
@@ -116,7 +116,7 @@ function shortDate(iso: string): string {
  * then "Otro día" (native picker) and "Sin fecha" on a row of their own.
  */
 export function DayCells({ value, today, onChange, noneDisabled, past = null }: Props) {
-  const { space } = useTheme();
+  const { colors, space } = useTheme();
   const pastDay = past !== null && past < today ? past : null;
   const otherValue =
     value !== null && !isQuickDay(value, today) && value !== pastDay ? value : null;
@@ -189,11 +189,25 @@ export function DayCells({ value, today, onChange, noneDisabled, past = null }: 
           <Cell
             testID="task-form.due.none"
             label={t('tasks.due.none')}
+            spoken={
+              noneDisabled ? `${t('tasks.due.none')}. ${t('taskForm.noneNeedsDate')}` : undefined
+            }
             selected={value === null}
             disabled={noneDisabled}
             onPress={() => onChange(null)}
           />
         </View>
+        {/* What looks off says why it waits (bloque 11). */}
+        {noneDisabled ? (
+          <Text
+            testID="task-form.due.none-why"
+            importantForAccessibility="no"
+            accessibilityElementsHidden
+            style={{ color: colors.muted, fontSize: 14 }}
+          >
+            {t('taskForm.noneNeedsDate')}
+          </Text>
+        ) : null}
       </View>
       {showIosPicker ? (
         <DateTimePicker

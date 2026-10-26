@@ -30,6 +30,11 @@ type Props = {
   flush?: boolean;
   /** `menuitem` inside a menu (`MemberMenu`); a button anywhere else. */
   role?: 'button' | 'menuitem';
+  /**
+   * What a disabled button waits for, said after its title («Guardar. Escribe qué hay que
+   * hacer»): what looks off says why (bloque 11).
+   */
+  waitingFor?: string;
 };
 
 export function Button({
@@ -44,6 +49,7 @@ export function Button({
   width = 'hug',
   flush = false,
   role = 'button',
+  waitingFor,
 }: Props) {
   const { colors, radii, shadows } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -61,7 +67,7 @@ export function Button({
       <Pressable
         testID={testID}
         accessibilityRole={role}
-        accessibilityLabel={title}
+        accessibilityLabel={disabled && waitingFor ? `${title}. ${waitingFor}` : title}
         aria-disabled={inactive}
         aria-busy={loading}
         disabled={inactive}

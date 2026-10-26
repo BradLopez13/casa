@@ -118,6 +118,7 @@ export function TaskForm({
   const [opened] = useState(initial);
   const [open, setOpen] = useState<FormField | null>(() => openFieldFor(opened, isNew));
   const dirty = isDirty(opened, typed) || isDirty(opened, values);
+  const hasTitle = values.title.trim() !== '';
   const { requestClose, dialog } = useDiscardGuard({ dirty, onCancel, busy: saving });
   const [triedSave, setTriedSave] = useState(false);
   const titleRef = useRef<TextInput>(null);
@@ -384,9 +385,11 @@ export function TaskForm({
               testID="task-form.save"
               title={t('taskForm.save')}
               onPress={save}
-              // Editing: nothing to save until something changed, so Save waits faded (the
-              // contract's disabled look) instead of inviting a tap that does nothing.
-              disabled={!isNew && !dirty}
+              // Nothing to save yet (a new task without a title, an edit with nothing changed):
+              // Save waits faded (the contract's disabled look) instead of inviting a tap that
+              // does nothing. A new task says what it waits for.
+              disabled={isNew ? !hasTitle : !dirty}
+              waitingFor={isNew ? t('taskForm.titleRequired') : undefined}
               loading={saving}
               width={density.footRow ? 'hug' : 'full'}
             />

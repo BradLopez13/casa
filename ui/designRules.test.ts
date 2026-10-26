@@ -276,10 +276,13 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(offenders(sources, (line) => /glyph=\{\{\s*node:\s*null/.test(line))).toEqual([]);
   });
 
-  // Fase 10a: in every edit sheet Save waits dimmed until something changes.
-  it('edit sheets keep Save dimmed until something changes', () => {
+  // Fase 10a, widened in bloque 11: in every sheet with Save, Save waits dimmed until there is
+  // something to save (a change in an edit sheet, a title in a new task).
+  it('sheets with Save keep it dimmed until there is something to save', () => {
     expect(read('app/shopping/[id].tsx')).toMatch(/canSave = [^;]*\bdirty\b/);
-    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(/disabled=\{!isNew && !dirty\}/);
+    expect(read('features/tasks/components/TaskForm.tsx')).toMatch(
+      /disabled=\{isNew \? !hasTitle : !dirty\}/,
+    );
   });
 
   // Fase 10a: the quantity reads the same in the list and in the product sheet, with the scale

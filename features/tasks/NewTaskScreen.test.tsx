@@ -85,23 +85,26 @@ beforeEach(() => {
 });
 
 describe('Nueva tarea', () => {
-  it('opens empty, with Guardar and Cancelar named and Guardar ready', () => {
+  it('opens empty, with Guardar and Cancelar named and Guardar waiting for a title', () => {
     renderNew();
     expect(screen.getAllByText(t('taskForm.newTitle')).length).toBeGreaterThan(0);
     expect(titleField().value).toBe('');
     expect(titleField().getAttribute('placeholder')).toBe(t('taskForm.titlePlaceholder'));
-    const save = screen.getByRole('button', { name: t('taskForm.save') });
-    expect(save.getAttribute('aria-disabled')).not.toBe('true');
+    // A pósit that does nothing contradicts «pósit es hacer» (bloque 11): it waits, saying why.
+    const save = screen.getByTestId('task-form.save');
+    expect(save.getAttribute('aria-disabled')).toBe('true');
+    expect(save.getAttribute('aria-label')).toBe(
+      `${t('taskForm.save')}. ${t('taskForm.titleRequired')}`,
+    );
     expect(screen.getByRole('button', { name: t('taskForm.cancel') })).toBeTruthy();
     // A new task has nothing to complete, skip or delete.
     expect(screen.queryByTestId('task-form.delete')).toBeNull();
     expect(screen.queryByTestId('task-form.complete')).toBeNull();
   });
 
-  it('without a title, does not save and says why', () => {
+  it('without a title, does not save', () => {
     renderNew();
     fireEvent.click(screen.getByTestId('task-form.save'));
-    expect(screen.getByTestId('task-form.error').textContent).toBe(t('taskForm.titleRequired'));
     expect(createTask).not.toHaveBeenCalled();
   });
 

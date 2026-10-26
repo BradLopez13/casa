@@ -229,6 +229,7 @@
   "tasks.due.past": "{date} · pasada",
   "taskForm.dueOther": "Otro día",
   "taskForm.pastDate": "{date} (pasada)",
+  "taskForm.noneNeedsDate": "Una tarea que se repite necesita fecha.",
   "taskForm.noRepeat": "No se repite",
   "taskForm.noRoom": "Sin estancia",
   "taskForm.newTitle": "Nueva tarea",

@@ -229,6 +229,7 @@
   "tasks.due.past": "{date} · past",
   "taskForm.dueOther": "Another day",
   "taskForm.pastDate": "{date} (past)",
+  "taskForm.noneNeedsDate": "A task that repeats needs a date.",
   "taskForm.noRepeat": "Doesn't repeat",
   "taskForm.noRoom": "No room",
   "taskForm.newTitle": "New task",

@@ -66,11 +66,33 @@ describe('TaskForm', () => {
     );
   });
 
-  it('does not save without a title, and says why', () => {
+  it('keeps Save dimmed until a new task has a title, and tells the reader why', () => {
     const { onSave } = renderForm();
+    const button = screen.getByTestId('task-form.save');
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(button.getAttribute('aria-label')).toBe(
+      `${t('taskForm.save')}. ${t('taskForm.titleRequired')}`,
+    );
     save();
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByTestId('task-form.error')).toBeTruthy();
+    fireEvent.change(titleField(), { target: { value: 'Barrer' } });
+    expect(screen.getByTestId('task-form.save').getAttribute('aria-disabled')).not.toBe('true');
+  });
+
+  it('says why a task that repeats has no «Sin fecha»', () => {
+    renderForm({
+      initial: {
+        ...blank,
+        title: 'Regar',
+        dueOn: TODAY,
+        recurrence: { kind: 'interval', every: 2 },
+      },
+    });
+    fireEvent.click(screen.getByTestId('task-form.prop.due'));
+    expect(screen.getByTestId('task-form.due.none').getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByTestId('task-form.due.none-why').textContent).toBe(
+      t('taskForm.noneNeedsDate'),
+    );
   });
 
   it('keeps an edited task as it was apart from what was changed', () => {
