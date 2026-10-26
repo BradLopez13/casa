@@ -138,6 +138,22 @@ describe('Tareas', () => {
     expect(field.compareDocumentPosition(pills) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  // Bloque 11 (11.6): Tareas opens the form for the chosen day (none on «Todas»), for no one yet.
+  it('with the field empty, the «+» opens the new task form for the chosen day', () => {
+    renderTasks([task('Fregar', {})]);
+    fireEvent.click(screen.getByTestId('tasks.quick-add.submit'));
+    expect(vi.mocked(router.push)).toHaveBeenLastCalledWith({
+      pathname: '/task/new',
+      params: { due: 'none' },
+    });
+    fireEvent.click(screen.getByTestId(`tasks.pill.${today}`));
+    fireEvent.click(screen.getByTestId('tasks.quick-add.submit'));
+    expect(vi.mocked(router.push)).toHaveBeenLastCalledWith({
+      pathname: '/task/new',
+      params: { due: today },
+    });
+  });
+
   it('the door line starts by saying what the tab is for', () => {
     renderTasks([task('Fregar', {})]);
     const line = screen.getByText((text) => text.startsWith(t('tasks.allLine.purpose')));

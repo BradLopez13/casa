@@ -43,6 +43,8 @@ export function DayQuickAdd({
       dueOn={day}
       placeholder={placeholder}
       hasNotes={hasNotes}
+      // Tareas is everyone's: the full form starts with no one (bloque 11).
+      formAssigneeId={null}
     />
   );
 }

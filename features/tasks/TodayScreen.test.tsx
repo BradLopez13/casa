@@ -230,6 +230,27 @@ describe('Hoy', () => {
     expect(createTask).toHaveBeenCalledTimes(1);
   });
 
+  // Bloque 11 (11.6): with the field empty the «+» opens the full form, for today and for you.
+  it('with the field empty, the «+» opens the new task form for today and for you', () => {
+    vi.mocked(router.push).mockClear();
+    renderToday([task('Fregar', {})]);
+    const add = screen.getByTestId('today.quick-add.submit');
+    expect(add.getAttribute('aria-label')).toBe(t('tasks.a11y.addMore'));
+    fireEvent.click(add);
+    expect(vi.mocked(router.push)).toHaveBeenCalledWith({
+      pathname: '/task/new',
+      params: { due: today, assignee: 'me' },
+    });
+  });
+
+  it('with something typed, the «+» adds it and is named so', () => {
+    renderToday([task('Fregar', {})]);
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    expect(screen.getByTestId('today.quick-add.submit').getAttribute('aria-label')).toBe(
+      t('tasks.a11y.addButton'),
+    );
+  });
+
   it('offers task ideas when there is nothing to do today', () => {
     renderToday([task('Planchar', { dueOn: addDays(today, 3) })]);
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();

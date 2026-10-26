@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   Platform,
@@ -42,6 +43,8 @@ import { buildCreateOptions } from '../create';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
+/** The new task form's `due` for a task without a date (`app/task/new.tsx`). */
+export const NO_DATE = 'none';
 const CHIP_HEIGHT = 32;
 
 const KIND_ICONS = {
@@ -58,6 +61,11 @@ type Props = {
   placeholder: string;
   /** Whether the list under it shows notes: from ×1.3 the example then keeps quiet. */
   hasNotes: boolean;
+  /**
+   * Who the full form starts with when the «+» opens it from an empty field: by default the
+   * person the field writes for; Tareas passes null (bloque 11).
+   */
+  formAssigneeId?: string | null;
   testID: string;
 };
 
@@ -89,7 +97,16 @@ function chipLabel(
  * chip leaves those words in the title. Anything not written lands on the given day for the given
  * person, and the field stays ready for the next one.
  */
-export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, hasNotes, testID }: Props) {
+export function QuickAdd({
+  householdId,
+  assigneeId,
+  dueOn,
+  placeholder,
+  hasNotes,
+  formAssigneeId = assigneeId,
+  testID,
+}: Props) {
+  const router = useRouter();
   const { colors, radii, space } = useTheme();
   const notify = useNotice();
   const today = useToday();
@@ -141,6 +158,14 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, hasNotes
     latest.current = next;
     setText(next);
     if (next.trim() === '') setDisabled(new Set());
+  };
+
+  // With the field empty the «+» opens the full form, with the day and the person of the context:
+  // the form had no way in, and the button did nothing (bloque 11).
+  const openForm = () => {
+    const params: { due: string; assignee?: string } = { due: dueOn ?? NO_DATE };
+    if (formAssigneeId !== null) params.assignee = formAssigneeId;
+    router.push({ pathname: '/task/new', params });
   };
 
   const send = () => {
@@ -236,10 +261,10 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, hasNotes
         <Pressable
           testID={`${testID}.submit`}
           accessibilityRole="button"
-          accessibilityLabel={t('tasks.a11y.addButton')}
+          accessibilityLabel={t(text.trim() === '' ? 'tasks.a11y.addMore' : 'tasks.a11y.addButton')}
           // The circle is 40 dp inside the pill; the slop brings the touch area to 44 dp.
           hitSlop={space(1)}
-          onPress={send}
+          onPress={() => (latest.current.trim() === '' ? openForm() : send())}
           style={({ pressed }) => ({
             width: ADD_SIZE,
             height: ADD_SIZE,

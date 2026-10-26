@@ -7,6 +7,7 @@ import { createTask, newTaskId, type TaskInput } from '@/features/tasks/api';
 import { markFresh } from '@/features/tasks/freshIds';
 import { assigneeParam, dueParam } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
+import { NO_DATE } from '@/features/tasks/components/QuickAdd';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { useTaskMutation } from '@/features/tasks/queries';
 import { useToday } from '@/features/tasks/useToday';
@@ -42,7 +43,8 @@ function NewTaskScreen() {
     title: '',
     room: null,
     assigneeId: assigneeParam(params.assignee),
-    dueOn: dueParam(params.due, today),
+    // From Tareas' «Todas» the «+» opens it without a date (bloque 11).
+    dueOn: params.due === NO_DATE ? null : dueParam(params.due, today),
     recurrence: null,
   };
 
