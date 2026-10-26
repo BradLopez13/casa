@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import { View, type ColorValue } from 'react-native';
 import { useHouseholds, useMembership, useSwitchHousehold } from '@/features/households/queries';
+import { useWarmHouseholds } from '@/features/households/useWarmHouseholds';
 import { FridgeTabBar } from '@/features/navigation/FridgeTabBar';
 import { NavigationRail } from '@/features/navigation/NavigationRail';
 import { coveredByModal } from '@/features/navigation/coveredByModal';
@@ -60,6 +61,7 @@ export default function TabsLayout() {
   // channel, closed and opened again on a switch (bloque 12).
   useHouseholdChannel(membership?.householdId);
   useHouseholdFromLink(membership?.householdId);
+  useWarmHouseholds();
   // With more than one household the doors name the one shown, and the name opens «Tus casas»
   // (decisión 1 (A) del bloque 12). With one, nothing changes.
   const name = membership?.householdName;

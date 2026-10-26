@@ -45,6 +45,19 @@ async function loadTasks(queryClient: QueryClient, householdId: string): Promise
   return withQueued(queryClient, householdId, tasks, before);
 }
 
+/**
+ * A household's task list, as Hoy and Tareas load it; also kept loaded for the households not
+ * shown (`useWarmHouseholds`), so switching offline still finds them (bloque 12).
+ */
+export function tasksQueryOptions(queryClient: QueryClient, householdId: string) {
+  return {
+    queryKey: tasksKey(householdId),
+    queryFn: () => loadTasks(queryClient, householdId),
+    // Kept on the device, like the shopping list: offline it shows what it had (fase 10e).
+    ...offlineFirstQueryOptions,
+  };
+}
+
 export function useTasks(householdId: string | undefined) {
   const queryClient = useQueryClient();
   // A task deleted on screen stays out while its «Deshacer» lasts, whatever a refetch brings.
@@ -55,11 +68,8 @@ export function useTasks(householdId: string | undefined) {
     [hidden],
   );
   return useQuery({
-    queryKey: tasksKey(householdId),
-    queryFn: () => loadTasks(queryClient, householdId as string),
+    ...tasksQueryOptions(queryClient, householdId as string),
     enabled: householdId !== undefined,
-    // Kept on the device, like the shopping list: offline it shows what it had (fase 10e).
-    ...offlineFirstQueryOptions,
     select,
   });
 }
