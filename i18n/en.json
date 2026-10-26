@@ -357,7 +357,6 @@
   "shopping.quantity.label": "Quantity of {name}: {quantity}",
   "shopping.quantity.less": "One less",
   "shopping.quantity.more": "One more",
-  "shopping.quantity.offline": "You're offline. Change the quantity when you're back online.",
   "shopping.quantity.none": "no amount",
   "shopping.quantityHint": "Tap the amount to change it.",
   "shopping.a11y.added": "“{name}” on the list.",

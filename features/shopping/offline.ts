@@ -43,14 +43,17 @@ export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: b
 }
 
 /**
- * The queued shopping mutations, add and bought: theirs are the only shopping mutation functions
- * registered (as defaults) before the cache is restored, so only they survive a restart
- * (`features/offline/persistence.ts`).
+ * The queued shopping mutations, add, bought and the quantity: theirs are the only shopping
+ * mutation functions registered (as defaults) before the cache is restored, so only they survive
+ * a restart (`features/offline/persistence.ts`). A quantity is an absolute value, so sending it
+ * again is safe (bloque 11: offline it was queued but lost on a restart).
  */
 export function isQueuedShoppingMutation(mutationKey: MutationKey | undefined): boolean {
   return (
     mutationKey?.[0] === 'shopping' &&
-    (mutationKey[1] === addKey[1] || mutationKey[1] === boughtKey[1])
+    (mutationKey[1] === addKey[1] ||
+      mutationKey[1] === boughtKey[1] ||
+      mutationKey[1] === quantityKey[1])
   );
 }
 
@@ -231,8 +234,9 @@ export function buildShoppingMutationDefaults(
     onSettled: () => invalidateShoppingWhenIdle(queryClient),
   };
 
-  // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Online
-  // only and not persisted, like the other edits, but retried when the request never got there.
+  // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Without a
+  // connection it waits in the queue like an add or a bought, and is kept on the device with it
+  // (bloque 11: «sin red, lo cotidiano se encola»).
   const quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext> = {
     mutationKey: quantityKey,
     scope: SHOPPING_SCOPE,

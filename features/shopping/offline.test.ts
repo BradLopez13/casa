@@ -109,6 +109,8 @@ describe('shouldPersistMutation', () => {
   it('keeps only the queued mutations, whose functions are registered at start', () => {
     expect(shouldPersistMutation(addKey)).toBe(true);
     expect(shouldPersistMutation(boughtKey)).toBe(true);
+    // Bloque 11: a quantity changed offline survives a restart too (T3).
+    expect(shouldPersistMutation(quantityKey)).toBe(true);
     expect(shouldPersistMutation(['shopping', 'edit'])).toBe(false);
     expect(shouldPersistMutation(['tasks', 'toggle'])).toBe(true);
     expect(shouldPersistMutation(['tasks', 'create'])).toBe(true);
@@ -331,6 +333,30 @@ describe('restart', () => {
         .getAll()
         .map((m) => m.state.status),
     ).toEqual(['success', 'success']);
+  });
+
+  it('sends a quantity changed offline after a restart (bloque 11, T3)', async () => {
+    const before = setup();
+    before.queryClient.setQueryData(key, [{ ...existing, id: 'x', quantity: null }]);
+    onlineManager.setOnline(false);
+    void before
+      .quantity({ id: 'x', householdId: 'h', name: 'Leche', quantity: '3' })
+      .catch(() => undefined);
+    await vi.waitFor(() => expect(list(before.queryClient)?.[0]?.quantity).toBe('3'));
+
+    const after = restart(before.queryClient);
+    expect(list(after.queryClient)?.[0]?.quantity).toBe('3');
+    expect(
+      after.queryClient
+        .getMutationCache()
+        .getAll()
+        .map((m) => m.state.variables),
+    ).toEqual([{ id: 'x', householdId: 'h', name: 'Leche', quantity: '3' }]);
+
+    vi.mocked(updateShoppingItem).mockResolvedValue(undefined);
+    onlineManager.setOnline(true);
+    await resumeShoppingQueue(after.queryClient);
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
   });
 
   it('resends an add that was in flight when the app closed', async () => {

@@ -357,7 +357,6 @@
   "shopping.quantity.label": "Cantidad de {name}: {quantity}",
   "shopping.quantity.less": "Uno menos",
   "shopping.quantity.more": "Uno más",
-  "shopping.quantity.offline": "Sin conexión. La cantidad se cambia con red.",
   "shopping.quantity.none": "sin cantidad",
   "shopping.quantityHint": "Toca la cantidad para cambiarla.",
   "shopping.a11y.added": "«{name}» en la lista.",

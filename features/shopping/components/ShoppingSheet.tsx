@@ -315,7 +315,6 @@ export function ShoppingSheet({
                     onToggle={() => onToggle(row)}
                     onOpen={row.boughtAt === null ? () => onOpen(row.id) : undefined}
                     quantityOpen={openQuantity === row.id}
-                    online={online}
                     onQuantityOpen={() => setOpenQuantity(row.id)}
                     onQuantityClose={() =>
                       setOpenQuantity((current) => (current === row.id ? null : current))

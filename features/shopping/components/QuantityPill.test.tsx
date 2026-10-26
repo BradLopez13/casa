@@ -10,7 +10,7 @@ vi.mock('@/features/hints/hints', async (importOriginal) => ({
   markHintSeen: vi.fn(),
 }));
 
-function renderPill(quantity: string | null, online = true) {
+function renderPill(quantity: string | null) {
   const onOpen = vi.fn();
   render(
     <NoticeProvider>
@@ -19,7 +19,6 @@ function renderPill(quantity: string | null, online = true) {
         name="Pan"
         quantity={quantity}
         open={false}
-        online={online}
         onOpen={onOpen}
         onClose={vi.fn()}
         onCommit={vi.fn()}
@@ -83,12 +82,5 @@ describe('QuantityPill', () => {
     fireEvent.click(pill);
     expect(onOpen).toHaveBeenCalled();
     expect(markHintSeen).toHaveBeenCalledWith('quantity');
-  });
-
-  it('offline it does not open, and the hint stays', () => {
-    const { pill, onOpen } = renderPill(null, false);
-    fireEvent.click(pill);
-    expect(onOpen).not.toHaveBeenCalled();
-    expect(markHintSeen).not.toHaveBeenCalled();
   });
 });
