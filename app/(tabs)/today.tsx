@@ -20,6 +20,7 @@ import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
+import { LicenseBand } from '@/features/households/LicenseBand';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -127,6 +128,7 @@ export default function TodayScreen() {
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : null}
+      <LicenseBand />
     </>
   );
 

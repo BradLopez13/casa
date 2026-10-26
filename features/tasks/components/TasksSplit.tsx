@@ -5,6 +5,7 @@ import { TaskSections } from '@/features/tasks/components/TaskSections';
 import { TaskListStates } from '@/features/tasks/TaskListStates';
 import { t } from '@/i18n';
 import { DoorHeader } from '@/ui/components/DoorHeader';
+import { LicenseBand } from '@/features/households/LicenseBand';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -52,6 +53,7 @@ export function TasksSplit({
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : null}
+      <LicenseBand />
     </>
   );
 
