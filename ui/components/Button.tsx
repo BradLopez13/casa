@@ -18,9 +18,9 @@ type Props = {
   testID?: string;
   loading?: boolean;
   disabled?: boolean;
-  /** primary: the one main action. secondary: a tonal pill. tertiary: bare text. */
+  /** primary: the one main action. outlined: the secondary one, with an edge. tertiary: text. */
   variant?: ButtonVariant;
-  /** destructive swaps cobalt for red; not available on secondary. */
+  /** destructive swaps cobalt for red; not available on outlined. */
   tone?: ButtonTone;
   /** Drawn before the label; hidden from screen readers, which hear the title. */
   icon?: ActionIcon;
@@ -66,9 +66,7 @@ export function Button({
         aria-busy={loading}
         disabled={inactive}
         onPress={onPress}
-        hitSlop={
-          variant === 'secondary' || variant === 'outlined' ? { top: 2, bottom: 2 } : undefined
-        }
+        hitSlop={variant === 'outlined' ? { top: 2, bottom: 2 } : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={({ pressed }) => ({

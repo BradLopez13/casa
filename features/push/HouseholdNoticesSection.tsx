@@ -106,7 +106,7 @@ export function HouseholdNoticesSection() {
         <Button
           testID="settings.push.enable"
           title={t('settings.pushEnable')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.openPhoneSettings}
           width="hug"
           disabled={asking}

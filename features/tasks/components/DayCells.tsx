@@ -47,7 +47,7 @@ function Cell({
 }: CellProps) {
   const { colors, radii, space } = useTheme();
   // A cell that cannot be chosen keeps its solid outline and fades its label: dashed is paused.
-  const off = buttonLook('secondary', 'default', 'disabled', colors);
+  const off = buttonLook('outlined', 'default', 'disabled', colors);
   const labelColor = disabled
     ? off.foreground
     : selected

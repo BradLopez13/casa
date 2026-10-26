@@ -213,7 +213,7 @@ export default function InviteScreen() {
         <Button
           testID="invite.retry"
           title={t('errors.retry')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.retry}
           width="hug"
           onPress={() => void refreshMembershipAndLeave()}

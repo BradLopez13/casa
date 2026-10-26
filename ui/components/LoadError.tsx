@@ -27,7 +27,7 @@ export function LoadError({
       <Button
         testID={`${testID}.retry`}
         title={t('errors.retry')}
-        variant="secondary"
+        variant="outlined"
         icon={actionIcons.retry}
         width="hug"
         loading={retrying}

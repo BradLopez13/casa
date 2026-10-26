@@ -2,11 +2,11 @@
 import type { Palette } from './tokens';
 
 /**
- * primary: the one main action. secondary: a tonal pill. outlined: an empty pill with a slate (or
- * chalk) edge, for a secondary action that sits on a note, where the tonal pill reads as disabled.
- * tertiary: bare text.
+ * primary: the one main action. outlined: the secondary action, an empty pill with a slate (or
+ * chalk) edge. tertiary: bare text. There is no tonal pill: on paper, in a note or in a dialog it
+ * read as disabled (bloque 11, «lo que parece apagado está apagado»).
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'tertiary';
+export type ButtonVariant = 'primary' | 'outlined' | 'tertiary';
 
 /** destructive swaps cobalt for red; only primary and tertiary may be destructive. */
 export type ButtonTone = 'default' | 'destructive';
@@ -30,7 +30,7 @@ export type ButtonLook = {
 export const DISABLED_LABEL_OPACITY = 0.6;
 
 /**
- * The colours of a button. A disabled primary or secondary is an empty pill with a solid `outline`
+ * The colours of a button. A disabled primary or outlined is an empty pill with a solid `outline`
  * border and a faded `ink` label (`DISABLED_LABEL_OPACITY`). A disabled tertiary has no pill to
  * empty, so it is just the faded label. A busy one keeps the look of an enabled one, so the
  * spinner sits on the same pill.
@@ -41,7 +41,7 @@ export function buttonLook(
   state: ButtonState,
   colors: Palette,
 ): ButtonLook {
-  if ((variant === 'secondary' || variant === 'outlined') && tone === 'destructive') {
+  if (variant === 'outlined' && tone === 'destructive') {
     throw new Error(`A ${variant} button cannot be destructive`);
   }
   if (state === 'disabled') {
@@ -70,14 +70,6 @@ export function buttonLook(
       labelOpacity: 1,
     };
   }
-  if (variant === 'secondary') {
-    return {
-      fill: colors.tonal,
-      border: colors.tonalEdge,
-      foreground: colors.cobalt,
-      labelOpacity: 1,
-    };
-  }
   return {
     fill: 'transparent',
     border: 'transparent',
@@ -102,14 +94,6 @@ const metrics: Record<ButtonVariant, ButtonMetrics> = {
     fontSize: 16,
     paddingV: 12,
     paddingH: 24,
-    iconSize: 20,
-    underline: false,
-  },
-  secondary: {
-    minHeight: 44,
-    fontSize: 15,
-    paddingV: 10,
-    paddingH: 20,
     iconSize: 20,
     underline: false,
   },

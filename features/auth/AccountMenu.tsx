@@ -102,7 +102,7 @@ export function AccountMenu({
             <Button
               testID="account-menu.close"
               title={t('account.close')}
-              variant="secondary"
+              variant="outlined"
               width="full"
               onPress={close}
             />

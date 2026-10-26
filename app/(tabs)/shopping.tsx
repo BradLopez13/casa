@@ -193,7 +193,7 @@ export default function ShoppingScreen() {
         <ErrorText>{shoppingErrorMessage(itemsQuery.error)}</ErrorText>
         <Button
           title={t('errors.retry')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.retry}
           loading={itemsQuery.isFetching}
           onPress={() => void itemsQuery.refetch()}

@@ -89,7 +89,7 @@ export default function SettingsScreen() {
               testID="settings.invite"
               title={t('settings.invite')}
               icon={actionIcons.invite}
-              variant={editing ? 'secondary' : 'primary'}
+              variant={editing ? 'outlined' : 'primary'}
               onPress={() => router.push('/household/members')}
             />
           </PinnedNote>

@@ -122,13 +122,11 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
 
   it('counts the default and conditional primaries', () => {
     expect(primaries('<Button title="a" />\n<Button title="b" variant="tertiary" />')).toBe(1);
-    expect(primaries("<Button\n  title=\"a\"\n  variant={x ? 'secondary' : 'primary'}\n/>")).toBe(
-      1,
-    );
+    expect(primaries("<Button\n  title=\"a\"\n  variant={x ? 'outlined' : 'primary'}\n/>")).toBe(1);
     expect(primaries('<Button title="a" />\n<Button title="b" variant="primary" />')).toBe(2);
     expect(primaries("buttonLook('primary', 'default', 'idle', colors)")).toBe(1);
     // The arrow in onPress does not cut the tag before its variant.
-    expect(primaries('<Button onPress={() => go()} variant="secondary" />')).toBe(0);
+    expect(primaries('<Button onPress={() => go()} variant="outlined" />')).toBe(0);
     expect(primaries('<Button onPress={() => go()} title="a" />')).toBe(1);
   });
 
@@ -170,12 +168,13 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect([...headed, ...titled]).toEqual([]);
   });
 
-  // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is secondary,
-  // or the red primary when it destroys.
+  // «Destructivo, en su medida»: a dialog never answers with the pósit. Confirming is the
+  // outlined secondary, or the red primary when it destroys, with Cancelar outlined then.
   it('the confirm dialog never draws the pósit', () => {
     const text = read('ui/components/ConfirmDialog.tsx');
     expect(text).not.toMatch(/variant="primary"/);
-    expect(text).toMatch(/variant=\{content\.destructive \? 'primary' : 'secondary'\}/);
+    expect(text).toMatch(/variant=\{content\.destructive \? 'primary' : 'outlined'\}/);
+    expect(text).toMatch(/variant=\{content\.destructive \? 'outlined' : 'tertiary'\}/);
     expect(text).toMatch(/tone=\{content\.destructive \? 'destructive' : 'default'\}/);
   });
 
@@ -330,6 +329,14 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(read('features/shopping/components/ShoppingSheet.tsx')).toMatch(/colors\.rule\b/);
     expect(read('app/(tabs)/today.tsx')).toMatch(/eyebrowDetail=/);
     expect(read('ui/components/DoorHeader.tsx')).not.toMatch(/\btrailing\b/);
+  });
+
+  // Bloque 11 (11.3): what looks off is off. The tonal pill read as disabled on paper, in a note
+  // and in a dialog, so the secondary action always has an edge (`outlined`) and the tonal is gone.
+  it('no tonal secondary: a secondary action has an edge', () => {
+    expect(offenders(sources, (line) => /['"]secondary['"]/.test(line))).toEqual([]);
+    expect(read('ui/tokens.ts')).not.toMatch(/\btonal\b/);
+    expect(read('app/household/members.tsx')).toMatch(/variant="outlined"/);
   });
 
   // Bloque 11 (11.1): the door is never seen cut. A list that moves for a notice measures its door

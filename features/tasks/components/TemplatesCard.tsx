@@ -31,7 +31,7 @@ export function TemplatesCard() {
         testID="today.templates"
         title={t('templates.cardAction')}
         icon={actionIcons.templates}
-        variant="secondary"
+        variant="outlined"
         onPress={() => router.push('/templates')}
       />
     </View>

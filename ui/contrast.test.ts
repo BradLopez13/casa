@@ -139,10 +139,6 @@ describe.each<Scheme>(['light', 'dark'])('%s switch stands out from its ground',
 describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
   const p = palettes[scheme];
 
-  it('cobalt text on the tonal pill', () => {
-    expect(contrastRatio(p.cobalt, p.tonal)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
   it('text on the yellow primary pill', () => {
     expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(AA_TEXT);
   });
@@ -166,12 +162,6 @@ describe.each<Scheme>(['light', 'dark'])('%s button colours', (scheme) => {
 
   it('chalk text on the brand band', () => {
     expect(contrastRatio(p.onBrandBand, p.brandBand)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('the tonal pill shows its shape by fill or by edge', () => {
-    const byFill = Math.min(contrastRatio(p.tonal, p.door), contrastRatio(p.tonal, p.page));
-    const byEdge = Math.min(contrastRatio(p.tonalEdge, p.door), contrastRatio(p.tonalEdge, p.page));
-    expect(byFill >= 1.2 || byEdge >= AA_NON_TEXT).toBe(true);
   });
 
   it('red text on the page and on a note', () => {

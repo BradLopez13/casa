@@ -84,7 +84,7 @@ export function ConfirmDialog({
             <Button
               testID="members.confirm"
               title={content.confirmLabel}
-              variant={content.destructive ? 'primary' : 'secondary'}
+              variant={content.destructive ? 'primary' : 'outlined'}
               width="full"
               tone={content.destructive ? 'destructive' : 'default'}
               loading={loading}
@@ -93,7 +93,7 @@ export function ConfirmDialog({
             <Button
               testID="members.cancel"
               title={cancelLabel}
-              variant={content.destructive ? 'secondary' : 'tertiary'}
+              variant={content.destructive ? 'outlined' : 'tertiary'}
               width="full"
               disabled={loading}
               onPress={onCancel}

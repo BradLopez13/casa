@@ -34,7 +34,7 @@ export function TaskListStates({ query, empty }: Props) {
         <ErrorText>{taskErrorMessage(query.error)}</ErrorText>
         <Button
           title={t('errors.retry')}
-          variant="secondary"
+          variant="outlined"
           icon={actionIcons.retry}
           loading={query.isFetching}
           onPress={() => void query.refetch()}

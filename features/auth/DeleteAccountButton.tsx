@@ -70,7 +70,7 @@ export function DeleteAccountButton({
           <Button
             testID={`${testID}.go-members`}
             title={t('settings.goToMembers')}
-            variant="secondary"
+            variant="outlined"
             width="hug"
             onPress={() => router.push('/household/members')}
           />
