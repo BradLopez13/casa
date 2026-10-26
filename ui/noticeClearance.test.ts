@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { listEndPadding, NOTICE_CLEARANCE, noticeNudge, noticeScroll } from './noticeClearance';
+import {
+  listEndPadding,
+  NOTICE_CLEARANCE,
+  noticeNudge,
+  noticeScroll,
+  wholeDoor,
+} from './noticeClearance';
 
 describe('listEndPadding', () => {
   it('is the base room while there is no notice', () => {
@@ -80,5 +86,24 @@ describe('noticeScroll', () => {
         door: { height: 0, slack: 0 },
       }),
     ).toEqual({ to: content - 28 - 700, extra: 0 });
+  });
+});
+
+describe('wholeDoor', () => {
+  const door = { height: 280, slack: 8 };
+
+  it('keeps where the list should be when its end still reaches it', () => {
+    expect(wholeDoor({ offset: 0, furthest: 300, door })).toBe(0);
+    // Wherever the person left it, even over the door: that is theirs.
+    expect(wholeDoor({ offset: 120, furthest: 300, door })).toBe(120);
+  });
+
+  it('follows a shorter end when the door stays whole', () => {
+    expect(wholeDoor({ offset: 500, furthest: 400, door })).toBe(400);
+    expect(wholeDoor({ offset: 50, furthest: 5, door })).toBe(5);
+  });
+
+  it('brings the door back whole when a shorter end would clip it in half', () => {
+    expect(wholeDoor({ offset: 300, furthest: 150, door })).toBe(0);
   });
 });

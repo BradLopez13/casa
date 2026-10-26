@@ -231,13 +231,16 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           backgroundColor: colors.door,
         }}
       />
-      <LinearGradient
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        colors={[colors.door, `${colors.door}00`]}
-        style={{ position: 'absolute', top: insets.top, left: 0, right: 0, height: VEIL_FADE }}
-      />
+      {/* While the door is open the light shows there instead: no enamel over it. */}
+      {refreshing && !reduceMotion ? null : (
+        <LinearGradient
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          colors={[colors.door, `${colors.door}00`]}
+          style={{ position: 'absolute', top: insets.top, left: 0, right: 0, height: VEIL_FADE }}
+        />
+      )}
     </View>
   );
 }

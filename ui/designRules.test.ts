@@ -339,7 +339,10 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     const nudging = sources.filter((f) => /useNoticeNudge\(/.test(read(f)));
     expect(nudging.length).toBeGreaterThan(0);
     for (const file of nudging) {
-      expect(read(file), file).toMatch(/onLayout=\{nudge\.onDoorLayout\}/);
+      // The measured view is the first thing in the header: the door starts at the list's top.
+      expect(read(file), file).toMatch(
+        /ListHeaderComponent=\{\s*<>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<View onLayout=\{nudge\.onDoorLayout\}>/,
+      );
       expect(read(file), file).toMatch(/nudge\.endPadding/);
     }
     expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);

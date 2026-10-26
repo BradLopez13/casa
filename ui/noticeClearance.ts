@@ -60,3 +60,21 @@ export function noticeScroll({ door, ...nudge }: Nudge & { door: Door }): {
   const furthest = Math.max(0, nudge.content - nudge.viewport);
   return { to, extra: Math.max(0, to - furthest) };
 }
+
+/**
+ * Where a list ends up when its end shrinks (the notice going): where it should be (`offset`) if
+ * the end still reaches it, the new end if not, and the top when that new end would leave the door
+ * cut. A place the person scrolled to is theirs; a clip the app causes never cuts the door.
+ */
+export function wholeDoor({
+  offset,
+  furthest,
+  door,
+}: {
+  offset: number;
+  furthest: number;
+  door: Door;
+}): number {
+  if (offset <= furthest) return offset;
+  return furthest > door.slack && furthest < door.height ? 0 : furthest;
+}
