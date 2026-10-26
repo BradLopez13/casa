@@ -39,7 +39,7 @@ describe('noteText', () => {
     const task = { ...base, recurrence: { kind: 'weekly', days: [1, 4] } } as TaskItem;
     const text = noteText(task, TODAY, undefined);
     expect(text.repeat).toBe('Lunes y jueves');
-    expect(text.label).toBe('Regar las plantas, Sin responsable, Cocina, Hoy, Lunes y jueves');
+    expect(text.label).toBe('Regar las plantas, Sin asignar, Cocina, Hoy, Lunes y jueves');
   });
 
   it('flags an overdue task and words its due date as late', () => {

@@ -221,8 +221,8 @@ export function QuickAdd({ householdId, assigneeId, dueOn, placeholder, hasNotes
             // A task title, not a name or an address: no autofill suggestions over the field.
             autoComplete="off"
             placeholder={placeholder}
-            // One line under the door, capped like it: at ×2 the placeholder («Añadir tarea para
-            // el miércoles…») wrapped and was cut, or ran under the «+».
+            // One line under the door, capped like it: at ×2 the placeholder («Tarea para ti, el
+            // miércoles…») wrapped and was cut, or ran under the «+».
             maxFontSizeMultiplier={DOOR_MAX_SCALE}
             accessibilityLabel={placeholder}
             placeholderTextColor={colors.muted}
