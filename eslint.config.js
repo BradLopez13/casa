@@ -14,6 +14,7 @@ module.exports = defineConfig([
     'dist/',
     'expo-env.d.ts',
     'supabase/functions/send-push/',
+    'supabase/functions/billing-webhook/',
   ]),
   expoConfig,
   {

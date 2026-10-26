@@ -407,6 +407,11 @@ deno_version = 2
 # Authenticates with the x-push-secret header instead of a user JWT.
 verify_jwt = false
 
+[functions.billing-webhook]
+# Authenticates with the Authorization header RevenueCat sends (BILLING_WEBHOOK_SECRET), not a
+# user JWT (bloque 12).
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
