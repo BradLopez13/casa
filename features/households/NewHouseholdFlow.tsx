@@ -279,7 +279,7 @@ function CreateStep({
       </Text>
       <TextField
         testID="onboarding.name"
-        label={t('onboarding.nameLabel')}
+        label={another ? t('onboarding.anotherNameLabel') : t('onboarding.nameLabel')}
         value={name}
         onChangeText={setName}
         error={nameError}
@@ -291,7 +291,7 @@ function CreateStep({
       {formError ? <ErrorText>{formError}</ErrorText> : null}
       <Button
         testID="onboarding.create"
-        title={t('onboarding.create')}
+        title={another ? t('onboarding.anotherCreate') : t('onboarding.create')}
         icon={actionIcons.home}
         width="full"
         loading={create.isPending}

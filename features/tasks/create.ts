@@ -80,6 +80,10 @@ export function buildCreateOptions(
       notify(taskErrorMessage(error));
       await invalidateIfStale(queryClient, error);
     },
-    onSettled: () => invalidateTasksWhenIdle(queryClient),
+    // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
+    // the meantime would lay a change that failed back on top of the list (bloque 12).
+    onSettled: () => {
+      void invalidateTasksWhenIdle(queryClient);
+    },
   };
 }

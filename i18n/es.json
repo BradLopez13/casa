@@ -608,5 +608,8 @@
   "shopping.doorHintThis": "Lo que añadas aquí lo verá toda esta casa.",
   "today.line.thisHouseholdOne": "A esta casa le queda {count}.",
   "today.line.thisHouseholdOther": "A esta casa le quedan {count}.",
-  "today.line.thisHouseholdNone": "Nada más para esta casa."
+  "today.line.thisHouseholdNone": "Nada más para esta casa.",
+  "onboarding.anotherNameLabel": "Nombre de la casa",
+  "onboarding.anotherCreate": "Crear la casa",
+  "today.empty.titleThis": "Por ahora eres la única persona de esta casa"
 }

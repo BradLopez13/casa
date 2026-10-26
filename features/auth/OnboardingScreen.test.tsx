@@ -222,7 +222,7 @@ describe('Crear otra casa (bloque 12)', () => {
     vi.mocked(listMyHouseholds).mockResolvedValue([]);
     renderOnboarding(<NewHouseholdFlow another />);
     fireEvent.change(nameField(), { target: { value: 'Casa de mamá' } });
-    fireEvent.click(createButton());
+    fireEvent.click(screen.getByRole('button', { name: t('onboarding.anotherCreate') }));
     fireEvent.click(await screen.findByRole('button', { name: t('onboarding.roomsContinue') }));
     await vi.waitFor(() => expect(router.replace).toHaveBeenCalledWith('/today'));
     expect(vi.mocked(setHouseholdRooms).mock.calls[0]?.[0]).toBe('h2');
@@ -232,7 +232,7 @@ describe('Crear otra casa (bloque 12)', () => {
   it('on a server that still allows one household, says so', async () => {
     vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('ALREADY_IN_HOUSEHOLD'));
     renderOnboarding(<NewHouseholdFlow another />);
-    fireEvent.click(createButton());
+    fireEvent.click(screen.getByRole('button', { name: t('onboarding.anotherCreate') }));
     expect((await screen.findByRole('alert')).textContent).toBe(
       t('onboarding.errors.ALREADY_IN_HOUSEHOLD'),
     );

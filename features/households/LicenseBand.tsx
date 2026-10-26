@@ -28,17 +28,13 @@ export function LicenseBand() {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        columnGap: space(2),
+        gap: space(2),
         paddingVertical: space(2),
         paddingHorizontal: space(5),
       }}
     >
       <Ionicons name="key-outline" size={16} color={colors.muted} accessible={false} />
-      <Text style={{ flexShrink: 1, color: colors.muted, fontSize: 14, fontWeight: '600' }}>
-        {text}
-      </Text>
+      <Text style={{ flex: 1, color: colors.muted, fontSize: 14, fontWeight: '600' }}>{text}</Text>
       <Pressable
         testID="license.band.open"
         accessibilityRole="link"

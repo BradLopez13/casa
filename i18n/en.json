@@ -608,5 +608,8 @@
   "shopping.doorHintThis": "Everyone in this home sees what you add here.",
   "today.line.thisHouseholdOne": "{count} left for this home.",
   "today.line.thisHouseholdOther": "{count} left for this home.",
-  "today.line.thisHouseholdNone": "Nothing more for this home."
+  "today.line.thisHouseholdNone": "Nothing more for this home.",
+  "onboarding.anotherNameLabel": "Home name",
+  "onboarding.anotherCreate": "Create the home",
+  "today.empty.titleThis": "For now you're the only person in this home"
 }
