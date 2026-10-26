@@ -1,12 +1,12 @@
 import { Pressable, View } from 'react-native';
 import { t } from '@/i18n';
 import { useTheme } from '../theme';
-import { MIN_TOUCH } from '../tokens';
+import { DOOR_HANDLE_OVERHANG, MIN_TOUCH } from '../tokens';
 
 /**
  * The door's handle, on its bottom edge: a 36 × 4 bar inside a 44 × 44 touch target that
  * refreshes the pane the door sits in. Drawn in the door's bottom padding: Android drops taps that
- * reach past the parent, so only 2 dp of the bar overflow.
+ * reach past the parent, so only 2 dp of the bar overflow (`DOOR_HANDLE_OVERHANG`).
  */
 export function DoorHandle({ onRefresh }: { onRefresh: () => void }) {
   const { colors, radii } = useTheme();
@@ -38,7 +38,7 @@ export function DoorHandle({ onRefresh }: { onRefresh: () => void }) {
           style={{
             width: 36,
             height: 4,
-            marginBottom: -2,
+            marginBottom: -DOOR_HANDLE_OVERHANG,
             borderRadius: radii.pill,
             backgroundColor: colors.outline,
           }}

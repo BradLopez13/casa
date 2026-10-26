@@ -3,6 +3,7 @@ import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 
 import { useNoticeShown } from './components/noticeContext';
 import { NOTICE_CLEARANCE, noticeScroll, wholeDoor } from './noticeClearance';
 import { useReduceMotion } from './a11y';
+import { DOOR_HANDLE_OVERHANG } from './tokens';
 import { useBaseListEndPadding } from './useTabBarClearance';
 
 /** Enough scroll events to know where the list is, without reporting every pixel. */
@@ -70,7 +71,7 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
     const target = wholeDoor({
       offset: touched.current ? offset.current : was.from,
       furthest: Math.max(0, shrunk - viewport.current),
-      door: { height: door.current, slack: DOOR_SLACK },
+      door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
     });
     if (Math.abs(target - offset.current) > 1) scrollTo(target);
   }, [shown, scrollTo]);
@@ -108,7 +109,8 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         viewport: viewport.current,
         content: height - room,
         basePadding,
-        door: { height: door.current, slack: DOOR_SLACK },
+        // Out whole means the handle too, which sits on the door's edge (seen on the .51).
+        door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
       });
       if (scroll === null) {
         nudged.current = null;

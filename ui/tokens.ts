@@ -224,6 +224,9 @@ export const INLINE_PILL_HEIGHT = 36;
 /** Width of the edge on every primary (pósit) button. */
 export const PRIMARY_EDGE = 1.5;
 
+/** How far the door's handle reaches past its bottom edge: it sits on the edge. */
+export const DOOR_HANDLE_OVERHANG = 2;
+
 /** How far the door slides down while refreshing. */
 export const DOOR_OPEN = 72;
 
