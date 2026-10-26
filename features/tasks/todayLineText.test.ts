@@ -109,4 +109,16 @@ describe('todayLineText', () => {
     });
     expect(sentence).toBe('And 1 from earlier days; 3 left for the household.');
   });
+
+  it('with several households, the household is «esta casa» (bloque 12)', () => {
+    expect(todayLineText({ kind: 'mine', today: 1, overdue: 0, household: 2 }, true).second).toBe(
+      'A esta casa le quedan 2.',
+    );
+    expect(todayLineText({ kind: 'mine', today: 0, overdue: 1, household: 0 }, true).second).toBe(
+      '1 de días anteriores; a esta casa no le queda nada más.',
+    );
+    expect(todayLineText({ kind: 'household', household: 1 }, true).first).toBe(
+      'A esta casa le queda 1.',
+    );
+  });
 });

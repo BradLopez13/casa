@@ -1,8 +1,10 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useContext, useState, type ReactNode } from 'react';
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
+import { pressedOpacity } from '../buttonLook';
 import { DOOR_MAX_SCALE, LARGE_TEXT, stripInDoor } from '../door';
 import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
@@ -10,6 +12,7 @@ import { displayFontBold, MIN_TOUCH } from '../tokens';
 import { useLayout } from '../useLayout';
 import {
   DoorCompactContext,
+  DoorHouseholdContext,
   DoorInsetContext,
   DoorTypeContext,
   useDoor,
@@ -21,12 +24,14 @@ import { FirstUseHint } from './FirstUseHint';
 
 // The door's pieces live beside it; screens keep importing them from here.
 export {
+  DoorHouseholdContext,
   DoorInsetContext,
   FridgeRefreshContext,
   useDoor,
   useDoorCompact,
   useDoorType,
   useFridgeRefresh,
+  type DoorHousehold,
   type FridgeRefreshValue,
 } from './doorContext';
 export { DoorControls, DoorHeadline } from './DoorHeadline';
@@ -42,6 +47,11 @@ type Props = {
    * or the short one in a compact door or wherever the long one would wrap. Read long.
    */
   eyebrowDetail?: { long: string; short: string };
+  /**
+   * Whether the label names the household when the person has more than one (bloque 12): Hoy,
+   * Tareas and Compra do; Ajustes, which lists them, does not.
+   */
+  withHousehold?: boolean;
   /**
    * The door's headline. A string is drawn in the display face (`DoorHeadline`); a node is drawn
    * as is (Hoy: the today line; Ajustes: your magnet and editable name).
@@ -100,6 +110,7 @@ const STRIP_MIN = 360;
 export function DoorHeader({
   eyebrow,
   eyebrowDetail,
+  withHousehold = true,
   heading,
   headingNumber,
   headingText,
@@ -147,11 +158,22 @@ export function DoorHeader({
   const fit = eyebrowDetail ? `${eyebrowDetail.long}@${windowWidth}@${fontScale}` : null;
   const [wrapped, setWrapped] = useState<string | null>(null);
   const shortened = fit !== null && wrapped === fit;
+  // With more than one household the label names the active one after the tab (and the date,
+  // short so both fit): «HOY · LUN, 26 OCT · CASA DE MAMÁ ⌄» (bloque 12).
+  const contextHousehold = useContext(DoorHouseholdContext);
+  const household = withHousehold ? contextHousehold : null;
   const detail = eyebrowDetail
-    ? door.compact || shortened
+    ? door.compact || shortened || household !== null
       ? eyebrowDetail.short
       : eyebrowDetail.long
     : null;
+  const labelStyle = {
+    color: colors.muted,
+    fontFamily: displayFontBold,
+    fontSize: type.eyebrow,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  } as const;
   // One line on one axis: the date is part of the label, not an aside in another style. The reader
   // always hears the long date; abbreviations read badly.
   const eyebrowRow = (
@@ -164,18 +186,66 @@ export function DoorHeader({
           setWrapped(fit);
         }
       }}
-      style={{
-        marginBottom: space(1),
-        color: colors.muted,
-        fontFamily: displayFontBold,
-        fontSize: type.eyebrow,
-        letterSpacing: 1.5,
-        textTransform: 'uppercase',
-      }}
+      style={household ? labelStyle : { marginBottom: space(1), ...labelStyle }}
     >
       {/* A no-break space: the label never breaks right after «HOY ·». */}
       {detail ? `${eyebrow}\u00A0· ${detail}` : eyebrow}
+      {household ? '\u00A0·' : null}
     </Text>
+  );
+  // The household's name follows on the same line, or on the next when it does not fit: never
+  // cut. In ink and underlined, with its chevron, when it opens «Tus casas»; muted when it only
+  // says where you are.
+  const householdName = household ? (
+    <Text
+      maxFontSizeMultiplier={DOOR_MAX_SCALE}
+      style={[labelStyle, household.onPress ? { color: colors.ink } : null]}
+    >
+      <Text style={household.onPress ? { textDecorationLine: 'underline' } : null}>
+        {household.name}
+      </Text>
+    </Text>
+  ) : null;
+  const eyebrowLine = household ? (
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        columnGap: space(2),
+        marginBottom: space(1),
+      }}
+    >
+      {eyebrowRow}
+      {household.onPress ? (
+        <Pressable
+          testID="door.household"
+          accessibilityRole="button"
+          accessibilityLabel={t('households.door', { household: household.name })}
+          onPress={household.onPress}
+          // The label is small; the touch is the size of a finger without moving the door.
+          hitSlop={{ top: 12, bottom: 12, left: 6, right: 12 }}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 2,
+            opacity: pressedOpacity(pressed),
+          })}
+        >
+          {householdName}
+          <Ionicons
+            name="chevron-down"
+            size={Math.round(type.eyebrow * 1.3)}
+            color={colors.ink}
+            accessible={false}
+          />
+        </Pressable>
+      ) : (
+        <View testID="door.household">{householdName}</View>
+      )}
+    </View>
+  ) : (
+    eyebrowRow
   );
   const headline =
     typeof heading === 'string' ? (
@@ -208,7 +278,7 @@ export function DoorHeader({
     ) : null;
   const hierarchy = (
     <>
-      {eyebrowRow}
+      {eyebrowLine}
       {headline}
       {sub}
     </>

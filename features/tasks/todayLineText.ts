@@ -10,28 +10,42 @@ export type TodayLineText = {
 
 const plain = (first: string): TodayLineText => ({ first, number: null, second: null });
 
-/** What is left for the household as a sentence of its own. */
-const householdSentence = (household: number): string =>
-  household === 0
-    ? t('today.line.householdNone')
-    : t(household === 1 ? 'today.line.householdOne' : 'today.line.householdOther', {
-        count: household,
-      });
-
-/** «3 de días anteriores; al hogar no le queda nada más.»: the two facts in one sentence. */
-const joined = (overdue: string, household: number): string =>
-  t('today.line.joined', {
-    overdue,
-    household:
-      household === 0
-        ? t('today.line.householdPartNone')
-        : t(household === 1 ? 'today.line.householdPartOne' : 'today.line.householdPartOther', {
+/**
+ * The words of the door of Hoy. Spanish plural: 1 is singular, everything else plural. With
+ * several households (bloque 12) the household is «esta casa», not «el hogar».
+ */
+export function todayLineText(line: TodayLine, several = false): TodayLineText {
+  /** What is left for the household as a sentence of its own. */
+  const householdSentence = (household: number): string =>
+    household === 0
+      ? t(several ? 'today.line.thisHouseholdNone' : 'today.line.householdNone')
+      : several
+        ? t(household === 1 ? 'today.line.thisHouseholdOne' : 'today.line.thisHouseholdOther', {
             count: household,
-          }),
-  });
+          })
+        : t(household === 1 ? 'today.line.householdOne' : 'today.line.householdOther', {
+            count: household,
+          });
 
-/** The words of the door of Hoy. Spanish plural: 1 is singular, everything else plural. */
-export function todayLineText(line: TodayLine): TodayLineText {
+  /** «3 de días anteriores; al hogar no le queda nada más.»: the two facts in one sentence. */
+  const joined = (overdue: string, household: number): string =>
+    t('today.line.joined', {
+      overdue,
+      household:
+        household === 0
+          ? t(several ? 'today.line.thisHouseholdPartNone' : 'today.line.householdPartNone')
+          : several
+            ? t(
+                household === 1
+                  ? 'today.line.thisHouseholdPartOne'
+                  : 'today.line.thisHouseholdPartOther',
+                { count: household },
+              )
+            : t(household === 1 ? 'today.line.householdPartOne' : 'today.line.householdPartOther', {
+                count: household,
+              }),
+    });
+
   switch (line.kind) {
     case 'empty':
       return plain(t('today.line.empty'));
@@ -84,9 +98,7 @@ export function todayLineText(line: TodayLine): TodayLineText {
     }
     case 'household':
       return {
-        first: t(line.household === 1 ? 'today.line.householdOne' : 'today.line.householdOther', {
-          count: line.household,
-        }),
+        first: householdSentence(line.household),
         number: String(line.household),
         second: null,
       };

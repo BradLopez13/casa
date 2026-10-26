@@ -9,7 +9,13 @@ import { useSession } from '@/features/auth/SessionProvider';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
 import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection';
 import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
-import { useMembers, useMembership } from '@/features/households/queries';
+import { HouseholdsSection } from '@/features/households/HouseholdsSection';
+import {
+  useHouseholds,
+  useMembers,
+  useMembership,
+  useSwitchHousehold,
+} from '@/features/households/queries';
 import { householdLine } from '@/features/settings/householdLine';
 import { NotificationsOffBand } from '@/features/settings/NotificationsOffBand';
 import { settingsPanes, type SettingsGroup } from '@/features/settings/settingsPanes';
@@ -41,6 +47,7 @@ import { useLayout } from '@/ui/useLayout';
 const HANG = magnetSizes.md / 2;
 
 const GLYPHS: Record<Exclude<SettingsGroup, 'account'>, string> = {
+  households: 'home-group',
   members: 'account-group-outline',
   reminders: 'alarm',
   notices: 'home-outline',
@@ -67,12 +74,21 @@ export default function SettingsScreen() {
   const unsent = useUnsentCount();
   const { userId } = useSession();
   const membership = useMembership().data;
+  const households = useHouseholds().data;
+  const switchTo = useSwitchHousehold();
   const members = useMembers(membership?.householdId);
   const list = useMemo(() => members.data ?? [], [members.data]);
   const { marks } = useMemberLabels(list, userId);
   const displayName = list.find((m) => m.userId === userId)?.displayName ?? '';
   const others = list.filter((m) => m.userId !== userId).map((m) => m.displayName);
   const alone = isOwnerAlone(membership?.role, members.data, userId);
+  // With several households (bloque 12), the ones where it is only you go with the account.
+  const several = (households?.length ?? 0) > 1;
+  const aloneIn = several
+    ? (households ?? [])
+        .filter((h) => h.role === 'owner' && h.memberCount === 1)
+        .map((h) => h.householdName)
+    : undefined;
   const { left, right } = settingsPanes(paneMode(useLayout()));
   // While the name is open, its Guardar is the screen's one pósit; Invitar steps back.
   const [editing, setEditing] = useState(false);
@@ -81,6 +97,16 @@ export default function SettingsScreen() {
 
   const group = (key: SettingsGroup) => {
     switch (key) {
+      case 'households':
+        return households ? (
+          <PinnedNote pin={{ glyph: GLYPHS.households }} side="left">
+            <HouseholdsSection
+              households={households}
+              activeId={membership?.householdId}
+              onSwitch={(id) => void switchTo(id)}
+            />
+          </PinnedNote>
+        ) : null;
       case 'members':
         return (
           <PinnedNote pin={{ glyph: GLYPHS.members }} side="left">
@@ -142,6 +168,7 @@ export default function SettingsScreen() {
             <DeleteAccountButton
               testID="settings.delete-account"
               alone={alone}
+              aloneIn={aloneIn}
               disabled={!members.data}
               quiet
             />
@@ -205,6 +232,7 @@ export default function SettingsScreen() {
   const door = (
     <DoorHeader
       eyebrow={t('settings.title')}
+      withHousehold={false}
       heading={
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(3) }}>
           <View style={{ flex: 1 }}>
@@ -221,7 +249,11 @@ export default function SettingsScreen() {
           <BrandPlate />
         </View>
       }
-      secondary={membership ? householdLine(membership.householdName, others) : undefined}
+      secondary={
+        membership
+          ? householdLine(membership.householdName, others, (households?.length ?? 1) - 1)
+          : undefined
+      }
       secondaryTestID="settings.household-name"
     />
   );

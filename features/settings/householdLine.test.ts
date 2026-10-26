@@ -20,4 +20,9 @@ describe('householdLine', () => {
       'Casa, con Bob, Eva, Leo y Zoe',
     );
   });
+
+  it('says how many other households there are (bloque 12)', () => {
+    expect(householdLine('Casa', ['Segundo'], 1)).toBe('Casa, con Segundo · y 1 casa más');
+    expect(householdLine('Casa', [], 2)).toBe('Casa · y 2 casas más');
+  });
 });

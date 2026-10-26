@@ -38,3 +38,11 @@ export function useDoor(): Door {
 export function useDoorType(): DoorType {
   return useContext(DoorTypeContext);
 }
+
+/**
+ * The household a door names in its label (bloque 12): only with more than one, so with a single
+ * household nothing changes. `onPress` opens «Tus casas»; without it the name is only said.
+ */
+export type DoorHousehold = { name: string; onPress?: () => void };
+
+export const DoorHouseholdContext = createContext<DoorHousehold | null>(null);

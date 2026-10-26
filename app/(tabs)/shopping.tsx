@@ -12,13 +12,14 @@ import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine, pendingNames } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
-import { useMembers, useMembership } from '@/features/households/queries';
+import { useMembers, useMembership, useSeveralHouseholds } from '@/features/households/queries';
 import { newShoppingItemId } from '@/features/shopping/api';
 import {
   AddItemField,
   useItemEntry,
   type ItemEntry,
 } from '@/features/shopping/components/AddItemField';
+import { LicenseBand } from '@/features/households/LicenseBand';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
 import { toAppError } from '@/data/supabase/errors';
@@ -194,6 +195,7 @@ export default function ShoppingScreen() {
 
   // Until the list loads the door has no count to say: a blank headline keeps its line height.
   const line = itemsQuery.data ? doorLine(pending.length) : null;
+  const several = useSeveralHouseholds();
   const door = (children: ReactNode) => (
     <DoorHeader
       eyebrow={t('shopping.title')}
@@ -201,7 +203,9 @@ export default function ShoppingScreen() {
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
       // An empty list says one thing: the headline, without the hint under it.
-      secondary={state === 'empty' ? undefined : t('shopping.doorHint')}
+      secondary={
+        state === 'empty' ? undefined : t(several ? 'shopping.doorHintThis' : 'shopping.doorHint')
+      }
     >
       {children}
     </DoorHeader>
@@ -313,6 +317,7 @@ function ShoppingStack({
       <View onLayout={nudge.onDoorLayout}>
         {door(<AddItemField entry={entry} />)}
         {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+        <LicenseBand />
       </View>
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
       <View style={[column, { paddingTop: space(listTopStep(!band)) }]}>{stateView}</View>
@@ -374,6 +379,7 @@ function ShoppingSplit({
         <>
           {door(null)}
           {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+          <LicenseBand />
         </>
       }
       leftTestID="shopping.pane.pending"

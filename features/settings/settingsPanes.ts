@@ -1,10 +1,17 @@
 import type { PaneMode } from '@/ui/panes';
 
 /** The notes under the door; who you are lives on the door itself. */
-export type SettingsGroup = 'members' | 'reminders' | 'notices' | 'help' | 'account';
+export type SettingsGroup = 'households' | 'members' | 'reminders' | 'notices' | 'help' | 'account';
 
 /** The single-column order, as Ajustes has always read. */
-const ORDER: readonly SettingsGroup[] = ['members', 'reminders', 'notices', 'help', 'account'];
+const ORDER: readonly SettingsGroup[] = [
+  'households',
+  'members',
+  'reminders',
+  'notices',
+  'help',
+  'account',
+];
 
 /** What the phone does on its own (reminders, household notices), and how the app works. */
 const PHONE: ReadonlySet<SettingsGroup> = new Set(['reminders', 'notices', 'help']);

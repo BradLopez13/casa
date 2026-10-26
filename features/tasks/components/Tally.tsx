@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import type { TodayLine } from '@/domain/tasks/todayLine';
+import { useSeveralHouseholds } from '@/features/households/queries';
 import { DayDone } from '@/features/tasks/components/DayDone';
 import { todayLineText } from '@/features/tasks/todayLineText';
 import { t } from '@/i18n';
@@ -16,7 +17,7 @@ import { useTheme } from '@/ui/theme';
 export function TallyView({ line, onSeeAll }: { line: TodayLine; onSeeAll?: () => void }) {
   const { colors, space } = useTheme();
   const type = useDoorType();
-  const { first, number, second } = todayLineText(line);
+  const { first, number, second } = todayLineText(line, useSeveralHouseholds());
   const label = second === null ? first : `${first} ${second}`;
 
   const seeAll = line.kind === 'nothingMine' && line.unassigned > 0 && onSeeAll;
