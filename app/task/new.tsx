@@ -1,15 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
 import { newTaskId, type TaskInput } from '@/features/tasks/api';
 import { buildCreateOptions } from '@/features/tasks/create';
 import { markFresh } from '@/features/tasks/freshIds';
-import { assigneeParam, dueParam } from '@/features/tasks/dueParam';
+import { assigneeParam, dueParam, NO_DATE } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
-import { NO_DATE } from '@/features/tasks/components/QuickAdd';
 import { useToday } from '@/features/tasks/useToday';
 import { t } from '@/i18n';
 import { ModalSheet } from '@/ui/components/ModalSheet';
@@ -41,6 +40,8 @@ function NewTaskScreen() {
   const queryClient = useQueryClient();
   const notify = useNotice();
   const create = useMutation(buildCreateOptions(queryClient, notify));
+  // A second tap before the sheet closes must not save, announce or close twice.
+  const sent = useRef(false);
 
   const initial: TaskInput = {
     title: '',
@@ -65,7 +66,8 @@ function NewTaskScreen() {
       error={null}
       onCancel={close}
       onSave={(input) => {
-        if (householdId === undefined) return;
+        if (householdId === undefined || sent.current) return;
+        sent.current = true;
         // Created here: its note lands with the pin choreography on the list behind.
         markFresh(id);
         create.mutate({ id, householdId, userId, input });

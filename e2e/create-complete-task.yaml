@@ -57,7 +57,13 @@ appId: com.bradlopez13.casa
       id: task-form.title
     timeout: 10000
 - assertVisible: Nueva tarea
-- assertVisible: Hoy
+# The form starts with the context: today, and for me
+- assertVisible:
+    id: task-form.prop.due
+    text: 'Cuándo, Hoy'
+- assertVisible:
+    id: task-form.prop.assignee
+    text: '.*Tú.*'
 - tapOn:
     id: task-form.cancel
 - extendedWaitUntil:

@@ -146,6 +146,10 @@ describe('Tareas', () => {
       pathname: '/task/new',
       params: { due: 'none' },
     });
+    // A second tap right away opens no second form; a moment later it does.
+    fireEvent.click(screen.getByTestId('tasks.quick-add.submit'));
+    expect(vi.mocked(router.push)).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(new Date(2026, 9, 22, 10, 0, 5));
     fireEvent.click(screen.getByTestId(`tasks.pill.${today}`));
     fireEvent.click(screen.getByTestId('tasks.quick-add.submit'));
     expect(vi.mocked(router.push)).toHaveBeenLastCalledWith({

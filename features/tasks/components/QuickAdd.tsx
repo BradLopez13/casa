@@ -40,11 +40,12 @@ import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { hintName, quickHintSegments, quickHintShown } from '../quickHint';
 import { buildCreateOptions } from '../create';
+import { NO_DATE } from '../dueParam';
 import { useToday } from '../useToday';
 
 const ADD_SIZE = 40;
-/** The new task form's `due` for a task without a date (`app/task/new.tsx`). */
-export const NO_DATE = 'none';
+/** A second tap on the «+» within this opens no second form. */
+const OPEN_FORM_GUARD_MS = 1000;
 const CHIP_HEIGHT = 32;
 
 const KIND_ICONS = {
@@ -162,7 +163,11 @@ export function QuickAdd({
 
   // With the field empty the «+» opens the full form, with the day and the person of the context:
   // the form had no way in, and the button did nothing (bloque 11).
+  const openedAt = useRef(-Infinity);
   const openForm = () => {
+    const now = Date.now();
+    if (now - openedAt.current < OPEN_FORM_GUARD_MS) return;
+    openedAt.current = now;
     const params: { due: string; assignee?: string } = { due: dueOn ?? NO_DATE };
     if (formAssigneeId !== null) params.assignee = formAssigneeId;
     router.push({ pathname: '/task/new', params });
