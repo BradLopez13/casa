@@ -26,13 +26,13 @@ isOneToOne: false
                   ]
                 },"household_licenses": {
                   Row: {
-                    "created_at": string,"current_period_end": string | null,"household_id": string,"paid_by": string | null,"plan": string,"provider": string,"provider_subscription_id": string | null,"status": string,"trial_ends_at": string | null,"updated_at": string
+                    "created_at": string,"current_period_end": string | null,"household_id": string,"last_event_at": string | null,"paid_by": string | null,"plan": string,"provider": string,"provider_subscription_id": string | null,"status": string,"trial_ends_at": string | null,"updated_at": string
                   }
                   Insert: {
-                    "created_at"?: string,"current_period_end"?: string | null,"household_id": string,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status": string,"trial_ends_at"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"current_period_end"?: string | null,"household_id": string,"last_event_at"?: string | null,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status": string,"trial_ends_at"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"current_period_end"?: string | null,"household_id"?: string,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status"?: string,"trial_ends_at"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"current_period_end"?: string | null,"household_id"?: string,"last_event_at"?: string | null,"paid_by"?: string | null,"plan"?: string,"provider"?: string,"provider_subscription_id"?: string | null,"status"?: string,"trial_ends_at"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -221,12 +221,14 @@ isOneToOne: false
           Functions: {
             "accept_invite":
 { Args: { "p_token": string }; Returns: string
+                           } |
+{ Args: { "p_token": string,"p_while_in_other": boolean }; Returns: string
                            },
 "add_shopping_item":
 { Args: { "p_household_id": string,"p_id": string,"p_name": string,"p_quantity": string }; Returns: string
                            },
 "apply_billing_event":
-{ Args: { "p_household_id": string,"p_paid_by": string,"p_period_end": string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
+{ Args: { "p_event_at": string,"p_household_id": string,"p_initial": boolean,"p_paid_by": string,"p_period_end": string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
                            },
 "billing_enabled":
 { Args: Record<PropertyKey, never>; Returns: boolean

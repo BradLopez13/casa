@@ -1,5 +1,5 @@
 begin;
-select plan(53);
+select plan(54);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -444,9 +444,16 @@ select is(
 select tests.authenticate_as(:'dani');
 select public.create_household('Casa de Dani') as dani_hid \gset
 
-select lives_ok(
+select throws_ok(
   format($$select public.accept_invite(%L)$$, :'own_token'),
-  'someone with another household of their own can accept it'
+  'P0001',
+  'ALREADY_IN_HOUSEHOLD',
+  'the one-argument accept_invite, the app before bloque 12, still refuses someone with a household'
+);
+
+select lives_ok(
+  format($$select public.accept_invite(%L, true)$$, :'own_token'),
+  'asking for it, someone with another household of their own can accept it'
 );
 
 -- Revoking an accepted invite does nothing

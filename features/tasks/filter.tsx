@@ -21,6 +21,8 @@ export function TaskFilterProvider({
     householdId,
     assigneeId: null,
   });
+  // Another household: back to Todos, also when coming back to the first one later.
+  if (chosen.householdId !== householdId) setChosen({ householdId, assigneeId: null });
   const assigneeId = chosen.householdId === householdId ? chosen.assigneeId : null;
   const select = useCallback(
     (userId: string | null) =>

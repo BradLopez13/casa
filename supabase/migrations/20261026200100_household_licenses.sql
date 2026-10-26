@@ -57,6 +57,9 @@ create table public.household_licenses (
   paid_by uuid references public.profiles (user_id) on delete set null,
   current_period_end timestamptz,
   trial_ends_at timestamptz,
+  -- When the provider says the last event it applied happened: an older event arriving late (a
+  -- retry) never undoes a newer one.
+  last_event_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -113,7 +116,9 @@ create trigger household_licenses_broadcast_update
   for each statement execute function private.broadcast_household_change();
 
 -- Whether the household may be written to: always while billing is off; with billing on, a
--- complimentary or active licence, a trial still running, or a past_due one within the grace.
+-- complimentary licence, an active one whose period has not ended (plus the grace: a missed
+-- renewal event must not cut the household), a trial still running, or a past_due one within the
+-- grace.
 create function private.household_is_licensed(p_household_id uuid)
 returns boolean
 language sql
@@ -127,7 +132,10 @@ as $$
     cross join private.app_settings s
     where l.household_id = p_household_id
       and (
-        l.status in ('complimentary', 'active')
+        l.status = 'complimentary'
+        or (l.status = 'active'
+            and coalesce(l.current_period_end, 'infinity'::timestamptz)
+                + make_interval(days => s.grace_days) > now())
         or (l.status = 'trial' and l.trial_ends_at > now())
         or (l.status = 'past_due'
             and coalesce(l.current_period_end, l.updated_at)
@@ -1018,44 +1026,92 @@ revoke execute on function public.start_household_checkout(uuid) from public, an
 grant execute on function public.start_household_checkout(uuid) to authenticated;
 
 -- apply_billing_event: the billing webhook's only door into the licences (service role only).
--- With billing off it changes nothing and says so (false). Paying takes the licence over: the
--- payer becomes paid_by.
+-- With billing off it changes nothing and says so (false). A subscription belongs to the
+-- household it was bought for: the first purchase (p_initial) ties it to p_household_id, and only
+-- if the payer leads that household; every later event finds the licence by its subscription id
+-- and ignores the household the event names (a customer attribute the app sets, which a second
+-- purchase overwrites). An event older than the last one applied changes nothing. Returns whether
+-- a licence changed. Paying takes the licence over: the payer becomes paid_by.
 create function public.apply_billing_event(
   p_household_id uuid,
   p_status text,
   p_period_end timestamptz,
   p_provider text,
   p_subscription_id text,
-  p_paid_by uuid
+  p_paid_by uuid,
+  p_initial boolean,
+  p_event_at timestamptz
 )
 returns boolean
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_hid uuid;
+  v_payer uuid;
 begin
   if not private.billing_enabled() then
     return false;
   end if;
 
-  if p_status not in ('active', 'past_due', 'canceled') then
+  if p_status is null or p_status not in ('active', 'past_due', 'canceled') then
     raise exception 'INVALID_LICENSE_STATUS' using errcode = 'P0001';
   end if;
 
+  if p_subscription_id is null or p_provider is null
+     or p_provider not in ('revenuecat', 'stripe') then
+    return false;
+  end if;
+
+  select l.household_id into v_hid
+  from public.household_licenses l
+  where l.provider = p_provider and l.provider_subscription_id = p_subscription_id
+  for update;
+
+  if not found then
+    -- Only a first purchase, by whoever leads the household, ties a subscription to it.
+    if not coalesce(p_initial, false) or p_household_id is null or not exists (
+      select 1
+      from public.household_members m
+      join public.households h on h.id = m.household_id and h.deleted_at is null
+      where m.household_id = p_household_id
+        and m.user_id = p_paid_by
+        and m.role = 'owner'
+        and m.left_at is null
+    ) then
+      return false;
+    end if;
+    v_hid := p_household_id;
+    perform 1 from public.household_licenses where household_id = v_hid for update;
+  end if;
+
+  -- A payer the database does not know is left as it was.
+  select p.user_id into v_payer from public.profiles p where p.user_id = p_paid_by;
+
   update public.household_licenses
   set status = p_status,
-      current_period_end = coalesce(p_period_end, current_period_end),
-      provider = coalesce(p_provider, provider),
-      provider_subscription_id = coalesce(p_subscription_id, provider_subscription_id),
-      paid_by = coalesce(p_paid_by, paid_by),
+      -- past_due without a date keeps the one it had, or starts its grace now, once.
+      current_period_end = coalesce(
+        p_period_end,
+        current_period_end,
+        case when p_status = 'past_due' then now() end
+      ),
+      provider = p_provider,
+      provider_subscription_id = p_subscription_id,
+      paid_by = coalesce(v_payer, paid_by),
+      last_event_at = coalesce(p_event_at, now()),
       updated_at = now()
-  where household_id = p_household_id;
+  where household_id = v_hid
+    and (last_event_at is null or p_event_at is null or p_event_at >= last_event_at);
 
   return found;
 end;
 $$;
 
-revoke execute on function public.apply_billing_event(uuid, text, timestamptz, text, text, uuid)
-  from public, anon, authenticated;
-grant execute on function public.apply_billing_event(uuid, text, timestamptz, text, text, uuid)
-  to service_role;
+revoke execute on function public.apply_billing_event(
+  uuid, text, timestamptz, text, text, uuid, boolean, timestamptz
+) from public, anon, authenticated;
+grant execute on function public.apply_billing_event(
+  uuid, text, timestamptz, text, text, uuid, boolean, timestamptz
+) to service_role;

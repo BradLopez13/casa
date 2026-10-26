@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
+import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitch';
 import { newTaskId, type TaskInput } from '@/features/tasks/api';
 import { buildCreateOptions } from '@/features/tasks/create';
 import { markFresh } from '@/features/tasks/freshIds';
@@ -32,6 +33,8 @@ function NewTaskScreen() {
   const { userId } = useSession();
   const householdId = useMembership().data?.householdId;
   const members = useMembers(householdId).data;
+  // Switched to another household meanwhile (bloque 12): the task would land in the wrong one.
+  useCloseOnHouseholdSwitch(householdId, close);
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
   // One id per form: a retried or repeated create returns the same task instead of a copy.
   const [id] = useState(newTaskId);

@@ -2,7 +2,7 @@
 -- licence a new household gets with the switch off and on, the write guard with every state,
 -- reading never blocked, my_households, the checkout and the billing webhook's door.
 begin;
-select plan(52);
+select plan(61);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -79,7 +79,7 @@ reset role;
 select tests.authenticate_as(:'ana');
 
 select throws_ok(
-  format($$select public.apply_billing_event(%L, 'active', null, 'revenuecat', 'sub', null)$$, :'hid'),
+  format($$select public.apply_billing_event(%L, 'active', null, 'revenuecat', 'sub', null, true, now())$$, :'hid'),
   '42501', null, 'the client cannot call the webhook''s door'
 );
 
@@ -125,7 +125,7 @@ select throws_ok(
 
 set local role service_role;
 select is(
-  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'bob'),
+  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'ana', true, now()),
   false,
   'with billing off the webhook changes nothing'
 );
@@ -257,6 +257,7 @@ $$;
 
 select is(pg_temp.licensed_as('complimentary', null, null), true, 'complimentary is licensed');
 select is(pg_temp.licensed_as('active', null, now() + interval '20 days'), true, 'active is licensed');
+select is(pg_temp.licensed_as('active', null, now() - interval '8 days'), false, 'an active licence whose period ended beyond the grace is not: a missed event does not keep it forever');
 select is(pg_temp.licensed_as('trial', now() + interval '1 day', null), true, 'a running trial is licensed');
 select is(pg_temp.licensed_as('trial', now() - interval '1 minute', null), false, 'an ended trial is not');
 select is(pg_temp.licensed_as('past_due', null, now() - interval '6 days'), true, 'past_due within the 7-day grace is licensed');
@@ -267,9 +268,19 @@ select is(pg_temp.licensed_as('canceled', null, now() + interval '1 day'), false
 select tests.clear_auth();
 set local role service_role;
 select is(
-  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'ana'),
+  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'bob', true, now()),
+  false,
+  'a purchase by someone who does not lead the household ties nothing'
+);
+select is(
+  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'ana', false, now()),
+  false,
+  'nor does a later event for a subscription nobody bought'
+);
+select is(
+  public.apply_billing_event(:'hid', 'active', now() + interval '30 days', 'revenuecat', 'sub_1', :'ana', true, now() - interval '1 hour'),
   true,
-  'with billing on the webhook updates the licence'
+  'the first purchase by whoever leads it ties the subscription to the household'
 );
 reset role;
 
@@ -281,11 +292,46 @@ select is(
 );
 
 set local role service_role;
-select throws_ok(
-  format($$select public.apply_billing_event(%L, 'complimentary', null, null, null, null)$$, :'hid'),
-  'P0001', 'INVALID_LICENSE_STATUS', 'the webhook cannot hand out a complimentary licence'
+select is(
+  public.apply_billing_event(:'eva_hid', 'past_due', null, 'revenuecat', 'sub_1', null, false, now()),
+  true,
+  'a later event finds the licence by its subscription, whatever household it names'
 );
 reset role;
+
+select is(
+  (select array_agg(household_id::text || ' ' || status order by status)
+    from public.household_licenses where household_id in (:'hid', :'eva_hid')),
+  array[:'hid' || ' past_due', :'eva_hid' || ' trial'],
+  'so the household the subscription was bought for changes, not the one named'
+);
+
+set local role service_role;
+select is(
+  public.apply_billing_event(null, 'active', now() + interval '30 days', 'revenuecat', 'sub_1', null, false, now() - interval '2 hours'),
+  false,
+  'an event older than the last one applied changes nothing'
+);
+select is(
+  public.apply_billing_event(null, 'active', now() + interval '30 days', 'revenuecat', 'sub_1', '00000000-0000-0000-0000-00000000dead', false, now()),
+  true,
+  'a payer the database does not know does not break the event'
+);
+select throws_ok(
+  format($$select public.apply_billing_event(%L, 'complimentary', null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
+  'P0001', 'INVALID_LICENSE_STATUS', 'the webhook cannot hand out a complimentary licence'
+);
+select throws_ok(
+  format($$select public.apply_billing_event(%L, null, null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
+  'P0001', 'INVALID_LICENSE_STATUS', 'nor a licence without a state'
+);
+reset role;
+
+select is(
+  (select paid_by from public.household_licenses where household_id = :'hid'),
+  :'ana'::uuid,
+  'and the payer stays whoever paid'
+);
 
 select tests.authenticate_as(:'ana');
 select lives_ok(
@@ -297,7 +343,7 @@ select lives_ok(
 select tests.authenticate_as(:'eva');
 select token as tok_eva from public.create_invite(:'eva_hid') \gset
 select tests.authenticate_as(:'bob');
-select public.accept_invite(:'tok_eva');
+select public.accept_invite(:'tok_eva', true);
 select tests.authenticate_as(:'eva');
 select public.transfer_ownership(:'eva_hid', :'bob');
 select tests.clear_auth();

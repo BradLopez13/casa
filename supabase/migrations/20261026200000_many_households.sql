@@ -42,10 +42,12 @@ begin
 end;
 $$;
 
--- accept_invite: you may accept an invite while you have another household. Only being in that
--- same household already is refused (ALREADY_A_MEMBER), and then the invite stays usable for
--- someone else. Lock order and idempotency as in 20261003181613_accept_invite_idempotent.sql.
-create or replace function public.accept_invite(p_token text)
+-- Accepting an invite, shared by both versions of accept_invite. With p_while_in_other, you may
+-- accept while you have another household; only being in that same household already is refused
+-- (ALREADY_A_MEMBER), and then the invite stays usable for someone else. Without it, as before
+-- bloque 12: any household refuses it (ALREADY_IN_HOUSEHOLD). Lock order and idempotency as in
+-- 20261003181613_accept_invite_idempotent.sql. Not callable from the API.
+create function private.accept_invite_as(p_token text, p_while_in_other boolean)
 returns uuid
 language plpgsql
 security definer
@@ -115,6 +117,15 @@ begin
     raise exception 'ALREADY_A_MEMBER' using errcode = 'P0001';
   end if;
 
+  if not p_while_in_other and exists (
+    select 1
+    from public.household_members m
+    join public.households h on h.id = m.household_id
+    where m.user_id = v_user and m.left_at is null and h.deleted_at is null
+  ) then
+    raise exception 'ALREADY_IN_HOUSEHOLD' using errcode = 'P0001';
+  end if;
+
   -- The household row is held (for share) and the invite locked, so a concurrent accept by the
   -- same person waits and then sees accepted_at; the index still guards the insert.
   begin
@@ -131,6 +142,36 @@ begin
   return v_invite.household_id;
 end;
 $$;
+
+revoke execute on function private.accept_invite_as(text, boolean) from public, anon, authenticated;
+
+-- The app before bloque 12 reads its one membership with maybeSingle(): a second household
+-- would break it. So the one-argument accept_invite it calls keeps refusing anyone who already
+-- has a household; the new app asks for the other behaviour explicitly.
+create or replace function public.accept_invite(p_token text)
+returns uuid
+language sql
+security definer
+set search_path = ''
+as $$
+  select private.accept_invite_as(p_token, false);
+$$;
+
+-- Bloque 12: accepting while in another household. p_while_in_other must be true; false acts
+-- as the one-argument version.
+create function public.accept_invite(p_token text, p_while_in_other boolean)
+returns uuid
+language sql
+security definer
+set search_path = ''
+as $$
+  select private.accept_invite_as(p_token, coalesce(p_while_in_other, false));
+$$;
+
+revoke execute on function public.accept_invite(text) from public, anon;
+grant execute on function public.accept_invite(text) to authenticated;
+revoke execute on function public.accept_invite(text, boolean) from public, anon;
+grant execute on function public.accept_invite(text, boolean) to authenticated;
 
 -- preview_invite also says whether you are already in that household, and which one it is, so
 -- the invitation can say so and take you there instead of offering to join. Only the token's
@@ -312,7 +353,9 @@ begin
     from public.household_members m
     join public.households h on h.id = m.household_id
     where m.user_id = v_user and m.left_at is null and h.deleted_at is null
-    order by m.joined_at
+    -- By id, not by joining date: two people leaving the same households at once take the
+    -- household locks in the same order and never deadlock.
+    order by m.household_id
   loop
     begin
       perform private.leave_household_as(v_household, v_user);

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   activeHouseholdStorageKey,
+  forgetChosenHouseholds,
   pickActive,
   readActiveHousehold,
   writeActiveHousehold,
@@ -37,6 +38,7 @@ describe('pickActive', () => {
 describe('the choice is the device’s, per person', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
+    forgetChosenHouseholds();
   });
 
   it('is kept under the person’s own key', async () => {

@@ -1,7 +1,7 @@
 import { Tabs, useGlobalSearchParams, useRouter, useSegments } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import type { ComponentType } from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View, type ColorValue } from 'react-native';
 import { useHouseholds, useMembership, useSwitchHousehold } from '@/features/households/queries';
 import { FridgeTabBar } from '@/features/navigation/FridgeTabBar';
@@ -39,9 +39,14 @@ function useHouseholdFromLink(activeId: string | undefined) {
   const households = useHouseholds().data;
   const switchTo = useSwitchHousehold();
   const wanted = typeof household === 'string' ? household : undefined;
+  // Each link switches once: the param stays on the route, and choosing another household
+  // afterwards must hold.
+  const handled = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (wanted === undefined || wanted === activeId) return;
-    if (households?.some((h) => h.householdId === wanted)) void switchTo(wanted);
+    if (wanted === undefined || handled.current === wanted) return;
+    if (!households?.some((h) => h.householdId === wanted)) return;
+    handled.current = wanted;
+    if (wanted !== activeId) void switchTo(wanted);
   }, [wanted, activeId, households, switchTo]);
 }
 

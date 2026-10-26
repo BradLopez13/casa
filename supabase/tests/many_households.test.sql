@@ -136,7 +136,7 @@ select is(
 );
 
 select is(
-  public.accept_invite(:'tok_a1'),
+  public.accept_invite(:'tok_a1', true),
   '00000000-0000-0000-0000-0000000000a1'::uuid,
   'who then joins it while keeping their own'
 );

@@ -10,6 +10,7 @@ const event = (type: string, extra: Record<string, unknown> = {}) => ({
     type,
     app_user_id: PAYER,
     expiration_at_ms: Date.UTC(2026, 10, 26),
+    event_timestamp_ms: Date.UTC(2026, 9, 26),
     original_transaction_id: 'GPA.1',
     subscriber_attributes: { household_id: { value: HOUSEHOLD } },
     ...extra,
@@ -24,7 +25,7 @@ const request = (body: unknown, auth: string | null = `Bearer ${SECRET}`) =>
   });
 
 function deps(enabled: boolean) {
-  const apply = vi.fn<(change: LicenseChange) => Promise<void>>(() => Promise.resolve());
+  const apply = vi.fn<(change: LicenseChange) => Promise<boolean>>(() => Promise.resolve(true));
   return { secret: SECRET, billingEnabled: () => Promise.resolve(enabled), apply };
 }
 
@@ -47,8 +48,10 @@ describe('licenseChange', () => {
       periodEnd: '2026-11-26T00:00:00.000Z',
       subscriptionId: 'GPA.1',
       paidBy: PAYER,
+      initial: true,
+      eventAt: '2026-10-26T00:00:00.000Z',
     });
-    expect(licenseChange(event('RENEWAL'))?.status).toBe('active');
+    expect(licenseChange(event('RENEWAL'))).toMatchObject({ status: 'active', initial: false });
   });
 
   it('a failed renewal is past_due, an expiry canceled', () => {
@@ -60,15 +63,20 @@ describe('licenseChange', () => {
     expect(licenseChange(event('CANCELLATION'))).toBeNull();
   });
 
-  it('an event without its household, or with something else in its place, changes nothing', () => {
-    expect(licenseChange(event('RENEWAL', { subscriber_attributes: {} }))).toBeNull();
+  it('an event without its subscription changes nothing', () => {
     expect(
-      licenseChange(
-        event('RENEWAL', { subscriber_attributes: { household_id: { value: 'x;drop' } } }),
-      ),
+      licenseChange(event('RENEWAL', { original_transaction_id: undefined, transaction_id: '' })),
     ).toBeNull();
     expect(licenseChange({})).toBeNull();
     expect(licenseChange(null)).toBeNull();
+  });
+
+  it('a household that is not an id is not passed on: the server finds it by the subscription', () => {
+    expect(
+      licenseChange(
+        event('RENEWAL', { subscriber_attributes: { household_id: { value: 'x;drop' } } }),
+      )?.householdId,
+    ).toBeNull();
   });
 });
 
@@ -95,6 +103,13 @@ describe('handleBillingWebhook', () => {
     const response = await handleBillingWebhook(request(event('BILLING_ISSUE')), d);
     expect(response.status).toBe(200);
     expect(d.apply).toHaveBeenCalledWith(expect.objectContaining({ status: 'past_due' }));
+  });
+
+  it('says so when no licence changed', async () => {
+    const d = deps(true);
+    d.apply.mockResolvedValueOnce(false);
+    const response = await handleBillingWebhook(request(event('RENEWAL')), d);
+    expect(await response.json()).toEqual({ ignored: 'no_licence' });
   });
 
   it('a body that is not JSON is a bad request', async () => {

@@ -80,15 +80,23 @@ export function useSeveralHouseholds(): boolean {
  * Makes `householdId` the household this phone shows, at once: every screen follows the
  * membership. The choice is kept on the phone for the next start.
  */
-export function setActiveHousehold(
+export async function setActiveHousehold(
   queryClient: QueryClient,
   userId: string | null,
   householdId: string,
 ): Promise<void> {
+  // A membership fetch already on its way would land on top of the switch.
+  await queryClient.cancelQueries({ queryKey: membershipKey });
+  if (userId !== null) await writeActiveHousehold(userId, householdId);
   const list = queryClient.getQueryData<Membership[]>(householdsKey) ?? [];
   const next = list.find((h) => h.householdId === householdId);
-  if (next) queryClient.setQueryData(membershipKey, next);
-  return userId === null ? Promise.resolve() : writeActiveHousehold(userId, householdId);
+  if (next) {
+    queryClient.setQueryData(membershipKey, next);
+    return;
+  }
+  // Not in the list this phone has (joined elsewhere a moment ago): fetch it fresh, which picks
+  // the household just chosen once it is there.
+  await queryClient.invalidateQueries({ queryKey: membershipKey });
 }
 
 /** Switching household from a screen: «Tus casas», Ajustes or a tapped notice. */

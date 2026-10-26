@@ -10,6 +10,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { useSession } from '@/features/auth/SessionProvider';
 import { deleteTask, updateTask, type TaskInput } from '@/features/tasks/api';
 import { useMembers, useMembership } from '@/features/households/queries';
+import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitch';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { deleteWithUndo } from '@/features/tasks/deferredDelete';
@@ -71,6 +72,8 @@ function EditTaskScreen() {
   const toggler = useToggleTask(householdId, userId);
   const unsent = useUnsentTasks();
   const close = useCloseModal('/today');
+  // Switched to another household meanwhile (bloque 12): this task is the other's.
+  useCloseOnHouseholdSwitch(householdId, close);
   // Completing, reopening or deleting from the form closes it, but only after a render that marks the form
   // busy: closing in the same tick let the discard guard ask over a task already toggled.
   const [toggled, setToggled] = useState(false);

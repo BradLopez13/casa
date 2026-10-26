@@ -11,6 +11,7 @@ import {
   type Membership,
 } from '@/features/households/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { householdsKey } from '@/features/households/keys';
 import { pendingInviteKey } from '@/features/households/pending-invite';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
@@ -54,10 +55,12 @@ const membership: Membership = {
   rooms: ['kitchen'],
 };
 
-function renderInvite() {
+function renderInvite(households?: Membership[]) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
+  // The households the app already knows, as the route guard leaves them.
+  if (households) queryClient.setQueryData(householdsKey, households);
   // No invitation kept on this phone from before.
   queryClient.setQueryData(pendingInviteKey, null);
   render(
@@ -258,5 +261,18 @@ describe('Invitación: la cuenta tras «⋯»', () => {
     fireEvent.click(screen.getByRole('button', { name: t('auth.signOut') }));
     await vi.waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
     expect(window.localStorage.getItem('pendingInviteToken')).toBeNull();
+  });
+
+  it('already in a household, a failed accept without the preview is said, not swallowed (bloque 12)', async () => {
+    vi.mocked(previewInvite).mockRejectedValue(new AppError('NETWORK'));
+    vi.mocked(acceptInvite).mockRejectedValueOnce(new AppError('INVITE_EXPIRED'));
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
+    renderInvite([membership]);
+    // The preview retries before giving up.
+    fireEvent.click(
+      await screen.findByRole('button', { name: t('invite.accept') }, { timeout: 8000 }),
+    );
+    expect((await screen.findByRole('alert')).textContent).toBe(t('invite.errors.INVITE_EXPIRED'));
+    expect(nav.router.replace).not.toHaveBeenCalled();
   });
 });

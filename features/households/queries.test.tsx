@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { forgetChosenHouseholds } from './active';
 import { listMyHouseholds, type Membership } from './api';
 import { householdsKey, membershipKey } from './keys';
 import { loadActiveMembership, setActiveHousehold } from './queries';
@@ -21,6 +22,7 @@ const mama: Membership = {
 beforeEach(async () => {
   vi.mocked(listMyHouseholds).mockReset();
   await AsyncStorage.clear();
+  forgetChosenHouseholds();
 });
 
 describe('the active household (bloque 12)', () => {
@@ -74,5 +76,29 @@ describe('the active household (bloque 12)', () => {
     await AsyncStorage.setItem('casa-active-household-me', 'mama');
     vi.mocked(listMyHouseholds).mockResolvedValue([casa]);
     expect(await loadActiveMembership(client, 'me')).toEqual(casa);
+  });
+
+  it('a switch made while the list loads is not undone by it', async () => {
+    const client = new QueryClient();
+    client.setQueryData(householdsKey, [casa, mama]);
+    let release: (list: Membership[]) => void = () => undefined;
+    vi.mocked(listMyHouseholds).mockReturnValue(new Promise((resolve) => (release = resolve)));
+    const loading = loadActiveMembership(client, 'me');
+    await setActiveHousehold(client, 'me', 'mama');
+    release([casa, mama]);
+    expect(await loading).toEqual(mama);
+  });
+
+  it('switching to a household this phone does not list yet fetches the list and shows it', async () => {
+    const client = new QueryClient();
+    client.setQueryData(householdsKey, [casa]);
+    client.setQueryData(membershipKey, casa);
+    vi.mocked(listMyHouseholds).mockResolvedValue([casa, mama]);
+    await client.fetchQuery({
+      queryKey: membershipKey,
+      queryFn: () => loadActiveMembership(client, 'me'),
+    });
+    await setActiveHousehold(client, 'me', 'mama');
+    expect(await loadActiveMembership(client, 'me')).toEqual(mama);
   });
 });

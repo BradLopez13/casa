@@ -21,15 +21,18 @@ Deno.serve((req) => {
       return data === true;
     },
     apply: async (change) => {
-      const { error } = await supabase.rpc('apply_billing_event', {
+      const { data, error } = await supabase.rpc('apply_billing_event', {
         p_household_id: change.householdId,
         p_status: change.status,
         p_period_end: change.periodEnd,
         p_provider: 'revenuecat',
         p_subscription_id: change.subscriptionId,
         p_paid_by: change.paidBy,
+        p_initial: change.initial,
+        p_event_at: change.eventAt,
       });
       if (error) throw error;
+      return data === true;
     },
   });
 });

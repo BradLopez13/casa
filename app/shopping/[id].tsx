@@ -14,6 +14,7 @@ import type { ShoppingItem } from '@/domain/shopping/list';
 import { isDirty } from '@/features/forms/isDirty';
 import { useDiscardGuard } from '@/features/forms/useDiscardGuard';
 import { useMembership } from '@/features/households/queries';
+import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitch';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
@@ -77,6 +78,8 @@ function EditShoppingItemScreen() {
     if (closed.current) return;
     closed.current = closeModal();
   };
+  // Switched to another household meanwhile (bloque 12): this product is the other's.
+  useCloseOnHouseholdSwitch(householdId, close);
 
   if (item === undefined) {
     const loading = itemsQuery.data === undefined && !itemsQuery.isError;

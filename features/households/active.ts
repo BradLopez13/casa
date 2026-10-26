@@ -6,22 +6,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export const activeHouseholdStorageKey = (userId: string) => `casa-active-household-${userId}`;
 
-/** The stored choice; null when there is none or the store cannot be read. */
+// The choice made since the app started, per person: it wins over the stored one, so a read of
+// the store that started before a switch can never undo it, nor can a store that fails to write.
+const chosenNow = new Map<string, string>();
+
+/** The choice: the one made since the app started, else the stored one; null when there is none. */
 export async function readActiveHousehold(userId: string): Promise<string | null> {
+  const now = chosenNow.get(userId);
+  if (now !== undefined) return now;
+  let stored: string | null;
   try {
-    return await AsyncStorage.getItem(activeHouseholdStorageKey(userId));
+    stored = await AsyncStorage.getItem(activeHouseholdStorageKey(userId));
   } catch {
-    return null;
+    stored = null;
   }
+  // A switch made while the store was being read wins.
+  return chosenNow.get(userId) ?? stored;
 }
 
-/** Remembers the choice; a store that cannot be written only forgets it on the next start. */
+/** Remembers the choice now, and on the phone for the next start. */
 export async function writeActiveHousehold(userId: string, householdId: string): Promise<void> {
+  chosenNow.set(userId, householdId);
   try {
     await AsyncStorage.setItem(activeHouseholdStorageKey(userId), householdId);
   } catch {
-    // The switch already happened on screen; only the next cold start may open another one.
+    // The switch holds for this run; only the next cold start may open another one.
   }
+}
+
+/** Tests only: forget the choices made in this run. */
+export function forgetChosenHouseholds(): void {
+  chosenNow.clear();
 }
 
 /**

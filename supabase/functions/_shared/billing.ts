@@ -15,11 +15,17 @@ function sameSecret(given: string, expected: string): boolean {
 }
 
 export type LicenseChange = {
-  householdId: string;
+  /** The household the app tagged the purchase with; only a first purchase uses it. */
+  householdId: string | null;
   status: 'active' | 'past_due' | 'canceled';
   periodEnd: string | null;
-  subscriptionId: string | null;
+  /** The subscription: every event after the first finds its household by it. */
+  subscriptionId: string;
   paidBy: string | null;
+  /** The first purchase, which ties the subscription to the household. */
+  initial: boolean;
+  /** When the provider says it happened, so a late retry never undoes a newer event. */
+  eventAt: string | null;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,32 +51,37 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
 /**
  * What a RevenueCat event changes in a household's licence, or null when it changes nothing (a
  * cancellation only stops the renewal: the licence holds until it expires; a test event; an
- * event without the household the app tagged the purchase with).
+ * event without its subscription). The household the event names is a customer attribute the app
+ * sets, overwritten by a second purchase: the server only trusts it on the first purchase.
  */
 export function licenseChange(body: unknown): LicenseChange | null {
   const event = asRecord(asRecord(body)?.event);
   if (!event) return null;
   const status = STATUS_BY_EVENT[String(event.type)];
   if (!status) return null;
+  const subscription = event.original_transaction_id ?? event.transaction_id;
+  if (typeof subscription !== 'string' || subscription === '') return null;
   const attributes = asRecord(event.subscriber_attributes);
   const householdId = asRecord(attributes?.household_id)?.value;
-  if (typeof householdId !== 'string' || !UUID.test(householdId)) return null;
   const expires = event.expiration_at_ms;
-  const subscription = event.original_transaction_id ?? event.transaction_id;
+  const at = event.event_timestamp_ms;
   const payer = event.app_user_id;
   return {
-    householdId,
+    householdId: typeof householdId === 'string' && UUID.test(householdId) ? householdId : null,
     status,
     periodEnd: typeof expires === 'number' ? new Date(expires).toISOString() : null,
-    subscriptionId: typeof subscription === 'string' ? subscription : null,
+    subscriptionId: subscription,
     paidBy: typeof payer === 'string' && UUID.test(payer) ? payer : null,
+    initial: event.type === 'INITIAL_PURCHASE',
+    eventAt: typeof at === 'number' ? new Date(at).toISOString() : null,
   };
 }
 
 export type WebhookDeps = {
   secret: string | undefined;
   billingEnabled: () => Promise<boolean>;
-  apply: (change: LicenseChange) => Promise<void>;
+  /** Whether a licence changed (false: unknown subscription, not the household's lead, stale). */
+  apply: (change: LicenseChange) => Promise<boolean>;
 };
 
 const json = (body: unknown, status = 200) =>
@@ -90,6 +101,7 @@ export async function handleBillingWebhook(req: Request, deps: WebhookDeps): Pro
   }
   const change = licenseChange(body);
   if (!change) return json({ ignored: 'no_change' });
-  await deps.apply(change);
-  return json({ applied: change.status });
+  return (await deps.apply(change))
+    ? json({ applied: change.status })
+    : json({ ignored: 'no_licence' });
 }

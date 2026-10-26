@@ -232,7 +232,23 @@ export async function previewInvite(token: string): Promise<InvitePreview> {
   };
 }
 
+/**
+ * Joins the invite's household, also while in another one (bloque 12: the one-argument
+ * accept_invite keeps refusing that for the app before it). A database without the two-argument
+ * version (PGRST202) gets the old one.
+ */
 export async function acceptInvite(token: string): Promise<string> {
+  let result;
+  try {
+    result = await supabase.rpc('accept_invite', { p_token: token, p_while_in_other: true });
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (!isMissingOnServer(result.error)) {
+    if (result.error) throw toAppError(result.error);
+    if (!result.data) throw new AppError('UNKNOWN');
+    return result.data;
+  }
   return unwrap(supabase.rpc('accept_invite', { p_token: token }));
 }
 
