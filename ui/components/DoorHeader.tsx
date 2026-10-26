@@ -72,8 +72,8 @@ type Props = {
   quickAdd?: ReactNode;
   /**
    * Tareas' day pills. Drawn only where `stripInDoor` brings them in (a compact door in one
-   * column): beside the controls on a phone held upright, beside the quick add on a phone on its
-   * side. Anywhere else the screen draws them at the head of its list.
+   * column), beside the controls' magnets (under them when there is no room). Anywhere else the
+   * screen draws them at the head of its list.
    */
   strip?: ReactNode;
 };
@@ -247,11 +247,10 @@ export function DoorHeader({
     // On a phone on its side the quick add comes into the door: beside the strip when there is
     // one (Tareas), under the controls otherwise (Hoy).
     const inDoor = door.holdsQuickAdd && quickAdd ? quickAdd : null;
-    // The day pills, when they come in: beside the quick add on a phone on its side, beside the
-    // magnets on a phone held upright (bloque 11).
-    const strip = stripProp && stripInDoor(door) ? stripProp : null;
-    const below = belowProp ?? (strip && inDoor ? strip : null);
-    const aside = strip && !inDoor && !door.beside ? strip : null;
+    // The day pills, when they come in, go beside the magnets, where the row has room left: the
+    // door does not grow for them (bloque 11).
+    const aside = stripProp && stripInDoor(door) ? stripProp : null;
+    const below = belowProp;
     // The strip's cells grow with the text (up to the door's cap); past that width the quick add
     // takes a line of its own under the strip.
     const stripMin = STRIP_MIN * Math.min(Math.max(fontScale, 1), DOOR_MAX_SCALE);

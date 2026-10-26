@@ -124,7 +124,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
       chosen={day}
       names={screen.names}
       onSelect={chooseDay}
-      bleed={!pillsInDoor ? 'both' : holdsQuickAdd ? 'none' : 'right'}
+      bleed={pillsInDoor ? 'right' : 'both'}
     />
   );
   const listRef = useRef<SectionList<TaskListRow, TaskListSection>>(null);

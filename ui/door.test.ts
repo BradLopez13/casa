@@ -194,7 +194,7 @@ describe('stripInDoor', () => {
     expect(stripInDoor(doorFor(layoutFor(392, 817), 817, 1.3))).toBe(true);
   });
 
-  it('brings them beside the quick add in the door of a phone on its side', () => {
+  it('brings them into the door of a phone on its side, above the quick add it holds', () => {
     expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1))).toBe(true);
   });
 

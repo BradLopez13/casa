@@ -18,9 +18,9 @@ type Props = {
   onSelect: (date: string | null) => void;
   /**
    * How far the row runs past its column, so a half pill at the edge says there is more: both
-   * sides in the list, only the right one beside the door's magnets, none beside its quick add.
+   * sides in the list, only the right one beside the door's magnets.
    */
-  bleed?: 'both' | 'right' | 'none';
+  bleed?: 'both' | 'right';
 };
 
 /**
@@ -55,11 +55,11 @@ export function DayPills({ days, today, chosen, names, onSelect, bleed = 'both' 
       // The row bleeds past the column so a half pill at the edge says there is more.
       style={{
         marginLeft: bleed === 'both' ? -space(5) : 0,
-        marginRight: bleed === 'none' ? 0 : -space(5),
+        marginRight: -space(5),
       }}
       contentContainerStyle={{
         paddingLeft: bleed === 'both' ? space(5) : 0,
-        paddingRight: bleed === 'none' ? 0 : space(5),
+        paddingRight: space(5),
         gap: space(2),
       }}
     >
