@@ -1,4 +1,5 @@
 import {
+  onlineManager,
   useMutation,
   useMutationState,
   useQuery,
@@ -167,7 +168,12 @@ export function useWaitingTasks(): ReadonlySet<string> {
   const ids = useMutationState({
     filters: {
       status: 'pending',
-      predicate: (m) => m.state.isPaused && isQueuedTaskMutation(m.options.mutationKey),
+      // Paused also means waiting its turn in the queue's scope: only without a connection is
+      // it waiting for the connection.
+      predicate: (m) =>
+        m.state.isPaused &&
+        !onlineManager.isOnline() &&
+        isQueuedTaskMutation(m.options.mutationKey),
     },
     select: (m) => (m.state.variables as { id?: string } | undefined)?.id ?? '',
   });

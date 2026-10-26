@@ -115,17 +115,19 @@ export function DoneNote({ task, mark, name, byYou, today, unsent, onReopen }: P
             </Text>
           )}
           {/* The same mark as a shopping row waiting for the connection; the time it shows is
-              the tap's, and it stays when the change arrives. */}
-          {unsent ? (
-            <View
-              testID={`done-tray.${task.id}.pending`}
-              accessible
-              accessibilityLabel={t('shopping.pending')}
-              style={{ alignSelf: 'center' }}
-            >
-              <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
-            </View>
-          ) : null}
+              the tap's, and it stays when the change arrives. Always in the tree, folded to no
+              width when sent: inserting it into a note that is still laying itself out (a tap
+              right after a quick add) crashed Fabric's mounting on Android. */}
+          <View
+            testID={unsent ? `done-tray.${task.id}.pending` : undefined}
+            accessible={unsent}
+            accessibilityElementsHidden={!unsent}
+            importantForAccessibility={unsent ? 'yes' : 'no-hide-descendants'}
+            accessibilityLabel={unsent ? t('shopping.pending') : undefined}
+            style={{ alignSelf: 'center', width: unsent ? 16 : 0, overflow: 'hidden' }}
+          >
+            <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
+          </View>
         </View>
       </Pressable>
     </Animated.View>
