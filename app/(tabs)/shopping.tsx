@@ -100,10 +100,10 @@ export default function ShoppingScreen() {
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
-  const addItem = useAddItem();
-  const setBought = useSetBought();
-  const clearBought = useClearBought();
-  const setQuantity = useSetQuantity();
+  const addItem = useAddItem(householdId);
+  const setBought = useSetBought(householdId);
+  const clearBought = useClearBought(householdId);
+  const setQuantity = useSetQuantity(householdId);
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
   // The same band as Hoy and Tareas, also on a Wi-Fi with no internet (bloque 11, N15).

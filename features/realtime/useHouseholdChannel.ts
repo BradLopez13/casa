@@ -31,6 +31,20 @@ const client: ChannelClient<RealtimeChannel> = {
   },
 };
 
+/**
+ * Whether a mutation touches this household: its queue says so, or its variables do; one that
+ * names no household (an edit by id) counts, as before, rather than risk overwriting its change.
+ */
+function mutationOf(
+  m: { options: { scope?: { id: string } }; state: { variables?: unknown } },
+  householdId: string,
+): boolean {
+  const scope = m.options.scope?.id;
+  if (scope?.includes(':')) return scope.endsWith(`:${householdId}`);
+  const named = (m.state.variables as { householdId?: unknown } | undefined)?.householdId;
+  return typeof named !== 'string' || named === householdId;
+}
+
 // A remount waits for the previous channel to be removed: supabase.channel() would
 // otherwise hand back the one still closing. The chain never rejects.
 let previousRemoval: Promise<unknown> = Promise.resolve();
@@ -47,13 +61,19 @@ export function useHouseholdChannel(householdId: string | undefined): void {
 
     // A key with its own mutation in flight would overwrite the optimistic state; the
     // mutation refreshes it when it settles.
+    // Every queued task change (create, complete, reopen), not only the toggle (fase 10e), of
+    // this household: another household's queue no longer holds this one's refresh (bloque 13).
     const isBusy = (key: QueryKey) => {
-      // Every queued task change (create, complete, reopen), not only the toggle (fase 10e).
-      if (key[0] === 'tasks') return queryClient.isMutating({ mutationKey: ['tasks'] }) > 0;
-      if (key[0] === 'shopping') return queryClient.isMutating({ mutationKey: ['shopping'] }) > 0;
-      return false;
+      const kind = key[0];
+      if (kind !== 'tasks' && kind !== 'shopping') return false;
+      return (
+        queryClient.isMutating({
+          predicate: (m) => m.options.mutationKey?.[0] === kind && mutationOf(m, householdId),
+        }) > 0
+      );
     };
     const batcher = createInvalidationBatcher({
+      householdId,
       delayMs: BATCH_DELAY_MS,
       isBusy,
       invalidate: (queryKey) => void queryClient.invalidateQueries({ queryKey }),

@@ -29,11 +29,17 @@ type Context = { previous: TaskItem | undefined; successor: TaskItem | undefined
 
 export const TOGGLE_KEY = ['tasks', 'toggle'] as const;
 
-/**
- * Every queued task change (create, complete, reopen) shares one scope, as the shopping queue
- * does: a complete queued behind the create of the same task reaches the server after it.
- */
+/** The scope of the defaults, for a mutation that names no household (see `SHOPPING_SCOPE`). */
 export const TASKS_SCOPE = { id: 'tasks' };
+
+/**
+ * Each household's queued task changes (create, complete, reopen) share one scope, as its shopping
+ * queue does: a complete queued behind the create of the same task reaches the server after it,
+ * and another household's never waits behind them (bloque 13, Aud P3-1).
+ */
+export const tasksScope = (householdId: string | undefined) => ({
+  id: `tasks:${householdId ?? ''}`,
+});
 
 /** Several task changes can be on their way: refetch once, after the last one settles. */
 export async function invalidateTasksWhenIdle(queryClient: QueryClient): Promise<void> {
@@ -164,7 +170,7 @@ export function runToggle(
   // Completed here: its note lands in the tray with the pin choreography.
   if (vars.done) markFresh(vars.id, 'done');
   // The notice already carries the error (onError): nothing else waits on this promise.
-  new MutationObserver(queryClient, options)
+  new MutationObserver(queryClient, { ...options, scope: tasksScope(vars.householdId) })
     .mutate({ ...vars, at: vars.at ?? new Date().toISOString() })
     .catch(() => undefined);
 }

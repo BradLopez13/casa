@@ -62,8 +62,8 @@ function EditShoppingItemScreen() {
   const online = useIsOnline();
   const found = itemsQuery.data?.find((item) => item.id === id && item.boughtAt === null);
 
-  const edit = useEditItem();
-  const remove = useDeleteItem();
+  const edit = useEditItem(householdId);
+  const remove = useDeleteItem(householdId);
   // Only an item that is still pending can be edited. Keep the last one seen while a delete
   // closes the modal (the refreshed list no longer has it), so it doesn't flash not-found.
   const [last, setLast] = useState<ShoppingItem | undefined>(found);

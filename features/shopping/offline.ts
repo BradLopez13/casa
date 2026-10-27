@@ -8,8 +8,19 @@ import { t } from '@/i18n';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
 import { shoppingErrorMessage } from './errors';
 
-/** Shopping mutations share one scope, so a queue built offline reaches the server in order. */
+/**
+ * The scope of the defaults, for a mutation that names no household: older builds had one queue
+ * for every household, and a restored change from one is moved to its household's (`queueStore`).
+ */
 export const SHOPPING_SCOPE = { id: 'shopping' };
+
+/**
+ * Each household's shopping changes share one queue, so a queue built offline reaches the server
+ * in order; another household's never waits behind it (bloque 13, Aud P3-1).
+ */
+export const shoppingScope = (householdId: string | undefined) => ({
+  id: `shopping:${householdId ?? ''}`,
+});
 export const addKey = ['shopping', 'add'];
 export const boughtKey = ['shopping', 'bought'];
 export const quantityKey = ['shopping', 'quantity'];
@@ -269,11 +280,12 @@ export function buildShoppingMutationDefaults(
     mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
       assertQueuedBy(userId);
       const target = resolve(householdId, id);
-      // Bought (here or by someone else) or gone before its turn: nothing left to change.
-      const item = queryClient
-        .getQueryData<ShoppingItem[]>(listKey(householdId))
-        ?.find((i) => i.id === target);
-      if (!item || item.boughtAt !== null) return;
+      // Bought (here or by someone else) or gone from a list that is here before its turn:
+      // nothing left to change. Without the list in the cache it goes all the same, and the
+      // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
+      const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
+      const item = list?.find((i) => i.id === target);
+      if (list !== undefined && (!item || item.boughtAt !== null)) return;
       await updateShoppingItem(target, name, value);
     },
     onMutate: async ({ id, householdId, quantity: value }) => {
