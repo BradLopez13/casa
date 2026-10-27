@@ -3,8 +3,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerPushToken, unregisterPushToken } from './api';
 
-/** The token this phone last registered, and for whom. */
-export type PushRegistration = { userId: string; token: string };
+/** The token this phone last registered, for whom, and when (ms; older saves have none). */
+export type PushRegistration = { userId: string; token: string; at?: number };
+
+/**
+ * The server keeps a token with its owner only while it is refreshed (30 days, bloque 13): it is
+ * registered again once a week even when nothing changed.
+ */
+const REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 
 const KEY = 'casa-push-registration';
 /** How long sign-out waits for a registration that is still on its way to the server. */
@@ -29,9 +35,19 @@ export function beginRegistration(): () => void {
   return end;
 }
 
-/** True when the server does not know this token for this user yet. */
-export function shouldRegister(last: PushRegistration | null, current: PushRegistration): boolean {
-  return last === null || last.userId !== current.userId || last.token !== current.token;
+/** True when the server does not know this token for this user yet, or it is due a refresh. */
+export function shouldRegister(
+  last: PushRegistration | null,
+  current: PushRegistration,
+  now = Date.now(),
+): boolean {
+  return (
+    last === null ||
+    last.userId !== current.userId ||
+    last.token !== current.token ||
+    last.at === undefined ||
+    now - last.at > REFRESH_MS
+  );
 }
 
 const isRegistration = (value: unknown): value is PushRegistration => {
@@ -46,14 +62,23 @@ export async function loadPushRegistration(): Promise<PushRegistration | null> {
     const raw = await AsyncStorage.getItem(KEY);
     if (raw === null) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isRegistration(parsed) ? { userId: parsed.userId, token: parsed.token } : null;
+    if (!isRegistration(parsed)) return null;
+    const at = (parsed as { at?: unknown }).at;
+    return {
+      userId: parsed.userId,
+      token: parsed.token,
+      ...(typeof at === 'number' ? { at } : {}),
+    };
   } catch {
     return null;
   }
 }
 
 export async function savePushRegistration(r: PushRegistration): Promise<void> {
-  await AsyncStorage.setItem(KEY, JSON.stringify({ userId: r.userId, token: r.token }));
+  await AsyncStorage.setItem(
+    KEY,
+    JSON.stringify({ userId: r.userId, token: r.token, at: r.at ?? Date.now() }),
+  );
 }
 
 /** Forgets the registration on this device. Errors are ignored. */
