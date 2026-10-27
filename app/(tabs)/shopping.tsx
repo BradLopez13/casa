@@ -21,6 +21,7 @@ import {
 } from '@/features/shopping/components/AddItemField';
 import { LicenseBand } from '@/features/households/LicenseBand';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { QueueBand } from '@/features/offline/QueueBand';
 import { useIsOnline } from '@/data/query/online';
 import { toAppError } from '@/data/supabase/errors';
 import { shouldShowStaleBand } from '@/features/tasks/staleBand';
@@ -316,7 +317,11 @@ function ShoppingStack({
       {/* Measured so the nudge never leaves it cut under the status bar. */}
       <View onLayout={nudge.onDoorLayout}>
         {door(<AddItemField entry={entry} />)}
-        {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+        {band ? (
+          <OfflineBand label={t('offline.showingLast')} />
+        ) : (
+          <QueueBand testID="shopping.queue" />
+        )}
         <LicenseBand />
       </View>
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
@@ -378,7 +383,11 @@ function ShoppingSplit({
       header={
         <>
           {door(null)}
-          {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+          {band ? (
+            <OfflineBand label={t('offline.showingLast')} />
+          ) : (
+            <QueueBand testID="shopping.queue" />
+          )}
           <LicenseBand />
         </>
       }
