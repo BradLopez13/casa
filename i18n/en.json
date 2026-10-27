@@ -603,6 +603,7 @@
   "onboarding.anotherWelcome": "Create another home, or join one with the link someone sent you. The ones you have stay as they are.",
   "onboarding.anotherDefaultName": "Another home",
   "onboarding.errors.ALREADY_IN_HOUSEHOLD": "You can't have another home yet: the server isn't up to date. Try again later.",
+  "onboarding.errors.TOO_MANY_HOUSEHOLDS": "You're already in 10 homes, the most there can be. Leave one to create another.",
   "invite.alreadyMember": "You're already in “{household}”",
   "invite.goThere": "Go to that home",
   "invite.errors.ALREADY_A_MEMBER": "You're already in this home. The invitation hasn't been used.",

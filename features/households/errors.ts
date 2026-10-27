@@ -42,6 +42,7 @@ const ONBOARDING_KEYS: Partial<Record<AppErrorCode, MessageKey>> = {
   INVALID_NAME: 'onboarding.errors.nameInvalid',
   INVALID_ROOM: 'errors.INVALID_ROOM',
   ALREADY_IN_HOUSEHOLD: 'onboarding.errors.ALREADY_IN_HOUSEHOLD',
+  TOO_MANY_HOUSEHOLDS: 'onboarding.errors.TOO_MANY_HOUSEHOLDS',
   NETWORK: 'onboarding.errors.NETWORK',
 };
 

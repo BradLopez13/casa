@@ -603,6 +603,7 @@
   "onboarding.anotherWelcome": "Crea otra casa o únete a una con el enlace que te pasen. Las que ya tienes siguen igual.",
   "onboarding.anotherDefaultName": "Otra casa",
   "onboarding.errors.ALREADY_IN_HOUSEHOLD": "Todavía no puedes tener otra casa: el servidor aún no está al día. Inténtalo más tarde.",
+  "onboarding.errors.TOO_MANY_HOUSEHOLDS": "Ya estás en 10 casas, que es el máximo. Sal de alguna para crear otra.",
   "invite.alreadyMember": "Ya estás en «{household}»",
   "invite.goThere": "Ir a esa casa",
   "invite.errors.ALREADY_A_MEMBER": "Ya estás en esta casa. La invitación no se ha usado.",
