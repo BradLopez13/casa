@@ -1,7 +1,8 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
-import { useState, type ReactNode } from 'react';
-import { persister } from '@/data/query/persist';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
+import { persister, saveCacheNow } from '@/data/query/persist';
 import { PERSIST_MAX_AGE_MS, queryClient } from '@/data/query/setup';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
@@ -37,8 +38,20 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
     queryClient.setMutationDefaults(CREATE_KEY, buildCreateOptions(queryClient, notify));
     return null;
   });
-  if (status === 'loading') return null;
   const buster = persistBuster(appVersion, userId);
+  // Leaving the app saves at once: the throttled save could come after the app is gone. Only once
+  // restored: saving the empty cache of a restore still under way would wipe what is on the device.
+  const restored = useRef<string | null>(null);
+  useEffect(() => {
+    if (status === 'loading') return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' && restored.current === buster) {
+        void saveCacheNow(queryClient, buster, persistDehydrateOptions);
+      }
+    });
+    return () => subscription.remove();
+  }, [status, buster]);
+  if (status === 'loading') return null;
   return (
     <PersistQueryClientProvider
       key={buster}
@@ -52,6 +65,7 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
       // Not awaited: the provider stays in its restoring state until onSuccess settles, and the
       // queues may take as long as the connection does.
       onSuccess={() => {
+        restored.current = buster;
         void resumeQueues(queryClient);
       }}
     >
