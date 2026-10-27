@@ -27,6 +27,8 @@ expected="${EXPECTED_SUPABASE_URL:-$EXPO_PUBLIC_SUPABASE_URL}"
 arch="${ARCH:-arm64-v8a}"
 
 echo "Building a release for ${expected} (${EXPO_PUBLIC_APP_ENV}, ${arch})."
+# A Gradle daemon from the last build keeps files open, and Windows will not delete them.
+if [ -x android/gradlew ]; then (cd android && ./gradlew --stop >/dev/null 2>&1) || true; fi
 CI=1 pnpm exec expo prebuild --platform android --clean --no-install
 # Gradle takes the bundle task as up to date when no source changed, even if EXPO_PUBLIC_* did.
 rm -rf android/app/build/generated/assets/react/release
