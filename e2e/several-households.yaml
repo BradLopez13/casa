@@ -1,0 +1,165 @@
+appId: com.bradlopez13.casa
+---
+# Bloque 12: one person, several households. Zoe (fixtures) has «Piso Zoe». She creates a second
+# household, switches between the two from the door and from Ajustes, invites to the new one,
+# sees its licence «Incluida por ahora» and joins Yoli's with a link while already in two.
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: zoe@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+# With one household the door does not name it.
+- assertNotVisible:
+    id: door.household
+
+# Create a second household from Ajustes: onboarding's screen, with «Volver».
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      id: settings.household-create
+- tapOn:
+    id: settings.household-create
+- extendedWaitUntil:
+    visible:
+      id: onboarding.back
+    timeout: 20000
+- tapOn:
+    id: onboarding.name
+- eraseText: 40
+- inputText: Casa de mamá
+- hideKeyboard
+- tapOn:
+    id: onboarding.create
+- scrollUntilVisible:
+    element:
+      id: onboarding.rooms.continue
+- tapOn:
+    id: onboarding.rooms.continue
+
+# The app shows the new household, and the door names it.
+- extendedWaitUntil:
+    visible:
+      id: door.household
+    timeout: 20000
+- assertVisible:
+    text: '(?i).*casa de mam.*'
+
+# Switch from the door: «Tus casas», and the other note.
+- tapOn:
+    id: door.household
+- extendedWaitUntil:
+    visible:
+      id: households.close
+    timeout: 10000
+- tapOn:
+    text: 'Piso Zoe.*'
+- extendedWaitUntil:
+    visible:
+      text: '(?i).*piso zoe.*'
+    timeout: 10000
+- assertNotVisible:
+    id: households.close
+
+# Switch back from Ajustes.
+- tapOn:
+    id: tab.settings
+- scrollUntilVisible:
+    element:
+      text: '.*Casa de mamá'
+- tapOn:
+    text: '.*Casa de mamá'
+- extendedWaitUntil:
+    visible:
+      id: settings.household-name
+      text: '.*y 1 casa más'
+    timeout: 10000
+- assertVisible:
+    id: settings.household-name
+    text: 'Casa de mamá.*'
+
+# Invite to the new household: its members are only Zoe, and an invitation is made.
+- scrollUntilVisible:
+    element:
+      id: settings.members
+- tapOn:
+    id: settings.members
+- extendedWaitUntil:
+    visible:
+      id: members.copy-link
+    timeout: 20000
+- tapOn:
+    id: members.copy-link
+- extendedWaitUntil:
+    visible:
+      id: members.copied
+    timeout: 20000
+- tapOn:
+    id: members.back
+
+# Its licence: included for now, nothing to pay.
+- scrollUntilVisible:
+    element:
+      id: settings.license
+- tapOn:
+    id: settings.license
+- extendedWaitUntil:
+    visible:
+      id: license.state
+      text: Incluida por ahora
+    timeout: 20000
+- assertNotVisible:
+    id: license.pay
+- tapOn:
+    id: license.back
+
+# Join Yoli's household with a link while already in two: it becomes the one shown.
+- scrollUntilVisible:
+    element:
+      id: settings.household-join
+- tapOn:
+    id: settings.household-join
+- extendedWaitUntil:
+    visible:
+      id: onboarding.link
+    timeout: 20000
+- tapOn:
+    id: onboarding.link
+- inputText: casa://invite?token=d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4
+- hideKeyboard
+- tapOn:
+    id: onboarding.join
+- extendedWaitUntil:
+    visible:
+      id: invite.accept
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: invite.accept
+- tapOn:
+    id: invite.accept
+- extendedWaitUntil:
+    visible:
+      text: '(?i).*piso yoli.*'
+    timeout: 20000
+- tapOn:
+    id: tab.settings
+- extendedWaitUntil:
+    visible:
+      id: settings.household-name
+      text: 'Piso Yoli.* y 2 casas más'
+    timeout: 20000

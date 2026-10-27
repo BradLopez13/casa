@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SettingsScreen from '@/app/(tabs)/settings';
 import { AppError } from '@/data/supabase/errors';
 import { listMembers, type Member, type Membership } from '@/features/households/api';
-import { membersKey, membershipKey } from '@/features/households/keys';
+import { householdsKey, membersKey, membershipKey } from '@/features/households/keys';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 
@@ -36,7 +36,7 @@ const members: Member[] = [
 ];
 
 /** Ajustes with the membership cached; `cached` members, or loaded through `listMembers`. */
-function renderSettings(cached?: Member[], queued = 0) {
+function renderSettings(cached?: Member[], queued = 0, households: Membership[] = [membership]) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
@@ -54,6 +54,7 @@ function renderSettings(cached?: Member[], queued = 0) {
       .catch(() => undefined);
   }
   queryClient.setQueryData(membershipKey, membership);
+  queryClient.setQueryData(householdsKey, households);
   if (cached) queryClient.setQueryData(membersKey('h'), cached);
   render(
     <QueryClientProvider client={queryClient}>
@@ -136,6 +137,32 @@ describe('Ajustes', () => {
     renderSettings(members);
     expect(screen.getByTestId('settings.offline').getAttribute('aria-label')).toBe(
       t('settings.offline'),
+    );
+  });
+
+  // Bloque 12: one person, several households.
+  it('with one household, «Tus casas» holds it, its licence and the two ways to another', () => {
+    renderSettings(members);
+    expect(screen.getByTestId('settings.household-name').textContent).toBe('Casa, con Bo');
+    expect(screen.getByRole('button', { name: 'Casa, ' + t('households.here') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('households.license') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('households.create') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('households.join') })).toBeTruthy();
+  });
+
+  it('with two, the door says so and the other household is a tap away', async () => {
+    const mama: Membership = { ...membership, householdId: 'mama', householdName: 'Casa de mamá' };
+    renderSettings(members, 0, [membership, mama]);
+    expect(screen.getByTestId('settings.household-name').textContent).toBe(
+      'Casa, con Bo · y 1 casa más',
+    );
+    const other = screen.getByRole('button', {
+      name: t('households.switchTo', { household: 'Casa de mamá' }),
+    });
+    expect(other.getAttribute('aria-selected')).toBe('false');
+    fireEvent.click(other);
+    await vi.waitFor(() =>
+      expect(screen.getByTestId('settings.household-name').textContent).toContain('Casa de mamá'),
     );
   });
 });

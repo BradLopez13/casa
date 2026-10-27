@@ -6,10 +6,12 @@ import { AppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import {
   acceptInvite,
-  getMyMembership,
+  listMyHouseholds,
   previewInvite,
   type Membership,
 } from '@/features/households/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { householdsKey } from '@/features/households/keys';
 import { pendingInviteKey } from '@/features/households/pending-invite';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
@@ -41,7 +43,7 @@ vi.mock('@/features/households/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/households/api')>()),
   previewInvite: vi.fn(),
   acceptInvite: vi.fn(),
-  getMyMembership: vi.fn(),
+  listMyHouseholds: vi.fn(),
 }));
 
 const TOKEN = 'ab'.repeat(24);
@@ -53,10 +55,12 @@ const membership: Membership = {
   rooms: ['kitchen'],
 };
 
-function renderInvite() {
+function renderInvite(households?: Membership[]) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
+  // The households the app already knows, as the route guard leaves them.
+  if (households) queryClient.setQueryData(householdsKey, households);
   // No invitation kept on this phone from before.
   queryClient.setQueryData(pendingInviteKey, null);
   render(
@@ -74,7 +78,7 @@ const busy = (button: HTMLElement) => within(button).queryByRole('progressbar') 
 
 beforeEach(() => {
   vi.clearAllMocks();
-  for (const fn of [previewInvite, acceptInvite, getMyMembership, signOut])
+  for (const fn of [previewInvite, acceptInvite, listMyHouseholds, signOut])
     vi.mocked(fn).mockReset();
   vi.mocked(previewInvite).mockResolvedValue(preview);
   nav.params = { token: TOKEN };
@@ -110,14 +114,14 @@ describe('Invitación', () => {
   it('accepts the invitation of the link, then lets the guard take them home', async () => {
     let finish: (id: string) => void = () => undefined;
     vi.mocked(acceptInvite).mockReturnValue(new Promise((resolve) => (finish = resolve)));
-    vi.mocked(getMyMembership).mockResolvedValue(membership);
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
     renderInvite();
     fireEvent.click(await screen.findByRole('button', { name: t('invite.accept') }));
     expect(acceptInvite).toHaveBeenCalledWith(TOKEN);
     await vi.waitFor(() => expect(busy(acceptButton())).toBe(true));
     finish('h');
     await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
-    expect(getMyMembership).toHaveBeenCalled();
+    expect(listMyHouseholds).toHaveBeenCalled();
   });
 
   it('without a connection, says so and leaves the invitation to accept again', async () => {
@@ -127,7 +131,7 @@ describe('Invitación', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(t('invite.errors.NETWORK'));
     expect(busy(acceptButton())).toBe(false);
     vi.mocked(acceptInvite).mockResolvedValueOnce('h');
-    vi.mocked(getMyMembership).mockResolvedValue(membership);
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
     fireEvent.click(acceptButton());
     await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
     expect(acceptInvite).toHaveBeenCalledTimes(2);
@@ -135,20 +139,20 @@ describe('Invitación', () => {
 
   it('joined but the household did not load: Reintentar loads it again without accepting twice', async () => {
     vi.mocked(acceptInvite).mockResolvedValueOnce('h');
-    vi.mocked(getMyMembership).mockRejectedValueOnce(new AppError('UNKNOWN'));
+    vi.mocked(listMyHouseholds).mockRejectedValueOnce(new AppError('UNKNOWN'));
     renderInvite();
     fireEvent.click(await screen.findByRole('button', { name: t('invite.accept') }));
     expect((await screen.findByRole('alert')).textContent).toBe(t('errors.membershipLoad'));
-    vi.mocked(getMyMembership).mockResolvedValueOnce(membership);
+    vi.mocked(listMyHouseholds).mockResolvedValueOnce([membership]);
     fireEvent.click(screen.getByRole('button', { name: t('errors.retry') }));
     await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
     expect(acceptInvite).toHaveBeenCalledTimes(1);
-    expect(getMyMembership).toHaveBeenCalledTimes(2);
+    expect(listMyHouseholds).toHaveBeenCalledTimes(2);
   });
 
   it('an expired invitation says so with the plain title, and Continuar goes on', async () => {
     vi.mocked(previewInvite).mockRejectedValue(new AppError('INVITE_EXPIRED'));
-    vi.mocked(getMyMembership).mockResolvedValue(null);
+    vi.mocked(listMyHouseholds).mockResolvedValue([]);
     renderInvite();
     expect((await screen.findByRole('alert')).textContent).toBe(t('invite.errors.INVITE_EXPIRED'));
     expect(screen.getByRole('heading', { name: t('invite.title') })).toBeTruthy();
@@ -159,7 +163,7 @@ describe('Invitación', () => {
 
   it('already in a household: says the invitation was not used', async () => {
     vi.mocked(acceptInvite).mockRejectedValueOnce(new AppError('ALREADY_IN_HOUSEHOLD'));
-    vi.mocked(getMyMembership).mockResolvedValue(membership);
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
     renderInvite();
     fireEvent.click(await screen.findByRole('button', { name: t('invite.accept') }));
     expect((await screen.findByRole('alert')).textContent).toBe(
@@ -167,6 +171,37 @@ describe('Invitación', () => {
     );
     expect(screen.getByRole('button', { name: t('invite.continue') })).toBeTruthy();
     expect(nav.router.replace).not.toHaveBeenCalled();
+  });
+
+  it('accepted while in another household: the new one is the one this phone shows (bloque 12)', async () => {
+    const other: Membership = { ...membership, householdId: 'mine', householdName: 'La mía' };
+    vi.mocked(acceptInvite).mockResolvedValueOnce('h');
+    vi.mocked(listMyHouseholds).mockResolvedValue([other, membership]);
+    renderInvite();
+    fireEvent.click(await screen.findByRole('button', { name: t('invite.accept') }));
+    await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
+    expect(await AsyncStorage.getItem('casa-active-household-me')).toBe('h');
+  });
+
+  it('already in that household (bloque 12): says so and takes them there, without accepting', async () => {
+    const other: Membership = { ...membership, householdId: 'mine', householdName: 'La mía' };
+    vi.mocked(previewInvite).mockResolvedValue({
+      ...preview,
+      alreadyMember: true,
+      householdId: 'h',
+    });
+    vi.mocked(listMyHouseholds).mockResolvedValue([other, membership]);
+    renderInvite();
+    expect(
+      await screen.findByRole('heading', {
+        name: t('invite.alreadyMember', { household: 'Casa' }),
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: t('invite.accept') })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: t('invite.goThere') }));
+    await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
+    expect(acceptInvite).not.toHaveBeenCalled();
+    expect(await AsyncStorage.getItem('casa-active-household-me')).toBe('h');
   });
 
   it('with no invitation at all, says it is not valid and offers the way back', async () => {
@@ -226,5 +261,18 @@ describe('Invitación: la cuenta tras «⋯»', () => {
     fireEvent.click(screen.getByRole('button', { name: t('auth.signOut') }));
     await vi.waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
     expect(window.localStorage.getItem('pendingInviteToken')).toBeNull();
+  });
+
+  it('already in a household, a failed accept without the preview is said, not swallowed (bloque 12)', async () => {
+    vi.mocked(previewInvite).mockRejectedValue(new AppError('NETWORK'));
+    vi.mocked(acceptInvite).mockRejectedValueOnce(new AppError('INVITE_EXPIRED'));
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
+    renderInvite([membership]);
+    // The preview retries before giving up.
+    fireEvent.click(
+      await screen.findByRole('button', { name: t('invite.accept') }, { timeout: 8000 }),
+    );
+    expect((await screen.findByRole('alert')).textContent).toBe(t('invite.errors.INVITE_EXPIRED'));
+    expect(nav.router.replace).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,21 @@
 import { supabase } from '@/data/supabase/client';
-import { AppError, toAppError } from '@/data/supabase/errors';
+import { AppError, isMissingOnServer, toAppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import type { InvitePreview } from './inviteText';
 import type { Locale } from '@/i18n';
 
 export type Role = 'owner' | 'member';
+
+export type LicenseStatus = 'complimentary' | 'trial' | 'active' | 'past_due' | 'canceled';
+
+/** A household's licence as the household list knows it (bloque 12). */
+export type LicenseSummary = {
+  status: LicenseStatus;
+  /** When a trial ends, or the paid period ended or ends; null when there is none. */
+  endsAt: string | null;
+  /** What the server's write guard says: always true while billing is off. */
+  licensed: boolean;
+};
 
 export type Membership = {
   householdId: string;
@@ -12,7 +23,22 @@ export type Membership = {
   role: Role;
   /** The rooms the home has, in the usual order. A membership persisted before rooms existed lacks it. */
   rooms: Room[];
+  /** How many people live there; unknown on a database without my_households (bloque 12). */
+  memberCount?: number;
+  /** Its licence; unknown on a database without licences. */
+  license?: LicenseSummary;
 };
+
+/** The licence screen's row: who pays and until when (bloque 12). */
+export type HouseholdLicense = {
+  status: LicenseStatus;
+  paidBy: string | null;
+  currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
+};
+
+/** What the billing provider needs to start paying for a household's licence. */
+export type Checkout = { provider: string; offering: string; householdId: string };
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
 
@@ -37,7 +63,7 @@ async function unwrap<D>(promise: Result<D>): Promise<NonNullable<D>> {
   return data;
 }
 
-export async function getMyMembership(): Promise<Membership | null> {
+async function sessionUserId(): Promise<string | null> {
   let sessionResult;
   try {
     sessionResult = await supabase.auth.getSession();
@@ -45,24 +71,67 @@ export async function getMyMembership(): Promise<Membership | null> {
     throw toAppError(e);
   }
   if (sessionResult.error) throw toAppError(sessionResult.error);
-  const userId = sessionResult.data.session?.user.id;
-  if (!userId) return null;
+  return sessionResult.data.session?.user.id ?? null;
+}
 
-  const data = await unwrapMaybe(
+const LICENSE_STATUSES: readonly string[] = [
+  'complimentary',
+  'trial',
+  'active',
+  'past_due',
+  'canceled',
+];
+
+function toLicense(
+  status: string | null,
+  endsAt: string | null,
+  licensed: boolean | null,
+): LicenseSummary | undefined {
+  if (status === null || !LICENSE_STATUSES.includes(status)) return undefined;
+  return { status: status as LicenseStatus, endsAt, licensed: licensed ?? true };
+}
+
+/**
+ * Every household the signed-in person is in, the oldest membership first (bloque 12). A
+ * database without my_households (PGRST202) is read as before, from the memberships, without
+ * sizes or licences.
+ */
+export async function listMyHouseholds(): Promise<Membership[]> {
+  const userId = await sessionUserId();
+  if (!userId) return [];
+
+  let result;
+  try {
+    result = await supabase.rpc('my_households');
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (!isMissingOnServer(result.error)) {
+    if (result.error) throw toAppError(result.error);
+    return (result.data ?? []).map((row) => ({
+      householdId: row.household_id,
+      householdName: row.name,
+      role: row.role as Role,
+      rooms: toRooms(row.rooms),
+      memberCount: row.member_count,
+      license: toLicense(row.license_status, row.license_ends_at, row.licensed),
+    }));
+  }
+
+  const data = await unwrap(
     supabase
       .from('household_members')
-      .select('household_id, role, households(name, rooms)')
+      .select('household_id, role, joined_at, households(name, rooms)')
       .eq('user_id', userId)
       .is('left_at', null)
-      .maybeSingle(),
+      .order('joined_at', { ascending: true }),
   );
-  if (!data) return null;
-  return {
-    householdId: data.household_id,
-    householdName: data.households?.name ?? '',
-    role: data.role as Role,
-    rooms: toRooms(data.households?.rooms),
-  };
+  return data.map((row) => ({
+    householdId: row.household_id,
+    householdName: row.households?.name ?? '',
+    role: row.role as Role,
+    rooms: toRooms(row.households?.rooms),
+  }));
 }
 
 /** Known rooms only, in the usual order; none known falls back to every room. */
@@ -110,8 +179,28 @@ export async function createHousehold(name: string): Promise<string> {
   return unwrap(supabase.rpc('create_household', { p_name: name }));
 }
 
-/** Replaces the rooms of the caller's household (at least one, known rooms only). */
-export async function setHouseholdRooms(rooms: readonly Room[]): Promise<void> {
+/**
+ * Replaces a household's rooms (at least one, known rooms only). A database without the
+ * per-household version (PGRST202) gets the old one, which picks the caller's newest household:
+ * the one just created.
+ */
+export async function setHouseholdRooms(
+  householdId: string,
+  rooms: readonly Room[],
+): Promise<void> {
+  let result;
+  try {
+    result = await supabase.rpc('set_household_rooms', {
+      p_household_id: householdId,
+      p_rooms: [...rooms],
+    });
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (!isMissingOnServer(result.error)) {
+    if (result.error) throw toAppError(result.error);
+    return;
+  }
   await unwrapMaybe(supabase.rpc('set_household_rooms', { p_rooms: [...rooms] }));
 }
 
@@ -137,10 +226,29 @@ export async function previewInvite(token: string): Promise<InvitePreview> {
     householdName: row.household_name,
     inviterName: row.inviter_name,
     memberCount: row.member_count,
+    // A database before bloque 12 does not say; accepting then answers ALREADY_IN_HOUSEHOLD.
+    alreadyMember: row.already_member ?? false,
+    householdId: row.household_id ?? null,
   };
 }
 
+/**
+ * Joins the invite's household, also while in another one (bloque 12: the one-argument
+ * accept_invite keeps refusing that for the app before it). A database without the two-argument
+ * version (PGRST202) gets the old one.
+ */
 export async function acceptInvite(token: string): Promise<string> {
+  let result;
+  try {
+    result = await supabase.rpc('accept_invite', { p_token: token, p_while_in_other: true });
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (!isMissingOnServer(result.error)) {
+    if (result.error) throw toAppError(result.error);
+    if (!result.data) throw new AppError('UNKNOWN');
+    return result.data;
+  }
   return unwrap(supabase.rpc('accept_invite', { p_token: token }));
 }
 
@@ -172,4 +280,40 @@ export async function setDisplayName(name: string): Promise<void> {
 /** Stores the phone's language in the signed-in person's profile, so pushes reach them in it. */
 export async function setLocale(locale: Locale): Promise<void> {
   await unwrapMaybe(supabase.rpc('set_locale', { p_locale: locale }));
+}
+
+/** A household's licence for its screen; null on a database without licences. */
+export async function getHouseholdLicense(householdId: string): Promise<HouseholdLicense | null> {
+  let result;
+  try {
+    result = await supabase
+      .from('household_licenses')
+      .select('status, paid_by, current_period_end, trial_ends_at')
+      .eq('household_id', householdId)
+      .maybeSingle();
+  } catch (e) {
+    throw toAppError(e);
+  }
+  if (isMissingOnServer(result.error)) return null;
+  if (result.error) throw toAppError(result.error);
+  const row = result.data;
+  if (!row || !LICENSE_STATUSES.includes(row.status)) return null;
+  return {
+    status: row.status as LicenseStatus,
+    paidBy: row.paid_by,
+    currentPeriodEnd: row.current_period_end,
+    trialEndsAt: row.trial_ends_at,
+  };
+}
+
+/** Starts paying for a household's licence; BILLING_DISABLED while billing is off. */
+export async function startHouseholdCheckout(householdId: string): Promise<Checkout> {
+  const data = await unwrap(
+    supabase.rpc('start_household_checkout', { p_household_id: householdId }),
+  );
+  const row = data as { provider?: unknown; offering?: unknown };
+  if (typeof row.provider !== 'string' || typeof row.offering !== 'string') {
+    throw new AppError('UNKNOWN');
+  }
+  return { provider: row.provider, offering: row.offering, householdId };
 }

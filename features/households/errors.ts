@@ -10,6 +10,7 @@ const MEMBER_KEYS: Partial<Record<string, MessageKey>> = {
   NOT_A_MEMBER: 'members.errors.NOT_A_MEMBER',
   INVITE_INVALID: 'members.errors.INVITE_INVALID',
   CANNOT_REMOVE_SELF: 'members.errors.CANNOT_REMOVE_SELF',
+  LICENSE_REQUIRED: 'errors.LICENSE_REQUIRED',
   NETWORK: 'members.errors.NETWORK',
 };
 
@@ -28,6 +29,7 @@ const INVITE_KEYS: Partial<Record<AppErrorCode, MessageKey>> = {
   INVITE_INVALID: 'invite.errors.INVITE_INVALID',
   INVITE_EXPIRED: 'invite.errors.INVITE_EXPIRED',
   ALREADY_IN_HOUSEHOLD: 'invite.errors.ALREADY_IN_HOUSEHOLD',
+  ALREADY_A_MEMBER: 'invite.errors.ALREADY_A_MEMBER',
   NETWORK: 'invite.errors.NETWORK',
 };
 
@@ -39,6 +41,7 @@ export function inviteErrorKey(code: AppErrorCode): MessageKey {
 const ONBOARDING_KEYS: Partial<Record<AppErrorCode, MessageKey>> = {
   INVALID_NAME: 'onboarding.errors.nameInvalid',
   INVALID_ROOM: 'errors.INVALID_ROOM',
+  ALREADY_IN_HOUSEHOLD: 'onboarding.errors.ALREADY_IN_HOUSEHOLD',
   NETWORK: 'onboarding.errors.NETWORK',
 };
 

@@ -3,10 +3,11 @@ import { t } from '@/i18n';
 
 /**
  * The secondary line of the Tareas door: what the tab is for («Todo lo del hogar, por día.»,
- * fase 10c), then how much is pending, dated or not. Spanish plural: 1 is singular, the rest plural.
+ * fase 10c; «Todo lo de esta casa» with several households, bloque 12), then how much is pending,
+ * dated or not. Spanish plural: 1 is singular, the rest plural.
  */
-export function allLineText(line: WeekLine): string {
-  return `${t('tasks.allLine.purpose')} ${count(line)}`;
+export function allLineText(line: WeekLine, several = false): string {
+  return `${t(several ? 'tasks.allLine.purposeThis' : 'tasks.allLine.purpose')} ${count(line)}`;
 }
 
 function count(line: WeekLine): string {

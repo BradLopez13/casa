@@ -1,4 +1,10 @@
-import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
@@ -30,29 +36,46 @@ export const shoppingKey = (householdId: string | undefined) => ['shopping', hou
 export const shoppingHistoryKey = (householdId: string | undefined) =>
   ['shopping-history', householdId] as const;
 
-export function useShoppingItems(householdId: string | undefined) {
-  const queryClient = useQueryClient();
-  return useQuery({
+/**
+ * A household's shopping list, as Compra loads it; also kept loaded for the households not shown
+ * (`useWarmHouseholds`, bloque 12).
+ */
+export function shoppingItemsQueryOptions(queryClient: QueryClient, householdId: string) {
+  return {
     queryKey: shoppingKey(householdId),
     // What the queue still holds goes on top of what the server sends (`withQueuedShopping`).
     queryFn: async () => {
       // Taken before the request: a change that lands while it runs is in neither the list it
       // reads nor the queue once it answers.
       const before = pendingShopping(queryClient);
-      const items = await listShoppingItems(householdId as string);
-      return withQueuedShopping(queryClient, householdId as string, items, before);
+      const items = await listShoppingItems(householdId);
+      return withQueuedShopping(queryClient, householdId, items, before);
     },
-    enabled: householdId !== undefined,
     ...shoppingQueryOptions,
+  };
+}
+
+/** A household's usual items, as Compra loads them. */
+export function shoppingHistoryQueryOptions(householdId: string) {
+  return {
+    queryKey: shoppingHistoryKey(householdId),
+    queryFn: () => shoppingHistory(householdId),
+    ...shoppingQueryOptions,
+  };
+}
+
+export function useShoppingItems(householdId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    ...shoppingItemsQueryOptions(queryClient, householdId as string),
+    enabled: householdId !== undefined,
   });
 }
 
 export function useShoppingHistory(householdId: string | undefined) {
   return useQuery({
-    queryKey: shoppingHistoryKey(householdId),
-    queryFn: () => shoppingHistory(householdId as string),
+    ...shoppingHistoryQueryOptions(householdId as string),
     enabled: householdId !== undefined,
-    ...shoppingQueryOptions,
   });
 }
 

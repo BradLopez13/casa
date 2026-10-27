@@ -1,7 +1,7 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
-import type { AppError } from '@/data/supabase/errors';
+import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
 import { t } from '@/i18n';
@@ -154,7 +154,13 @@ export function buildShoppingMutationDefaults(
       [id]: resolvedId,
     }));
   };
-  const syncFailed = (name: string) => notify(t('shopping.syncFailed', { name }));
+  // A household without its licence says so (bloque 12); anything else names what was not saved.
+  const syncFailed = (name: string, error: unknown) =>
+    notify(
+      toAppError(error).code === 'LICENSE_REQUIRED'
+        ? t('errors.LICENSE_REQUIRED')
+        : t('shopping.syncFailed', { name }),
+    );
 
   const add: MutationOptions<string, AppError, AddVars, AddContext> = {
     mutationKey: addKey,
@@ -196,9 +202,13 @@ export function buildShoppingMutationDefaults(
           current?.filter((i) => i.id !== id),
         );
       }
-      syncFailed(trimItemText(name));
+      syncFailed(trimItemText(name), error);
     },
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
+    // the meantime would lay a change that failed back on top of the list (bloque 12).
+    onSettled: () => {
+      void invalidateShoppingWhenIdle(queryClient);
+    },
   };
 
   const bought: MutationOptions<void, AppError, BoughtVars, BoughtContext> = {
@@ -238,9 +248,13 @@ export function buildShoppingMutationDefaults(
       }
       // An item no longer on the list has nothing to explain.
       const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
-      if (item) syncFailed(item.name);
+      if (item) syncFailed(item.name, error);
     },
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
+    // the meantime would lay a change that failed back on top of the list (bloque 12).
+    onSettled: () => {
+      void invalidateShoppingWhenIdle(queryClient);
+    },
   };
 
   // The row's stepper: each tap shows at once (optimistic), the save goes after a pause. Without a
@@ -284,7 +298,11 @@ export function buildShoppingMutationDefaults(
       }
       notify(shoppingErrorMessage(error));
     },
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
+    // the meantime would lay a change that failed back on top of the list (bloque 12).
+    onSettled: () => {
+      void invalidateShoppingWhenIdle(queryClient);
+    },
   };
 
   return { add, bought, quantity };

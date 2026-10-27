@@ -57,7 +57,11 @@ export async function invalidateIfStale(queryClient: QueryClient, error: unknown
   }
 }
 
-const EXPLAINED_CODES: ReadonlySet<string> = new Set(['ALREADY_ADVANCED', 'INVALID_TODAY']);
+const EXPLAINED_CODES: ReadonlySet<string> = new Set([
+  'ALREADY_ADVANCED',
+  'INVALID_TODAY',
+  'LICENSE_REQUIRED',
+]);
 
 /** Says which action failed (marking done or reopening) and, without connection, why. */
 function explainToggleError(error: unknown, done: boolean): string {
@@ -127,7 +131,11 @@ export function buildToggleOptions(
       notify(explainToggleError(error, done));
       await invalidateIfStale(queryClient, error);
     },
-    onSettled: () => invalidateTasksWhenIdle(queryClient),
+    // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
+    // the meantime would lay a change that failed back on top of the list (bloque 12).
+    onSettled: () => {
+      void invalidateTasksWhenIdle(queryClient);
+    },
   };
 }
 

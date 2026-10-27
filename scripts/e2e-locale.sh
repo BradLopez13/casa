@@ -18,19 +18,38 @@ esac
 [ "$#" -ge 2 ] || { echo "usage: e2e-locale.sh <es|en> <command...>" >&2; exit 1; }
 shift
 
-set_locale() {
-  adb root > /dev/null
-  adb wait-for-device
-  adb shell "setprop persist.sys.locale $1; setprop ctl.restart zygote"
-  # The restart drops the boot flag: wait for it to come back before anything else runs.
-  sleep 5
-  adb wait-for-device
-  for _ in $(seq 1 60); do
-    [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ] && return 0
+# `sys.boot_completed` comes back before the device has settled: an English run started right
+# then found it offline ("device offline", Maestro's server died before launching the app). Wait
+# until the boot flag and the package manager answer five times in a row, two seconds apart.
+wait_settled() {
+  local ok=0
+  for _ in $(seq 1 90); do
+    if [ "$(adb shell getprop sys.boot_completed 2> /dev/null | tr -d '\r')" = "1" ] &&
+      adb shell pm path android > /dev/null 2>&1; then
+      ok=$((ok + 1))
+      [ "$ok" -ge 5 ] && return 0
+    else
+      ok=0
+      adb wait-for-device || true
+    fi
     sleep 2
   done
-  echo "e2e-locale: the emulator did not come back after changing the language" >&2
   return 1
+}
+
+set_locale() {
+  adb root > /dev/null
+  # `adb root` restarts adbd when it was not root yet: let the device come back first.
+  adb wait-for-device
+  wait_settled || true
+  adb shell "setprop persist.sys.locale $1; setprop ctl.restart zygote"
+  # The restart drops the boot flag: wait for it to come back, and for the device to settle.
+  sleep 5
+  adb wait-for-device
+  if ! wait_settled; then
+    echo "e2e-locale: the emulator did not come back after changing the language" >&2
+    return 1
+  fi
 }
 
 # Switching back is only needed after another language; `es` is the baseline and restores nothing.

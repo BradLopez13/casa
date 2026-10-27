@@ -35,4 +35,10 @@ describe('allLineText', () => {
       `${PURPOSE} A Ana le tocan 2.`,
     );
   });
+
+  it('with several households, says it is this one’s (bloque 12)', () => {
+    expect(allLineText({ kind: 'mine', count: 1 }, true)).toBe(
+      'Todo lo de esta casa, por día. Te toca 1 en total.',
+    );
+  });
 });

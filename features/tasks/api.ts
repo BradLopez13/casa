@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import type { Json } from '@/data/supabase/database.types';
 import { supabase } from '@/data/supabase/client';
-import { AppError, toAppError } from '@/data/supabase/errors';
+import { AppError, isMissingOnServer, toAppError } from '@/data/supabase/errors';
 import { recurrenceRuleSchema, type RecurrenceRule } from '@/domain/recurrence/rule';
 import type { TaskInput } from '@/domain/tasks/input';
 import type { Room } from '@/domain/tasks/rooms';
@@ -115,19 +115,12 @@ export async function completeTask(id: string, today: string, at?: string): Prom
     const result = await callOrNetwork(
       supabase.rpc('complete_task', { p_id: id, p_today: today, p_at: at }),
     );
-    if (!isMissingSignature(result.error)) {
+    if (!isMissingOnServer(result.error)) {
       if (result.error) throw toAppError(result.error);
       return;
     }
   }
   await unwrapMaybe(supabase.rpc('complete_task', { p_id: id, p_today: today }));
-}
-
-/** PostgREST's answer when no function matches the arguments sent. */
-function isMissingSignature(error: unknown): boolean {
-  return (
-    typeof error === 'object' && error !== null && 'code' in error && error.code === 'PGRST202'
-  );
 }
 
 /** The result of a call, or the AppError of a request that failed to go. */

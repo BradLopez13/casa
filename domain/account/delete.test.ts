@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deleteFailureKind, isOwnerAlone } from './delete';
+import { deleteFailureKind, isOwnerAlone, transferNames } from './delete';
 
 describe('isOwnerAlone', () => {
   it('is true for the owner as the only member', () => {
@@ -26,5 +26,19 @@ describe('deleteFailureKind', () => {
   it('maps everything else to unknown', () => {
     expect(deleteFailureKind('NETWORK')).toBe('unknown');
     expect(deleteFailureKind('UNKNOWN')).toBe('unknown');
+  });
+});
+
+describe('transferNames', () => {
+  it('reads the households the server names (bloque 12)', () => {
+    expect(transferNames('["Casa", "Casa de mamá"]')).toEqual(['Casa', 'Casa de mamá']);
+  });
+
+  it('gives none when there is no list or it is not one', () => {
+    expect(transferNames(undefined)).toEqual([]);
+    expect(transferNames('')).toEqual([]);
+    expect(transferNames('not json')).toEqual([]);
+    expect(transferNames('{"a": 1}')).toEqual([]);
+    expect(transferNames('["Casa", 3]')).toEqual(['Casa']);
   });
 });

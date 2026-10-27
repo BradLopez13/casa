@@ -11,7 +11,7 @@ shards=(
   "forgot-password recurring-task delete-account-onboarding password-toggle auth-back members-remove templates"
   "sign-up-create-household invite-link-signed-out create-complete-task shopping-realtime rotate task-edit-skip-delete"
   "join-with-invite shopping delete-account shopping-offline members-transfer notification-settings"
-  "undo tasks-offline leave-household quantity help"
+  "undo tasks-offline leave-household quantity help several-households"
 )
 
 if [ "${1:-}" = "english" ]; then

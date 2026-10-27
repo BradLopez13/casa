@@ -20,6 +20,8 @@ import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
+import { LicenseBand } from '@/features/households/LicenseBand';
+import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
@@ -49,6 +51,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const layout = useLayout();
   const screen = useTaskScreen();
+  const several = useSeveralHouseholds();
   const { today, userId, membership, members, tasksQuery, assigneeId, filtered } = screen;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
 
@@ -73,7 +76,7 @@ export default function TodayScreen() {
   const invite = (
     <View style={{ gap: space(4) }}>
       <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '600' }}>
-        {t('today.empty.title')}
+        {several ? t('today.empty.titleThis') : t('today.empty.title')}
       </Text>
       <Text style={{ color: colors.ink, fontSize: 16 }}>{t('today.empty.body')}</Text>
       <Button
@@ -127,6 +130,7 @@ export default function TodayScreen() {
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : null}
+      <LicenseBand />
     </>
   );
 

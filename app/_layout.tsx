@@ -28,8 +28,8 @@ import { resolveRoute, type RouteInput } from '@/domain/navigation/resolve-route
 import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { useSyncDevice } from '@/features/auth/useSyncDevice';
 import { usePendingInvite } from '@/features/households/pending-invite';
-import { useMembership } from '@/features/households/queries';
-import { routeForNotification } from '@/features/push/routes';
+import { setActiveHousehold, useHouseholds, useMembership } from '@/features/households/queries';
+import { householdForNotification, routeForNotification } from '@/features/push/routes';
 import { usePushRegistration } from '@/features/push/usePushRegistration';
 import { onNotificationTapped } from '@/features/reminders/notifications';
 import { useReminders } from '@/features/reminders/useReminders';
@@ -115,16 +115,16 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
 
 /**
  * A membership that ended from someone else's side (removed, or the household deleted) must
- * not leave that household's data on the device: once the membership resolves to none or to
- * another household, the old one's is forgotten.
+ * not leave that household's data on the device: once the household list no longer has it, its
+ * data is forgotten. The other households' data stays (bloque 12).
  */
-function useForgetEndedHousehold(membership: { householdId: string } | null | undefined) {
+function useForgetEndedHousehold(households: readonly { householdId: string }[] | undefined) {
   const client = useQueryClient();
   useEffect(() => {
-    for (const id of endedHouseholdIds(cachedHouseholdIds(client), membership)) {
+    for (const id of endedHouseholdIds(cachedHouseholdIds(client), households)) {
       forgetEndedHousehold(client, id);
     }
-  }, [client, membership]);
+  }, [client, households]);
 }
 
 /**
@@ -155,8 +155,10 @@ function Guard() {
   const navRef = useNavigationContainerRef();
   const session = useSession();
   const membershipQuery = useMembership();
+  const householdsQuery = useHouseholds();
+  const queryClient = useQueryClient();
   const pending = usePendingInvite();
-  useForgetEndedHousehold(membershipQuery.data);
+  useForgetEndedHousehold(householdsQuery.data);
   useEffect(() => trackNavigation(navRef), [navRef]);
 
   const signedIn = session.status === 'signed-in';
@@ -165,16 +167,16 @@ function Guard() {
   useReminders();
   const hasData = membershipQuery.data !== undefined;
   const failed = signedIn && membershipQuery.isError && !hasData;
-  const membership: RouteInput['membership'] =
+  const households: RouteInput['households'] =
     !signedIn || membershipQuery.isPending || pending.isLoading || failed
       ? 'loading'
       : membershipQuery.data === null
-        ? 'none'
-        : 'member';
+        ? 0
+        : Math.max(1, householdsQuery.data?.length ?? 1);
   const group = groupOf(segments[0]);
   const target = resolveRoute({
     session: session.status,
-    membership,
+    households,
     hasPendingInvite: pending.hasPendingInvite,
     group,
   });
@@ -195,19 +197,25 @@ function Guard() {
 
   // A tapped notification opens its screen (reminders: Hoy), once the app has settled on a
   // member's screens (so the redirects above do not undo it). A tap that launched the app is
-  // handled here too.
-  const inHousehold = ready && membership === 'member';
+  // handled here too. A push notice from another of the person's households switches to it
+  // first (bloque 12).
+  const inHousehold = ready && households !== 'loading' && households > 0;
+  const userId = session.userId;
   useEffect(() => {
     if (!inHousehold) return;
     let unsubscribeTaps: (() => void) | undefined;
     const cancel = whenNavReady(navRef, () => {
-      unsubscribeTaps = onNotificationTapped((data) => router.push(routeForNotification(data)));
+      unsubscribeTaps = onNotificationTapped((data) => {
+        const householdId = householdForNotification(data);
+        if (householdId !== null) void setActiveHousehold(queryClient, userId, householdId);
+        router.push(routeForNotification(data));
+      });
     });
     return () => {
       cancel();
       unsubscribeTaps?.();
     };
-  }, [navRef, inHousehold, router]);
+  }, [navRef, inHousehold, router, queryClient, userId]);
 
   // The modals are always transparent and draw their own frame (ModalSheet): full screen on a
   // phone in portrait, a centred sheet over the scrim from `medium` up. A presentation cannot
@@ -231,6 +239,7 @@ function Guard() {
         <Stack.Screen name="shopping/[id]" options={modal} />
         <Stack.Screen name="templates" options={modal} />
         <Stack.Screen name="help" options={modal} />
+        <Stack.Screen name="households" options={modal} />
       </Stack>
       {failed ? (
         <MembershipError

@@ -15,3 +15,17 @@ export type DeleteFailure = 'transfer' | 'unknown';
 export function deleteFailureKind(code: string): DeleteFailure {
   return code === 'OWNER_MUST_TRANSFER' ? 'transfer' : 'unknown';
 }
+
+/**
+ * The households OWNER_MUST_TRANSFER names, from the JSON array the server puts in the error's
+ * detail (bloque 12); none when it does not name them (a server before bloque 12, a race).
+ */
+export function transferNames(detail: string | undefined): string[] {
+  if (!detail) return [];
+  try {
+    const parsed: unknown = JSON.parse(detail);
+    return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : [];
+  } catch {
+    return [];
+  }
+}

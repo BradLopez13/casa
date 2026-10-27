@@ -10,6 +10,8 @@ const DIRS = ['features', 'ui/components', 'app'];
 const ALLOWED = [
   'ui/components/ScreenTitle.tsx',
   'ui/components/Magnet.tsx',
+  // A household's magnet draws its initial like Magnet (bloque 12).
+  'ui/components/HouseMagnet.tsx',
   'ui/components/FridgeRefresh.tsx',
   'features/navigation/NavigationRail.tsx',
   'features/navigation/FridgeTabBar.tsx',

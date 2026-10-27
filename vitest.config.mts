@@ -9,6 +9,7 @@ const exclude = [
   'supabase/migrations',
   'supabase/tests',
   'supabase/functions/send-push',
+  'supabase/functions/billing-webhook',
 ];
 
 export default defineConfig({

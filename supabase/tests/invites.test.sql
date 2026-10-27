@@ -1,5 +1,5 @@
 begin;
-select plan(53);
+select plan(54);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -420,17 +420,17 @@ select throws_ok(
   'revoked invite'
 );
 
--- Someone who already has a household cannot consume an invite
+-- Someone already in that household cannot consume an invite; having another household is no
+-- obstacle (bloque 12).
 select tests.authenticate_as(:'ana');
 select token as own_token, invite_id as own_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
-select tests.authenticate_as(:'dani');
-select public.create_household('Casa de Dani') as dani_hid \gset
+select tests.authenticate_as(:'bob');
 
 select throws_ok(
   format($$select public.accept_invite(%L)$$, :'own_token'),
   'P0001',
-  'ALREADY_IN_HOUSEHOLD',
-  'accept_invite while in a household is rejected'
+  'ALREADY_A_MEMBER',
+  'accepting an invite to a household you are already in is rejected'
 );
 
 select tests.clear_auth();
@@ -438,14 +438,22 @@ select tests.clear_auth();
 select is(
   (select accepted_by from public.household_invites where id = :'own_inv'),
   null::uuid,
-  'accept_invite while in a household leaves the invite unused'
+  'and the invite stays unused'
 );
 
-select tests.authenticate_as(:'carla');
+select tests.authenticate_as(:'dani');
+select public.create_household('Casa de Dani') as dani_hid \gset
+
+select throws_ok(
+  format($$select public.accept_invite(%L)$$, :'own_token'),
+  'P0001',
+  'ALREADY_IN_HOUSEHOLD',
+  'the one-argument accept_invite, the app before bloque 12, still refuses someone with a household'
+);
 
 select lives_ok(
-  format($$select public.accept_invite(%L)$$, :'own_token'),
-  'the unused invite can still be accepted by someone without a household'
+  format($$select public.accept_invite(%L, true)$$, :'own_token'),
+  'asking for it, someone with another household of their own can accept it'
 );
 
 -- Revoking an accepted invite does nothing

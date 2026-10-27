@@ -1,12 +1,14 @@
 import type { QueryKey } from '@tanstack/react-query';
 // From keys, which features/households/queries re-exports: the batcher needs no React.
-import { membershipKey } from '@/features/households/keys';
+import { householdsKey, membershipKey } from '@/features/households/keys';
 
 const TASKS: QueryKey = ['tasks'];
 const SHOPPING: QueryKey = ['shopping'];
 const SHOPPING_HISTORY: QueryKey = ['shopping-history'];
 // Every household's member list (membersKey is ['members', householdId]).
 const MEMBERS: QueryKey = ['members'];
+// Every household's licence (licenseKey is ['license', householdId]).
+const LICENSE: QueryKey = ['license'];
 
 /**
  * Query prefixes to refresh when the server broadcasts a change to `table`. They are
@@ -16,12 +18,15 @@ export function invalidationsFor(table: string): QueryKey[] {
   switch (table) {
     case 'shopping_items':
       return [SHOPPING, SHOPPING_HISTORY];
-    // The household itself: its name and owner live in the membership.
+    // The household itself: its name and owner live in the membership and the household list.
     case 'households':
-      return [membershipKey];
-    // Who is in, who left, who owns it: the member lists and the role in the membership.
+      return [membershipKey, householdsKey];
+    // Who is in, who left, who owns it: the member lists, the role and the household's size.
     case 'household_members':
-      return [MEMBERS, membershipKey];
+      return [MEMBERS, membershipKey, householdsKey];
+    // Its licence (bloque 12): the band and the licence screen.
+    case 'household_licenses':
+      return [LICENSE, membershipKey, householdsKey];
     case 'task_series':
     case 'task_occurrences':
       return [TASKS];
@@ -86,7 +91,15 @@ export function createInvalidationBatcher(opts: InvalidationBatcherOptions): Inv
       if (disposed) return;
       cancelTimer();
       pending.clear();
-      invalidateAll([TASKS, SHOPPING, SHOPPING_HISTORY, MEMBERS, membershipKey]);
+      invalidateAll([
+        TASKS,
+        SHOPPING,
+        SHOPPING_HISTORY,
+        MEMBERS,
+        LICENSE,
+        membershipKey,
+        householdsKey,
+      ]);
     },
     dispose() {
       disposed = true;

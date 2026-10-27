@@ -7,6 +7,7 @@ const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping-history',
   'shopping-resolved',
   'membership',
+  'households',
   'members',
   'tasks',
 ]);
@@ -14,7 +15,8 @@ const PERSISTED_QUERIES: ReadonlySet<unknown> = new Set([
 /**
  * Kept on the device: the shopping list, its history and the queue's resolved ids, the tasks
  * (an offline cold start shows Hoy and Tareas as they were, with the band; fase 10e), plus the
- * membership (an offline cold start gets past the route guard) and the members (the magnets).
+ * membership and the household list (an offline cold start gets past the route guard and can
+ * still switch household; bloque 12) and the members (the magnets).
  */
 export function shouldPersistQuery(queryKey: QueryKey): boolean {
   return PERSISTED_QUERIES.has(queryKey[0]);
@@ -31,8 +33,13 @@ export function shouldPersistMutation(mutationKey: MutationKey | undefined): boo
  * add or a create is idempotent by id, a bought or a toggle sets an absolute value.
  */
 export const persistDehydrateOptions: DehydrateOptions = {
+  // A list whose last refresh failed (offline) keeps its data: it is kept too, or the next cold
+  // start without a connection would find it gone (bloque 12: the household list after a
+  // switch offline).
   shouldDehydrateQuery: (query) =>
-    shouldPersistQuery(query.queryKey) && query.state.status === 'success',
+    shouldPersistQuery(query.queryKey) &&
+    (query.state.status === 'success' ||
+      (query.state.status === 'error' && query.state.data !== undefined)),
   shouldDehydrateMutation: (mutation) =>
     mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey),
 };

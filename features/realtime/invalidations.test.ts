@@ -14,11 +14,23 @@ describe('invalidationsFor', () => {
 
   it('maps the household to its membership and ignores the dropped categories table', () => {
     expect(invalidationsFor('household_item_categories')).toEqual([]);
-    expect(invalidationsFor('households')).toEqual([['membership']]);
+    expect(invalidationsFor('households')).toEqual([['membership'], ['households']]);
   });
 
-  it('maps household members to the member lists and the membership', () => {
-    expect(invalidationsFor('household_members')).toEqual([['members'], ['membership']]);
+  it('maps household members to the member lists, the membership and the household list', () => {
+    expect(invalidationsFor('household_members')).toEqual([
+      ['members'],
+      ['membership'],
+      ['households'],
+    ]);
+  });
+
+  it('maps a licence change to the licence, the membership and the household list (bloque 12)', () => {
+    expect(invalidationsFor('household_licenses')).toEqual([
+      ['license'],
+      ['membership'],
+      ['households'],
+    ]);
   });
 
   it('ignores any other table', () => {
@@ -102,19 +114,21 @@ describe('createInvalidationBatcher', () => {
     const { batcher, invalidate } = setup();
     batcher.push('task_series');
     batcher.flushAll();
-    expect(invalidate).toHaveBeenCalledTimes(5);
+    expect(invalidate).toHaveBeenCalledTimes(7);
     for (const key of [
       ['tasks'],
       ['shopping'],
       ['shopping-history'],
       ['members'],
+      ['license'],
       ['membership'],
+      ['households'],
     ]) {
       expect(invalidate).toHaveBeenCalledWith(key);
     }
 
     vi.advanceTimersByTime(300);
-    expect(invalidate).toHaveBeenCalledTimes(5);
+    expect(invalidate).toHaveBeenCalledTimes(7);
   });
 
   it('flushAll also leaves a busy key to its mutation', () => {
@@ -124,7 +138,9 @@ describe('createInvalidationBatcher', () => {
       [['tasks']],
       [['shopping-history']],
       [['members']],
+      [['license']],
       [['membership']],
+      [['households']],
     ]);
   });
 });

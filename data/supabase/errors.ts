@@ -3,6 +3,7 @@ export const APP_ERROR_CODES = [
   'INVALID_NAME',
   'INVALID_DISPLAY_NAME',
   'ALREADY_IN_HOUSEHOLD',
+  'ALREADY_A_MEMBER',
   'INVITE_INVALID',
   'INVITE_EXPIRED',
   'NOT_A_MEMBER',
@@ -26,6 +27,8 @@ export const APP_ERROR_CODES = [
   'INVALID_TIME_ZONE',
   'INVALID_PUSH_TOKEN',
   'INVALID_PREFS',
+  'LICENSE_REQUIRED',
+  'BILLING_DISABLED',
   'NETWORK',
   'UNKNOWN',
 ] as const;
@@ -34,11 +37,14 @@ export type AppErrorCode = (typeof APP_ERROR_CODES)[number];
 
 export class AppError extends Error {
   readonly code: AppErrorCode;
+  /** What the server added to the code, as it sent it (OWNER_MUST_TRANSFER: the households). */
+  readonly detail: string | undefined;
 
-  constructor(code: AppErrorCode) {
+  constructor(code: AppErrorCode, detail?: string) {
     super(code);
     this.name = 'AppError';
     this.code = code;
+    this.detail = detail;
   }
 }
 
@@ -72,7 +78,23 @@ export function toAppError(e: unknown): AppError {
   const code = 'code' in e ? e.code : undefined;
   const message = 'message' in e && typeof e.message === 'string' ? e.message : '';
 
-  if (code === 'P0001') return new AppError(isCode(message) ? message : 'UNKNOWN');
+  if (code === 'P0001') {
+    const details = 'details' in e && typeof e.details === 'string' ? e.details : undefined;
+    return new AppError(isCode(message) ? message : 'UNKNOWN', details ?? undefined);
+  }
   if (isNetworkFailure(e)) return new AppError('NETWORK');
   return new AppError('UNKNOWN');
+}
+
+/**
+ * PostgREST's answer when no function matches the name and arguments sent (PGRST202) or the table
+ * is not there (PGRST205): a database a migration behind. The callers then go as before.
+ */
+export function isMissingOnServer(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error.code === 'PGRST202' || error.code === 'PGRST205')
+  );
 }

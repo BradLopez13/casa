@@ -8,6 +8,7 @@ const HOUSEHOLD_QUERIES: ReadonlySet<unknown> = new Set([
   'shopping-resolved',
   'members',
   'tasks',
+  'license',
 ]);
 
 /**
@@ -32,13 +33,14 @@ export function cachedHouseholdIds(queryClient: QueryClient): string[] {
 }
 
 /**
- * The cached households the user no longer belongs to, once the membership is known: all of
- * them when there is no membership, every other one when it is another household.
+ * The cached households the user no longer belongs to, once their households are known: every
+ * cached one that is not in the list. With several households (bloque 12) the others are not
+ * ended: their data and their queues stay, whichever one the phone shows.
  */
 export function endedHouseholdIds(
   cached: readonly string[],
-  membership: { householdId: string } | null | undefined,
+  households: readonly { householdId: string }[] | undefined,
 ): string[] {
-  if (membership === undefined) return [];
-  return cached.filter((id) => id !== membership?.householdId);
+  if (households === undefined) return [];
+  return cached.filter((id) => !households.some((h) => h.householdId === id));
 }

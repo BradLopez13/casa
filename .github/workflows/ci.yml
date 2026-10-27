@@ -48,7 +48,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.119.0
-      - run: supabase db start
+      # With retries: the public image registry sometimes refuses an anonymous pull.
+      - run: bash scripts/ci-supabase.sh db
       - run: supabase test db
       - run: pnpm gen:recurrence-tests && git diff --exit-code supabase/tests/recurrence_cases.test.sql
       - run: pnpm gen:normalize-tests && git diff --exit-code supabase/tests/normalize_cases.test.sql

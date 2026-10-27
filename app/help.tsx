@@ -35,6 +35,7 @@ export const HELP_ITEMS: readonly Item[] = [
   { key: 'shopping', icon: 'basket-outline' },
   { key: 'quantity', icon: 'add-circle-outline' },
   { key: 'invite', icon: 'link-outline' },
+  { key: 'households', icon: 'home-outline' },
 ];
 
 /** Mounted once inside its frame, so rotating never remounts it. */

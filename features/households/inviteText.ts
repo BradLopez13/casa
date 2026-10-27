@@ -12,6 +12,10 @@ export type InvitePreview = {
   householdName: string;
   inviterName: string | null;
   memberCount: number;
+  /** You are already in that household (bloque 12): the invitation takes you there instead. */
+  alreadyMember?: boolean;
+  /** Which household it is; unknown on a database before bloque 12. */
+  householdId?: string | null;
 };
 
 /** The invite screen's title and the line under it; without a preview, the plain title. */

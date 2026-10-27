@@ -64,7 +64,8 @@ select is((select body from private.push_outbox where recipient_id = :'bob' and 
 select is((select title from private.push_outbox where recipient_id = :'bob' and body like 'Sacar%'),
           'Tienes una tarea nueva', 'the title is fixed');
 select is((select data from private.push_outbox where recipient_id = :'bob' and body like 'Sacar%'),
-          '{"route": "/tasks"}'::jsonb, 'the route is /tasks');
+          '{"route": "/tasks", "household_id": "00000000-0000-0000-0000-0000000000a1"}'::jsonb,
+          'the route is /tasks, with the household it comes from (bloque 12)');
 
 select tests.authenticate_as(:'ana');
 select public.create_task('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000a1',
@@ -135,7 +136,8 @@ select is((select count(*) from private.push_outbox where recipient_id in (:'ber
 select is((select distinct body from private.push_outbox where kind = 'member_joined'),
           'Berta se ha unido a Piso 4B', 'the body names the newcomer and the household');
 select is((select distinct title || data::text from private.push_outbox where kind = 'member_joined'),
-          'Alguien nuevo en el hogar{"route": "/household/members"}', 'title and route of the joined notice');
+          'Alguien nuevo en el hogar{"route": "/household/members", "household_id": "00000000-0000-0000-0000-0000000000a1"}',
+          'title, route and household of the joined notice');
 
 -- Creating a household queues nothing.
 delete from private.push_outbox;

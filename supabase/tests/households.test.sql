@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -29,7 +29,7 @@ select throws_ok(
     values ('00000000-0000-0000-0000-0000000000a1', %L, 'member')$$, :'carla'),
   '23505',
   null,
-  'one user cannot be in two households at once'
+  'one user cannot be in the same household twice'
 );
 
 select tests.authenticate_as(:'ana');
@@ -130,11 +130,9 @@ select throws_ok(
   '61-char name is rejected'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.create_household('Otra')$$,
-  'P0001',
-  'ALREADY_IN_HOUSEHOLD',
-  'second household is rejected'
+  'a second household is allowed (bloque 12)'
 );
 
 select tests.clear_auth();
@@ -161,11 +159,18 @@ insert into public.household_members (household_id, user_id, role)
 values ('00000000-0000-0000-0000-0000000000a1', :'fran', 'member');
 select tests.authenticate_as(:'fran');
 
-select throws_ok(
-  $$select public.create_household('Casa')$$,
-  'P0001',
-  'ALREADY_IN_HOUSEHOLD',
-  'an existing active membership is reported as ALREADY_IN_HOUSEHOLD'
+select lives_ok(
+  $$select public.create_household('Casa de Fran')$$,
+  'a member of another household can create their own'
+);
+
+select tests.clear_auth();
+
+select is(
+  (select array_agg(role order by role) from public.household_members
+    where user_id = :'fran' and left_at is null),
+  array['member', 'owner'],
+  'and is then in both, leading the new one'
 );
 
 select tests.clear_auth();

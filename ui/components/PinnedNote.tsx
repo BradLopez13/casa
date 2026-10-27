@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import { useTheme } from '../theme';
 import { magnetSizes, type MagnetSize } from '../tokens';
+import { HouseMagnet } from './HouseMagnet';
 import { Magnet } from './Magnet';
 
 type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -11,8 +12,13 @@ type Glyph = ComponentProps<typeof MaterialCommunityIcons>['name'];
 /** Android stacks by elevation before zIndex: above the note's, or a small magnet (flat) sinks. */
 const MAGNET_LIFT = 8;
 
-/** Who or what holds the note: a member's magnet (initial and colour) or a slate one with a glyph. */
-export type Pin = { mark: MemberMark } | { glyph: string };
+/**
+ * Who or what holds the note: a member's magnet (initial and colour), a slate one with a glyph, or
+ * a household's (bloque 12): its initial, on `selection` when it is the one shown (the one style
+ * of chosen), on the plain ring otherwise.
+ */
+export type Pin =
+  { mark: MemberMark } | { glyph: string } | { house: { initial: string; active: boolean } };
 
 /**
  * A note held to the door by its magnet, the unit of every screen and not only the tabs (a
@@ -42,7 +48,9 @@ export function PinnedNote({
   const hang = diameter / 2;
   const left = side === 'left';
   const magnet =
-    'mark' in pin ? (
+    'house' in pin ? (
+      <HouseMagnet size={size} initial={pin.house.initial} active={pin.house.active} />
+    ) : 'mark' in pin ? (
       <Magnet
         size={size}
         decorative

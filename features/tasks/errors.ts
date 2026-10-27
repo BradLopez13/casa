@@ -12,6 +12,7 @@ const ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
   NOT_RECURRING: 'tasks.errors.NOT_RECURRING',
   ALREADY_ADVANCED: 'tasks.errors.ALREADY_ADVANCED',
   NOT_A_MEMBER: 'tasks.errors.NOT_A_MEMBER',
+  LICENSE_REQUIRED: 'errors.LICENSE_REQUIRED',
   NETWORK: 'tasks.errors.NETWORK',
 };
 

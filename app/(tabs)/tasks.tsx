@@ -16,6 +16,8 @@ import { useTaskScreen } from '@/features/tasks/useTaskScreen';
 import { HelpLink } from '@/features/settings/HelpLink';
 import { t } from '@/i18n';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
+import { LicenseBand } from '@/features/households/LicenseBand';
+import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
@@ -69,10 +71,14 @@ export default function TasksScreen() {
   // The door counts the whole household, like Hoy's, so it can say what is left for everyone.
   const tasks = tasksQuery.data;
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
+  const several = useSeveralHouseholds();
   const doorLine = useMemo(
     () =>
-      allLineText(allLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName })),
-    [tasks, today, userId, assigneeId, filterName],
+      allLineText(
+        allLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
+        several,
+      ),
+    [tasks, today, userId, assigneeId, filterName, several],
   );
 
   const sections = useMemo(
@@ -153,6 +159,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : null}
+      <LicenseBand />
     </>
   );
 

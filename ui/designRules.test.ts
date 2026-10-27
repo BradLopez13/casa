@@ -163,7 +163,11 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       (f) =>
         /\bScreenTitle\b/.test(read(f)) &&
         !/^app\/\(auth\)\//.test(f) &&
-        !['app/onboarding.tsx', 'app/invite.tsx', 'ui/components/ScreenTitle.tsx'].includes(f),
+        ![
+          'features/households/NewHouseholdFlow.tsx',
+          'app/invite.tsx',
+          'ui/components/ScreenTitle.tsx',
+        ].includes(f),
     );
     expect([...headed, ...titled]).toEqual([]);
   });
