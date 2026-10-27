@@ -140,14 +140,37 @@ describe('Ajustes', () => {
     );
   });
 
-  // Bloque 12: one person, several households.
-  it('with one household, «Tus casas» holds it, its licence and the two ways to another', () => {
+  // Bloque 12: one person, several households. Bloque 13 (decisión 5, A): with one, «Tu casa»
+  // goes under Miembros and Invitar, and nothing in it is a button that does nothing.
+  it('with one household, «Tu casa» holds it, its licence and the two ways to another', () => {
     renderSettings(members);
     expect(screen.getByTestId('settings.household-name').textContent).toBe('Casa, con Bo');
-    expect(screen.getByRole('button', { name: 'Casa, ' + t('households.here') })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: t('households.titleOne') })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Casa, ' + t('households.here') })).toBeNull();
+    expect(screen.getByText(t('households.here'))).toBeTruthy();
     expect(screen.getByRole('button', { name: t('households.license') })).toBeTruthy();
     expect(screen.getByRole('button', { name: t('households.create') })).toBeTruthy();
     expect(screen.getByRole('button', { name: t('households.join') })).toBeTruthy();
+  });
+
+  it('with one household, Miembros and Invitar come before «Tu casa»', () => {
+    renderSettings(members);
+    const order = screen
+      .getAllByRole('button')
+      .map((b) => b.getAttribute('data-testid'))
+      .filter((id) => id === 'settings.members' || id === 'settings.license');
+    expect(order).toEqual(['settings.members', 'settings.license']);
+  });
+
+  it('without a connection, Invitar and «Crear otra casa» say they wait for it', () => {
+    onlineManager.setOnline(false);
+    renderSettings(members);
+    expect(screen.getByTestId('settings.invite').getAttribute('aria-label')).toBe(
+      `${t('settings.invite')}. ${t('settings.inviteNeedsNet')}`,
+    );
+    expect(screen.getByTestId('settings.household-create').getAttribute('aria-label')).toBe(
+      `${t('households.create')}. ${t('households.createNeedsNet')}`,
+    );
   });
 
   it('with two, the door says so and the other household is a tap away', async () => {
@@ -159,7 +182,7 @@ describe('Ajustes', () => {
     const other = screen.getByRole('button', {
       name: t('households.switchTo', { household: 'Casa de mamá' }),
     });
-    expect(other.getAttribute('aria-selected')).toBe('false');
+    expect(screen.getByRole('heading', { name: t('households.title') })).toBeTruthy();
     fireEvent.click(other);
     await vi.waitFor(() =>
       expect(screen.getByTestId('settings.household-name').textContent).toContain('Casa de mamá'),
