@@ -161,7 +161,7 @@ describe('Tareas', () => {
   it('the door line starts by saying what the tab is for', () => {
     renderTasks([task('Fregar', {})]);
     const line = screen.getByText((text) => text.startsWith(t('tasks.allLine.purpose')));
-    expect(line.textContent?.startsWith('Todo lo del hogar, por día.')).toBe(true);
+    expect(line.textContent?.startsWith('Todo lo de la casa, por día.')).toBe(true);
   });
 
   // The list draws its first rows only (no layout in jsdom), so the five groups go in two renders.

@@ -10,18 +10,18 @@ describe('todayLineText', () => {
     expect(text({ kind: 'mine', today: 1, overdue: 0, household: 1 })).toEqual({
       first: 'Te toca 1.',
       number: '1',
-      second: 'Al hogar le queda 1.',
+      second: 'A la casa le queda 1.',
     });
     expect(text({ kind: 'mine', today: 2, overdue: 0, household: 3 })).toEqual({
       first: 'Te tocan 2.',
       number: '2',
-      second: 'Al hogar le quedan 3.',
+      second: 'A la casa le quedan 3.',
     });
   });
 
   it('always says the household line, even when nothing else is left', () => {
     expect(text({ kind: 'mine', today: 2, overdue: 0, household: 0 }).second).toBe(
-      'Nada más para el hogar.',
+      'Nada más para la casa.',
     );
   });
 
@@ -33,7 +33,7 @@ describe('todayLineText', () => {
     expect(text({ kind: 'mine', today: 2, overdue: 1, household: 3 })).toEqual({
       first: 'Te tocan 2.',
       number: '2',
-      second: 'Y 1 de días anteriores; al hogar le quedan 3.',
+      second: 'Y 1 de días anteriores; a la casa le quedan 3.',
     });
     expect(text({ kind: 'mine', today: 1, overdue: 2, household: null }).second).toBe(
       'Y 2 de días anteriores.',
@@ -44,10 +44,10 @@ describe('todayLineText', () => {
     expect(text({ kind: 'mine', today: 0, overdue: 3, household: 0 })).toEqual({
       first: 'Nada para hoy.',
       number: null,
-      second: '3 de días anteriores; al hogar no le queda nada más.',
+      second: '3 de días anteriores; a la casa no le queda nada más.',
     });
     expect(text({ kind: 'mine', today: 0, overdue: 1, household: 2 }).second).toBe(
-      '1 de días anteriores; al hogar le quedan 2.',
+      '1 de días anteriores; a la casa le quedan 2.',
     );
     expect(text({ kind: 'mine', today: 0, overdue: 1, household: null }).second).toBe(
       '1 de días anteriores.',
@@ -56,17 +56,17 @@ describe('todayLineText', () => {
 
   it('says a single household left in one sentence too', () => {
     expect(text({ kind: 'mine', today: 1, overdue: 1, household: 1 }).second).toBe(
-      'Y 1 de días anteriores; al hogar le queda 1.',
+      'Y 1 de días anteriores; a la casa le queda 1.',
     );
   });
 
   it('household only', () => {
     expect(text({ kind: 'household', household: 1 })).toEqual({
-      first: 'Al hogar le queda 1.',
+      first: 'A la casa le queda 1.',
       number: '1',
       second: null,
     });
-    expect(text({ kind: 'household', household: 3 }).first).toBe('Al hogar le quedan 3.');
+    expect(text({ kind: 'household', household: 3 }).first).toBe('A la casa le quedan 3.');
   });
 
   it('nothing mine, with and without unassigned', () => {
@@ -107,7 +107,7 @@ describe('todayLineText', () => {
       overdue: en['today.line.overduePartOne'],
       household: fill(en['today.line.householdPartOther'], { count: '3' }),
     });
-    expect(sentence).toBe('And 1 from earlier days; 3 left for the household.');
+    expect(sentence).toBe('And 1 from earlier days; 3 left for the home.');
   });
 
   it('with several households, the household is «esta casa» (bloque 12)', () => {

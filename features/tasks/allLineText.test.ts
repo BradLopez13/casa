@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allLineText } from './allLineText';
 
-const PURPOSE = 'Todo lo del hogar, por día.';
+const PURPOSE = 'Todo lo de la casa, por día.';
 
 describe('allLineText', () => {
   // Fase 10c: the line first says what the tab is for, so Tareas does not read as Hoy again.
@@ -12,10 +12,10 @@ describe('allLineText', () => {
 
   it('household, singular and plural', () => {
     expect(allLineText({ kind: 'household', household: 1 })).toBe(
-      `${PURPOSE} Al hogar le queda 1.`,
+      `${PURPOSE} A la casa le queda 1.`,
     );
     expect(allLineText({ kind: 'household', household: 8 })).toBe(
-      `${PURPOSE} Al hogar le quedan 8.`,
+      `${PURPOSE} A la casa le quedan 8.`,
     );
   });
 
