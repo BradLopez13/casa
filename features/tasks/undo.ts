@@ -18,6 +18,8 @@ export function completeWithUndo({ toggle, notify, task }: Args): boolean {
     label: t('tasks.undo'),
     onPress: () => toggle({ id: task.id, done: false }),
     testID: 'notice.undo',
+    // The note goes to the tray: the list has nothing to uncover and does not move.
+    leftList: true,
   });
   return true;
 }

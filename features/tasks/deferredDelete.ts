@@ -84,6 +84,8 @@ export function deleteWithUndo({ id, remove, notify, ms, schedule, watchBackgrou
   notify(t('tasks.deleted'), {
     label: t('tasks.undo'),
     testID: 'notice.undo',
+    // The note is gone from the list: nothing to uncover, the list does not move.
+    leftList: true,
     onPress: () => {
       // Already sent (the app went to the background, or the window just ended): say so rather
       // than pretend it came back.
