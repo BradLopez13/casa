@@ -27,10 +27,16 @@ const WIDE_CARD_WIDTH = 880;
 export function CenteredCard({
   children,
   header,
+  bar,
   aside,
 }: {
   children: ReactNode;
   header?: ReactNode;
+  /**
+   * A bar that stays put above the scroll, in place of the band: `ModalHeader` on a secondary
+   * screen such as «Otra casa» (bloque 13), with «Volver» on the left like everywhere else.
+   */
+  bar?: ReactNode;
   aside?: ReactNode;
 }) {
   const { colors, radii, shadows, noteEdge, space } = useTheme();
@@ -74,6 +80,7 @@ export function CenteredCard({
       }}
     >
       {beside ? header : null}
+      {bar}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -118,9 +125,11 @@ export function CenteredCard({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      {/* The band asks for light status icons: beside, a slate strip under the status bar keeps
-          the ones over the page readable, and joins the band at the side. */}
-      {beside ? (
+      {/* The band asks for light status icons: a slate strip under the status bar keeps them
+          readable, beside over the page and joining the band at the side; above, once the form
+          scrolls (the keyboard up on a tablet on its side), the band slides under it instead of
+          being cut by the clock (bloque 13). */}
+      {header ? (
         <View
           pointerEvents="none"
           style={{

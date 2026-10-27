@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { AppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
@@ -21,6 +21,7 @@ import { useNotice } from '@/ui/components/Notice';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { CenteredCard } from '@/ui/components/CenteredCard';
 import { Magnet } from '@/ui/components/Magnet';
+import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ScreenTitle } from '@/ui/components/ScreenTitle';
 import { onboardingErrorMessage } from '@/features/households/errors';
 import { TextField } from '@/ui/components/TextField';
@@ -46,30 +47,6 @@ export function NewHouseholdFlow({
     <RoomsStep householdId={created} another={another} />
   ) : (
     <CreateStep onCreated={setCreated} another={another} focusLink={focusLink} />
-  );
-}
-
-/** «Volver» on the slate band, where onboarding has the account menu. */
-function BandBack() {
-  const { colors } = useTheme();
-  const router = useRouter();
-  return (
-    <Pressable
-      testID="onboarding.back"
-      accessibilityRole="button"
-      accessibilityLabel={t('onboarding.back')}
-      hitSlop={8}
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
-      style={({ pressed }) => ({
-        minHeight: MIN_TOUCH,
-        justifyContent: 'center',
-        opacity: pressedOpacity(pressed),
-      })}
-    >
-      <Text style={{ color: colors.onBrandBand, fontSize: 16, textDecorationLine: 'underline' }}>
-        {t('onboarding.back')}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -215,6 +192,7 @@ function CreateStep({
   const [link, setLink] = useState('');
   const [linkError, setLinkError] = useState<string | undefined>();
   const notify = useNotice();
+  const joinBlock = useRef<View>(null);
   const [signingOut, setSigningOut] = useState(false);
   const leave = () => {
     setSigningOut(true);
@@ -261,20 +239,31 @@ function CreateStep({
     router.push({ pathname: '/invite', params: { token } });
   }
 
-  // The account waits behind «⋯»: the first steps are only «create» or «paste a link». For another
-  // household, «Volver» takes its place.
+  // The account waits behind «⋯»: the first steps are only «create» or «paste a link». Another
+  // household is a secondary screen: the common header, «Volver» on the left and its title, no
+  // band (bloque 13, P2-6).
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/settings'));
   return (
     <CenteredCard
       header={
-        <BrandHeader
-          variant="hero"
-          trailing={
-            another ? <BandBack /> : <AccountMenu onSignOut={leave} signingOut={signingOut} />
-          }
-        />
+        another ? undefined : (
+          <BrandHeader
+            variant="hero"
+            trailing={<AccountMenu onSignOut={leave} signingOut={signingOut} />}
+          />
+        )
+      }
+      bar={
+        another ? (
+          <ModalHeader
+            title={t('onboarding.anotherTitle')}
+            step={2}
+            cancel={{ testID: 'onboarding.back', label: t('onboarding.back'), onPress: back }}
+          />
+        ) : undefined
       }
     >
-      <ScreenTitle>{another ? t('onboarding.anotherTitle') : t('onboarding.title')}</ScreenTitle>
+      {another ? null : <ScreenTitle>{t('onboarding.title')}</ScreenTitle>}
       <Text style={{ color: colors.ink, fontSize: 16 }}>
         {another ? t('onboarding.anotherWelcome') : t('onboarding.welcome')}
       </Text>
@@ -310,28 +299,32 @@ function CreateStep({
       >
         {t('onboarding.linkTitle')}
       </Text>
-      <TextField
-        testID="onboarding.link"
-        label={t('onboarding.linkLabel')}
-        value={link}
-        onChangeText={setLink}
-        error={linkError}
-        keyboardType="url"
-        autoFocus={focusLink}
-        textContentType="URL"
-        autoCapitalize="none"
-        autoCorrect={false}
-        returnKeyType="done"
-        onSubmitEditing={submitJoin}
-      />
-      <Button
-        testID="onboarding.join"
-        title={t('onboarding.join')}
-        variant="outlined"
-        icon={actionIcons.join}
-        width="full"
-        onPress={submitJoin}
-      />
+      <View ref={joinBlock} collapsable={false} style={{ gap: space(4) }}>
+        <TextField
+          testID="onboarding.link"
+          label={t('onboarding.linkLabel')}
+          // With the keyboard up, «Unirme» comes into view with the field (bloque 13, P2-6).
+          revealBlock={joinBlock}
+          value={link}
+          onChangeText={setLink}
+          error={linkError}
+          keyboardType="url"
+          autoFocus={focusLink}
+          textContentType="URL"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={submitJoin}
+        />
+        <Button
+          testID="onboarding.join"
+          title={t('onboarding.join')}
+          variant="outlined"
+          icon={actionIcons.join}
+          width="full"
+          onPress={submitJoin}
+        />
+      </View>
     </CenteredCard>
   );
 }
