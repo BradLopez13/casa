@@ -11,7 +11,22 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Read only unless a job asks for more; actions pinned by commit (bloque 13, Aud P3-11).
+permissions:
+  contents: read
+
 jobs:
+  # The Edge Functions are Deno, outside tsc and ESLint: deno checks their entry points.
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2
+        with:
+          deno-version: v2.x
+      # Its own npm cache, not the app's node_modules (which CI does not install here).
+      - run: deno check --node-modules-dir=none supabase/functions/*/index.ts
+
   app:
     runs-on: ubuntu-latest
     env:
@@ -21,9 +36,9 @@ jobs:
       # No Sentry token in CI: skip the source map upload.
       SENTRY_DISABLE_AUTO_UPLOAD: 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -38,14 +53,14 @@ jobs:
   db:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
         with:
           version: 2.119.0
       # With retries: the public image registry sometimes refuses an anonymous pull.
@@ -64,8 +79,8 @@ jobs:
     outputs:
       e2e: ${{ steps.filter.outputs.e2e }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filter
         with:
           # A file counts only when it matches every pattern: anything but the ignored ones.
@@ -86,24 +101,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # The APK embeds the local Supabase key, which `supabase status` only prints with the API
       # up. It comes up in the background while the job installs the rest. The key comes from
       # config.toml, so every shard's stack hands out the same one (each shard checks it).
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
         with:
           version: 2.119.0
       - run: bash scripts/ci-supabase.sh start
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
       - run: pnpm install --frozen-lockfile
       - name: Wait for local Supabase
         run: bash scripts/ci-supabase.sh wait
@@ -118,7 +133,7 @@ jobs:
           pnpm expo prebuild --platform android --clean
           cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-apk
           path: |
@@ -139,14 +154,14 @@ jobs:
         shard: [1, 2, 3, 4]
     name: e2e-android (${{ matrix.shard }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       # Supabase comes up in the background while the job installs and boots the emulator.
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
         with:
           version: 2.119.0
       - run: bash scripts/ci-supabase.sh start
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -155,7 +170,7 @@ jobs:
       - name: List the shard's flows
         run: bash scripts/e2e-shard.sh ${{ matrix.shard }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: e2e-apk
           path: e2e-apk
@@ -184,7 +199,7 @@ jobs:
           "$tools/latest/bin/sdkmanager" --version
 
       # Each script line runs on its own and the first failing one stops it.
-      - uses: reactivecircus/android-emulator-runner@v2
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           target: google_apis
@@ -200,7 +215,7 @@ jobs:
             set -a; . ./.env.e2e; set +a; maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh ${{ matrix.shard }}) --format junit --output e2e-report.xml
             if [ "${{ matrix.shard }}" = 1 ]; then set -a; . ./.env.e2e; set +a; bash scripts/e2e-locale.sh en maestro test -e SUPABASE_KEY="$EXPO_PUBLIC_SUPABASE_KEY" $(bash scripts/e2e-shard.sh english) --format junit --output e2e-report-english.xml; fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: e2e-android-report-${{ matrix.shard }}

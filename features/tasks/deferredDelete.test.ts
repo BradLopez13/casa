@@ -44,6 +44,8 @@ describe('deleteWithUndo', () => {
     const { notify, remove, action } = setup();
     expect(hiddenTasks.get().has('t1')).toBe(true);
     expect(notify.mock.calls[0]![0]).toBe(t('tasks.deleted'));
+    // The note left the list: it does not move for the notice (decisión 1, 27 de octubre).
+    expect(action.leftList).toBe(true);
     expect(action.label).toBe(t('tasks.undo'));
     expect(action.testID).toBe('notice.undo');
     expect(remove).not.toHaveBeenCalled();

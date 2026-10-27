@@ -18,13 +18,15 @@ export type MagnetSwitchLook = {
 /**
  * How a switch is drawn (fase 10f): a magnet that sticks when on. On, the slate magnet
  * (`selection`) with the bell in `onSelection` and its shadow; off, the bare `outline` ring, flat,
- * with the crossed bell in `muted`; paused (the phone has notifications off), the same ring dashed.
+ * with the crossed bell in `ink`, so the off state reads on its own (decisión 3 de Brad, 27 de
+ * octubre; in `muted` it nearly vanished in dark); paused (the phone has notifications off), the
+ * same ring dashed, the bell in `muted`.
  * A switch that is only busy (asking the phone, saving) keeps the look of its value. State reads by fill, glyph and relief, not by colour alone, and each
  * part is at least 3:1 on the page and on a note.
  */
 export function magnetSwitchLook(
   value: boolean,
-  colors: Pick<Palette, 'selection' | 'onSelection' | 'outline' | 'muted'>,
+  colors: Pick<Palette, 'selection' | 'onSelection' | 'outline' | 'muted' | 'ink'>,
   disabled = false,
 ): MagnetSwitchLook {
   if (!disabled && value) {
@@ -41,7 +43,7 @@ export function magnetSwitchLook(
     fill: 'transparent',
     edge: colors.outline,
     glyph: 'bell-off-outline',
-    glyphColor: colors.muted,
+    glyphColor: disabled ? colors.muted : colors.ink,
     raised: false,
     dashed: disabled,
   };

@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -8,6 +7,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { UnsentMark } from '@/ui/components/UnsentMark';
 import { enterAnimation, layoutTransition, tiltFor } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
@@ -116,17 +116,18 @@ export function DoneNote({ task, mark, name, byYou, today, unsent, onReopen }: P
           )}
           {/* The same mark as a shopping row waiting for the connection; the time it shows is
               the tap's, and it stays when the change arrives. Always in the tree, folded to no
-              width when sent: inserting it into a note that is still laying itself out (a tap
-              right after a quick add) crashed Fabric's mounting on Android. */}
+              size when sent: inserting it into a note that is still laying itself out (a tap
+              right after a quick add) crashed Fabric's mounting on Android. Folded in height
+              too: at no width its words broke letter by letter and stretched the note (seen on
+              the .51, bloque 13). */}
           <View
-            testID={unsent ? `done-tray.${task.id}.pending` : undefined}
-            accessible={unsent}
+            testID={`done-tray.${task.id}.mark`}
+            accessible={false}
             accessibilityElementsHidden={!unsent}
-            importantForAccessibility={unsent ? 'yes' : 'no-hide-descendants'}
-            accessibilityLabel={unsent ? t('shopping.pending') : undefined}
-            style={{ alignSelf: 'center', width: unsent ? 16 : 0, overflow: 'hidden' }}
+            importantForAccessibility={unsent ? 'auto' : 'no-hide-descendants'}
+            style={unsent ? { alignSelf: 'center' } : { width: 0, height: 0, overflow: 'hidden' }}
           >
-            <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
+            <UnsentMark testID={unsent ? `done-tray.${task.id}.pending` : undefined} />
           </View>
         </View>
       </Pressable>

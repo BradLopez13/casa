@@ -5,6 +5,11 @@ import { useReduceMotion, useTheme } from '../theme';
 import { Button } from './Button';
 
 type Props = {
+  /**
+   * Names this dialog's buttons for the E2E flows: `<testID>.confirm` and `<testID>.cancel`
+   * (bloque 13, T-4: every dialog used to answer to `members.confirm`).
+   */
+  testID: string;
   visible: boolean;
   title: string;
   message: string;
@@ -19,6 +24,7 @@ type Props = {
 
 // A custom Modal instead of Alert.alert so Maestro can tap the same testIDs on iOS and Android.
 export function ConfirmDialog({
+  testID,
   visible,
   title,
   message,
@@ -82,7 +88,7 @@ export function ConfirmDialog({
               or the red primary when it destroys, with Cancelar one step quieter. */}
           <View style={{ gap: space(3), marginTop: space(4) }}>
             <Button
-              testID="members.confirm"
+              testID={`${testID}.confirm`}
               title={content.confirmLabel}
               variant={content.destructive ? 'primary' : 'outlined'}
               width="full"
@@ -91,7 +97,7 @@ export function ConfirmDialog({
               onPress={onConfirm}
             />
             <Button
-              testID="members.cancel"
+              testID={`${testID}.cancel`}
               title={cancelLabel}
               variant={content.destructive ? 'outlined' : 'tertiary'}
               width="full"

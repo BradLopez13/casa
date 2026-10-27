@@ -9,6 +9,27 @@ export function setSessionUser(userId: string | null | undefined): void {
   current = userId;
 }
 
+/** How long an asked sign-out waits for its SIGNED_OUT: a failed one must not mark a later one. */
+const SIGNING_OUT_MS = 30_000;
+let signingOutAt = -Infinity;
+
+/** The person asked to sign out (Ajustes, deleting the account): the SIGNED_OUT that follows is theirs. */
+export function markSigningOut(now = Date.now()): void {
+  signingOutAt = now;
+}
+
+/** Whether the sign-out just seen was asked for (in the last 30 s); asking again starts over. */
+export function consumeSigningOut(now = Date.now()): boolean {
+  const asked = now - signingOutAt < SIGNING_OUT_MS;
+  signingOutAt = -Infinity;
+  return asked;
+}
+
+/** Whether someone is signed in, as far as the app knows: unknown at a cold start counts as yes. */
+export function isSignedIn(): boolean {
+  return current !== null;
+}
+
 /**
  * A queued change goes as the person who made it, or not at all. Retries outlive a sign-out
  * (clearing the cache does not stop them), and a change made by one person must never reach the

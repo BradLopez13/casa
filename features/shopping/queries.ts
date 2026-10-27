@@ -1,3 +1,4 @@
+import { hiddenItems } from './deferredDelete';
 import {
   useMutation,
   useMutationState,
@@ -5,7 +6,7 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import {
@@ -21,7 +22,7 @@ import {
   countsAsUnsent,
   invalidateShoppingWhenIdle,
   quantityKey,
-  SHOPPING_SCOPE,
+  shoppingScope,
   shoppingQueryOptions,
   type AddContext,
   type AddVars,
@@ -66,9 +67,17 @@ export function shoppingHistoryQueryOptions(householdId: string) {
 
 export function useShoppingItems(householdId: string | undefined) {
   const queryClient = useQueryClient();
+  // A product deleted on screen stays out while its «Deshacer» lasts (decisión 2, bloque 13).
+  const hidden = useSyncExternalStore(hiddenItems.subscribe, hiddenItems.get);
+  const select = useCallback(
+    (items: ShoppingItem[]) =>
+      hidden.size === 0 ? items : items.filter((item) => !hidden.has(item.id)),
+    [hidden],
+  );
   return useQuery({
     ...shoppingItemsQueryOptions(queryClient, householdId as string),
     enabled: householdId !== undefined,
+    select,
   });
 }
 
@@ -80,55 +89,81 @@ export function useShoppingHistory(householdId: string | undefined) {
 }
 
 /** Adds an item, optimistically; queued while offline. Its options are the registered defaults. */
-export function useAddItem() {
-  return useMutation<string, AppError, AddVars, AddContext>({ mutationKey: addKey });
+export function useAddItem(householdId: string | undefined) {
+  return useMutation<string, AppError, AddVars, AddContext>({
+    mutationKey: addKey,
+    scope: shoppingScope(householdId),
+  });
 }
 
 /** Marks an item bought or not, optimistically; queued while offline. */
-export function useSetBought() {
-  return useMutation<void, AppError, BoughtVars, BoughtContext>({ mutationKey: boughtKey });
+export function useSetBought(householdId: string | undefined) {
+  return useMutation<void, AppError, BoughtVars, BoughtContext>({
+    mutationKey: boughtKey,
+    scope: shoppingScope(householdId),
+  });
 }
 
 export type EditVars = { id: string; name: string; quantity: string | null };
 
 // Edits, deletes and clears only run online: they are not persisted, so they never outlive
 // the app. They share the scope so they reach the server after any queued add or bought.
-export function useEditItem() {
+export function useEditItem(householdId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, EditVars>({
     mutationKey: ['shopping', 'edit'],
-    scope: SHOPPING_SCOPE,
+    scope: shoppingScope(householdId),
     networkMode: 'online',
     mutationFn: ({ id, name, quantity }) => updateShoppingItem(id, name, quantity),
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
 
 /** Sets an item's quantity from the row's stepper; its options are the registered defaults. */
-export function useSetQuantity() {
-  return useMutation<void, AppError, QuantityVars, QuantityContext>({ mutationKey: quantityKey });
+export function useSetQuantity(householdId: string | undefined) {
+  return useMutation<void, AppError, QuantityVars, QuantityContext>({
+    mutationKey: quantityKey,
+    scope: shoppingScope(householdId),
+  });
 }
 
-export function useDeleteItem() {
-  const queryClient = useQueryClient();
-  return useMutation<void, AppError, { id: string }>({
-    mutationKey: ['shopping', 'delete'],
-    scope: SHOPPING_SCOPE,
-    networkMode: 'online',
-    mutationFn: ({ id }) => deleteShoppingItem(id),
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
-  });
+/**
+ * Deletes a product once its «Deshacer» has gone (decisión 2, bloque 13), outside any screen: the
+ * product sheet is closed by then. In the household's queue, so it reaches the server after an add
+ * or a quantity still on its way; offline it fails at once and the product comes back.
+ */
+export function deleteItemNow(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  id: string,
+): Promise<void> {
+  return queryClient
+    .getMutationCache()
+    .build<void, AppError, void, unknown>(queryClient, {
+      mutationKey: ['shopping', 'delete'],
+      scope: shoppingScope(householdId),
+      mutationFn: () => deleteShoppingItem(id),
+      // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
+      onSuccess: () => {
+        if (householdId === undefined) return;
+        queryClient.setQueryData<ShoppingItem[]>(shoppingKey(householdId), (current) =>
+          current?.filter((entry) => entry.id !== id),
+        );
+      },
+      onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
+    })
+    .execute(undefined);
 }
 
 /**
  * Clears the bought items. Optimistic: they leave the cached list as the clear starts (the undo
  * window has already hidden them), and come back if the server refuses.
  */
-export function useClearBought() {
+export function useClearBought(householdId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, { householdId: string }, { before?: ShoppingItem[] }>({
     mutationKey: ['shopping', 'clear'],
-    scope: SHOPPING_SCOPE,
+    scope: shoppingScope(householdId),
     networkMode: 'online',
     mutationFn: ({ householdId }) => clearBoughtItems(householdId),
     onMutate: async ({ householdId }) => {
@@ -143,7 +178,7 @@ export function useClearBought() {
     onError: (_error, { householdId }, context) => {
       if (context?.before) queryClient.setQueryData(shoppingKey(householdId), context.before);
     },
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
 

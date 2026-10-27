@@ -1,3 +1,4 @@
+import { markSigningOut } from '@/data/query/sessionUser';
 import { supabase } from '@/data/supabase/client';
 import { AuthFailure, toAuthFailure } from './errors';
 import { toAppError } from '@/data/supabase/errors';
@@ -122,6 +123,8 @@ export async function resetPassword({
 }
 
 export async function signOut(): Promise<void> {
+  // Asked for: the SIGNED_OUT that follows forgets the queue too (bloque 13).
+  markSigningOut();
   // While still signed in, stop the server sending to this phone. Best effort: a failure here
   // never blocks the sign-out.
   await forgetPushRegistration().catch(() => undefined);
@@ -173,6 +176,7 @@ export async function deleteAccount(): Promise<void> {
 
 /** Drops the local session only (the server-side token is already gone after deletion). */
 export async function signOutLocally(): Promise<void> {
+  markSigningOut();
   let result;
   try {
     result = await supabase.auth.signOut({ scope: 'local' });

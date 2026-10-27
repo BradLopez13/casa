@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { ActivityIndicator, ScrollView, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
-import { doorLine, pendingNames } from '@/domain/shopping/screen';
+import { doorLine } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership, useSeveralHouseholds } from '@/features/households/queries';
@@ -21,6 +21,7 @@ import {
 } from '@/features/shopping/components/AddItemField';
 import { LicenseBand } from '@/features/households/LicenseBand';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { QueueBand } from '@/features/offline/QueueBand';
 import { useIsOnline } from '@/data/query/online';
 import { toAppError } from '@/data/supabase/errors';
 import { shouldShowStaleBand } from '@/features/tasks/staleBand';
@@ -99,10 +100,10 @@ export default function ShoppingScreen() {
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
-  const addItem = useAddItem();
-  const setBought = useSetBought();
-  const clearBought = useClearBought();
-  const setQuantity = useSetQuantity();
+  const addItem = useAddItem(householdId);
+  const setBought = useSetBought(householdId);
+  const clearBought = useClearBought(householdId);
+  const setQuantity = useSetQuantity(householdId);
   const unsentIds = usePendingItemIds();
   const online = useIsOnline();
   // The same band as Hoy and Tareas, also on a Wi-Fi with no internet (bloque 11, N15).
@@ -202,10 +203,8 @@ export default function ShoppingScreen() {
       heading={line?.text ?? ' '}
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
-      // An empty list says one thing: the headline, without the hint under it.
-      secondary={
-        state === 'empty' ? undefined : t(several ? 'shopping.doorHintThis' : 'shopping.doorHint')
-      }
+      // Who sees what you add, also with the list empty, where it matters most (bloque 13).
+      secondary={t(several ? 'shopping.doorHintThis' : 'shopping.doorHint')}
     >
       {children}
     </DoorHeader>
@@ -238,11 +237,14 @@ export default function ShoppingScreen() {
         <ActivityIndicator color={colors.muted} accessibilityLabel={t('common.loading')} />
       </View>
     );
-  } else if (state === 'empty') {
+  } else if (state === 'empty' || (state === 'list' && pending.length === 0)) {
+    // Everything in the bag (back from the shop) keeps the note with its basket magnet and the
+    // usual items, as an empty list does (bloque 13, P2-5).
     stateView = (
       <View style={{ gap: space(4) }}>
         <EmptyList
-          usual={usual(history, pendingNames(items))}
+          // Back from the shop, what is in the bag is not offered again (bloque 13).
+          usual={usual(history, new Set(items.map((entry) => entry.normalizedName)))}
           onAdd={(name) => entry.submit(name)}
         />
         <HelpLink entry="shopping" testID="shopping.help" />
@@ -316,7 +318,11 @@ function ShoppingStack({
       {/* Measured so the nudge never leaves it cut under the status bar. */}
       <View onLayout={nudge.onDoorLayout}>
         {door(<AddItemField entry={entry} />)}
-        {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+        {band ? (
+          <OfflineBand label={t('offline.showingLast')} />
+        ) : (
+          <QueueBand testID="shopping.queue" />
+        )}
         <LicenseBand />
       </View>
       {/* The door runs edge to edge; the state line keeps to the column like the rows. */}
@@ -378,7 +384,11 @@ function ShoppingSplit({
       header={
         <>
           {door(null)}
-          {band ? <OfflineBand label={t('offline.showingLast')} /> : null}
+          {band ? (
+            <OfflineBand label={t('offline.showingLast')} />
+          ) : (
+            <QueueBand testID="shopping.queue" />
+          )}
           <LicenseBand />
         </>
       }
@@ -392,7 +402,7 @@ function ShoppingSplit({
       left={
         <View style={pane}>
           <AddItemField entry={entry} />
-          {panes.leftState ? stateView : null}
+          {panes.leftState || pending.length === 0 ? stateView : null}
           {panes.pendingSheet ? (
             <ShoppingSheet flush pending={pending} bought={NO_ITEMS} {...sheet} />
           ) : null}

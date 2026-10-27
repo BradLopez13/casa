@@ -8,7 +8,7 @@ import { isScreenReaderOn, useScreenReader } from '../a11y';
 import { useTheme } from '../theme';
 import { MIN_TOUCH, radii } from '../tokens';
 import { useTabBarClearance } from '../useTabBarClearance';
-import { NoticeShownContext } from './noticeContext';
+import { NoticeNudgesContext, NoticeShownContext } from './noticeContext';
 import { NOTICE_ACTION_MS, noticeDuration, noticeExpired } from './noticeTiming';
 
 export type NoticeAction = {
@@ -17,6 +17,11 @@ export type NoticeAction = {
   testID?: string;
   /** The notice went away without its action: timed out, closed, replaced or left on its tab. */
   onExpire?: () => void;
+  /**
+   * The note it speaks of left the list (completed into the tray, deleted): nothing to uncover,
+   * so the list does not move for it (decisión 1 de Brad, 27 de octubre).
+   */
+  leftList?: boolean;
 };
 type Notify = (message: string, action?: NoticeAction) => void;
 /** ms null: no timer, the notice waits (a screen reader is on and there is an action to reach). */
@@ -110,7 +115,11 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
 
   return (
     <NoticeContext.Provider value={notify}>
-      <NoticeShownContext.Provider value={notice !== null}>{children}</NoticeShownContext.Provider>
+      <NoticeShownContext.Provider value={notice !== null}>
+        <NoticeNudgesContext.Provider value={notice !== null && !notice.action?.leftList}>
+          {children}
+        </NoticeNudgesContext.Provider>
+      </NoticeShownContext.Provider>
       {notice === null ? null : (
         <View
           // The pill is tappable only for its action; everything around it lets touches through.

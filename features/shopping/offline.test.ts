@@ -29,7 +29,11 @@ import {
   persistDehydrateOptions,
   shouldPersistMutation,
   shouldPersistQuery,
+  shouldQueueMutation,
 } from '@/features/offline/persistence';
+
+/** What a restart finds on the device: the cache, and the queue under its own key (bloque 13). */
+const onTheDevice = { ...persistDehydrateOptions, shouldDehydrateMutation: shouldQueueMutation };
 
 // The persistence covers the task queue too: its requests stay out of these tests.
 vi.mock('@/features/tasks/api', () => ({
@@ -123,7 +127,7 @@ describe('shouldPersistMutation', () => {
       state: { status: 'pending' },
       options: { mutationKey: ['shopping', 'category'] },
     };
-    expect(persistDehydrateOptions.shouldDehydrateMutation?.(stale as never)).toBe(false);
+    expect(shouldQueueMutation(stale)).toBe(false);
   });
 });
 
@@ -280,16 +284,18 @@ describe('buildShoppingMutationDefaults', () => {
       bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' }),
     ]);
     const keys = spy.mock.calls.map((c) => c[0]?.queryKey);
-    expect(keys).toEqual([['shopping'], ['shopping-history']]);
+    // Only that household's (bloque 13).
+    expect(keys).toEqual([
+      ['shopping', 'h'],
+      ['shopping-history', 'h'],
+    ]);
   });
 });
 
 describe('restart', () => {
   // What the persister writes and reads back: a JSON round trip of the dehydrated cache.
   const restart = (from: QueryClient) => {
-    const saved = JSON.parse(
-      JSON.stringify(dehydrate(from, persistDehydrateOptions)),
-    ) as DehydratedState;
+    const saved = JSON.parse(JSON.stringify(dehydrate(from, onTheDevice))) as DehydratedState;
     const next = setup();
     hydrate(next.queryClient, saved);
     return next;
@@ -434,7 +440,7 @@ describe('restart', () => {
     await vi.waitFor(() => expect(list(before.queryClient)).toHaveLength(1));
 
     const saved = JSON.parse(
-      JSON.stringify(dehydrate(before.queryClient, persistDehydrateOptions)),
+      JSON.stringify(dehydrate(before.queryClient, onTheDevice)),
     ) as DehydratedState;
     for (const mutation of saved.mutations) mutation.state.context = undefined;
     const after = setup();
@@ -571,6 +577,14 @@ describe('the quantity default', () => {
     await quantity(vars);
     expect(updateShoppingItem).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  // Bloque 13 (Aud P3-4): with the list gone from the cache it used to do nothing, silently.
+  it('sends a quantity whose list is not in the cache, and lets the server answer', async () => {
+    const { quantity } = setup();
+    vi.mocked(updateShoppingItem).mockResolvedValueOnce(undefined);
+    await quantity(vars);
+    expect(updateShoppingItem).toHaveBeenCalledTimes(1);
   });
 
   it('retries a request that never reached the server', async () => {

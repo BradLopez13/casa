@@ -40,6 +40,7 @@ import { markFresh } from '../freshIds';
 import { quickAddInput, quickLocale, type QuickAddContext } from '../quickAddInput';
 import { hintName, quickHintSegments, quickHintShown } from '../quickHint';
 import { buildCreateOptions } from '../create';
+import { tasksScope } from '../toggle';
 import { NO_DATE } from '../dueParam';
 import { useToday } from '../useToday';
 
@@ -153,7 +154,10 @@ export function QuickAdd({
   // waits and goes when the connection is back. A final error says so from the queue itself.
   const queryClient = useQueryClient();
   const { userId } = useSession();
-  const create = useMutation(buildCreateOptions(queryClient, notify));
+  const create = useMutation({
+    ...buildCreateOptions(queryClient, notify),
+    scope: tasksScope(householdId),
+  });
 
   const changeText = (next: string) => {
     latest.current = next;

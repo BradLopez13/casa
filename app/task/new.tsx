@@ -7,6 +7,7 @@ import { useMembers, useMembership } from '@/features/households/queries';
 import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitch';
 import { newTaskId, type TaskInput } from '@/features/tasks/api';
 import { buildCreateOptions } from '@/features/tasks/create';
+import { tasksScope } from '@/features/tasks/toggle';
 import { markFresh } from '@/features/tasks/freshIds';
 import { assigneeParam, dueParam, NO_DATE } from '@/features/tasks/dueParam';
 import { TaskForm } from '@/features/tasks/components/TaskForm';
@@ -42,7 +43,10 @@ function NewTaskScreen() {
   // create waits for it, and a final error takes the note away and says so.
   const queryClient = useQueryClient();
   const notify = useNotice();
-  const create = useMutation(buildCreateOptions(queryClient, notify));
+  const create = useMutation({
+    ...buildCreateOptions(queryClient, notify),
+    scope: tasksScope(householdId),
+  });
   // A second tap before the sheet closes must not save, announce or close twice.
   const sent = useRef(false);
 

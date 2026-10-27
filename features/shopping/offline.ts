@@ -1,4 +1,5 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
+import { QUEUED_META, touches } from '@/data/query/queue';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import { toAppError, type AppError } from '@/data/supabase/errors';
@@ -8,8 +9,19 @@ import { t } from '@/i18n';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
 import { shoppingErrorMessage } from './errors';
 
-/** Shopping mutations share one scope, so a queue built offline reaches the server in order. */
+/**
+ * The scope of the defaults, for a mutation that names no household: older builds had one queue
+ * for every household, and a restored change from one is moved to its household's (`queueStore`).
+ */
 export const SHOPPING_SCOPE = { id: 'shopping' };
+
+/**
+ * Each household's shopping changes share one queue, so a queue built offline reaches the server
+ * in order; another household's never waits behind it (bloque 13, Aud P3-1).
+ */
+export const shoppingScope = (householdId: string | undefined) => ({
+  id: `shopping:${householdId ?? ''}`,
+});
 export const addKey = ['shopping', 'add'];
 export const boughtKey = ['shopping', 'bought'];
 export const quantityKey = ['shopping', 'quantity'];
@@ -109,12 +121,22 @@ export function draftShoppingItem(
 export const resolvedKey = (householdId: string) => ['shopping-resolved', householdId];
 type Resolved = Readonly<Record<string, string>>;
 
-/** Several shopping mutations can be in flight: refetch once, after the last one settles. */
-export async function invalidateShoppingWhenIdle(queryClient: QueryClient): Promise<void> {
-  if (queryClient.isMutating({ mutationKey: ['shopping'] }) === 1) {
+/**
+ * Several shopping mutations of a household can be in flight: refetch its list once, after its
+ * last one settles; another household's queue no longer holds it back (bloque 13).
+ */
+export async function invalidateShoppingWhenIdle(
+  queryClient: QueryClient,
+  householdId?: string,
+): Promise<void> {
+  const busy = queryClient.isMutating({
+    predicate: (m) => m.options.mutationKey?.[0] === 'shopping' && touches(m, householdId),
+  });
+  if (busy === 1) {
+    const scoped = (kind: string) => (householdId === undefined ? [kind] : [kind, householdId]);
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['shopping'] }),
-      queryClient.invalidateQueries({ queryKey: ['shopping-history'] }),
+      queryClient.invalidateQueries({ queryKey: scoped('shopping') }),
+      queryClient.invalidateQueries({ queryKey: scoped('shopping-history') }),
     ]);
   }
 }
@@ -206,14 +228,15 @@ export function buildShoppingMutationDefaults(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateShoppingWhenIdle(queryClient);
+    onSettled: (_data, _error, { householdId }) => {
+      void invalidateShoppingWhenIdle(queryClient, householdId);
     },
   };
 
   const bought: MutationOptions<void, AppError, BoughtVars, BoughtContext> = {
     mutationKey: boughtKey,
     scope: SHOPPING_SCOPE,
+    meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
@@ -252,8 +275,8 @@ export function buildShoppingMutationDefaults(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateShoppingWhenIdle(queryClient);
+    onSettled: (_data, _error, { householdId }) => {
+      void invalidateShoppingWhenIdle(queryClient, householdId);
     },
   };
 
@@ -263,17 +286,19 @@ export function buildShoppingMutationDefaults(
   const quantity: MutationOptions<void, AppError, QuantityVars, QuantityContext> = {
     mutationKey: quantityKey,
     scope: SHOPPING_SCOPE,
+    meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
     mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
       assertQueuedBy(userId);
       const target = resolve(householdId, id);
-      // Bought (here or by someone else) or gone before its turn: nothing left to change.
-      const item = queryClient
-        .getQueryData<ShoppingItem[]>(listKey(householdId))
-        ?.find((i) => i.id === target);
-      if (!item || item.boughtAt !== null) return;
+      // Bought (here or by someone else) or gone from a list that is here before its turn:
+      // nothing left to change. Without the list in the cache it goes all the same, and the
+      // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
+      const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
+      const item = list?.find((i) => i.id === target);
+      if (list !== undefined && (!item || item.boughtAt !== null)) return;
       await updateShoppingItem(target, name, value);
     },
     onMutate: async ({ id, householdId, quantity: value }) => {
@@ -300,8 +325,8 @@ export function buildShoppingMutationDefaults(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateShoppingWhenIdle(queryClient);
+    onSettled: (_data, _error, { householdId }) => {
+      void invalidateShoppingWhenIdle(queryClient, householdId);
     },
   };
 

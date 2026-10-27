@@ -19,6 +19,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { markHintSeen } from '@/features/hints/hints';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { noteText } from '@/features/tasks/noteText';
+import { UnsentMark } from '@/ui/components/UnsentMark';
 import { t } from '@/i18n';
 import { CompleteBox } from '@/ui/components/CompleteBox';
 import { Magnet } from '@/ui/components/Magnet';
@@ -50,6 +51,8 @@ type Props = {
   /** The task is the viewer's, so the reader says «tuya». */
   mine?: boolean;
   busy: boolean;
+  /** A change to it waits in the queue (created, reopened offline): it says «Sin enviar». */
+  unsent?: boolean;
   onToggle: () => void;
   /** Swipe right to complete; the caller offers the undo. */
   onComplete?: () => void;
@@ -67,6 +70,7 @@ export function TaskNote({
   assigneeName,
   mine = false,
   busy,
+  unsent = false,
   onToggle,
   onComplete,
   onOpen,
@@ -108,7 +112,9 @@ export function TaskNote({
 
   const done = task.completedAt !== null;
   const provisional = isProvisional(task);
-  const { room, due, overdue, repeat, label } = noteText(task, today, assigneeName, mine);
+  const text = noteText(task, today, assigneeName, mine);
+  const { room, due, overdue, repeat } = text;
+  const label = unsent ? `${text.label}, ${t('shopping.pending').toLowerCase()}` : text.label;
 
   const swipeable = useRef<SwipeableMethods>(null);
   const canSwipe = !done && !provisional && !busy && !!onComplete;
@@ -241,6 +247,7 @@ export function TaskNote({
                 {` ${repeat}`}
               </Text>
             ) : null}
+            {unsent ? <UnsentMark testID={`task-note.${task.id}.pending`} /> : null}
           </Pressable>
           <Pressable
             testID={`task-note.${task.id}.toggle`}

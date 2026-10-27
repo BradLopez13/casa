@@ -89,7 +89,7 @@ export default function SettingsScreen() {
         .filter((h) => h.role === 'owner' && h.memberCount === 1)
         .map((h) => h.householdName)
     : undefined;
-  const { left, right } = settingsPanes(paneMode(useLayout()));
+  const { left, right } = settingsPanes(paneMode(useLayout()), several);
   // While the name is open, its Guardar is the screen's one pósit; Invitar steps back.
   const [editing, setEditing] = useState(false);
   const notificationsOff = useNotificationPermission() === 'denied';
@@ -120,6 +120,9 @@ export default function SettingsScreen() {
               title={t('settings.invite')}
               icon={actionIcons.invite}
               variant={editing ? 'outlined' : 'primary'}
+              // Inviting makes a link on the server: offline it says it waits (bloque 13, P3-11).
+              disabled={!online}
+              waitingFor={t('settings.inviteNeedsNet')}
               onPress={() => router.push('/household/members')}
             />
           </PinnedNote>
@@ -142,6 +145,8 @@ export default function SettingsScreen() {
             <ListRow
               testID="settings.help"
               title={t('settings.help')}
+              // Alone in its note: no hairline left hanging under it (bloque 13, P3-7).
+              divider={false}
               onPress={() => router.push('/help')}
             />
           </PinnedNote>
@@ -267,6 +272,7 @@ export default function SettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       <ConfirmDialog
+        testID="sign-out"
         visible={confirmingSignOut}
         title={t('auth.signOutTitle')}
         message={

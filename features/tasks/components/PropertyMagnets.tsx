@@ -282,7 +282,6 @@ export function PropertyMagnets({
           field="repeat"
           label={t('taskForm.repeatField')}
           value={repeat === null ? t('taskForm.noRepeat') : recurrenceLabel(repeat)}
-          spoken={repeat === null ? t('taskForm.noRepeat') : undefined}
           empty={repeat === null}
           open={shown === 'repeat'}
           disabled={!repeatEditable}

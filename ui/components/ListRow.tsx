@@ -10,10 +10,12 @@ type Props = {
   title: string;
   onPress: () => void;
   testID?: string;
+  /** The hairline below, which separates it from what follows; a row alone in its note has none. */
+  divider?: boolean;
 };
 
 /** A tappable row that leads to another screen: icon, title and a chevron, with a hairline below. */
-export function ListRow({ icon, title, onPress, testID }: Props) {
+export function ListRow({ icon, title, onPress, testID, divider = true }: Props) {
   const { colors, space } = useTheme();
   return (
     <Pressable
@@ -27,7 +29,7 @@ export function ListRow({ icon, title, onPress, testID }: Props) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: space(3),
-        borderBottomWidth: 1,
+        borderBottomWidth: divider ? 1 : 0,
         borderBottomColor: colors.hairline,
         opacity: pressedOpacity(pressed),
       })}

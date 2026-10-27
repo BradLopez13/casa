@@ -10,7 +10,7 @@ describe('inviteExpiresText', () => {
 
 describe('invitePreviewText', () => {
   it('falls back to the plain title without a preview', () =>
-    expect(invitePreviewText(null)).toEqual({ title: 'Te han invitado a un hogar', from: null }));
+    expect(invitePreviewText(null)).toEqual({ title: 'Te han invitado a una casa', from: null }));
   it('names the household and who invites', () =>
     expect(
       invitePreviewText({ householdName: 'Casa', inviterName: 'Ana', memberCount: 1 }),

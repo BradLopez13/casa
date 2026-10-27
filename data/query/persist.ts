@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import type { QueryClient } from '@tanstack/react-query';
+import { dehydrate, type DehydrateOptions, type QueryClient } from '@tanstack/react-query';
 import { pickActive } from '@/features/households/active';
 import { householdsKey, membershipKey } from '@/features/households/keys';
 
@@ -8,10 +8,30 @@ import { householdsKey, membershipKey } from '@/features/households/keys';
  * The on-device copy of the query cache: the shopping list, its history and its queue, the
  * tasks and their queue, the membership and the members.
  */
+const CACHE_KEY = 'casa-query-cache';
+
 export const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: 'casa-query-cache',
+  key: CACHE_KEY,
 });
+
+/**
+ * Saves the cache now, past the persister's one-second throttle: the app going to the background
+ * may be the last moment it runs, and a tap just before closing it would otherwise be lost (bloque
+ * 13, Aud P3-3). The same shape the persister writes, so the restore reads it as its own.
+ */
+export function saveCacheNow(
+  queryClient: QueryClient,
+  buster: string,
+  dehydrateOptions: DehydrateOptions,
+): Promise<void> {
+  const client = {
+    buster,
+    timestamp: Date.now(),
+    clientState: dehydrate(queryClient, dehydrateOptions),
+  };
+  return AsyncStorage.setItem(CACHE_KEY, JSON.stringify(client));
+}
 
 /** Signing out: forgets everything cached, in memory and on the device. */
 export function forgetCachedData(queryClient: QueryClient): void {

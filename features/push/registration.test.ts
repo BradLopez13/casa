@@ -13,8 +13,14 @@ describe('shouldRegister', () => {
     expect(shouldRegister(null, current)).toBe(true);
   });
 
-  it('skips the same user with the same token', () => {
-    expect(shouldRegister({ ...current }, current)).toBe(false);
+  it('skips the same user with the same token, registered lately', () => {
+    expect(shouldRegister({ ...current, at: 1000 }, current, 1000 + 60_000)).toBe(false);
+  });
+
+  // Bloque 13: the server keeps a token with its owner only while it is refreshed.
+  it('registers again once a week, and a save from before it kept the date', () => {
+    expect(shouldRegister({ ...current, at: 0 }, current, 8 * 24 * 60 * 60 * 1000)).toBe(true);
+    expect(shouldRegister({ ...current }, current)).toBe(true);
   });
 
   it('registers the same token for another user', () => {

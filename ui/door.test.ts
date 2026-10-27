@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { DOOR_HEADLINE_MAX_SCALE, DOOR_MAX_SCALE, DOOR_TYPE, doorFor, stripInDoor } from './door';
+import {
+  DOOR_HEADLINE_MAX_SCALE,
+  DOOR_MAX_SCALE,
+  DOOR_TYPE,
+  doorFor,
+  isLargeText,
+  stripInDoor,
+} from './door';
 import { layoutFor } from './layout';
 
 describe('DOOR_TYPE', () => {
@@ -200,5 +207,25 @@ describe('stripInDoor', () => {
     // On its side the controls sit beside the headline, with no room left for the pills.
     expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1))).toBe(false);
     expect(stripInDoor(doorFor(layoutFor(817, 392), 392, 1.6))).toBe(false);
+  });
+});
+
+// Bloque 13 (P2-1): Android hands the scale over as a float, 1.3f = 1.2999999523…
+describe('isLargeText', () => {
+  it('counts the system «large» step, as Android hands it over, as large text', () => {
+    expect(isLargeText(Math.fround(1.3))).toBe(true);
+    expect(isLargeText(1.3)).toBe(true);
+    expect(isLargeText(1.6)).toBe(true);
+  });
+
+  it('does not count a smaller scale', () => {
+    expect(isLargeText(1.29)).toBe(false);
+    expect(isLargeText(1.15)).toBe(false);
+    expect(isLargeText(1)).toBe(false);
+  });
+
+  it('turns the door on the .51 compact at the float 1.3', () => {
+    expect(doorFor(layoutFor(375, 817), 817, Math.fround(1.3)).compact).toBe(true);
+    expect(doorFor(layoutFor(375, 817), 817, 1.29).compact).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
-import { useState, type ReactNode, type Ref } from 'react';
+import { useState, type ReactNode, type Ref, type RefObject } from 'react';
 import { Text, TextInput, View, type TextInputProps, type TextStyle } from 'react-native';
 import { useFocusReveal } from '../focusReveal';
+import type { Measurable } from '../useRevealFocusedField';
 import { useTheme } from '../theme';
 import { CONTROL_HEIGHT } from '../tokens';
 import { ErrorText } from './ErrorText';
@@ -19,6 +20,11 @@ type Props = Omit<TextInputProps, 'style'> & {
    * (`focusRing` while focused, `hairline` otherwise) is the whole field. For the task title.
    */
   bare?: boolean;
+  /**
+   * The block kept in view with the field while it has the focus (the field and the button that
+   * sends it), instead of the field alone (bloque 13: «Unirme» stayed behind the keyboard).
+   */
+  revealBlock?: RefObject<Measurable | null>;
 };
 
 export function TextField({
@@ -31,6 +37,7 @@ export function TextField({
   bare = false,
   onFocus,
   onBlur,
+  revealBlock,
   ...inputProps
 }: Props) {
   const { colors, radii, space } = useTheme();
@@ -59,7 +66,7 @@ export function TextField({
           cursorColor={colors.cobalt}
           onFocus={(e) => {
             setFocused(true);
-            reveal();
+            reveal(revealBlock?.current);
             onFocus?.(e);
           }}
           onBlur={(e) => {

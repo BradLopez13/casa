@@ -12,8 +12,11 @@ import { MIN_TOUCH } from '@/ui/tokens';
 
 /** The stepper saves this long after the last tap, so a run of taps is one call. */
 export const SAVE_AFTER_MS = 700;
-/** And closes on its own after this long untouched. */
-export const CLOSE_AFTER_MS = 4000;
+/**
+ * And closes on its own after this long untouched: 6 s, as 4 s closed it under a slow thumb
+ * (bloque 13, P3-6; the older person of PRODUCT.md).
+ */
+export const CLOSE_AFTER_MS = 6000;
 
 /**
  * The least width of the quantity's column at the note's right margin (fase 10f): every short
