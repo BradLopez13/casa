@@ -27,6 +27,14 @@ describe('retryOnNetwork', () => {
     expect(retryOnNetwork(0, new AppError('INVALID_ITEM_NAME'))).toBe(false);
     expect(retryOnNetwork(0, new AppError('UNKNOWN'))).toBe(false);
   });
+
+  // Bloque 13 (P2-2): ten items ticked in the supermarket, a 503 during a deploy on the way back.
+  it('tries again what a server that could not answer said', () => {
+    expect(retryOnNetwork(0, new AppError('UNKNOWN', undefined, { status: 503 }))).toBe(true);
+    expect(retryOnNetwork(3, new AppError('UNKNOWN', undefined, { serverCode: '40001' }))).toBe(
+      true,
+    );
+  });
 });
 
 describe('retryDelayOnNetwork', () => {

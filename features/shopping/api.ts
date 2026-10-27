@@ -1,30 +1,9 @@
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/data/supabase/client';
-import { AppError, toAppError } from '@/data/supabase/errors';
+import { unwrap, unwrapMaybe } from '@/data/supabase/unwrap';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName } from '@/domain/shopping/normalize';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
-
-type Result<D> = PromiseLike<{ data: D; error: unknown }>;
-
-/** Resolves with the data (possibly null), or throws an AppError. */
-async function unwrapMaybe<D>(promise: Result<D>): Promise<D> {
-  let result;
-  try {
-    result = await promise;
-  } catch (e) {
-    throw toAppError(e);
-  }
-  if (result.error) throw toAppError(result.error);
-  return result.data;
-}
-
-/** Like unwrapMaybe, but a null result is an error. */
-async function unwrap<D>(promise: Result<D>): Promise<NonNullable<D>> {
-  const data = await unwrapMaybe(promise);
-  if (data === null || data === undefined) throw new AppError('UNKNOWN');
-  return data;
-}
 
 export const newShoppingItemId = (): string => Crypto.randomUUID();
 

@@ -39,12 +39,22 @@ export class AppError extends Error {
   readonly code: AppErrorCode;
   /** What the server added to the code, as it sent it (OWNER_MUST_TRANSFER: the households). */
   readonly detail: string | undefined;
+  /** The HTTP status of the answer, when there was one. */
+  readonly status: number | undefined;
+  /** PostgREST's or Postgres's own code (`PGRST301`, `40001`…), when the answer carried one. */
+  readonly serverCode: string | undefined;
 
-  constructor(code: AppErrorCode, detail?: string) {
+  constructor(
+    code: AppErrorCode,
+    detail?: string,
+    origin: { status?: number; serverCode?: string } = {},
+  ) {
     super(code);
     this.name = 'AppError';
     this.code = code;
     this.detail = detail;
+    this.status = origin.status;
+    this.serverCode = origin.serverCode;
   }
 }
 
@@ -71,19 +81,54 @@ function isCode(value: string): value is AppErrorCode {
   return RPC_CODES.has(value);
 }
 
-export function toAppError(e: unknown): AppError {
+/**
+ * The app's error for whatever a call threw or answered. `status` is the HTTP status of the answer
+ * (`unwrap` passes it), kept with the server's own code so a queued change can tell a server that
+ * could not answer from one that said no (`isTransient`), and Sentry can say which.
+ */
+export function toAppError(e: unknown, status?: number): AppError {
   if (e instanceof AppError) return e;
-  if (typeof e !== 'object' || e === null) return new AppError('UNKNOWN');
+  if (typeof e !== 'object' || e === null) return new AppError('UNKNOWN', undefined, { status });
 
   const code = 'code' in e ? e.code : undefined;
   const message = 'message' in e && typeof e.message === 'string' ? e.message : '';
+  const origin = { status, serverCode: typeof code === 'string' && code !== '' ? code : undefined };
 
   if (code === 'P0001') {
     const details = 'details' in e && typeof e.details === 'string' ? e.details : undefined;
-    return new AppError(isCode(message) ? message : 'UNKNOWN', details ?? undefined);
+    // The app's own code is the message: P0001 says nothing more.
+    return new AppError(isCode(message) ? message : 'UNKNOWN', details ?? undefined, { status });
   }
   if (isNetworkFailure(e)) return new AppError('NETWORK');
-  return new AppError('UNKNOWN');
+  return new AppError('UNKNOWN', undefined, origin);
+}
+
+/**
+ * Answers that pass on their own: the JWT caught mid-refresh (`PGRST301`), PostgREST's pool full
+ * (`PGRST003`), a serialization clash or deadlock (`40001`, `40P01`) and a statement cut short
+ * (`57014`).
+ */
+const TRANSIENT_SERVER_CODES: ReadonlySet<string> = new Set([
+  'PGRST301',
+  'PGRST003',
+  '40001',
+  '40P01',
+  '57014',
+]);
+
+/**
+ * Whether a queued change that got this error should be tried again (bloque 13, P2-2): no answer
+ * at all, a server that could not answer (5xx, 408, 429) or one of the codes that pass on their
+ * own; a permission denied too, but only without a session, when supabase-js sent the request
+ * with the anonymous key because the refresh failed. Anything else the server says is final.
+ */
+export function isTransient(error: AppError, signedIn: boolean): boolean {
+  if (error.code === 'NETWORK') return true;
+  const { status, serverCode } = error;
+  if (status !== undefined && (status >= 500 || status === 408 || status === 429)) return true;
+  if (serverCode === undefined) return false;
+  if (TRANSIENT_SERVER_CODES.has(serverCode)) return true;
+  return serverCode === '42501' && !signedIn;
 }
 
 /**

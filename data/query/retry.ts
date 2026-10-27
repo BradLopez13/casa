@@ -1,6 +1,7 @@
 // Pure: no react-native import, so Vitest can check it.
 import { onlineManager } from '@tanstack/react-query';
-import { toAppError, type AppError } from '@/data/supabase/errors';
+import { isTransient, toAppError, type AppError } from '@/data/supabase/errors';
+import { isSignedIn } from './sessionUser';
 
 /**
  * The longest wait between two tries of a change that has not reached the server: short enough
@@ -35,10 +36,12 @@ export const NETWORK_RETRY_LIMIT = (7 * 24 * 60 * 60_000) / NETWORK_RETRY_MAX_MS
  * offline, so a phone without a connection waits as long as it takes), at a try every 15 s at most. A connection that hangs
  * without failing (a captive portal, a weak signal in the supermarket) used to spend ten tries in
  * about five minutes and drop the change (bloque 11, T1); a week keeps it, and still frees the
- * queue behind it if one request never gets through. Any answer from the server is final.
+ * queue behind it if one request never gets through. An answer from a server that could not
+ * answer (5xx, 429, a token mid-refresh, a serialization clash: `isTransient`) is tried again
+ * the same way (bloque 13, P2-2); any other answer from the server is final.
  */
 export const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRY_LIMIT && toAppError(error).code === 'NETWORK';
+  failureCount < NETWORK_RETRY_LIMIT && isTransient(toAppError(error), isSignedIn());
 
 /**
  * Each try waits twice as long as the last, from 1 s up to 15 s; for a minute after the connection

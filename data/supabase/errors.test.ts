@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppError, isMissingOnServer, toAppError } from './errors';
+import { AppError, isMissingOnServer, isTransient, toAppError } from './errors';
 
 describe('toAppError', () => {
   it('maps a P0001 PostgREST error to its code', () => {
@@ -87,5 +87,45 @@ describe('toAppError', () => {
     expect(toAppError({ code: '42501', message: 'permission denied' })).toMatchObject({
       code: 'UNKNOWN',
     });
+  });
+});
+
+// Bloque 13 (P2-2): a server that is restarting, a token caught mid-refresh or a serialization
+// clash used to be final and undo the person's note.
+describe('isTransient', () => {
+  const answer = (status: number, code?: string) =>
+    toAppError({ code, message: 'whatever', details: null, hint: null }, status);
+
+  it('keeps what the server never answered, and what it answered while unable to', () => {
+    expect(isTransient(new AppError('NETWORK'), true)).toBe(true);
+    for (const status of [500, 502, 503, 504, 408, 429]) {
+      expect(isTransient(answer(status), true)).toBe(true);
+    }
+  });
+
+  it('keeps the PostgREST and Postgres codes that pass on their own', () => {
+    for (const code of ['PGRST301', 'PGRST003', '40001', '40P01', '57014']) {
+      expect(isTransient(answer(400, code), true)).toBe(true);
+    }
+  });
+
+  it('keeps a permission denied only when there is no session (sent with the anonymous key)', () => {
+    expect(isTransient(answer(401, '42501'), false)).toBe(true);
+    expect(isTransient(answer(403, '42501'), true)).toBe(false);
+  });
+
+  it('takes anything else the server says as final', () => {
+    expect(isTransient(answer(400, 'P0001'), true)).toBe(false);
+    expect(isTransient(answer(400, '23505'), true)).toBe(false);
+    expect(isTransient(answer(404, 'PGRST202'), true)).toBe(false);
+    expect(isTransient(new AppError('ITEM_NOT_FOUND'), true)).toBe(false);
+    expect(isTransient(new AppError('UNKNOWN'), true)).toBe(false);
+  });
+
+  it('carries the status and the code on the error, for Sentry', () => {
+    const error = answer(503, 'PGRST003');
+    expect(error.code).toBe('UNKNOWN');
+    expect(error.status).toBe(503);
+    expect(error.serverCode).toBe('PGRST003');
   });
 });

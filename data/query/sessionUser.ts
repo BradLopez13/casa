@@ -9,6 +9,11 @@ export function setSessionUser(userId: string | null | undefined): void {
   current = userId;
 }
 
+/** Whether someone is signed in, as far as the app knows: unknown at a cold start counts as yes. */
+export function isSignedIn(): boolean {
+  return current !== null;
+}
+
 /**
  * A queued change goes as the person who made it, or not at all. Retries outlive a sign-out
  * (clearing the cache does not stop them), and a change made by one person must never reach the
