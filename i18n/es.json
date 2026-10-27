@@ -401,6 +401,7 @@
   "shopping.deleteFailed": "No se pudo borrar el producto; ha vuelto a la lista. Inténtalo de nuevo.",
   "shopping.deleteFailedOffline": "No se pudo borrar el producto: sin conexión. Ha vuelto a la lista; bórralo cuando vuelva.",
   "shopping.usualTitle": "¿Falta algo de lo de siempre?",
+  "shopping.usualNone": "Aquí saldrá lo que compráis a menudo, para añadirlo de un toque.",
   "shopping.bought.empty": "Todavía no hay nada comprado",
   "today.line.empty": "Nada para hoy",
   "today.line.allDone": "Todo hecho por hoy.",

@@ -139,6 +139,12 @@ describe('Compra', () => {
     expect(quantity.querySelector('[data-icon="scale-outline"]')).not.toBeNull();
   });
 
+  it('keeps the note with its basket in a new household, with nothing usual yet', () => {
+    renderShopping([]);
+    expect(screen.getByTestId('shopping.empty-note')).toBeTruthy();
+    expect(screen.getByText(t('shopping.usualNone'))).toBeTruthy();
+  });
+
   it('says who sees what you add also with the list empty', () => {
     renderShopping([]);
     expect(screen.getByText(t('shopping.doorHint'))).toBeTruthy();

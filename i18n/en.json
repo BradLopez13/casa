@@ -401,6 +401,7 @@
   "shopping.deleteFailed": "Couldn't delete the item; it's back on the list. Try again.",
   "shopping.deleteFailedOffline": "Couldn't delete the item: no connection. It's back on the list; delete it when you're online.",
   "shopping.usualTitle": "Need any of the usual?",
+  "shopping.usualNone": "What you buy often will show up here, one tap to add it.",
   "shopping.bought.empty": "Nothing bought yet",
   "today.line.empty": "Nothing for today",
   "today.line.allDone": "All done for today.",
