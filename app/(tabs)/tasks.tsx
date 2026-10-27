@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
+import { dayHeading } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
 import { allLineText } from '@/features/tasks/allLineText';
 import { chosenPill, daySections } from '@/features/tasks/dayFilter';
@@ -144,7 +145,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
     <>
       <DoorHeader
         eyebrow={t('tasks.title')}
-        heading={t('tasks.allHeadline')}
+        heading={day === null ? t('tasks.allHeadline') : dayHeading(day, today)}
         secondary={doorLine}
         quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
         strip={pills}

@@ -13,7 +13,7 @@ const notes = (key: string, title: string, tasks: TaskItem[]): TaskListSection =
   data: tasks.map((task): TaskListRow => ({ kind: 'note', task })),
 });
 
-const tray = (key: string, title: string, tasks: TaskItem[]): TaskListSection => ({
+export const tray = (key: string, title: string, tasks: TaskItem[]): TaskListSection => ({
   key,
   title,
   count: tasks.length,
