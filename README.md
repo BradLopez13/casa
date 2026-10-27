@@ -120,6 +120,16 @@ pnpm expo start
 
 En `.env` solo van la URL y la clave publishable; nunca la `service_role`.
 
+### Builds de prueba locales
+
+Una release local para los móviles de prueba sale siempre del mismo script, nunca a mano:
+
+```bash
+pnpm android:release
+```
+
+Lee `.env` y `.env.local`, regenera `android/` con `expo prebuild --clean` (una carpeta vieja conservaba `allowBackup="true"` aunque `app.json` dice `false`), borra el bundle JS que Gradle reutilizaría de una build anterior hecha para otro entorno, compila para `arm64-v8a` y, antes de dar el APK por bueno, comprueba que el bundle habla con el Supabase esperado y con ningún otro (`scripts/bundle-url.mjs`). Variables: `EXPECTED_SUPABASE_URL` si la URL que debe salir no es la de `.env`, `ARCH=x86_64` para un emulador y `EXPO_PUBLIC_APP_ENV` (por defecto `preview`). En Windows, desde un checkout de ruta corta (MAX_PATH).
+
 ### Builds de EAS
 
 Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):

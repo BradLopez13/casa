@@ -336,6 +336,7 @@ export default function MembersScreen() {
       />
 
       <ConfirmDialog
+        testID="members"
         visible={pending !== null}
         title={
           dialog === null

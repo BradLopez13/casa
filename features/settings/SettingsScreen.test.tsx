@@ -76,10 +76,10 @@ describe('Ajustes', () => {
     renderSettings(members, 2);
     fireEvent.click(screen.getByTestId('settings.sign-out'));
     expect(await screen.findByText(t('auth.signOutUnsent', { count: 2 }))).toBeTruthy();
-    expect(screen.getByTestId('members.confirm').getAttribute('aria-label')).toBe(
+    expect(screen.getByTestId('sign-out.confirm').getAttribute('aria-label')).toBe(
       t('auth.signOutAnyway'),
     );
-    expect(screen.getByTestId('members.cancel').getAttribute('aria-label')).toBe(
+    expect(screen.getByTestId('sign-out.cancel').getAttribute('aria-label')).toBe(
       t('auth.signOutWait'),
     );
   });

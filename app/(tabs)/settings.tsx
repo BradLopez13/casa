@@ -272,6 +272,7 @@ export default function SettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       <ConfirmDialog
+        testID="sign-out"
         visible={confirmingSignOut}
         title={t('auth.signOutTitle')}
         message={
