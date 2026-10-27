@@ -144,7 +144,23 @@ function RoomsStep({ householdId, another }: { householdId: string; another: boo
   };
 
   return (
-    <CenteredCard header={<BrandHeader variant="hero" />}>
+    // Another household keeps the common header on its second step too (bloque 13, P2-6).
+    <CenteredCard
+      header={another ? undefined : <BrandHeader variant="hero" />}
+      bar={
+        another ? (
+          <ModalHeader
+            title={t('onboarding.anotherTitle')}
+            step={2}
+            cancel={{
+              testID: 'onboarding.back',
+              label: t('onboarding.back'),
+              onPress: () => (router.canGoBack() ? router.back() : router.replace('/settings')),
+            }}
+          />
+        ) : undefined
+      }
+    >
       <ScreenTitle subtitle={t('onboarding.roomsHint')}>{t('onboarding.roomsTitle')}</ScreenTitle>
       <View style={{ gap: space(1) }}>
         {ROOMS.map((room) => (

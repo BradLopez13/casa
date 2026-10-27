@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { ActivityIndicator, ScrollView, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
-import { doorLine, pendingNames } from '@/domain/shopping/screen';
+import { doorLine } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership, useSeveralHouseholds } from '@/features/households/queries';
@@ -243,7 +243,8 @@ export default function ShoppingScreen() {
     stateView = (
       <View style={{ gap: space(4) }}>
         <EmptyList
-          usual={usual(history, pendingNames(items))}
+          // Back from the shop, what is in the bag is not offered again (bloque 13).
+          usual={usual(history, new Set(items.map((entry) => entry.normalizedName)))}
           onAdd={(name) => entry.submit(name)}
         />
         <HelpLink entry="shopping" testID="shopping.help" />

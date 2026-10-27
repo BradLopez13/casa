@@ -107,7 +107,7 @@ describe('todayLineText', () => {
       overdue: en['today.line.overduePartOne'],
       household: fill(en['today.line.householdPartOther'], { count: '3' }),
     });
-    expect(sentence).toBe('And 1 from earlier days; 3 left for the home.');
+    expect(sentence).toBe('And 1 from earlier days; 3 left at home.');
   });
 
   it('with several households, the household is «esta casa» (bloque 12)', () => {

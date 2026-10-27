@@ -20,10 +20,8 @@ import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitc
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
-import { deleteShoppingItem } from '@/features/shopping/api';
 import { deleteItemWithUndo } from '@/features/shopping/deferredDelete';
-import { invalidateShoppingWhenIdle } from '@/features/shopping/offline';
-import { shoppingKey, useEditItem, useShoppingItems } from '@/features/shopping/queries';
+import { deleteItemNow, useEditItem, useShoppingItems } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -131,15 +129,7 @@ function EditShoppingItemScreen() {
     setDeleted(true);
     deleteItemWithUndo({
       id: item.id,
-      // Straight to the server: the sheet is gone by the time the notice goes.
-      remove: async (id) => {
-        await deleteShoppingItem(id);
-        // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
-        queryClient.setQueryData<ShoppingItem[]>(shoppingKey(householdId), (current) =>
-          current?.filter((entry) => entry.id !== id),
-        );
-        await invalidateShoppingWhenIdle(queryClient, householdId);
-      },
+      remove: (id) => deleteItemNow(queryClient, householdId, id),
       notify,
       ms: noticeDuration({ action: true, screenReader: isScreenReaderOn() }),
       schedule: (fn, ms) => {

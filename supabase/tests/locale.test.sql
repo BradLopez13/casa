@@ -74,9 +74,9 @@ select public.accept_invite(:'inv_token');
 select tests.clear_auth();
 
 select is((select title || ' | ' || body from private.push_outbox where recipient_id = :'eli' and kind = 'member_joined'),
-          'Someone new in the household | Berta joined Piso 4B', 'English member_joined');
+          'Someone new at home | Berta joined Piso 4B', 'English member_joined');
 select is((select title || ' | ' || body from private.push_outbox where recipient_id = :'ana' and kind = 'member_joined'),
-          'Alguien nuevo en el hogar | Berta se ha unido a Piso 4B', 'Spanish member_joined');
+          'Alguien nuevo en la casa | Berta se ha unido a Piso 4B', 'Spanish member_joined');
 select is((select count(*) from private.push_outbox where kind = 'member_joined'), 3::bigint,
           'one row per housemate, whatever the language');
 

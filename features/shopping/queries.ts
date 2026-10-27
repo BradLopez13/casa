@@ -127,15 +127,32 @@ export function useSetQuantity(householdId: string | undefined) {
   });
 }
 
-export function useDeleteItem(householdId: string | undefined) {
-  const queryClient = useQueryClient();
-  return useMutation<void, AppError, { id: string }>({
-    mutationKey: ['shopping', 'delete'],
-    scope: shoppingScope(householdId),
-    networkMode: 'online',
-    mutationFn: ({ id }) => deleteShoppingItem(id),
-    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
-  });
+/**
+ * Deletes a product once its «Deshacer» has gone (decisión 2, bloque 13), outside any screen: the
+ * product sheet is closed by then. In the household's queue, so it reaches the server after an add
+ * or a quantity still on its way; offline it fails at once and the product comes back.
+ */
+export function deleteItemNow(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  id: string,
+): Promise<void> {
+  return queryClient
+    .getMutationCache()
+    .build<void, AppError, void, unknown>(queryClient, {
+      mutationKey: ['shopping', 'delete'],
+      scope: shoppingScope(householdId),
+      mutationFn: () => deleteShoppingItem(id),
+      // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
+      onSuccess: () => {
+        if (householdId === undefined) return;
+        queryClient.setQueryData<ShoppingItem[]>(shoppingKey(householdId), (current) =>
+          current?.filter((entry) => entry.id !== id),
+        );
+      },
+      onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
+    })
+    .execute(undefined);
 }
 
 /**
