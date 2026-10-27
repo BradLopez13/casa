@@ -91,6 +91,19 @@ async function readStored(userId: string): Promise<Stored | null> {
   }
 }
 
+/**
+ * A queue this build cannot read (a newer schema, a broken write) is copied aside before saving
+ * starts, so the first save does not overwrite it: a later build can still read it.
+ */
+async function keepUnreadable(userId: string): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(queueKey(userId));
+    if (raw !== null) await AsyncStorage.setItem(`${queueKey(userId)}-unread`, raw);
+  } catch {
+    // Nothing else to do.
+  }
+}
+
 /** How many changes the person had waiting on this phone, without taking them in. */
 export async function countStoredQueue(userId: string): Promise<number> {
   return (await readStored(userId))?.length ?? 0;
@@ -105,8 +118,22 @@ export async function forgetQueue(userId: string): Promise<void> {
   }
 }
 
-const identity = (m: { mutationKey?: MutationKey; state: { variables?: unknown } }) =>
+type Identified = { mutationKey?: MutationKey; state: { variables?: unknown } };
+
+const identity = (m: Identified) =>
   JSON.stringify([m.mutationKey ?? null, m.state.variables ?? null]);
+
+/** `from` without one occurrence of each change also in `already`: repeats count, in order. */
+function minus<T extends Identified>(from: readonly T[], already: readonly Identified[]): T[] {
+  const left = new Map<string, number>();
+  for (const m of already) left.set(identity(m), (left.get(identity(m)) ?? 0) + 1);
+  return from.filter((m) => {
+    const n = left.get(identity(m)) ?? 0;
+    if (n === 0) return true;
+    left.set(identity(m), n - 1);
+    return false;
+  });
+}
 
 /**
  * Takes the person's stored queue into the cache, and the changes an older build kept inside the
@@ -124,22 +151,19 @@ export async function restoreQueue(queryClient: QueryClient, userId: string): Pr
   );
   const adopted = legacy.size > 0 ? queuedNow(queryClient, legacy) : [];
   for (const mutation of legacy) cache.remove(mutation);
-  const stored = (await readStored(userId)) ?? [];
-  const present = new Set(
-    cache
-      .findAll({ status: 'pending' })
-      .map((m) => identity({ mutationKey: m.options.mutationKey, state: m.state })),
-  );
-  const incoming: Stored = [];
-  for (const mutation of [...adopted, ...stored]) {
-    const id = identity(mutation);
-    if (present.has(id)) continue;
-    present.add(id);
-    incoming.push({
-      ...mutation,
-      scope: queueScope(mutation.mutationKey, mutation.state.variables) ?? mutation.scope,
-    });
-  }
+  const stored = await readStored(userId);
+  if (stored === null) await keepUnreadable(userId);
+  // The same change may be in two places (the cache an older build kept and its own key, or the
+  // cache already holding it): taken once. Within one source a repeat is a real change (bought,
+  // put back, bought again), so repeats are counted, never collapsed.
+  const merged = [...(stored ?? []), ...minus(adopted, stored ?? [])];
+  const present = cache
+    .findAll({ status: 'pending' })
+    .map((m) => ({ mutationKey: m.options.mutationKey, state: m.state }));
+  const incoming: Stored = minus(merged, present).map((mutation) => ({
+    ...mutation,
+    scope: queueScope(mutation.mutationKey, mutation.state.variables) ?? mutation.scope,
+  }));
   if (incoming.length > 0) hydrate(queryClient, { mutations: incoming, queries: [] });
   return cache.findAll({ status: 'pending' }).filter((m) => isQueued(m.options.mutationKey)).length;
 }

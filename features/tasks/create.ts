@@ -1,4 +1,5 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
+import { QUEUED_META } from '@/data/query/queue';
 import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import type { AppError } from '@/data/supabase/errors';
@@ -57,6 +58,7 @@ export function buildCreateOptions(
   return {
     mutationKey: CREATE_KEY,
     scope: TASKS_SCOPE,
+    meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
@@ -94,8 +96,8 @@ export function buildCreateOptions(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateTasksWhenIdle(queryClient);
+    onSettled: (_id, _error, { householdId }) => {
+      void invalidateTasksWhenIdle(queryClient, householdId);
     },
   };
 }

@@ -75,6 +75,18 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
     };
   }, [userId]);
   if (status === 'loading') return null;
+  // The person's queue comes back from its own key (and an older build's from the cache),
+  // whatever happened to the cache, and goes on.
+  const afterRestore = () => {
+    restored.current = buster;
+    void (async () => {
+      if (userId) {
+        await restoreQueue(queryClient, userId).catch(() => 0);
+        startSavingQueue(userId);
+      }
+      await resumeQueues(queryClient);
+    })();
+  };
   return (
     <PersistQueryClientProvider
       key={buster}
@@ -87,18 +99,9 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
       }}
       // Not awaited: the provider stays in its restoring state until onSuccess settles, and the
       // queues may take as long as the connection does.
-      onSuccess={() => {
-        restored.current = buster;
-        // The person's queue comes back from its own key (and an older build's from the cache),
-        // whatever happened to the cache, and goes on.
-        void (async () => {
-          if (userId) {
-            await restoreQueue(queryClient, userId).catch(() => 0);
-            startSavingQueue(userId);
-          }
-          await resumeQueues(queryClient);
-        })();
-      }}
+      onSuccess={afterRestore}
+      // A cache that cannot be read is dropped; the queue, in its own key, still comes back.
+      onError={afterRestore}
     >
       {children}
     </PersistQueryClientProvider>

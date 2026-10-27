@@ -284,7 +284,11 @@ describe('buildShoppingMutationDefaults', () => {
       bought({ id: 'a', householdId: 'h', bought: true, userId: 'me' }),
     ]);
     const keys = spy.mock.calls.map((c) => c[0]?.queryKey);
-    expect(keys).toEqual([['shopping'], ['shopping-history']]);
+    // Only that household's (bloque 13).
+    expect(keys).toEqual([
+      ['shopping', 'h'],
+      ['shopping-history', 'h'],
+    ]);
   });
 });
 

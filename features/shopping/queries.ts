@@ -106,7 +106,7 @@ export function useEditItem(householdId: string | undefined) {
     scope: shoppingScope(householdId),
     networkMode: 'online',
     mutationFn: ({ id, name, quantity }) => updateShoppingItem(id, name, quantity),
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
 
@@ -125,7 +125,7 @@ export function useDeleteItem(householdId: string | undefined) {
     scope: shoppingScope(householdId),
     networkMode: 'online',
     mutationFn: ({ id }) => deleteShoppingItem(id),
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
 
@@ -152,7 +152,7 @@ export function useClearBought(householdId: string | undefined) {
     onError: (_error, { householdId }, context) => {
       if (context?.before) queryClient.setQueryData(shoppingKey(householdId), context.before);
     },
-    onSettled: () => invalidateShoppingWhenIdle(queryClient),
+    onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
 

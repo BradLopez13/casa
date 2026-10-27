@@ -27,13 +27,13 @@ function report(error: unknown, key: readonly unknown[] | undefined, queued: boo
   if (found) reporter(error, found);
 }
 
-/** The app's one query client. A queued mutation is one with a scope (shopping, tasks). */
+/** The app's one query client. A queued mutation says so in its meta (`QUEUED_META`). */
 export const queryClient = new QueryClient({
   defaultOptions: appQueryDefaults,
   queryCache: new QueryCache({ onError: (error, query) => report(error, query.queryKey, false) }),
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) =>
-      report(error, mutation.options.mutationKey, mutation.options.scope !== undefined),
+      report(error, mutation.options.mutationKey, mutation.meta?.queued === true),
   }),
 });
 

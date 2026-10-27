@@ -9,17 +9,19 @@ export function setSessionUser(userId: string | null | undefined): void {
   current = userId;
 }
 
-let signingOut = false;
+/** How long an asked sign-out waits for its SIGNED_OUT: a failed one must not mark a later one. */
+const SIGNING_OUT_MS = 30_000;
+let signingOutAt = -Infinity;
 
 /** The person asked to sign out (Ajustes, deleting the account): the SIGNED_OUT that follows is theirs. */
-export function markSigningOut(): void {
-  signingOut = true;
+export function markSigningOut(now = Date.now()): void {
+  signingOutAt = now;
 }
 
-/** Whether the sign-out just seen was asked for; asking again starts over. */
-export function consumeSigningOut(): boolean {
-  const asked = signingOut;
-  signingOut = false;
+/** Whether the sign-out just seen was asked for (in the last 30 s); asking again starts over. */
+export function consumeSigningOut(now = Date.now()): boolean {
+  const asked = now - signingOutAt < SIGNING_OUT_MS;
+  signingOutAt = -Infinity;
   return asked;
 }
 

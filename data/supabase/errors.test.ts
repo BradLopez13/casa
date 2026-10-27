@@ -98,7 +98,7 @@ describe('isTransient', () => {
 
   it('keeps what the server never answered, and what it answered while unable to', () => {
     expect(isTransient(new AppError('NETWORK'), true)).toBe(true);
-    for (const status of [500, 502, 503, 504, 408, 429]) {
+    for (const status of [502, 503, 504, 408, 429]) {
       expect(isTransient(answer(status), true)).toBe(true);
     }
   });
@@ -116,6 +116,8 @@ describe('isTransient', () => {
 
   it('takes anything else the server says as final', () => {
     expect(isTransient(answer(400, 'P0001'), true)).toBe(false);
+    // A function broken by a migration answers 500 every time.
+    expect(isTransient(answer(500, 'XX000'), true)).toBe(false);
     expect(isTransient(answer(400, '23505'), true)).toBe(false);
     expect(isTransient(answer(404, 'PGRST202'), true)).toBe(false);
     expect(isTransient(new AppError('ITEM_NOT_FOUND'), true)).toBe(false);

@@ -4,6 +4,7 @@ import {
   countStoredQueue,
   forgetQueue,
   saveQueue,
+  savingQueueOf,
   stopSavingQueue,
 } from '@/features/offline/queueStore';
 import { releasePushLocally } from '@/features/push/registration';
@@ -28,6 +29,9 @@ export async function handleSignedOut({
   voluntary: boolean;
   notify: (message: string) => void;
 }): Promise<void> {
+  // Only a queue already restored is in the cache: saving one still being restored (or never
+  // restored) would save nothing over the person's stored queue.
+  const owned = previous !== null && savingQueueOf(previous);
   stopSavingQueue();
   if (voluntary) {
     forgetCachedData(queryClient);
@@ -35,7 +39,7 @@ export async function handleSignedOut({
     return;
   }
   // Taken from the cache before it is cleared: the last tap may not have been saved yet.
-  const kept = previous ? saveQueue(queryClient, previous).catch(() => undefined) : undefined;
+  const kept = owned ? saveQueue(queryClient, previous).catch(() => undefined) : undefined;
   forgetCachedData(queryClient);
   await Promise.all([kept, releasePushLocally().catch(() => undefined)]);
   if (!previous) return;

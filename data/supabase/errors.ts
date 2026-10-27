@@ -108,6 +108,8 @@ export function toAppError(e: unknown, status?: number): AppError {
  * (`PGRST003`), a serialization clash or deadlock (`40001`, `40P01`) and a statement cut short
  * (`57014`).
  */
+const TRANSIENT_STATUSES: ReadonlySet<number> = new Set([502, 503, 504, 408, 429]);
+
 const TRANSIENT_SERVER_CODES: ReadonlySet<string> = new Set([
   'PGRST301',
   'PGRST003',
@@ -118,14 +120,15 @@ const TRANSIENT_SERVER_CODES: ReadonlySet<string> = new Set([
 
 /**
  * Whether a queued change that got this error should be tried again (bloque 13, P2-2): no answer
- * at all, a server that could not answer (5xx, 408, 429) or one of the codes that pass on their
- * own; a permission denied too, but only without a session, when supabase-js sent the request
- * with the anonymous key because the refresh failed. Anything else the server says is final.
+ * at all, a server that could not answer (502, 503, 504, 408, 429) or one of the codes that pass
+ * on their own; a permission denied too, but only without a session, when supabase-js sent the
+ * request with the anonymous key because the refresh failed. Anything else the server says is
+ * final, a plain 500 included: an RPC broken by a migration would hold the queue for a week.
  */
 export function isTransient(error: AppError, signedIn: boolean): boolean {
   if (error.code === 'NETWORK') return true;
   const { status, serverCode } = error;
-  if (status !== undefined && (status >= 500 || status === 408 || status === 429)) return true;
+  if (status !== undefined && TRANSIENT_STATUSES.has(status)) return true;
   if (serverCode === undefined) return false;
   if (TRANSIENT_SERVER_CODES.has(serverCode)) return true;
   return serverCode === '42501' && !signedIn;

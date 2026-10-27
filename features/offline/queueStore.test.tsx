@@ -122,6 +122,64 @@ describe('the queue on the device (bloque 13, P2-3)', () => {
   });
 });
 
+describe('the queue on the device keeps every change (review of bloque 13)', () => {
+  /** Bought, put back and bought again offline: three changes, not two. */
+  function queueBought(client: QueryClient, bought: boolean) {
+    void client
+      .getMutationCache()
+      .build(client, {
+        mutationKey: ['shopping', 'bought'],
+        networkMode: 'online',
+        scope: queueScope(['shopping', 'bought'], { householdId: 'casa' }),
+        mutationFn: () => Promise.resolve(),
+      })
+      .execute({ id: 'p1', householdId: 'casa', bought, userId: 'ana' })
+      .catch(() => undefined);
+  }
+  const boughtValues = (client: QueryClient) =>
+    client
+      .getMutationCache()
+      .findAll({ status: 'pending' })
+      .map((m) => (m.state.variables as { bought: boolean }).bought);
+
+  it('restores a repeated change as many times as it was made', async () => {
+    const before = new QueryClient();
+    for (const bought of [true, false, true]) queueBought(before, bought);
+    await saveQueue(before, 'ana');
+    const after = new QueryClient();
+    expect(await restoreQueue(after, 'ana')).toBe(3);
+    expect(boughtValues(after)).toEqual([true, false, true]);
+  });
+
+  it('takes an older build’s queue and its own key once, repeats included', async () => {
+    const client = new QueryClient();
+    for (const bought of [true, false, true]) queueBought(client, bought);
+    await saveQueue(client, 'ana');
+    // The cache an older build kept holds the same three, in the one old queue.
+    const restarted = new QueryClient();
+    for (const bought of [true, false, true]) {
+      void restarted
+        .getMutationCache()
+        .build(restarted, {
+          mutationKey: ['shopping', 'bought'],
+          networkMode: 'online',
+          scope: { id: 'shopping' },
+          mutationFn: () => Promise.resolve(),
+        })
+        .execute({ id: 'p1', householdId: 'casa', bought, userId: 'ana' })
+        .catch(() => undefined);
+    }
+    expect(await restoreQueue(restarted, 'ana')).toBe(3);
+  });
+
+  it('copies a queue it cannot read aside before anything is saved over it', async () => {
+    const unread = JSON.stringify({ v: QUEUE_SCHEMA + 1, mutations: [{}] });
+    store.set(queueKey('ana'), unread);
+    await restoreQueue(new QueryClient(), 'ana');
+    expect(store.get(`${queueKey('ana')}-unread`)).toBe(unread);
+  });
+});
+
 describe('queueScope (bloque 13, Aud P3-1)', () => {
   it('gives each household its own queue, per kind', () => {
     expect(queueScope(['shopping', 'bought'], { householdId: 'casa' })).toEqual({

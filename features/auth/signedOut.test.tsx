@@ -5,7 +5,9 @@ import {
   countStoredQueue,
   queueKey,
   queueScope,
+  saveQueue,
   startSavingQueue,
+  stopSavingQueue,
 } from '@/features/offline/queueStore';
 import { t } from '@/i18n';
 import { handleSignedOut } from './signedOut';
@@ -73,6 +75,21 @@ describe('handleSignedOut (bloque 13, P2-3)', () => {
     expect(await countStoredQueue('ana')).toBe(1);
     expect(notify).toHaveBeenCalledWith(t('auth.signedOutUnsentOne'));
     expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unasked sign-out before the queue is restored leaves the stored queue alone', async () => {
+    // Stored by the last session; this one has not taken it in yet.
+    await saveQueue(withQueuedAdd(), 'ana');
+    stopSavingQueue();
+    const notify = vi.fn();
+    await handleSignedOut({
+      queryClient: new QueryClient(),
+      previous: 'ana',
+      voluntary: false,
+      notify,
+    });
+    expect(await countStoredQueue('ana')).toBe(1);
+    expect(notify).toHaveBeenCalledWith(t('auth.signedOutUnsentOne'));
   });
 
   it('an unasked sign-out with nothing queued says nothing', async () => {

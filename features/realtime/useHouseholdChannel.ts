@@ -1,4 +1,5 @@
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { touches } from '@/data/query/queue';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 import { supabase } from '@/data/supabase/client';
@@ -31,20 +32,6 @@ const client: ChannelClient<RealtimeChannel> = {
   },
 };
 
-/**
- * Whether a mutation touches this household: its queue says so, or its variables do; one that
- * names no household (an edit by id) counts, as before, rather than risk overwriting its change.
- */
-function mutationOf(
-  m: { options: { scope?: { id: string } }; state: { variables?: unknown } },
-  householdId: string,
-): boolean {
-  const scope = m.options.scope?.id;
-  if (scope?.includes(':')) return scope.endsWith(`:${householdId}`);
-  const named = (m.state.variables as { householdId?: unknown } | undefined)?.householdId;
-  return typeof named !== 'string' || named === householdId;
-}
-
 // A remount waits for the previous channel to be removed: supabase.channel() would
 // otherwise hand back the one still closing. The chain never rejects.
 let previousRemoval: Promise<unknown> = Promise.resolve();
@@ -68,7 +55,7 @@ export function useHouseholdChannel(householdId: string | undefined): void {
       if (kind !== 'tasks' && kind !== 'shopping') return false;
       return (
         queryClient.isMutating({
-          predicate: (m) => m.options.mutationKey?.[0] === kind && mutationOf(m, householdId),
+          predicate: (m) => m.options.mutationKey?.[0] === kind && touches(m, householdId),
         }) > 0
       );
     };
