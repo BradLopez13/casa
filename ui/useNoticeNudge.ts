@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { useNoticeShown } from './components/noticeContext';
+import { useNoticeNudges, useNoticeShown } from './components/noticeContext';
 import { NOTICE_CLEARANCE, noticeScroll, wholeDoor } from './noticeClearance';
 import { useReduceMotion } from './a11y';
 import { DOOR_HANDLE_OVERHANG } from './tokens';
@@ -30,6 +30,9 @@ const DOOR_SLACK = 8;
  */
 export function useNoticeNudge(scrollList: (y: number, animated: boolean) => void) {
   const shown = useNoticeShown();
+  // A notice whose note left the list (to the tray, deleted) leaves the room at the end but moves
+  // nothing: there is nothing to uncover.
+  const nudges = useNoticeNudges();
   const basePadding = useBaseListEndPadding();
   const reduceMotion = useReduceMotion();
   const [endPadding, setEndPadding] = useState(0);
@@ -57,9 +60,9 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   }, []);
 
   useLayoutEffect(() => {
-    pending.current = shown;
+    pending.current = shown && nudges;
     if (shown) {
-      touched.current = false;
+      if (nudges) touched.current = false;
       return;
     }
     const was = nudged.current;
@@ -73,8 +76,10 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
       furthest: Math.max(0, shrunk - viewport.current),
       door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
     });
-    if (Math.abs(target - offset.current) > 1) scrollTo(target);
-  }, [shown, scrollTo]);
+    // Always told where to be: a shrinking end clamps the list without a scroll event, so where
+    // it says it is may be stale (seen on the .51).
+    scrollTo(target);
+  }, [shown, nudges, scrollTo]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offset.current = e.nativeEvent.contentOffset.y;
@@ -114,9 +119,7 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
       });
       if (scroll === null) {
         nudged.current = null;
-        if (was !== null && !touched.current && Math.abs(offset.current - from) > 1) {
-          scrollTo(from);
-        }
+        if (was !== null && !touched.current) scrollTo(from);
         return;
       }
       nudged.current = { from, to: scroll.to };
@@ -129,7 +132,10 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         setEndPadding(needed + ROOM_SLACK);
         return;
       }
-      if (!touched.current && Math.abs(offset.current - scroll.to) > 1) scrollTo(scroll.to);
+      // Told again every time, even when it should already be there: the list shrinking under
+      // the offset (the note done going to «Hechas hoy») clamps it with no scroll event, so the
+      // last offset heard is not where it is, and the door was left cut (crítica del 27, P1-1).
+      if (!touched.current) scrollTo(scroll.to);
     },
     [basePadding, endPadding, room, shown, scrollTo],
   );
