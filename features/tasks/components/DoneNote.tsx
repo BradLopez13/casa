@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -8,6 +7,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { isFresh, takeFresh } from '@/features/tasks/freshIds';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { UnsentMark } from '@/ui/components/UnsentMark';
 import { enterAnimation, layoutTransition, tiltFor } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { displayFontBold, magnetSizes, MIN_TOUCH } from '@/ui/tokens';
@@ -119,14 +119,12 @@ export function DoneNote({ task, mark, name, byYou, today, unsent, onReopen }: P
               width when sent: inserting it into a note that is still laying itself out (a tap
               right after a quick add) crashed Fabric's mounting on Android. */}
           <View
-            testID={unsent ? `done-tray.${task.id}.pending` : undefined}
-            accessible={unsent}
+            accessible={false}
             accessibilityElementsHidden={!unsent}
-            importantForAccessibility={unsent ? 'yes' : 'no-hide-descendants'}
-            accessibilityLabel={unsent ? t('shopping.pending') : undefined}
-            style={{ alignSelf: 'center', width: unsent ? 16 : 0, overflow: 'hidden' }}
+            importantForAccessibility={unsent ? 'auto' : 'no-hide-descendants'}
+            style={unsent ? { alignSelf: 'center' } : { width: 0, overflow: 'hidden' }}
           >
-            <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
+            <UnsentMark testID={unsent ? `done-tray.${task.id}.pending` : undefined} />
           </View>
         </View>
       </Pressable>

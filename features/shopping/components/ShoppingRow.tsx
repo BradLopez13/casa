@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -15,6 +14,7 @@ import type { ProductIcon } from '@/domain/shopping/icons';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { t } from '@/i18n';
 import { Magnet } from '@/ui/components/Magnet';
+import { UnsentMark } from '@/ui/components/UnsentMark';
 import { FADE_MS, haptic } from '@/ui/motion';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
@@ -100,8 +100,8 @@ export function ShoppingRow({
     onToggle();
   };
 
-  // The quantity has its own stop, so the name says only the name.
-  const label = item.name;
+  // The quantity has its own stop, so the name says only the name, and whether it waits.
+  const label = unsent ? `${item.name}, ${t('shopping.pending').toLowerCase()}` : item.name;
   const nameStyle = {
     flex: 1,
     minHeight: MIN_TOUCH,
@@ -121,16 +121,20 @@ export function ShoppingRow({
         importantForAccessibility="no"
         style={{ marginRight: space(2) }}
       />
-      <Text
-        style={{
-          flex: 1,
-          color: bought ? colors.muted : colors.ink,
-          fontSize: 17,
-          textDecorationLine: bought ? 'line-through' : 'none',
-        }}
-      >
-        {item.name}
-      </Text>
+      {/* «Sin enviar» goes under the name, in words (bloque 13): beside the quantity it had no
+          room at a large text size. */}
+      <View style={{ flex: 1, gap: space(0.5) }}>
+        <Text
+          style={{
+            color: bought ? colors.muted : colors.ink,
+            fontSize: 17,
+            textDecorationLine: bought ? 'line-through' : 'none',
+          }}
+        >
+          {item.name}
+        </Text>
+        {unsent ? <UnsentMark testID={`shopping.item.${item.id}.pending`} /> : null}
+      </View>
       {bought && item.quantity ? (
         <Text
           // Shares the row with the name, so at a large text size it wraps rather than crowd it out.
@@ -247,16 +251,6 @@ export function ShoppingRow({
           onEdit={onOpen}
           flushRef={flushQuantity}
         />
-      ) : null}
-      {unsent ? (
-        <View
-          testID={`shopping.item.${item.id}.pending`}
-          accessible
-          accessibilityLabel={t('shopping.pending')}
-          style={{ marginLeft: space(2) }}
-        >
-          <Ionicons name="cloud-offline-outline" size={18} color={colors.muted} />
-        </View>
       ) : null}
       {bought ? (
         <View style={{ marginLeft: space(3) }}>

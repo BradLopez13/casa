@@ -275,6 +275,50 @@ describe('Hoy', () => {
     );
   });
 
+  // Bloque 13 (P1-2, P3-2): every note that waits says so, with the word, not only the done one.
+  it('offline, the done note says «Sin enviar» in words', async () => {
+    renderToday([task('Fregar', {})]);
+    onlineManager.setOnline(false);
+    fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
+    const mark = await screen.findByTestId('done-tray.Fregar.pending');
+    expect(mark.textContent).toContain(t('shopping.pending'));
+  });
+
+  it('offline, a note reopened is marked «Sin enviar» too', async () => {
+    renderToday([task('Fregar', { completedAt: `${today}T08:00:00.000Z`, completedBy: 'me' })]);
+    onlineManager.setOnline(false);
+    fireEvent.click(screen.getByTestId('done-tray.Fregar'));
+    const mark = await screen.findByTestId('task-note.Fregar.pending');
+    expect(mark.textContent).toContain(t('shopping.pending'));
+    expect(screen.getByTestId('task-note.Fregar').getAttribute('aria-label')).toContain(
+      t('shopping.pending').toLowerCase(),
+    );
+  });
+
+  it('offline, a note created with the quick add is marked «Sin enviar»', async () => {
+    renderToday([task('Fregar', {})]);
+    onlineManager.setOnline(false);
+    fireEvent.change(screen.getByTestId('today.quick-add'), { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('today.quick-add.submit'));
+    const note = await screen.findByText('Regar');
+    const id = note.closest('[data-testid^="task-note."]')?.getAttribute('data-testid');
+    expect(id).toBeTruthy();
+    expect(screen.getByTestId(`${id}.pending`).textContent).toContain(t('shopping.pending'));
+  });
+
+  it('a note the server has opens its sheet, a draft still on its way does not', () => {
+    renderToday([task('Fregar', {}), task('Regar', { draft: true })]);
+    fireEvent.click(screen.getByTestId('task-note.Fregar'));
+    expect(vi.mocked(router.push)).toHaveBeenCalledWith({
+      pathname: '/task/[id]',
+      params: { id: 'Fregar' },
+    });
+    vi.mocked(router.push).mockClear();
+    fireEvent.click(screen.getByTestId('task-note.Regar'));
+    expect(router.push).not.toHaveBeenCalled();
+    expect(screen.getByText(t('tasks.unsent'))).toBeTruthy();
+  });
+
   it('keeps the door handle hint back while the box one shows', () => {
     phoneSize();
     hintsOpen('refresh', 'complete');
