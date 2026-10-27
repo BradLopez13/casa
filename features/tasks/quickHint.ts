@@ -1,5 +1,5 @@
 import { quickParse, type QuickParseContext } from '@/domain/tasks/quick-parse';
-import { LARGE_TEXT } from '@/ui/door';
+import { isLargeText } from '@/ui/door';
 
 /** A run of the hint's example: `known` when the quick add would pick it out. */
 export type HintSegment = { text: string; known: boolean };
@@ -49,5 +49,5 @@ export function quickHintShown({
   hasNotes: boolean;
 }): boolean {
   if (!open) return false;
-  return fontScale < LARGE_TEXT || !hasNotes;
+  return !isLargeText(fontScale) || !hasNotes;
 }

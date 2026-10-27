@@ -1,4 +1,5 @@
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { isLargeText } from '@/ui/door';
 import type { MemberMark } from '@/domain/members/marks';
 import { toLocalDate } from '@/domain/tasks/dates';
 import { dayCountLabel } from '@/domain/tasks/strip';
@@ -33,7 +34,7 @@ export function DayList({ days, selected, onSelect, today, marks, names }: Props
   const { colors, radii, space } = useTheme();
   // Name and count grow with the system text; once a name may run to two lines, the number sits
   // level with its first line instead of floating in the middle.
-  const align = useWindowDimensions().fontScale > 1.3 ? 'flex-start' : 'center';
+  const align = isLargeText(useWindowDimensions().fontScale) ? 'flex-start' : 'center';
   const allSelected = selected === null;
   const all = days.reduce((sum, day) => sum + day.count, 0);
   return (
