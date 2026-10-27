@@ -69,7 +69,7 @@ Result: PASS
 
 | Nivel            | Qué prueba                                                                                                                                                                                     | Comando                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Cliente          | 1870 tests de Vitest en 181 archivos: dominio (recurrencia, fechas, alta rápida, normalización), caché y cola offline, Realtime, mapas de errores, esquemas, maquetación y reglas de DESIGN.md | `pnpm test`                     |
+| Cliente          | 1872 tests de Vitest en 181 archivos: dominio (recurrencia, fechas, alta rápida, normalización), caché y cola offline, Realtime, mapas de errores, esquemas, maquetación y reglas de DESIGN.md | `pnpm test`                     |
 | Render           | 34 archivos de render (`*.test.tsx`) con react-native-web en jsdom: las cuatro pestañas, hojas, Ajustes, la cola y la puerta                                                                   | `pnpm test`                     |
 | Base de datos    | 718 aserciones pgTAP en 29 archivos: permisos por rol, RLS, índices únicos, varias casas, licencias, tope de casas y prueba por persona, errores de cada RPC y grants                          | `pnpm db:start && pnpm db:test` |
 | De punta a punta | 26 flujos Maestro en un emulador de Android, más uno en inglés                                                                                                                                 | `pnpm e2e`                      |
