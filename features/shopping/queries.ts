@@ -1,3 +1,4 @@
+import { hiddenItems } from './deferredDelete';
 import {
   useMutation,
   useMutationState,
@@ -5,7 +6,7 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import {
@@ -66,9 +67,17 @@ export function shoppingHistoryQueryOptions(householdId: string) {
 
 export function useShoppingItems(householdId: string | undefined) {
   const queryClient = useQueryClient();
+  // A product deleted on screen stays out while its «Deshacer» lasts (decisión 2, bloque 13).
+  const hidden = useSyncExternalStore(hiddenItems.subscribe, hiddenItems.get);
+  const select = useCallback(
+    (items: ShoppingItem[]) =>
+      hidden.size === 0 ? items : items.filter((item) => !hidden.has(item.id)),
+    [hidden],
+  );
   return useQuery({
     ...shoppingItemsQueryOptions(queryClient, householdId as string),
     enabled: householdId !== undefined,
+    select,
   });
 }
 

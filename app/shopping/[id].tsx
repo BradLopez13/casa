@@ -1,7 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,12 +20,17 @@ import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitc
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { useIsOnline } from '@/data/query/online';
 import { shoppingErrorMessage } from '@/features/shopping/errors';
-import { useDeleteItem, useEditItem, useShoppingItems } from '@/features/shopping/queries';
+import { deleteShoppingItem } from '@/features/shopping/api';
+import { deleteItemWithUndo } from '@/features/shopping/deferredDelete';
+import { invalidateShoppingWhenIdle } from '@/features/shopping/offline';
+import { shoppingKey, useEditItem, useShoppingItems } from '@/features/shopping/queries';
 import { shoppingNameSchema, shoppingQuantitySchema } from '@/features/shopping/schemas';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
-import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { useNotice } from '@/ui/components/Notice';
+import { noticeDuration } from '@/ui/components/noticeTiming';
+import { isScreenReaderOn } from '@/ui/a11y';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
@@ -63,14 +70,16 @@ function EditShoppingItemScreen() {
   const found = itemsQuery.data?.find((item) => item.id === id && item.boughtAt === null);
 
   const edit = useEditItem(householdId);
-  const remove = useDeleteItem(householdId);
+  const queryClient = useQueryClient();
+  const notify = useNotice();
+  // Deleted: the list hides it at once, and the sheet closes on the last one seen.
+  const [deleted, setDeleted] = useState(false);
   // Only an item that is still pending can be edited. Keep the last one seen while a delete
-  // closes the modal (the refreshed list no longer has it), so it doesn't flash not-found.
+  // closes the modal (the list no longer has it), so it doesn't flash not-found.
   const [last, setLast] = useState<ShoppingItem | undefined>(found);
   if (found !== undefined && found !== last) setLast(found);
-  const item = found ?? (remove.isPending || remove.isSuccess ? last : undefined);
+  const item = found ?? (deleted ? last : undefined);
 
-  const [confirming, setConfirming] = useState(false);
   const locked = useRef(false);
   // Cancel isn't covered by the submit lock: only the first close goes back.
   const closed = useRef(false);
@@ -110,21 +119,51 @@ function EditShoppingItemScreen() {
   }
 
   // Saving or deleting locks the other, and a success keeps both locked while the modal closes.
-  const busy = edit.isPending || edit.isSuccess || remove.isPending || remove.isSuccess;
-  const failure = remove.error ?? edit.error;
+  const busy = edit.isPending || edit.isSuccess;
+  const failure = edit.error;
+
+  // Without a dialog, as a task (decisión 2 de Brad, 27 de octubre): the product leaves the list
+  // at once, «Producto borrado. Deshacer» shows, and the server deletes it when the notice goes.
+  const deleteNow = () => {
+    if (!online || locked.current) return;
+    locked.current = true;
+    edit.reset();
+    setDeleted(true);
+    deleteItemWithUndo({
+      id: item.id,
+      // Straight to the server: the sheet is gone by the time the notice goes.
+      remove: async (id) => {
+        await deleteShoppingItem(id);
+        // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
+        queryClient.setQueryData<ShoppingItem[]>(shoppingKey(householdId), (current) =>
+          current?.filter((entry) => entry.id !== id),
+        );
+        await invalidateShoppingWhenIdle(queryClient, householdId);
+      },
+      notify,
+      ms: noticeDuration({ action: true, screenReader: isScreenReaderOn() }),
+      schedule: (fn, ms) => {
+        const timer = setTimeout(fn, ms);
+        return () => clearTimeout(timer);
+      },
+      watchBackground: (flush) => {
+        const sub = AppState.addEventListener('change', (state) => {
+          if (state === 'background') flush();
+        });
+        return () => sub.remove();
+      },
+    });
+    close();
+  };
 
   // One submit at a time, checked synchronously: render-time state lags behind a quick double tap.
   const submit = (run: (done: { onSuccess: () => void; onError: () => void }) => void) => {
     if (locked.current) return;
     locked.current = true;
     run({
-      onSuccess: () => {
-        setConfirming(false);
-        close();
-      },
+      onSuccess: () => close(),
       onError: () => {
         locked.current = false;
-        setConfirming(false);
       },
     });
   };
@@ -140,24 +179,9 @@ function EditShoppingItemScreen() {
         error={failure ? shoppingErrorMessage(failure) : null}
         onCancel={close}
         onSave={(name, quantity) => {
-          remove.reset();
           submit((done) => edit.mutate({ id: item.id, name, quantity }, done));
         }}
-        onDelete={() => setConfirming(true)}
-      />
-      <ConfirmDialog
-        visible={confirming}
-        title={t('shopping.edit.deleteTitle')}
-        message={t('shopping.edit.deleteMessage')}
-        confirmLabel={t('shopping.edit.deleteAction')}
-        destructive
-        loading={remove.isPending}
-        onCancel={() => setConfirming(false)}
-        onConfirm={() => {
-          if (!online) return;
-          edit.reset();
-          submit((done) => remove.mutate({ id: item.id }, done));
-        }}
+        onDelete={deleteNow}
       />
     </>
   );
