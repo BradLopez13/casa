@@ -203,10 +203,8 @@ export default function ShoppingScreen() {
       heading={line?.text ?? ' '}
       headingNumber={line?.number}
       headingTestID="shopping.door-line"
-      // An empty list says one thing: the headline, without the hint under it.
-      secondary={
-        state === 'empty' ? undefined : t(several ? 'shopping.doorHintThis' : 'shopping.doorHint')
-      }
+      // Who sees what you add, also with the list empty, where it matters most (bloque 13).
+      secondary={t(several ? 'shopping.doorHintThis' : 'shopping.doorHint')}
     >
       {children}
     </DoorHeader>
@@ -239,7 +237,9 @@ export default function ShoppingScreen() {
         <ActivityIndicator color={colors.muted} accessibilityLabel={t('common.loading')} />
       </View>
     );
-  } else if (state === 'empty') {
+  } else if (state === 'empty' || (state === 'list' && pending.length === 0)) {
+    // Everything in the bag (back from the shop) keeps the note with its basket magnet and the
+    // usual items, as an empty list does (bloque 13, P2-5).
     stateView = (
       <View style={{ gap: space(4) }}>
         <EmptyList
@@ -401,7 +401,7 @@ function ShoppingSplit({
       left={
         <View style={pane}>
           <AddItemField entry={entry} />
-          {panes.leftState ? stateView : null}
+          {panes.leftState || pending.length === 0 ? stateView : null}
           {panes.pendingSheet ? (
             <ShoppingSheet flush pending={pending} bought={NO_ITEMS} {...sheet} />
           ) : null}

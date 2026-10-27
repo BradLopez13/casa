@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -136,18 +137,36 @@ export function ShoppingRow({
         {unsent ? <UnsentMark testID={`shopping.item.${item.id}.pending`} /> : null}
       </View>
       {bought && item.quantity ? (
-        <Text
-          // Shares the row with the name, so at a large text size it wraps rather than crowd it out.
+        // The scale before the value, as on the list and the product sheet (bloque 13).
+        <View
+          testID={`shopping.item.${item.id}.bought-quantity`}
           style={{
             flexShrink: 1,
             maxWidth: '50%',
-            color: colors.muted,
-            fontSize: 15,
-            fontVariant: ['tabular-nums'],
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space(1),
           }}
         >
-          {item.quantity}
-        </Text>
+          <Ionicons
+            name="scale-outline"
+            size={14}
+            color={colors.muted}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+          <Text
+            // Shares the row with the name, so at a large text size it wraps rather than crowd it.
+            style={{
+              flexShrink: 1,
+              color: colors.muted,
+              fontSize: 15,
+              fontVariant: ['tabular-nums'],
+            }}
+          >
+            {item.quantity}
+          </Text>
+        </View>
       ) : null}
     </>
   );

@@ -1,4 +1,5 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { router } from 'expo-router';
@@ -51,13 +52,13 @@ function item(id: string, patch: Partial<ShoppingItem> = {}): ShoppingItem {
 }
 
 /** Compra with the household cached; `items` undefined loads them through `listShoppingItems`. */
-function renderShopping(items?: ShoppingItem[]) {
+function renderShopping(items?: ShoppingItem[], history: HistoryEntry[] = []) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
   queryClient.setQueryData(membershipKey, membership);
   queryClient.setQueryData(membersKey('h'), members);
-  queryClient.setQueryData(shoppingHistoryKey('h'), []);
+  queryClient.setQueryData(shoppingHistoryKey('h'), history);
   if (items) queryClient.setQueryData(shoppingKey('h'), items);
   render(
     <QueryClientProvider client={queryClient}>
@@ -117,6 +118,30 @@ describe('Compra', () => {
     const clear = screen.getByTestId('shopping.clear');
     expect(clear.getAttribute('aria-label')).toBe(t('shopping.clear'));
     expect(clear.getAttribute('aria-disabled')).not.toBe('true');
+  });
+
+  // Bloque 13 (P2-5): back from the shop, everything in the bag kept the note away.
+  it('with everything in the bag, keeps the note with its basket and the usual items', () => {
+    const bread: HistoryEntry = {
+      name: 'Pan',
+      normalizedName: 'pan',
+      uses: 4,
+      lastUsedAt: '2026-10-20T08:00:00.000Z',
+    };
+    renderShopping(
+      [item('Leche', { boughtAt: '2026-10-21T08:00:00.000Z', boughtBy: 'me', quantity: '2' })],
+      [bread],
+    );
+    expect(screen.getByTestId('shopping.usual.pan')).toBeTruthy();
+    expect(screen.getByTestId('shopping.help')).toBeTruthy();
+    // The bag's quantity carries the scale, as the list's does.
+    const quantity = screen.getByTestId('shopping.item.Leche.bought-quantity');
+    expect(quantity.querySelector('[data-icon="scale-outline"]')).not.toBeNull();
+  });
+
+  it('says who sees what you add also with the list empty', () => {
+    renderShopping([]);
+    expect(screen.getByText(t('shopping.doorHint'))).toBeTruthy();
   });
 
   it('with nothing bought, there is no «Vaciar bolsa»', () => {
