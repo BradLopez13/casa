@@ -116,13 +116,16 @@ export function DoneNote({ task, mark, name, byYou, today, unsent, onReopen }: P
           )}
           {/* The same mark as a shopping row waiting for the connection; the time it shows is
               the tap's, and it stays when the change arrives. Always in the tree, folded to no
-              width when sent: inserting it into a note that is still laying itself out (a tap
-              right after a quick add) crashed Fabric's mounting on Android. */}
+              size when sent: inserting it into a note that is still laying itself out (a tap
+              right after a quick add) crashed Fabric's mounting on Android. Folded in height
+              too: at no width its words broke letter by letter and stretched the note (seen on
+              the .51, bloque 13). */}
           <View
+            testID={`done-tray.${task.id}.mark`}
             accessible={false}
             accessibilityElementsHidden={!unsent}
             importantForAccessibility={unsent ? 'auto' : 'no-hide-descendants'}
-            style={unsent ? { alignSelf: 'center' } : { width: 0, overflow: 'hidden' }}
+            style={unsent ? { alignSelf: 'center' } : { width: 0, height: 0, overflow: 'hidden' }}
           >
             <UnsentMark testID={unsent ? `done-tray.${task.id}.pending` : undefined} />
           </View>

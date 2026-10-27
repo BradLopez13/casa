@@ -284,6 +284,13 @@ describe('Hoy', () => {
     expect(mark.textContent).toContain(t('shopping.pending'));
   });
 
+  it('a sent done note keeps the mark folded to no size, so it stays compact', () => {
+    renderToday([task('Fregar', { completedAt: `${today}T08:00:00.000Z`, completedBy: 'me' })]);
+    const mark = screen.getByTestId('done-tray.Fregar.mark');
+    expect(getComputedStyle(mark).height).toBe('0px');
+    expect(getComputedStyle(mark).width).toBe('0px');
+  });
+
   it('offline, a note reopened is marked «Sin enviar» too', async () => {
     renderToday([task('Fregar', { completedAt: `${today}T08:00:00.000Z`, completedBy: 'me' })]);
     onlineManager.setOnline(false);
