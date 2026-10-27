@@ -21,7 +21,9 @@ const DOOR_SLACK = 8;
  * with room added at the list's end while the notice lasts if the list is too short to get there
  * (`endPadding`). When the notice goes, a list nobody touched goes back to where it was; one that
  * was touched stays, unless the shrinking end would clip it into a cut door, and then the door
- * comes back whole (DESIGN.md, «la puerta nunca se ve partida»).
+ * comes back whole (DESIGN.md, «la puerta nunca se ve partida»). A notice whose note left the
+ * list (`NoticeAction.leftList`: completed into the tray, deleted) leaves the room and moves
+ * nothing; a clip the list's own shrinking causes still never leaves the door cut.
  *
  * The door must be the first thing in the list's header. `scrollList` moves the list (a
  * SectionList through its scroll responder, a FlatList with `scrollToOffset`). Spread `listProps`
@@ -47,6 +49,8 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   const nudged = useRef<{ from: number; to: number } | null>(null);
   // Someone dragged the list while the notice was up: where it is now is theirs.
   const touched = useRef(false);
+  // Whether a notice was up at the last effect, to tell a notice going from no notice at all.
+  const showing = useRef(false);
   // The room at the end as laid out now: it lasts as long as the notice.
   const room = shown ? endPadding : 0;
 
@@ -58,28 +62,34 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   const scrollTo = useCallback((y: number) => {
     latest.current.scrollList(y, !latest.current.reduceMotion);
   }, []);
+  // Out whole means the handle too, which sits on the door's edge (seen on the .51).
+  const doorNow = useCallback(
+    () => ({ height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK }),
+    [],
+  );
 
   useLayoutEffect(() => {
     pending.current = shown && nudges;
+    const hid = showing.current && !shown;
+    showing.current = shown;
     if (shown) {
       if (nudges) touched.current = false;
       return;
     }
+    if (!hid) return;
     const was = nudged.current;
     nudged.current = null;
-    if (was === null) return;
     // The end is about to lose the pill's room and any extra: the list must not be clipped into
-    // a cut door by it.
+    // a cut door by it, whether the notice moved it or not (one whose note left the list did not).
     const shrunk = content.current - NOTICE_CLEARANCE - latest.current.endPadding;
     const target = wholeDoor({
-      offset: touched.current ? offset.current : was.from,
+      offset: was !== null && !touched.current ? was.from : offset.current,
       furthest: Math.max(0, shrunk - viewport.current),
-      door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
+      door: doorNow(),
     });
-    // Always told where to be: a shrinking end clamps the list without a scroll event, so where
-    // it says it is may be stale (seen on the .51).
-    scrollTo(target);
-  }, [shown, nudges, scrollTo]);
+    // Where the list already is stays untouched: a fling still running is the person's.
+    if (Math.abs(target - offset.current) > 1) scrollTo(target);
+  }, [shown, nudges, scrollTo, doorNow]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offset.current = e.nativeEvent.contentOffset.y;
@@ -96,15 +106,24 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   const onContentSizeChange = useCallback(
     (_width: number, height: number) => {
       content.current = height;
+      // A list that shrinks under its offset is clamped to its new end with no scroll event
+      // (Android): the last offset heard is no longer where it is. Taken as the list has it, or
+      // a second change while the notice lasts (the note done going to «Hechas hoy») thought the
+      // list was where it should be and left the door cut (crítica del 27, P1-1).
+      const before = offset.current;
+      offset.current = Math.min(before, Math.max(0, height - viewport.current));
+      const clipped = offset.current < before;
       const was = nudged.current;
-      if (was === null) {
-        if (!pending.current) {
-          // The room an earlier notice asked for goes with it.
-          if (!shown && endPadding !== 0) setEndPadding(0);
-          return;
-        }
-        pending.current = false;
+      // Nothing to work out (no notice moving the list, or one whose note left it replaced the
+      // one that did): only a clip into a cut door is undone, by bringing the door back whole.
+      if ((was === null && !pending.current) || (was !== null && !nudges)) {
+        const cut = doorNow();
+        if (clipped && offset.current > cut.slack && offset.current < cut.height) scrollTo(0);
+        // The room an earlier notice asked for goes with it.
+        if (!shown && endPadding !== 0) setEndPadding(0);
+        return;
       }
+      pending.current = false;
       // Worked out again from where the list was each time it changes while the notice lasts:
       // a note moving between sections, another one done, a refetch. Reopening from the tray
       // shrinks the list right after the notice shows, and then nothing needs moving any more.
@@ -114,12 +133,13 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         viewport: viewport.current,
         content: height - room,
         basePadding,
-        // Out whole means the handle too, which sits on the door's edge (seen on the .51).
-        door: { height: door.current + DOOR_HANDLE_OVERHANG, slack: DOOR_SLACK },
+        door: doorNow(),
       });
       if (scroll === null) {
         nudged.current = null;
-        if (was !== null && !touched.current) scrollTo(from);
+        if (was !== null && !touched.current && Math.abs(offset.current - from) > 1) {
+          scrollTo(from);
+        }
         return;
       }
       nudged.current = { from, to: scroll.to };
@@ -132,12 +152,9 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
         setEndPadding(needed + ROOM_SLACK);
         return;
       }
-      // Told again every time, even when it should already be there: the list shrinking under
-      // the offset (the note done going to «Hechas hoy») clamps it with no scroll event, so the
-      // last offset heard is not where it is, and the door was left cut (crítica del 27, P1-1).
-      if (!touched.current) scrollTo(scroll.to);
+      if (!touched.current && Math.abs(offset.current - scroll.to) > 1) scrollTo(scroll.to);
     },
-    [basePadding, endPadding, room, shown, scrollTo],
+    [basePadding, endPadding, nudges, room, shown, scrollTo, doorNow],
   );
 
   return {
