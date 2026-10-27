@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
-import { useUnsentTasks, type ToggleRequest } from '@/features/tasks/queries';
+import { useWaitingTasks, type ToggleRequest } from '@/features/tasks/queries';
 import { useHint } from '@/features/hints/hints';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { FirstUseHint } from '@/ui/components/FirstUseHint';
@@ -45,15 +45,16 @@ export function TaskRow({
   // One hint over the list at a time: the box first, then the swipe.
   const hint =
     !first || row.kind !== 'note' ? null : boxHint ? 'complete' : swipeHint ? 'swipe' : null;
-  const unsent = useUnsentTasks();
-  // A note created here and still waiting for the connection is not on the server yet: its sheet
-  // waits until it is (fase 10e). Ticking it off still works: it queues behind its create.
-  const openTask = (id: string) => {
-    if (unsent.has(id)) {
+  const waiting = useWaitingTasks();
+  // A note created here that the server has not confirmed yet is not there to edit: its sheet
+  // waits until it is (fase 10e). Ticking it off still works: it queues behind its create. What
+  // the server has opens, whatever the queue still holds (bloque 13, P1-2).
+  const openTask = (task: { id: string; draft?: true }) => {
+    if (task.draft) {
       notify(t('tasks.unsent'));
       return;
     }
-    router.push({ pathname: '/task/[id]', params: { id } });
+    router.push({ pathname: '/task/[id]', params: { id: task.id } });
   };
   return (
     <View style={{ paddingHorizontal: flush ? 0 : space(5) }}>
@@ -85,6 +86,7 @@ export function TaskRow({
           assigneeName={row.task.assigneeId ? names.get(row.task.assigneeId) : undefined}
           mine={row.task.assigneeId !== null && row.task.assigneeId === userId}
           busy={isBusy(row.task.id)}
+          unsent={waiting.has(row.task.id)}
           // Tapping the box or swiping completes the same way, and reopening too: all offer «Deshacer».
           onToggle={() =>
             row.task.completedAt === null
@@ -92,7 +94,7 @@ export function TaskRow({
               : reopenWithUndo({ toggle, notify, task: row.task })
           }
           onComplete={() => completeWithUndo({ toggle, notify, task: row.task })}
-          onOpen={() => openTask(row.task.id)}
+          onOpen={() => openTask(row.task)}
         />
       ) : (
         <DoneTray

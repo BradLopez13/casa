@@ -36,7 +36,12 @@ export function draftItem({ id, userId, input }: CreateVars, at = new Date()): T
     generatedFrom: null,
     createdBy: userId,
     createdAt: at.toISOString(),
+    draft: true,
   };
+}
+
+function withoutDraft({ draft: _draft, ...task }: TaskItem): TaskItem {
+  return task;
 }
 
 /**
@@ -69,6 +74,13 @@ export function buildCreateOptions(
         return [...current, draftItem(vars)];
       });
       return { added };
+    },
+    // The server has it: the note is no longer a draft, whatever the mutation's state says next
+    // (bloque 13: a sheet kept saying «Aún se está enviando» for a task already sent).
+    onSuccess: (_id, { id, householdId }) => {
+      queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
+        current?.map((task) => (task.id === id && task.draft ? withoutDraft(task) : task)),
+      );
     },
     // A new id is never on the server before its create: the note goes, also for a create
     // restored after a restart, which has no context.

@@ -14,13 +14,7 @@ import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitc
 import { TaskForm } from '@/features/tasks/components/TaskForm';
 import { taskErrorMessage } from '@/features/tasks/errors';
 import { deleteWithUndo } from '@/features/tasks/deferredDelete';
-import {
-  useSkipTask,
-  useTaskMutation,
-  useTasks,
-  useToggleTask,
-  useUnsentTasks,
-} from '@/features/tasks/queries';
+import { useSkipTask, useTaskMutation, useTasks, useToggleTask } from '@/features/tasks/queries';
 import { invalidateIfStale } from '@/features/tasks/toggle';
 import { completeWithUndo, reopenWithUndo } from '@/features/tasks/undo';
 import { markFresh } from '@/features/tasks/freshIds';
@@ -70,7 +64,6 @@ function EditTaskScreen() {
   const save = useTaskMutation(({ input }: { input: TaskInput }) => updateTask(id, input));
   const skip = useSkipTask(householdId);
   const toggler = useToggleTask(householdId, userId);
-  const unsent = useUnsentTasks();
   const close = useCloseModal('/today');
   // Switched to another household meanwhile (bloque 12): this task is the other's.
   useCloseOnHouseholdSwitch(householdId, close);
@@ -121,8 +114,8 @@ function EditTaskScreen() {
     skip.isSuccess ||
     toggling ||
     toggled ||
-    // Opened by a link while its create still waits: nothing to edit on the server yet.
-    unsent.has(task.id);
+    // Opened by a link before the server confirmed its create: nothing to edit there yet.
+    task.draft === true;
   const canSkip =
     task.recurrence !== null &&
     task.completedAt === null &&
