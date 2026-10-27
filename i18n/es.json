@@ -67,6 +67,8 @@
   "auth.signOutAction": "Cerrar sesión",
   "auth.signOutUnsent": "Tienes {count} cambios sin enviar. Si cierras sesión, se pierden.",
   "auth.signOutUnsentOne": "Tienes 1 cambio sin enviar. Si cierras sesión, se pierde.",
+  "auth.signedOutUnsentOne": "Se cerró tu sesión. Tu cambio sin enviar se enviará cuando vuelvas a entrar.",
+  "auth.signedOutUnsent": "Se cerró tu sesión. Tus {count} cambios sin enviar se enviarán cuando vuelvas a entrar.",
   "auth.signOutAnyway": "Cerrar igualmente",
   "auth.signOutWait": "Esperar",
   "auth.signOutFailed": "No se pudo cerrar la sesión. Inténtalo de nuevo.",

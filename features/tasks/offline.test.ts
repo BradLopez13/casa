@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '@/data/supabase/errors';
-import { persistDehydrateOptions } from '@/features/offline/persistence';
+import { persistDehydrateOptions, shouldQueueMutation } from '@/features/offline/persistence';
 import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, createTask, reopenTask } from './api';
 import { buildCreateOptions, CREATE_KEY, type CreateVars } from './create';
@@ -17,6 +17,9 @@ import { resumeTasksQueue } from './offline';
 import { buildToggleOptions, TOGGLE_KEY, type ToggleVars } from './toggle';
 
 vi.mock('./api', () => ({ createTask: vi.fn(), completeTask: vi.fn(), reopenTask: vi.fn() }));
+
+/** What a restart finds on the device: the cache, and the queue under its own key (bloque 13). */
+const onTheDevice = { ...persistDehydrateOptions, shouldDehydrateMutation: shouldQueueMutation };
 vi.mock('@/features/shopping/api', () => ({
   addShoppingItem: vi.fn(),
   setItemBought: vi.fn(),
@@ -43,9 +46,7 @@ function setup() {
 
 /** What the persister writes and reads back: a JSON round trip of the dehydrated cache. */
 function restart(from: QueryClient) {
-  const saved = JSON.parse(
-    JSON.stringify(dehydrate(from, persistDehydrateOptions)),
-  ) as DehydratedState;
+  const saved = JSON.parse(JSON.stringify(dehydrate(from, onTheDevice))) as DehydratedState;
   const next = setup();
   hydrate(next.queryClient, saved);
   return next;

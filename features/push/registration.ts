@@ -83,6 +83,22 @@ export function registerAndSave(
   return job;
 }
 
+/**
+ * A sign-out nobody asked for leaves no session to tell the server: the phone gives up its push
+ * token instead, so it stops getting that person's notices (titles, household names), and the next
+ * sign-in registers a new one. The server drops the old token when Expo reports it gone (bloque
+ * 13, Aud P2-3).
+ */
+export async function releasePushLocally(): Promise<void> {
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.unregisterForNotificationsAsync();
+  } catch {
+    // Best effort: at worst the notices stop when someone else registers this phone.
+  }
+  await clearPushRegistration();
+}
+
 /** Resolves when `promise` settles or after `ms`, whichever comes first. */
 function settleWithin(promise: Promise<void>, ms: number): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;

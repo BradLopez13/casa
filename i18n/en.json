@@ -67,6 +67,8 @@
   "auth.signOutAction": "Sign out",
   "auth.signOutUnsent": "You have {count} changes not sent yet. If you sign out, they are lost.",
   "auth.signOutUnsentOne": "You have 1 change not sent yet. If you sign out, it is lost.",
+  "auth.signedOutUnsentOne": "You were signed out. Your change not sent yet will go when you sign back in.",
+  "auth.signedOutUnsent": "You were signed out. Your {count} changes not sent yet will go when you sign back in.",
   "auth.signOutAnyway": "Sign out anyway",
   "auth.signOutWait": "Wait",
   "auth.signOutFailed": "Couldn't sign out. Try again.",

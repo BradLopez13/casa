@@ -9,6 +9,20 @@ export function setSessionUser(userId: string | null | undefined): void {
   current = userId;
 }
 
+let signingOut = false;
+
+/** The person asked to sign out (Ajustes, deleting the account): the SIGNED_OUT that follows is theirs. */
+export function markSigningOut(): void {
+  signingOut = true;
+}
+
+/** Whether the sign-out just seen was asked for; asking again starts over. */
+export function consumeSigningOut(): boolean {
+  const asked = signingOut;
+  signingOut = false;
+  return asked;
+}
+
 /** Whether someone is signed in, as far as the app knows: unknown at a cold start counts as yes. */
 export function isSignedIn(): boolean {
   return current !== null;

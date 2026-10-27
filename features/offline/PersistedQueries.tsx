@@ -15,6 +15,10 @@ import { buildCreateOptions, CREATE_KEY } from '@/features/tasks/create';
 import { buildToggleOptions, TOGGLE_KEY } from '@/features/tasks/toggle';
 import { useNotice } from '@/ui/components/Notice';
 import { persistBuster, persistDehydrateOptions, resumeQueues } from './persistence';
+import { restoreQueue, saveQueue, savingQueueOf, startSavingQueue } from './queueStore';
+
+/** A burst of taps is saved once, right after it: soon enough for a phone put away at once. */
+const QUEUE_SAVE_MS = 50;
 
 const appVersion = Constants.expoConfig?.version ?? '0';
 
@@ -48,9 +52,28 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
       if (state !== 'active' && restored.current === buster) {
         void saveCacheNow(queryClient, buster, persistDehydrateOptions);
       }
+      if (state !== 'active' && userId && savingQueueOf(userId)) {
+        void saveQueue(queryClient, userId).catch(() => undefined);
+      }
     });
     return () => subscription.remove();
-  }, [status, buster]);
+  }, [status, buster, userId]);
+  // The queue is saved on its own, at every change, not with the throttled cache (bloque 13).
+  useEffect(() => {
+    if (!userId) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = queryClient.getMutationCache().subscribe(() => {
+      if (!savingQueueOf(userId)) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (savingQueueOf(userId)) void saveQueue(queryClient, userId).catch(() => undefined);
+      }, QUEUE_SAVE_MS);
+    });
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [userId]);
   if (status === 'loading') return null;
   return (
     <PersistQueryClientProvider
@@ -66,7 +89,15 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
       // queues may take as long as the connection does.
       onSuccess={() => {
         restored.current = buster;
-        void resumeQueues(queryClient);
+        // The person's queue comes back from its own key (and an older build's from the cache),
+        // whatever happened to the cache, and goes on.
+        void (async () => {
+          if (userId) {
+            await restoreQueue(queryClient, userId).catch(() => 0);
+            startSavingQueue(userId);
+          }
+          await resumeQueues(queryClient);
+        })();
       }}
     >
       {children}
