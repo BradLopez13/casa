@@ -1,11 +1,41 @@
 import NetInfo from '@react-native-community/netinfo';
-import { focusManager, onlineManager, QueryClient } from '@tanstack/react-query';
+import {
+  focusManager,
+  MutationCache,
+  onlineManager,
+  QueryCache,
+  QueryClient,
+} from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 import { appQueryDefaults } from './defaults';
+import { errorReport, type ErrorReport } from '@/data/telemetry/queryErrors';
 import { markOnline } from './retry';
 
-/** The app's one query client. */
-export const queryClient = new QueryClient({ defaultOptions: appQueryDefaults });
+type Reporter = (error: unknown, report: ErrorReport) => void;
+let reporter: Reporter = () => undefined;
+
+/**
+ * Where a failed query or mutation worth knowing about goes (Sentry, from the root layout):
+ * unknown answers and queued changes the queue dropped (bloque 13, T-2; `errorReport`).
+ */
+export function reportQueryErrorsTo(next: Reporter): void {
+  reporter = next;
+}
+
+function report(error: unknown, key: readonly unknown[] | undefined, queued: boolean): void {
+  const found = errorReport(error, { key, queued });
+  if (found) reporter(error, found);
+}
+
+/** The app's one query client. A queued mutation is one with a scope (shopping, tasks). */
+export const queryClient = new QueryClient({
+  defaultOptions: appQueryDefaults,
+  queryCache: new QueryCache({ onError: (error, query) => report(error, query.queryKey, false) }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) =>
+      report(error, mutation.options.mutationKey, mutation.options.scope !== undefined),
+  }),
+});
 
 /** How long a cache kept on the device is good for. */
 export const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
