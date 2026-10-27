@@ -22,6 +22,7 @@ import {
   useInvites,
   useMembers,
   useMembership,
+  useSeveralHouseholds,
 } from '@/features/households/queries';
 import { useIsOnline } from '@/data/query/online';
 import { forgetHouseholdData } from '@/data/query/persist';
@@ -57,6 +58,7 @@ export default function MembersScreen() {
   const membership = useMembership().data;
   const householdId = membership?.householdId;
   const isOwner = membership?.role === 'owner';
+  const several = useSeveralHouseholds();
   const members = useMembers(householdId);
   const invites = useInvites(householdId);
   const invite = useHouseholdMutation(createInvite);
@@ -335,7 +337,14 @@ export default function MembersScreen() {
 
       <ConfirmDialog
         visible={pending !== null}
-        title={dialog ? t(dialog.title, { name: targetName }) : ''}
+        title={
+          dialog === null
+            ? ''
+            : pending?.kind === 'delete' && several && membership
+              ? // With more than one house, the irreversible says which (bloque 13, P3-10).
+                t('members.confirm.deleteTitleNamed', { household: membership.householdName })
+              : t(dialog.title, { name: targetName })
+        }
         message={
           dialog
             ? t(

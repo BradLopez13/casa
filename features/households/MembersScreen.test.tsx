@@ -12,7 +12,7 @@ import {
   type Member,
   type Membership,
 } from './api';
-import { invitesKey, membersKey, membershipKey } from './keys';
+import { householdsKey, invitesKey, membersKey, membershipKey } from './keys';
 
 vi.mock('@/features/auth/SessionProvider', () => ({
   useSession: () => ({ status: 'signed-in', userId: 'me' }),
@@ -44,10 +44,12 @@ function renderMembers({
   membership = owner,
   cached = members,
   invites = [],
+  households,
 }: {
   membership?: Membership;
   cached?: Member[] | null;
   invites?: ActiveInvite[] | null;
+  households?: Membership[];
 } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
@@ -55,6 +57,7 @@ function renderMembers({
   queryClient.setQueryData(membershipKey, membership);
   if (cached) queryClient.setQueryData(membersKey('h'), cached);
   if (invites) queryClient.setQueryData(invitesKey('h'), invites);
+  if (households) queryClient.setQueryData(householdsKey, households);
   render(
     <QueryClientProvider client={queryClient}>
       <NoticeProvider>
@@ -116,11 +119,21 @@ describe('Miembros', () => {
     expect(screen.getByRole('button', { name: t('members.leave') })).toBeTruthy();
   });
 
-  it('«Borrar hogar» asks before doing anything', () => {
+  it('«Borrar casa» asks before doing anything', () => {
     renderMembers();
     fireEvent.click(screen.getByTestId('members.delete-household'));
     expect(screen.getByTestId('members.confirm')).toBeTruthy();
     expect(screen.getByTestId('members.cancel')).toBeTruthy();
+  });
+
+  // Bloque 13 (P3-10): with more than one house, the irreversible says which.
+  it('with two houses, «Borrar casa» names the one it deletes', () => {
+    const other: Membership = { ...owner, householdId: 'mama', householdName: 'Casa de mamá' };
+    renderMembers({ households: [owner, other] });
+    fireEvent.click(screen.getByTestId('members.delete-household'));
+    expect(
+      screen.getByText(t('members.confirm.deleteTitleNamed', { household: owner.householdName })),
+    ).toBeTruthy();
   });
 
   it('the owner of a household with others cannot leave: it says to hand it over first', () => {
