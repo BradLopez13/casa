@@ -1,13 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '@/data/supabase/errors';
 import {
   markOnline,
   NETWORK_RETRY_LIMIT,
   NETWORK_RETRY_MAX_MS,
+  queuedFn,
   RECONNECT_RETRY_MS,
   RECONNECT_WINDOW_MS,
   retryDelayOnNetwork,
   retryOnNetwork,
+  retryQueuedNow,
 } from './retry';
 
 describe('retryOnNetwork', () => {
@@ -60,5 +62,83 @@ describe('retryDelayOnNetwork', () => {
       NETWORK_RETRY_MAX_MS,
     );
     expect(RECONNECT_RETRY_MS).toBe(1000);
+  });
+});
+
+describe('queuedFn', () => {
+  // Bloque 14.1 (T5): «Reintentar» only resumed what was paused; a change waiting between two tries
+  // waited for the timer already set, up to 15 s. The wait now lives in the change's own function,
+  // where «Reintentar» and the connection coming back cut it short.
+  it('goes at once the first time and waits between tries', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      const calls: number[] = [];
+      const fn = queuedFn((_vars: { id: string }) => {
+        calls.push(Date.now());
+        return Promise.resolve();
+      });
+      const vars = { id: 'a' };
+      const run = {};
+      const start = Date.now();
+      await fn(vars, run);
+      expect(calls).toEqual([start]);
+      const second = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(calls).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await second;
+      expect(calls).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tries again at once when asked (Reintentar) or when the connection comes back', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      let calls = 0;
+      const fn = queuedFn((_vars: object) => {
+        calls++;
+        return Promise.resolve();
+      });
+      const vars = {};
+      const run = {};
+      await fn(vars, run);
+      const second = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(1000);
+      await second;
+      const third = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(calls).toBe(2);
+      retryQueuedNow();
+      await vi.advanceTimersByTimeAsync(0);
+      await third;
+      expect(calls).toBe(3);
+      const fourth = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(calls).toBe(3);
+      markOnline();
+      await vi.advanceTimersByTimeAsync(0);
+      await fourth;
+      expect(calls).toBe(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('starts over on a new run (a change sent again after a restart, a direct call)', async () => {
+    let calls = 0;
+    const fn = queuedFn((_vars: object) => {
+      calls++;
+      return Promise.resolve();
+    });
+    const vars = {};
+    await fn(vars, {});
+    await fn(vars, {});
+    await fn(vars);
+    await fn(vars);
+    expect(calls).toBe(4);
   });
 });

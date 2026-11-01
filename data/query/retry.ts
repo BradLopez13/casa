@@ -23,6 +23,7 @@ let onlineSince = -Infinity;
  */
 export function markOnline(now = Date.now()): void {
   onlineSince = now;
+  retryQueuedNow();
 }
 
 /**
@@ -68,3 +69,53 @@ export const offlineFirstQueryOptions = {
   networkMode: 'offlineFirst',
   retry: retryOnceOnline,
 } as const;
+
+/** The waits of the queued changes between two tries, each with the way to cut it short. */
+const waits = new Set<() => void>();
+
+/**
+ * Cuts short every wait between two tries of a queued change: they try again now. «Reintentar»
+ * (`QueueBand`) and the connection coming back (`markOnline`) call it (bloque 14.1, T5).
+ */
+export function retryQueuedNow(): void {
+  for (const wake of [...waits]) wake();
+}
+
+/**
+ * How many times each run of a change has been tried, by the context TanStack gives its function:
+ * one object per run (`execute`), the same on every retry of that run.
+ */
+const tries = new WeakMap<object, number>();
+
+/**
+ * A queued change's function, with the wait between two tries inside it instead of in TanStack's
+ * `retryDelay` (which the queued changes set to 0): TanStack's timer cannot be cut short, and
+ * «Reintentar» waited for it, up to 15 s (bloque 14.1, T5). The first try goes at once; each next
+ * one waits `retryDelayOnNetwork`, or less if `retryQueuedNow` comes first. A change restored after
+ * a restart is a new run and starts over.
+ */
+export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
+  return async (vars, run) => {
+    if (run !== undefined) {
+      const done = tries.get(run) ?? 0;
+      tries.set(run, done + 1);
+      if (done > 0) await waitBetweenTries(retryDelayOnNetwork(done - 1));
+    }
+    return fn(vars);
+  };
+}
+
+/** The retry delay TanStack keeps for the queued changes: none, the wait is in `queuedFn`. */
+export const QUEUED_RETRY_DELAY = 0;
+
+function waitBetweenTries(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const wake = () => {
+      clearTimeout(timer);
+      waits.delete(wake);
+      resolve();
+    };
+    const timer = setTimeout(wake, ms);
+    waits.add(wake);
+  });
+}

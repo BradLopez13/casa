@@ -1,7 +1,12 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { QUEUED_META, touches } from '@/data/query/queue';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
-import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import {
+  offlineFirstQueryOptions,
+  QUEUED_RETRY_DELAY,
+  queuedFn,
+  retryOnNetwork,
+} from '@/data/query/retry';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
@@ -47,15 +52,6 @@ export type QuantityVars = {
   userId?: string;
 };
 export type QuantityContext = { previous: ShoppingItem | undefined };
-
-/**
- * Whether a shopping mutation still on its way marks its row as unsent. A quantity save is a
- * short online request: it only counts once it waits for the connection, so the icon does not
- * jump in beside the stepper on every save.
- */
-export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: boolean): boolean {
-  return mutationKey?.[1] === quantityKey[1] ? isPaused : true;
-}
 
 /**
  * The queued shopping mutations, add, bought and the quantity: theirs are the only shopping
@@ -190,11 +186,11 @@ export function buildShoppingMutationDefaults(
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, name, quantity, userId }: AddVars) => {
       assertQueuedBy(userId);
       return addShoppingItem(id, householdId, name, quantity);
-    },
+    }),
     onMutate: async (vars) => {
       const { id, householdId } = vars;
       const key = listKey(householdId);
@@ -239,11 +235,11 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, bought: value, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, bought: value, userId }: BoughtVars) => {
       assertQueuedBy(userId);
       return setItemBought(resolve(householdId, id), value);
-    },
+    }),
     onMutate: async ({ id, householdId, bought: value, userId }) => {
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -289,18 +285,20 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
-      assertQueuedBy(userId);
-      const target = resolve(householdId, id);
-      // Bought (here or by someone else) or gone from a list that is here before its turn:
-      // nothing left to change. Without the list in the cache it goes all the same, and the
-      // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
-      const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
-      const item = list?.find((i) => i.id === target);
-      if (list !== undefined && (!item || item.boughtAt !== null)) return;
-      await updateShoppingItem(target, name, value);
-    },
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(
+      async ({ id, householdId, name, quantity: value, userId }: QuantityVars) => {
+        assertQueuedBy(userId);
+        const target = resolve(householdId, id);
+        // Bought (here or by someone else) or gone from a list that is here before its turn:
+        // nothing left to change. Without the list in the cache it goes all the same, and the
+        // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
+        const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
+        const item = list?.find((i) => i.id === target);
+        if (list !== undefined && (!item || item.boughtAt !== null)) return;
+        await updateShoppingItem(target, name, value);
+      },
+    ),
     onMutate: async ({ id, householdId, quantity: value }) => {
       const key = listKey(householdId);
       const target = resolve(householdId, id);
