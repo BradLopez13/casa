@@ -31,7 +31,7 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: settings.delete-account
 - tapOn:
-    id: members.confirm
+    id: delete-account.confirm
 - extendedWaitUntil:
     visible:
       id: sign-in.email

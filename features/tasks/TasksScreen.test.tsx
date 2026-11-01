@@ -158,10 +158,22 @@ describe('Tareas', () => {
     });
   });
 
+  // Bloque 13 (P3-3): on «Hoy» the door says the day and the list shows what is done today.
+  it('on the «Hoy» pill, the door says «Hoy» and the list shows what was done today', () => {
+    renderTasks([
+      task('Fregar', {}),
+      task('Regar', { completedAt: new Date().toISOString(), completedBy: 'me' }),
+    ]);
+    fireEvent.click(screen.getByTestId(`tasks.pill.${today}`));
+    expect(screen.queryByText(t('tasks.allHeadline'))).toBeNull();
+    expect(screen.getByText(t('tasks.section.doneToday'))).toBeTruthy();
+    expect(screen.getByTestId('done-tray.Regar')).toBeTruthy();
+  });
+
   it('the door line starts by saying what the tab is for', () => {
     renderTasks([task('Fregar', {})]);
     const line = screen.getByText((text) => text.startsWith(t('tasks.allLine.purpose')));
-    expect(line.textContent?.startsWith('Todo lo del hogar, por día.')).toBe(true);
+    expect(line.textContent?.startsWith('Todo lo de la casa, por día.')).toBe(true);
   });
 
   // The list draws its first rows only (no layout in jsdom), so the five groups go in two renders.

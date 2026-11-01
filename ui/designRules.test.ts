@@ -48,6 +48,14 @@ function offenders(
 
 describe('design rules (DESIGN.md «Reglas»)', () => {
   // §14.2: radii come from `radii` (door 30, note 14, pill 999) or are circles (`size / 2`).
+  // Bloque 13 (P2-1): Android's 1.3f is 1.2999999523…, so the scale is read in one place.
+  it('the text scale is compared with the large step only through isLargeText', () => {
+    const found = offenders(sources, (line) =>
+      /fontScale\)?\s*(>=|<=|>|<)\s*(LARGE_TEXT|1\.3)|LARGE_TEXT\s*(>=|<=|>|<)/.test(line),
+    );
+    expect(found).toEqual([]);
+  });
+
   it('no numeric radius literal outside circles and documented decorative pieces', () => {
     const found = offenders(sources, (line) => {
       const value = /\b\w*[rR]adius:\s*(\d+(?:\.\d+)?)/.exec(line)?.[1];

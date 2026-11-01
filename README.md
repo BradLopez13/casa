@@ -40,7 +40,9 @@ Siguiente: publicación en TestFlight y en las pruebas internas de Google Play.
 
 **Una persona, varias casas.** Un índice único parcial sobre `household_members (household_id, user_id) where left_at is null` impide estar dos veces en la misma casa; en casas distintas, las que haga falta. Todo lo demás ya era por casa (tareas, compra, estancias, invitaciones, difusión por `household:{id}`), así que una persona en dos casas ve lo de cada una y nada de una tercera, y quien comparte una casa con ella no ve la otra. `my_households()` es lo que lista la app. La casa que se ve es una preferencia del móvil (`casa-active-household-<usuario>` en AsyncStorage), no del servidor; las colas sin red y la caché van por casa, así que cambiar de casa no toca lo que la otra tenga pendiente. `delete_account` exige pasar antes cada casa compartida que lleves y las nombra en el detalle de `OWNER_MUST_TRANSFER`.
 
-**Una licencia por casa, con el cobro apagado.** Cada casa tiene su licencia mensual en `household_licenses` (`complimentary`, `trial`, `active`, `past_due`, `canceled`), la paga quien la crea (`paid_by`) y se queda con la casa si se traspasa. Nadie la escribe desde el cliente: la crea un trigger al crear la casa y la cambia `apply_billing_event`, que solo puede llamar el servicio (la Edge Function `billing-webhook`, con la cabecera `Authorization` de RevenueCat). El interruptor es `private.app_settings.billing_enabled` (en la base, `false`; se cambia con SQL) y en la app `EXPO_PUBLIC_BILLING_ENABLED` (si ofrece «Pagar la licencia»; el SDK del proveedor no está instalado) y `EXPO_PUBLIC_LICENSE_PRICE` (el importe, nunca en el código). Con el cobro apagado toda casa está licenciada, `create_household` crea la licencia como `complimentary`, `start_household_checkout` responde `BILLING_DISABLED` y el webhook contesta 200 sin tocar nada. Encendido, una casa nueva empieza 14 días de prueba, y las RPC que escriben tareas, compra o invitaciones consultan `private.household_is_licensed` y responden `LICENSE_REQUIRED` cuando la licencia caducó (con 7 días de gracia para `past_due`). Leer, salir, traspasar y borrar no se bloquean nunca.
+**Una licencia por casa, con el cobro apagado.** Cada casa tiene su licencia mensual en `household_licenses` (`complimentary`, `trial`, `active`, `past_due`, `canceled`), la paga quien la crea (`paid_by`) y se queda con la casa si se traspasa. Nadie la escribe desde el cliente: la crea un trigger al crear la casa y la cambia `apply_billing_event`, que solo puede llamar el servicio (la Edge Function `billing-webhook`, con la cabecera `Authorization` de RevenueCat). El interruptor es `private.app_settings.billing_enabled` (en la base, `false`; se cambia con SQL) y en la app `EXPO_PUBLIC_BILLING_ENABLED` (si ofrece «Pagar la licencia»; el SDK del proveedor no está instalado) y `EXPO_PUBLIC_LICENSE_PRICE` (el importe, nunca en el código). Con el cobro apagado toda casa está licenciada, `create_household` crea la licencia como `complimentary`, `start_household_checkout` responde `BILLING_DISABLED` y el webhook contesta 200 sin tocar nada. El cobro se enciende con `private.enable_billing()`, nunca cambiando la columna a mano: las casas `complimentary` pasan a 14 días de prueba desde ese momento. Encendido, la primera casa que crea cada persona empieza 14 días de prueba (una prueba por persona, en `private.trial_grants`: borrar la casa no da otra), nadie puede estar en más de 10 casas (`TOO_MANY_HOUSEHOLDS`), y las RPC que escriben tareas, compra o invitaciones consultan `private.household_is_licensed` y responden `LICENSE_REQUIRED` cuando la licencia caducó (con 7 días de gracia para `past_due`). Leer, salir, traspasar y borrar no se bloquean nunca.
+
+**El modelo de cobro que permiten las tiendas (decidido, sin construir).** App Store y Google Play no dejan suscribirse dos veces al mismo producto, así que quien lleva dos casas no puede tener dos `household_monthly`. El cobro será un grupo de suscripción por persona con un nivel por número de casas (`casas_1`, `casas_2`…, precio n × importe): «una licencia por casa» se mantiene en lo que paga la persona. Hasta que `apply_billing_event` sepa qué casas cubre cada suscripción, el cobro no se enciende (decisión de Brad, 27 de octubre).
 
 **Un solo propietario.** Otro índice único parcial, sobre `household_id where role = 'owner' and left_at is null`. Si quedan otros miembros, el último propietario no puede salir sin transferir antes (`OWNER_MUST_TRANSFER`); si está solo, salir borra el hogar.
 
@@ -56,21 +58,21 @@ Siguiente: publicación en TestFlight y en las pruebas internas de Google Play.
 
 ## Tests
 
-Resultado de `pnpm db:test` contra el Supabase local (28 archivos, uno por área: hogares y varias casas, invitaciones, miembros, licencias, tareas y recurrencia, compra, difusión en tiempo real, avisos, cuenta y el guard de permisos):
+Resultado de `pnpm db:test` contra el Supabase local (29 archivos, uno por área: hogares y varias casas, el tope de casas y la prueba por persona, invitaciones, miembros, licencias, tareas y recurrencia, compra, difusión en tiempo real, avisos, cuenta y el guard de permisos):
 
 ```
 $ supabase test db
 All tests successful.
-Files=28, Tests=701
+Files=29, Tests=718
 Result: PASS
 ```
 
 | Nivel            | Qué prueba                                                                                                                                                                                     | Comando                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Cliente          | 1353 tests de Vitest en 125 archivos: dominio (recurrencia, fechas, alta rápida, normalización), caché y cola offline, Realtime, mapas de errores, esquemas, maquetación y reglas de DESIGN.md | `pnpm test`                     |
-| Render           | 15 tests de render (`*.test.tsx`) con react-native-web en jsdom: estados de la lista de tareas, Hoy y el formulario de tarea                                                                   | `pnpm test`                     |
-| Base de datos    | 701 aserciones pgTAP en 28 archivos: permisos por rol, RLS, índices únicos, varias casas, licencias, errores de cada RPC, difusión por sentencia y grants                                      | `pnpm db:start && pnpm db:test` |
-| De punta a punta | 19 flujos Maestro en un emulador de Android, más uno en inglés                                                                                                                                 | `pnpm e2e`                      |
+| Cliente          | 1872 tests de Vitest en 181 archivos: dominio (recurrencia, fechas, alta rápida, normalización), caché y cola offline, Realtime, mapas de errores, esquemas, maquetación y reglas de DESIGN.md | `pnpm test`                     |
+| Render           | 34 archivos de render (`*.test.tsx`) con react-native-web en jsdom: las cuatro pestañas, hojas, Ajustes, la cola y la puerta                                                                   | `pnpm test`                     |
+| Base de datos    | 718 aserciones pgTAP en 29 archivos: permisos por rol, RLS, índices únicos, varias casas, licencias, tope de casas y prueba por persona, errores de cada RPC y grants                          | `pnpm db:start && pnpm db:test` |
+| De punta a punta | 26 flujos Maestro en un emulador de Android, más uno en inglés                                                                                                                                 | `pnpm e2e`                      |
 
 Los flujos de `e2e/` cubren el acceso (registro, entrar, recuperar la contraseña, ver la contraseña, volver), el hogar (crearlo, unirse con un enlace con y sin sesión, quitar a alguien, pasar el hogar), las tareas (crear y completar, repetir, editar, saltar y borrar, tareas típicas), la compra (lista, tiempo real con otra persona y cola sin conexión), varias casas (crear otra, cambiar, invitar, la licencia y unirse estando en dos), los ajustes de avisos, borrar la cuenta, el giro de pantalla y el idioma inglés (`e2e/locale/`). Cada flujo entra con su propio usuario de `supabase/e2e/fixtures.sql`, así que no comparten estado.
 
@@ -119,6 +121,16 @@ pnpm expo start
 ```
 
 En `.env` solo van la URL y la clave publishable; nunca la `service_role`.
+
+### Builds de prueba locales
+
+Una release local para los móviles de prueba sale siempre del mismo script, nunca a mano:
+
+```bash
+pnpm android:release
+```
+
+Lee `.env` y `.env.local`, regenera `android/` con `expo prebuild --clean` (una carpeta vieja conservaba `allowBackup="true"` aunque `app.json` dice `false`), borra el bundle JS que Gradle reutilizaría de una build anterior hecha para otro entorno, compila para `arm64-v8a` y, antes de dar el APK por bueno, comprueba que el bundle habla con el Supabase esperado y con ningún otro (`scripts/bundle-url.mjs`). Variables: `EXPECTED_SUPABASE_URL` si la URL que debe salir no es la de `.env`, `ARCH=x86_64` para un emulador y `EXPO_PUBLIC_APP_ENV` (por defecto `preview`). En Windows, desde un checkout de ruta corta (MAX_PATH).
 
 ### Builds de EAS
 

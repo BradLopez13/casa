@@ -66,4 +66,20 @@ describe('creating a task, queued like a shopping add (fase 10e)', () => {
     expect(queryClient.getQueryData<TaskItem[]>(key)).toEqual([]);
     expect(notify).toHaveBeenCalledTimes(1);
   });
+
+  // Bloque 13 (P1-2): «sin enviar» is what the server has not confirmed, not a mutation's state.
+  it('marks the note as a draft until the server confirms it', async () => {
+    const { queryClient, run } = setup();
+    queryClient.setQueryData<TaskItem[]>(key, []);
+    let answer: (id: string) => void = () => undefined;
+    vi.mocked(createTask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    void run();
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.draft).toBe(true),
+    );
+    answer('new');
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.draft).toBeUndefined(),
+    );
+  });
 });

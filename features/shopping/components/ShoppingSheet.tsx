@@ -360,9 +360,10 @@ export function EmptyList({
   onAdd: (name: string) => void;
 }) {
   const { colors, radii, noteEdge, shadows, space } = useTheme();
-  if (usual.length === 0) return null;
+  // The note and its basket stay with nothing usual yet (a new household): only what it says
+  // changes (seen on the .51, bloque 13; DESIGN.md, «El imán de Compra con la cesta»).
   return (
-    <View style={{ paddingTop: HANG }}>
+    <View testID="shopping.empty-note" style={{ paddingTop: HANG }}>
       <HangingMagnet left={space(3)} />
       <View
         style={{
@@ -376,7 +377,9 @@ export function EmptyList({
           ...noteEdge,
         }}
       >
-        <Text style={{ color: colors.muted, fontSize: 15 }}>{t('shopping.usualTitle')}</Text>
+        <Text style={{ color: colors.muted, fontSize: 15 }}>
+          {t(usual.length === 0 ? 'shopping.usualNone' : 'shopping.usualTitle')}
+        </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
           {usual.map((entry) => (
             <Pressable

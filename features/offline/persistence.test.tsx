@@ -32,4 +32,13 @@ describe('what goes on the device', () => {
     client.setQueryData(['invites', 'h'], []);
     expect(kept(client)).toEqual([]);
   });
+
+  // Bloque 13 (P2-3): an update or a new cache schema discards this cache; the queue is not in it.
+  it('leaves the queue out of the cache: it has its own key', () => {
+    const client = new QueryClient();
+    client
+      .getMutationCache()
+      .build(client, { mutationKey: ['shopping', 'add'] }, { status: 'pending' } as never);
+    expect(dehydrate(client, persistDehydrateOptions).mutations).toEqual([]);
+  });
 });

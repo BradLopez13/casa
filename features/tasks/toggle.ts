@@ -5,6 +5,7 @@ import { localDateIso } from '@/domain/tasks/dates';
 import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
+import { QUEUED_META, touches } from '@/data/query/queue';
 import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
@@ -29,16 +30,33 @@ type Context = { previous: TaskItem | undefined; successor: TaskItem | undefined
 
 export const TOGGLE_KEY = ['tasks', 'toggle'] as const;
 
-/**
- * Every queued task change (create, complete, reopen) shares one scope, as the shopping queue
- * does: a complete queued behind the create of the same task reaches the server after it.
- */
+/** The scope of the defaults, for a mutation that names no household (see `SHOPPING_SCOPE`). */
 export const TASKS_SCOPE = { id: 'tasks' };
 
-/** Several task changes can be on their way: refetch once, after the last one settles. */
-export async function invalidateTasksWhenIdle(queryClient: QueryClient): Promise<void> {
-  if (queryClient.isMutating({ mutationKey: ['tasks'] }) <= 1) {
-    await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+/**
+ * Each household's queued task changes (create, complete, reopen) share one scope, as its shopping
+ * queue does: a complete queued behind the create of the same task reaches the server after it,
+ * and another household's never waits behind them (bloque 13, Aud P3-1).
+ */
+export const tasksScope = (householdId: string | undefined) => ({
+  id: `tasks:${householdId ?? ''}`,
+});
+
+/**
+ * Several task changes of a household can be on their way: refetch its tasks once, after its last
+ * one settles; another household's queue no longer holds it back (bloque 13).
+ */
+export async function invalidateTasksWhenIdle(
+  queryClient: QueryClient,
+  householdId?: string,
+): Promise<void> {
+  const busy = queryClient.isMutating({
+    predicate: (m) => m.options.mutationKey?.[0] === 'tasks' && touches(m, householdId),
+  });
+  if (busy <= 1) {
+    await queryClient.invalidateQueries({
+      queryKey: householdId === undefined ? ['tasks'] : ['tasks', householdId],
+    });
   }
 }
 
@@ -86,6 +104,7 @@ export function buildToggleOptions(
   return {
     mutationKey: TOGGLE_KEY,
     scope: TASKS_SCOPE,
+    meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
@@ -133,8 +152,8 @@ export function buildToggleOptions(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateTasksWhenIdle(queryClient);
+    onSettled: (_data, _error, { householdId }) => {
+      void invalidateTasksWhenIdle(queryClient, householdId);
     },
   };
 }
@@ -164,7 +183,7 @@ export function runToggle(
   // Completed here: its note lands in the tray with the pin choreography.
   if (vars.done) markFresh(vars.id, 'done');
   // The notice already carries the error (onError): nothing else waits on this promise.
-  new MutationObserver(queryClient, options)
+  new MutationObserver(queryClient, { ...options, scope: tasksScope(vars.householdId) })
     .mutate({ ...vars, at: vars.at ?? new Date().toISOString() })
     .catch(() => undefined);
 }

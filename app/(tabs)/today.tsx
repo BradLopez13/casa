@@ -23,6 +23,7 @@ import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { LicenseBand } from '@/features/households/LicenseBand';
 import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { QueueBand } from '@/features/offline/QueueBand';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { paneMode } from '@/ui/panes';
@@ -129,7 +130,9 @@ export default function TodayScreen() {
       </DoorHeader>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
-      ) : null}
+      ) : (
+        <QueueBand testID="tasks.queue" />
+      )}
       <LicenseBand />
     </>
   );

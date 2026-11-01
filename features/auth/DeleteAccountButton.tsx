@@ -94,6 +94,7 @@ export function DeleteAccountButton({
         <ErrorText testID={`${testID}.error`}>{t('members.errors.UNKNOWN')}</ErrorText>
       ) : null}
       <ConfirmDialog
+        testID="delete-account"
         visible={confirming}
         title={t('settings.deleteAccountTitle')}
         message={

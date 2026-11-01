@@ -52,6 +52,15 @@ const COMPACT_MAX_SHARE = 0.4;
  */
 export const LARGE_TEXT = 1.3;
 const COMPACT_MAX_SHARE_LARGE_TEXT = 0.45;
+
+/**
+ * Whether the system text is at the «large» step or above: the one place that reads the scale
+ * against `LARGE_TEXT`. Android hands it over as a float (1.3f is 1.2999999523…), so it is taken to
+ * two decimals first; compared as it came, ×1.3 never counted as large text (bloque 13, P2-1).
+ */
+export function isLargeText(fontScale: number): boolean {
+  return Math.round(fontScale * 100) / 100 >= LARGE_TEXT;
+}
 /**
  * In one column the full door scrolls away with the list, so at the default text it may be taller
  * than a fixed one: only past half the window does it compact, a safety net for a low window. From
@@ -81,7 +90,7 @@ export function doorFor(
   fontScale = 1,
 ): Door {
   const fullDoor = FULL_DOOR_HEIGHT * Math.min(Math.max(1, fontScale), DOOR_MAX_SCALE);
-  const largeText = fontScale >= LARGE_TEXT;
+  const largeText = isLargeText(fontScale);
   const crowds =
     layout.twoPane || largeText
       ? fullDoor > windowHeight * COMPACT_MAX_SHARE

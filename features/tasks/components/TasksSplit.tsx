@@ -1,4 +1,6 @@
 import { View } from 'react-native';
+import { dayHeading } from '@/domain/tasks/labels';
+import { QueueBand } from '@/features/offline/QueueBand';
 import { DayList } from '@/features/tasks/components/DayList';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { TaskSections } from '@/features/tasks/components/TaskSections';
@@ -41,7 +43,12 @@ export function TasksSplit({
   };
   const door = (
     <>
-      <DoorHeader eyebrow={t('tasks.title')} heading={t('tasks.allHeadline')} secondary={doorLine}>
+      <DoorHeader
+        eyebrow={t('tasks.title')}
+        // A chosen day is what the door says, as in one column (bloque 13, P3-3).
+        heading={day === null ? t('tasks.allHeadline') : dayHeading(day, screen.today)}
+        secondary={doorLine}
+      >
         <MemberFilter
           members={screen.members}
           marks={screen.marks}
@@ -52,7 +59,9 @@ export function TasksSplit({
       </DoorHeader>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
-      ) : null}
+      ) : (
+        <QueueBand testID="tasks.queue" />
+      )}
       <LicenseBand />
     </>
   );

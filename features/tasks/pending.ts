@@ -46,7 +46,12 @@ export function withQueued(
     if (kind === CREATE_KEY[1]) {
       const vars = mutation.state.variables as CreateVars | undefined;
       if (!vars || vars.householdId !== householdId) continue;
-      if (!out.some((task) => task.id === vars.id)) out = [...out, draftItem(vars, at)];
+      if (!out.some((task) => task.id === vars.id)) {
+        // Sent while the list was being read: on the server already, just not in this read.
+        const sent = mutation.state.status === 'success';
+        const item = draftItem(vars, at);
+        out = [...out, sent ? { ...item, draft: undefined } : item];
+      }
     } else if (kind === TOGGLE_KEY[1]) {
       const vars = mutation.state.variables as ToggleVars | undefined;
       if (!vars || vars.householdId !== householdId) continue;

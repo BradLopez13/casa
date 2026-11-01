@@ -30,10 +30,14 @@ select public.register_push_token('ExponentPushToken[aaaaaaaaaa]', 'android');
 select is((select user_id from public.push_tokens where token = 'ExponentPushToken[aaaaaaaaaa]'),
           :'ana'::uuid, 'Ana registers a token and it is hers');
 
+-- A token is moved to someone else only once its owner has left it for 30 days (bloque 13).
+select tests.clear_auth();
+update public.push_tokens set updated_at = now() - interval '31 days'
+where token = 'ExponentPushToken[aaaaaaaaaa]';
 select tests.authenticate_as(:'bob');
 select public.register_push_token('ExponentPushToken[aaaaaaaaaa]', 'android');
 select is((select user_id from public.push_tokens where token = 'ExponentPushToken[aaaaaaaaaa]'),
-          :'bob'::uuid, 'registering the same token moves it to Bob');
+          :'bob'::uuid, 'registering a token left for 30 days moves it to Bob');
 
 select tests.authenticate_as(:'ana');
 select is((select count(*) from public.push_tokens), 0::bigint, 'Ana cannot read Bob''s tokens');

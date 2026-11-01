@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { pressedOpacity } from '../buttonLook';
-import { DOOR_MAX_SCALE, LARGE_TEXT, stripInDoor } from '../door';
+import { DOOR_MAX_SCALE, isLargeText, stripInDoor } from '../door';
 import { doorEdge } from '../positEdge';
 import { useTheme } from '../theme';
 import { displayFontBold, MIN_TOUCH } from '../tokens';
@@ -142,7 +142,7 @@ export function DoorHeader({
   const quickAddOpen = useHint('quickAdd');
   // From ×1.3 the quick add's example keeps quiet beside notes (`quickHintShown`): waiting for it
   // there would keep the handle's hint back for good.
-  const quickAddWaits = quickAddOpen && fontScale < LARGE_TEXT;
+  const quickAddWaits = quickAddOpen && !isLargeText(fontScale);
   const refreshHint = refreshOpen && !boxOpen && !quickAddWaits && handle;
   const right = gutter;
 

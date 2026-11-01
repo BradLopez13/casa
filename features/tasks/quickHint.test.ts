@@ -75,3 +75,9 @@ describe('quickHintShown', () => {
     expect(quickHintShown({ ...open, open: false, fontScale: 1, hasNotes: false })).toBe(false);
   });
 });
+
+describe('quickHintShown at the float 1.3 (bloque 13, P2-1)', () => {
+  it('keeps quiet beside notes at the scale Android hands over for 1.3', () => {
+    expect(quickHintShown({ open: true, fontScale: Math.fround(1.3), hasNotes: true })).toBe(false);
+  });
+});

@@ -32,7 +32,7 @@ appId: com.bradlopez13.casa
 - extendedWaitUntil:
     visible: Wanda
     timeout: 20000
-# A member manages nobody: no «⋯» on any note, and no «Borrar hogar»
+# A member manages nobody: no «⋯» on any note, and no «Borrar casa»
 - assertNotVisible:
     id: members.menu.*
 - assertNotVisible:
@@ -45,10 +45,10 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: members.leave
 - extendedWaitUntil:
-    visible: ¿Salir del hogar?
+    visible: ¿Salir de la casa?
     timeout: 5000
 - tapOn:
     id: members.confirm
 - extendedWaitUntil:
-    visible: Crea tu hogar
+    visible: Crea tu casa
     timeout: 20000

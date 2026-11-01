@@ -132,14 +132,15 @@ describe('Hoja de producto', () => {
     await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
   });
 
-  it('deleting asks first, then deletes and closes', async () => {
+  // Decisión 2 de Brad (27 de octubre, A): a product touches nobody but the list.
+  it('deleting closes at once with «Deshacer», and undoing keeps the product', () => {
     renderSheet([item('Leche')]);
     fireEvent.click(screen.getByTestId('shopping.edit.delete'));
-    expect(screen.getByText(t('shopping.edit.deleteTitle'))).toBeTruthy();
+    expect(nav.router.back).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(t('shopping.deleted'))).toBeTruthy();
     expect(deleteShoppingItem).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: t('shopping.edit.deleteAction') }));
-    await vi.waitFor(() => expect(deleteShoppingItem).toHaveBeenCalledWith('Leche'));
-    await vi.waitFor(() => expect(nav.router.back).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByTestId('notice.undo'));
+    expect(deleteShoppingItem).not.toHaveBeenCalled();
   });
 
   it('offline, shows the band; Guardar and Borrar wait for the connection', () => {

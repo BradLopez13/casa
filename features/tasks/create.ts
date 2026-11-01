@@ -1,4 +1,5 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
+import { QUEUED_META } from '@/data/query/queue';
 import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import type { AppError } from '@/data/supabase/errors';
@@ -36,7 +37,12 @@ export function draftItem({ id, userId, input }: CreateVars, at = new Date()): T
     generatedFrom: null,
     createdBy: userId,
     createdAt: at.toISOString(),
+    draft: true,
   };
+}
+
+function withoutDraft({ draft: _draft, ...task }: TaskItem): TaskItem {
+  return task;
 }
 
 /**
@@ -52,6 +58,7 @@ export function buildCreateOptions(
   return {
     mutationKey: CREATE_KEY,
     scope: TASKS_SCOPE,
+    meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: retryDelayOnNetwork,
@@ -70,6 +77,13 @@ export function buildCreateOptions(
       });
       return { added };
     },
+    // The server has it: the note is no longer a draft, whatever the mutation's state says next
+    // (bloque 13: a sheet kept saying «Aún se está enviando» for a task already sent).
+    onSuccess: (_id, { id, householdId }) => {
+      queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
+        current?.map((task) => (task.id === id && task.draft ? withoutDraft(task) : task)),
+      );
+    },
     // A new id is never on the server before its create: the note goes, also for a create
     // restored after a restart, which has no context.
     onError: async (error, { id, householdId }) => {
@@ -82,8 +96,8 @@ export function buildCreateOptions(
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
-    onSettled: () => {
-      void invalidateTasksWhenIdle(queryClient);
+    onSettled: (_id, _error, { householdId }) => {
+      void invalidateTasksWhenIdle(queryClient, householdId);
     },
   };
 }

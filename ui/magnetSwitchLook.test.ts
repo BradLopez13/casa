@@ -16,12 +16,13 @@ describe('magnetSwitchLook', () => {
     });
   });
 
-  it('off: the bare ring, flat, with the crossed bell', () => {
+  // Decisión 3 de Brad (27 de octubre, A): the off state reads on its own, the bell in ink.
+  it('off: the bare ring, flat, with the crossed bell in ink', () => {
     expect(magnetSwitchLook(false, p)).toEqual({
       fill: 'transparent',
       edge: p.outline,
       glyph: 'bell-off-outline',
-      glyphColor: p.muted,
+      glyphColor: p.ink,
       raised: false,
       dashed: false,
     });
@@ -33,6 +34,7 @@ describe('magnetSwitchLook', () => {
         fill: 'transparent',
         edge: p.outline,
         glyph: 'bell-off-outline',
+        glyphColor: p.muted,
         raised: false,
         dashed: true,
       });

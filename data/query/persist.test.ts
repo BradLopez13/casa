@@ -1,7 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { householdsKey, membershipKey } from '@/features/households/keys';
-import { forgetHouseholdData } from './persist';
+import { forgetHouseholdData, saveCacheNow } from './persist';
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
@@ -56,5 +57,21 @@ describe('forgetHouseholdData (bloque 12)', () => {
     expect(forgetHouseholdData(client, 'casa')).toBeNull();
     expect(client.getQueryData(membershipKey)).toBeNull();
     expect(queuedFor(client)).toEqual([]);
+  });
+});
+
+describe('saveCacheNow (bloque 13, Aud P3-3)', () => {
+  it('writes the cache at once, in the shape the persister restores', async () => {
+    const client = new QueryClient();
+    client.setQueryData(['tasks', 'casa'], [{ id: 't1' }]);
+    await saveCacheNow(client, 'b', { shouldDehydrateQuery: () => true });
+    const [key, value] = vi.mocked(AsyncStorage.setItem).mock.calls.at(-1)!;
+    expect(key).toBe('casa-query-cache');
+    const saved = JSON.parse(value) as {
+      buster: string;
+      clientState: { queries: { queryKey: unknown[] }[] };
+    };
+    expect(saved.buster).toBe('b');
+    expect(saved.clientState.queries.map((q) => q.queryKey)).toEqual([['tasks', 'casa']]);
   });
 });

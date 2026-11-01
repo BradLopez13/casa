@@ -1,4 +1,5 @@
 import { supabase } from '@/data/supabase/client';
+import { unwrap, unwrapMaybe } from '@/data/supabase/unwrap';
 import { AppError, isMissingOnServer, toAppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import type { InvitePreview } from './inviteText';
@@ -41,27 +42,6 @@ export type HouseholdLicense = {
 export type Checkout = { provider: string; offering: string; householdId: string };
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
-
-type Result<D> = PromiseLike<{ data: D; error: unknown }>;
-
-/** Resolves with the data (possibly null), or throws an AppError. */
-async function unwrapMaybe<D>(promise: Result<D>): Promise<D> {
-  let result;
-  try {
-    result = await promise;
-  } catch (e) {
-    throw toAppError(e);
-  }
-  if (result.error) throw toAppError(result.error);
-  return result.data;
-}
-
-/** Like unwrapMaybe, but a null result is an error. */
-async function unwrap<D>(promise: Result<D>): Promise<NonNullable<D>> {
-  const data = await unwrapMaybe(promise);
-  if (data === null || data === undefined) throw new AppError('UNKNOWN');
-  return data;
-}
 
 async function sessionUserId(): Promise<string | null> {
   let sessionResult;

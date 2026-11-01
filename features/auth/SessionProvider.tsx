@@ -1,9 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { forgetCachedData } from '@/data/query/persist';
-import { setSessionUser } from '@/data/query/sessionUser';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { consumeSigningOut, setSessionUser } from '@/data/query/sessionUser';
 import { supabase } from '@/data/supabase/client';
 import { setTelemetryUser } from '@/data/telemetry/sentry';
+import { useNotice } from '@/ui/components/Notice';
+import { handleSignedOut } from './signedOut';
 
 export type SessionState = {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -15,12 +24,17 @@ const SessionContext = createContext<SessionState>({ status: 'loading', userId: 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<SessionState>({ status: 'loading', userId: null });
+  const notify = useNotice();
+  // Who was signed in before the event: a sign-out keeps or forgets that person's queue.
+  const last = useRef<string | null>(null);
 
   useEffect(() => {
     // INITIAL_SESSION is emitted on subscribe, so this also reads the stored session.
     // The callback stays synchronous: no supabase calls inside it.
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const userId = session?.user.id ?? null;
+      const previous = last.current;
+      last.current = userId;
       setTelemetryUser(userId);
       // A change queued by whoever signed out is never sent as the next person (bloque 11).
       setSessionUser(userId);
@@ -29,14 +43,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return prev.status === status && prev.userId === userId ? prev : { status, userId };
       });
       if (event === 'SIGNED_OUT') {
-        // Never let the next user see the previous user's cached data, here or on the device.
-        forgetCachedData(queryClient);
+        // Never let the next user see the previous user's cached data, here or on the device;
+        // an unasked sign-out keeps that person's queue for when they come back (bloque 13).
+        void handleSignedOut({ queryClient, previous, voluntary: consumeSigningOut(), notify });
       } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         void queryClient.invalidateQueries({ queryKey: ['membership'] });
       }
     });
     return () => data.subscription.unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, notify]);
 
   const value = useMemo(() => state, [state]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

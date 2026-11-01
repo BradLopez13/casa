@@ -4,37 +4,40 @@ import { createInvalidationBatcher, invalidationsFor } from './invalidations';
 
 describe('invalidationsFor', () => {
   it('maps shopping_items to the list and its history', () => {
-    expect(invalidationsFor('shopping_items')).toEqual([['shopping'], ['shopping-history']]);
+    expect(invalidationsFor('shopping_items', 'h')).toEqual([
+      ['shopping', 'h'],
+      ['shopping-history', 'h'],
+    ]);
   });
 
   it('maps both task tables to the tasks queries', () => {
-    expect(invalidationsFor('task_series')).toEqual([['tasks']]);
-    expect(invalidationsFor('task_occurrences')).toEqual([['tasks']]);
+    expect(invalidationsFor('task_series', 'h')).toEqual([['tasks', 'h']]);
+    expect(invalidationsFor('task_occurrences', 'h')).toEqual([['tasks', 'h']]);
   });
 
   it('maps the household to its membership and ignores the dropped categories table', () => {
-    expect(invalidationsFor('household_item_categories')).toEqual([]);
-    expect(invalidationsFor('households')).toEqual([['membership'], ['households']]);
+    expect(invalidationsFor('household_item_categories', 'h')).toEqual([]);
+    expect(invalidationsFor('households', 'h')).toEqual([['membership'], ['households']]);
   });
 
   it('maps household members to the member lists, the membership and the household list', () => {
-    expect(invalidationsFor('household_members')).toEqual([
-      ['members'],
+    expect(invalidationsFor('household_members', 'h')).toEqual([
+      ['members', 'h'],
       ['membership'],
       ['households'],
     ]);
   });
 
   it('maps a licence change to the licence, the membership and the household list (bloque 12)', () => {
-    expect(invalidationsFor('household_licenses')).toEqual([
-      ['license'],
+    expect(invalidationsFor('household_licenses', 'h')).toEqual([
+      ['license', 'h'],
       ['membership'],
       ['households'],
     ]);
   });
 
   it('ignores any other table', () => {
-    expect(invalidationsFor('profiles')).toEqual([]);
+    expect(invalidationsFor('profiles', 'h')).toEqual([]);
   });
 });
 
@@ -49,6 +52,7 @@ describe('createInvalidationBatcher', () => {
   function setup(isBusy: (key: QueryKey) => boolean = () => false) {
     const invalidate = vi.fn<(key: QueryKey) => void>();
     const batcher = createInvalidationBatcher({
+      householdId: 'h',
       delayMs: 300,
       isBusy,
       invalidate,
@@ -70,7 +74,11 @@ describe('createInvalidationBatcher', () => {
     vi.advanceTimersByTime(300);
     expect(invalidate).toHaveBeenCalledTimes(3);
     expect(invalidate.mock.calls.map(([key]) => key)).toEqual(
-      expect.arrayContaining([['shopping'], ['shopping-history'], ['tasks']]),
+      expect.arrayContaining([
+        ['shopping', 'h'],
+        ['shopping-history', 'h'],
+        ['tasks', 'h'],
+      ]),
     );
   });
 
@@ -81,7 +89,7 @@ describe('createInvalidationBatcher', () => {
     batcher.push('task_occurrences');
     vi.advanceTimersByTime(50);
     expect(invalidate).toHaveBeenCalledTimes(1);
-    expect(invalidate).toHaveBeenCalledWith(['tasks']);
+    expect(invalidate).toHaveBeenCalledWith(['tasks', 'h']);
   });
 
   it('skips a key that is busy when the window closes', () => {
@@ -89,9 +97,9 @@ describe('createInvalidationBatcher', () => {
     batcher.push('task_series');
     batcher.push('shopping_items');
     vi.advanceTimersByTime(300);
-    expect(invalidate).not.toHaveBeenCalledWith(['tasks']);
-    expect(invalidate).toHaveBeenCalledWith(['shopping']);
-    expect(invalidate).toHaveBeenCalledWith(['shopping-history']);
+    expect(invalidate).not.toHaveBeenCalledWith(['tasks', 'h']);
+    expect(invalidate).toHaveBeenCalledWith(['shopping', 'h']);
+    expect(invalidate).toHaveBeenCalledWith(['shopping-history', 'h']);
   });
 
   it('ignores unknown tables without opening a window', () => {
@@ -116,11 +124,11 @@ describe('createInvalidationBatcher', () => {
     batcher.flushAll();
     expect(invalidate).toHaveBeenCalledTimes(7);
     for (const key of [
-      ['tasks'],
-      ['shopping'],
-      ['shopping-history'],
-      ['members'],
-      ['license'],
+      ['tasks', 'h'],
+      ['shopping', 'h'],
+      ['shopping-history', 'h'],
+      ['members', 'h'],
+      ['license', 'h'],
       ['membership'],
       ['households'],
     ]) {
@@ -135,10 +143,10 @@ describe('createInvalidationBatcher', () => {
     const { batcher, invalidate } = setup((key) => key[0] === 'shopping');
     batcher.flushAll();
     expect(invalidate.mock.calls).toEqual([
-      [['tasks']],
-      [['shopping-history']],
-      [['members']],
-      [['license']],
+      [['tasks', 'h']],
+      [['shopping-history', 'h']],
+      [['members', 'h']],
+      [['license', 'h']],
       [['membership']],
       [['households']],
     ]);

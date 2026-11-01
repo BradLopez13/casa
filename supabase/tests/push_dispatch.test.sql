@@ -57,7 +57,7 @@ select lives_ok(
   $$insert into private.push_outbox (recipient_id, kind, title, body, data) values
       ('$$ || :'ana' || $$', 'task_assigned', 'Tienes una tarea nueva', 'Fregar', '{"url":"/tasks"}'),
       ('$$ || :'bob' || $$', 'task_assigned', 'Tienes una tarea nueva', 'Barrer', '{"url":"/tasks"}'),
-      ('$$ || :'carla' || $$', 'member_joined', 'Alguien nuevo en el hogar', 'Bob se ha unido a Piso', '{}')$$,
+      ('$$ || :'carla' || $$', 'member_joined', 'Alguien nuevo en la casa', 'Bob se ha unido a Piso', '{}')$$,
   'inserting into the outbox works without Vault secrets'
 );
 select is((select count(*) from net.http_request_queue), :queue_before::bigint,

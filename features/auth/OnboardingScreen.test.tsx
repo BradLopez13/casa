@@ -207,9 +207,13 @@ describe('Crear tu hogar: las estancias', () => {
 });
 
 describe('Crear otra casa (bloque 12)', () => {
-  it('is onboarding with «Volver» on the band instead of the account', () => {
+  // Bloque 13 (P2-6): the common header, «Volver» first and on the left, and no brand band.
+  it('has the common header, «Volver» and its title, instead of the band and the account', () => {
     renderOnboarding(<NewHouseholdFlow another />);
     expect(screen.getByRole('heading', { name: t('onboarding.anotherTitle') })).toBeTruthy();
+    expect(screen.queryByLabelText('Nido')).toBeNull();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons[0]?.getAttribute('aria-label')).toBe(t('onboarding.back'));
     expect(nameField().value).toBe(t('onboarding.anotherDefaultName'));
     expect(screen.queryByTestId('account-menu')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.back') }));

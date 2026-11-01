@@ -25,7 +25,6 @@ import {
 import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
 import { pendingTasks, withQueued } from './pending';
-import { CREATE_KEY, type CreateVars } from './create';
 import { isQueuedTaskMutation } from './offline';
 
 export { tasksKey };
@@ -170,9 +169,10 @@ export function useToggleTask(
 export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;
 
 /**
- * The tasks with a change waiting for the connection (a create, a complete or a reopen): their
- * done note says «Sin enviar», as a shopping row does (bloque 11). Only while it waits: a change on
- * its way with a connection would flash the mark on every tap.
+ * The tasks with a change waiting in the queue (a create, a complete or a reopen): their note says
+ * «Sin enviar», open or done, as a shopping row does (bloque 11; the open note too, bloque 13).
+ * Only while it waits: for the connection, or trying again after a failed try back online. A
+ * change on its way at its first try would flash the mark on every tap.
  */
 export function useWaitingTasks(): ReadonlySet<string> {
   const ids = useMutationState({
@@ -181,24 +181,11 @@ export function useWaitingTasks(): ReadonlySet<string> {
       // Paused also means waiting its turn in the queue's scope: only without a connection is
       // it waiting for the connection.
       predicate: (m) =>
-        m.state.isPaused &&
-        !onlineManager.isOnline() &&
-        isQueuedTaskMutation(m.options.mutationKey),
+        isQueuedTaskMutation(m.options.mutationKey) &&
+        ((m.state.isPaused && !onlineManager.isOnline()) || m.state.failureCount > 0),
     },
     select: (m) => (m.state.variables as { id?: string } | undefined)?.id ?? '',
   });
   const key = ids.filter((id) => id !== '').join('\n');
   return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
-}
-
-/**
- * The tasks created here whose create still waits in the queue: they exist only on this phone,
- * so editing, skipping or deleting them would reach a server that does not know them yet.
- */
-export function useUnsentTasks(): ReadonlySet<string> {
-  const ids = useMutationState({
-    filters: { mutationKey: CREATE_KEY, status: 'pending' },
-    select: (m) => (m.state.variables as CreateVars | undefined)?.id ?? '',
-  });
-  return new Set(ids);
 }

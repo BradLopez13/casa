@@ -40,7 +40,7 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: members.make-owner.*
 - extendedWaitUntil:
-    visible: ¿Pasar el hogar a Toni?
+    visible: ¿Pasar la casa a Toni?
     timeout: 5000
 - tapOn:
     id: members.confirm

@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
+import { dayHeading } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
 import { allLineText } from '@/features/tasks/allLineText';
 import { chosenPill, daySections } from '@/features/tasks/dayFilter';
@@ -19,6 +20,7 @@ import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { LicenseBand } from '@/features/households/LicenseBand';
 import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
+import { QueueBand } from '@/features/offline/QueueBand';
 import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
 import { stripInDoor } from '@/ui/door';
@@ -143,7 +145,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
     <>
       <DoorHeader
         eyebrow={t('tasks.title')}
-        heading={t('tasks.allHeadline')}
+        heading={day === null ? t('tasks.allHeadline') : dayHeading(day, today)}
         secondary={doorLine}
         quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
         strip={pills}
@@ -158,7 +160,9 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
       </DoorHeader>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
-      ) : null}
+      ) : (
+        <QueueBand testID="tasks.queue" />
+      )}
       <LicenseBand />
     </>
   );

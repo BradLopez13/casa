@@ -1,34 +1,14 @@
 import * as Crypto from 'expo-crypto';
 import type { Json } from '@/data/supabase/database.types';
 import { supabase } from '@/data/supabase/client';
-import { AppError, isMissingOnServer, toAppError } from '@/data/supabase/errors';
+import { unwrap, unwrapMaybe } from '@/data/supabase/unwrap';
+import { isMissingOnServer, toAppError } from '@/data/supabase/errors';
 import { recurrenceRuleSchema, type RecurrenceRule } from '@/domain/recurrence/rule';
 import type { TaskInput } from '@/domain/tasks/input';
 import type { Room } from '@/domain/tasks/rooms';
 import type { TaskItem } from '@/domain/tasks/views';
 
 export type { TaskInput };
-
-type Result<D> = PromiseLike<{ data: D; error: unknown }>;
-
-/** Resolves with the data (possibly null), or throws an AppError. */
-async function unwrapMaybe<D>(promise: Result<D>): Promise<D> {
-  let result;
-  try {
-    result = await promise;
-  } catch (e) {
-    throw toAppError(e);
-  }
-  if (result.error) throw toAppError(result.error);
-  return result.data;
-}
-
-/** Like unwrapMaybe, but a null result is an error. */
-async function unwrap<D>(promise: Result<D>): Promise<NonNullable<D>> {
-  const data = await unwrapMaybe(promise);
-  if (data === null || data === undefined) throw new AppError('UNKNOWN');
-  return data;
-}
 
 export const newTaskId = (): string => Crypto.randomUUID();
 
@@ -116,7 +96,7 @@ export async function completeTask(id: string, today: string, at?: string): Prom
       supabase.rpc('complete_task', { p_id: id, p_today: today, p_at: at }),
     );
     if (!isMissingOnServer(result.error)) {
-      if (result.error) throw toAppError(result.error);
+      if (result.error) throw toAppError(result.error, result.status);
       return;
     }
   }
@@ -124,7 +104,9 @@ export async function completeTask(id: string, today: string, at?: string): Prom
 }
 
 /** The result of a call, or the AppError of a request that failed to go. */
-async function callOrNetwork<D>(promise: Result<D>): Promise<{ data: D; error: unknown }> {
+async function callOrNetwork<D>(
+  promise: PromiseLike<{ data: D; error: unknown; status?: number }>,
+): Promise<{ data: D; error: unknown; status?: number }> {
   try {
     return await promise;
   } catch (e) {

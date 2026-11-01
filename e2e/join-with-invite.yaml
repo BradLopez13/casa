@@ -80,8 +80,8 @@ appId: com.bradlopez13.casa
     visible: Ana
     timeout: 20000
 - assertVisible: Bob
-- assertNotVisible: Quitar del hogar
-- assertNotVisible: Pasar el hogar
+- assertNotVisible: Quitar de la casa
+- assertNotVisible: Pasar la casa
 
 # Leave the household
 - scrollUntilVisible:

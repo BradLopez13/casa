@@ -63,13 +63,21 @@ describe('daySections', () => {
       task({ title: 'Ayer', dueOn: '2026-10-20' }),
     ];
     const sections = daySections(tasks, today, today);
-    expect(sections).toHaveLength(1);
     expect(sections[0]).toMatchObject({ key: today, title: 'Hoy', count: 1 });
     expect(daySections(tasks, '2026-10-22', today)[0]).toMatchObject({
       key: '2026-10-22',
       title: 'Mañana',
       count: 1,
     });
+  });
+
+  // Bloque 13 (P3-3): «Hoy» said «Nada para hoy» with a task done today and showed no tray.
+  it('ends with the tray of what was done that day', () => {
+    const done = task({ title: 'Hecha', completedAt: new Date(2026, 9, 21, 10).toISOString() });
+    const sections = daySections([task({ title: 'Hoy' }), done], today, today);
+    expect(sections.map((s) => s.key)).toEqual([today, `done-${today}`]);
+    expect(sections[1]).toMatchObject({ title: 'Hechas hoy', count: 1 });
+    expect(daySections([done], today, today).map((s) => s.key)).toEqual([`done-${today}`]);
   });
 
   it('is empty for a day with nothing on it, so the list says so in one line', () => {

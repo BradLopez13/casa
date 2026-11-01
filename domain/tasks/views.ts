@@ -16,6 +16,11 @@ export type TaskItem = {
   recurrence: RecurrenceRule | null;
   skippedAt: string | null;
   generatedFrom: string | null;
+  /**
+   * Only on this phone: created here and not yet confirmed by the server (bloque 13). The server's
+   * own copy never has it, so a refetch that brings the task clears it; until then its sheet waits.
+   */
+  draft?: true;
 };
 
 const WEEK_DAYS = 7;

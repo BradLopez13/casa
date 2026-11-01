@@ -1,9 +1,9 @@
-import { addDays } from '@/domain/tasks/dates';
+import { addDays, localDateIso } from '@/domain/tasks/dates';
 import { dayHeading, dayInSentence, weekdayDay } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { isOpen, type TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
-import type { TaskListSection } from './sections';
+import { tray, type TaskListSection } from './sections';
 
 /** One pill of the row under the quick add of Tareas: «Todas» (`date` null) or one of the week's days. */
 export type DayPill = { date: string | null; label: string };
@@ -33,18 +33,32 @@ export function chosenPill(
   return chosen !== null && days.some((day) => day.date === chosen) ? chosen : null;
 }
 
-/** The list filtered by a day: one section, keyed by the date, with the open tasks due then. */
+/**
+ * The list filtered by a day: a section keyed by the date with the open tasks due then, and the
+ * tray of what was done that day (on «Hoy», what is done today; bloque 13, P3-3).
+ */
 export function daySections(tasks: TaskItem[], day: string, today: string): TaskListSection[] {
   const due = tasks.filter((task) => isOpen(task) && task.dueOn === day);
-  if (due.length === 0) return [];
-  return [
-    {
+  const done = tasks.filter(
+    (task) =>
+      task.completedAt !== null &&
+      task.skippedAt === null &&
+      localDateIso(new Date(task.completedAt)) === day,
+  );
+  const sections: TaskListSection[] = [];
+  if (due.length > 0) {
+    sections.push({
       key: day,
       title: dayHeading(day, today),
       count: due.length,
       data: due.map((task) => ({ kind: 'note', task })),
-    },
-  ];
+    });
+  }
+  if (done.length > 0) {
+    const title = day === today ? t('tasks.section.doneToday') : t('tasks.section.done');
+    sections.push(tray(`done-${day}`, title, done));
+  }
+  return sections;
 }
 
 /** A chosen day with nothing on it says so by name, in one line: the quick add is right above. */

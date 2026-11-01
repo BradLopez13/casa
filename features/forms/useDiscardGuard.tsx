@@ -58,6 +58,7 @@ export function useDiscardGuard({ dirty, onCancel, busy = false }: Options): {
 
   const dialog = (
     <ConfirmDialog
+      testID="discard"
       visible={asking}
       title={t('form.discardTitle')}
       message={t('form.discardMessage')}

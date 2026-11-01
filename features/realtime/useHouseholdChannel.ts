@@ -1,4 +1,5 @@
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { touches } from '@/data/query/queue';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 import { supabase } from '@/data/supabase/client';
@@ -47,13 +48,19 @@ export function useHouseholdChannel(householdId: string | undefined): void {
 
     // A key with its own mutation in flight would overwrite the optimistic state; the
     // mutation refreshes it when it settles.
+    // Every queued task change (create, complete, reopen), not only the toggle (fase 10e), of
+    // this household: another household's queue no longer holds this one's refresh (bloque 13).
     const isBusy = (key: QueryKey) => {
-      // Every queued task change (create, complete, reopen), not only the toggle (fase 10e).
-      if (key[0] === 'tasks') return queryClient.isMutating({ mutationKey: ['tasks'] }) > 0;
-      if (key[0] === 'shopping') return queryClient.isMutating({ mutationKey: ['shopping'] }) > 0;
-      return false;
+      const kind = key[0];
+      if (kind !== 'tasks' && kind !== 'shopping') return false;
+      return (
+        queryClient.isMutating({
+          predicate: (m) => m.options.mutationKey?.[0] === kind && touches(m, householdId),
+        }) > 0
+      );
     };
     const batcher = createInvalidationBatcher({
+      householdId,
       delayMs: BATCH_DELAY_MS,
       isBusy,
       invalidate: (queryKey) => void queryClient.invalidateQueries({ queryKey }),

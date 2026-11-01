@@ -28,9 +28,19 @@ export function shouldPersistMutation(mutationKey: MutationKey | undefined): boo
 }
 
 /**
- * What goes on the device: settled persisted queries, and every queued mutation still pending.
- * That includes one in flight or waiting to retry when the app closes; resending it is safe: an
- * add or a create is idempotent by id, a bought or a toggle sets an absolute value.
+ * A change that goes in the queue's own key (`queueStore`): every queued mutation still pending,
+ * one in flight or waiting to retry when the app closes included. Resending it is safe: an add or
+ * a create is idempotent by id, a bought or a toggle sets an absolute value.
+ */
+export const shouldQueueMutation = (mutation: {
+  state: { status: string };
+  options: { mutationKey?: MutationKey };
+}) => mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey);
+
+/**
+ * What goes in the cache on the device: settled persisted queries. The queue no longer goes with
+ * them: it has its own key per person (`queueStore`), so an update or a new `CACHE_SCHEMA`, which
+ * discard this cache, never take it (bloque 13, P2-3).
  */
 export const persistDehydrateOptions: DehydrateOptions = {
   // A list whose last refresh failed (offline) keeps its data: it is kept too, or the next cold
@@ -40,8 +50,7 @@ export const persistDehydrateOptions: DehydrateOptions = {
     shouldPersistQuery(query.queryKey) &&
     (query.state.status === 'success' ||
       (query.state.status === 'error' && query.state.data !== undefined)),
-  shouldDehydrateMutation: (mutation) =>
-    mutation.state.status === 'pending' && shouldPersistMutation(mutation.options.mutationKey),
+  shouldDehydrateMutation: () => false,
 };
 
 /**

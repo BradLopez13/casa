@@ -189,6 +189,8 @@ describe('TaskForm', () => {
       const magnet = screen.getByTestId(`task-form.prop.${field}`);
       expect(magnet.textContent).toBe(`${t(label)}${value}`);
       expect(magnet.getAttribute('aria-expanded')).toBe('false');
+      // Read with its field's name, «Repetir» without a value too (bloque 13, P3-9).
+      expect(magnet.getAttribute('aria-label')).toBe(`${t(label)}, ${value}`);
     }
   });
 

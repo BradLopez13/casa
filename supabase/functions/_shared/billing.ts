@@ -3,6 +3,13 @@
 // Authorization header configured in its dashboard. Billing is off: until the switch is on, the
 // webhook answers 200 and changes nothing.
 
+// The model the stores allow (decisión 4 de Brad, 27 de octubre; DESIGN.md and README): App
+// Store and Google Play allow one subscription per product and account, so a person who runs two
+// households cannot hold two «household_monthly». Billing will be one subscription group per
+// person with a level per number of households (casas_1, casas_2…, priced n × amount); «one
+// licence per household» stays in what the person pays. Until that is built, the event below binds
+// one household per subscription: switch billing on only once it names the households it covers.
+
 // The _shared modules import nothing: Deno needs the `.ts` in a path that the app's TypeScript
 // refuses. So the comparison is push.ts' sameSecret, again.
 function sameSecret(given: string, expected: string): boolean {

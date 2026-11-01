@@ -40,7 +40,7 @@ appId: com.bradlopez13.casa
 - tapOn:
     id: members.remove.*
 - extendedWaitUntil:
-    visible: ¿Quitar a Quim del hogar?
+    visible: ¿Quitar a Quim de la casa?
     timeout: 5000
 - tapOn:
     id: members.confirm

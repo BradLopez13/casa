@@ -11,7 +11,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
 import { forgetEndedHousehold } from '@/data/query/persist';
-import { queryClient, watchAppAndConnection } from '@/data/query/setup';
+import { queryClient, reportQueryErrorsTo, watchAppAndConnection } from '@/data/query/setup';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
@@ -49,6 +49,7 @@ initTelemetry();
 void SplashScreen.preventAutoHideAsync();
 
 watchAppAndConnection();
+reportQueryErrorsTo((error, report) => captureError(error, report));
 
 function MembershipError({
   network,

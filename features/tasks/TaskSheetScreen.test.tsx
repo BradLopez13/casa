@@ -141,7 +141,7 @@ describe('Hoja de tarea', () => {
     renderSheet([task('Fregar')]);
     fireEvent.click(screen.getByTestId('task-form.delete'));
     // No ConfirmDialog in between.
-    expect(screen.queryByTestId('members.confirm')).toBeNull();
+    expect(screen.queryByTestId('discard.confirm')).toBeNull();
     expect(screen.getByText(t('tasks.deleted'))).toBeTruthy();
     expect(t('tasks.deleted')).toBe('Tarea borrada.');
     expect(screen.getByRole('button', { name: t('tasks.undo') })).toBeTruthy();
