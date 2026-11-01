@@ -10,6 +10,7 @@ import { AppState, Platform } from 'react-native';
 import { appQueryDefaults } from './defaults';
 import { errorReport, type ErrorReport } from '@/data/telemetry/queryErrors';
 import { markOnline } from './retry';
+import { queueLog, queueLogOn, startQueueLog } from './queueLog';
 
 type Reporter = (error: unknown, report: ErrorReport) => void;
 let reporter: Reporter = () => undefined;
@@ -51,6 +52,7 @@ export function watchAppAndConnection(): void {
   onlineManager.subscribe((online) => {
     if (online) markOnline();
   });
+  if (queueLogOn) startQueueLog(queryClient);
   if (Platform.OS === 'web') return;
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -60,6 +62,9 @@ export function watchAppAndConnection(): void {
   });
   onlineManager.setEventListener((setOnline) =>
     NetInfo.addEventListener((state) => {
+      if (queueLogOn) {
+        queueLog(`netinfo connected=${state.isConnected} reachable=${state.isInternetReachable}`);
+      }
       setOnline(state.isConnected === true && state.isInternetReachable !== false);
     }),
   );
