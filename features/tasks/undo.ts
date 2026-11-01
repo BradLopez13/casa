@@ -18,13 +18,14 @@ export function completeWithUndo({ toggle, notify, task }: Args): boolean {
     label: t('tasks.undo'),
     onPress: () => toggle({ id: task.id, done: false }),
     testID: 'notice.undo',
-    // The note goes to the tray: the list has nothing to uncover and does not move.
-    leftList: true,
   });
   return true;
 }
 
-/** Reopens a done task and offers «Deshacer» in the notice, which marks it done again. */
+/**
+ * Reopens a done task and offers «Deshacer» in the notice, which marks it done again. The note goes
+ * up to its section and the list stays where the person had it (decisión 5, A; bloque 14.2).
+ */
 export function reopenWithUndo({ toggle, notify, task }: Args): boolean {
   if (!toggle({ id: task.id, done: false })) return false;
   notify(t('tasks.reopened'), {

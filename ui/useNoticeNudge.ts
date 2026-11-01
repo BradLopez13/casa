@@ -21,9 +21,9 @@ const DOOR_SLACK = 8;
  * with room added at the list's end while the notice lasts if the list is too short to get there
  * (`endPadding`). When the notice goes, a list nobody touched goes back to where it was; one that
  * was touched stays, unless the shrinking end would clip it into a cut door, and then the door
- * comes back whole (DESIGN.md, «la puerta nunca se ve partida»). A notice whose note left the
- * list (`NoticeAction.leftList`: completed into the tray, deleted) leaves the room and moves
- * nothing; a clip the list's own shrinking causes still never leaves the door cut.
+ * comes back whole (DESIGN.md, «la puerta nunca se ve partida»). Only a notice that asks for it
+ * moves the list (`NoticeAction.nudges`, «Bolsa vaciada»); any other leaves the room and moves
+ * nothing, and a clip the list's own shrinking causes still never leaves the door cut.
  *
  * The door must be the first thing in the list's header. `scrollList` moves the list (a
  * SectionList through its scroll responder, a FlatList with `scrollToOffset`). Spread `listProps`
@@ -100,9 +100,22 @@ export function useNoticeNudge(scrollList: (y: number, animated: boolean) => voi
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     viewport.current = e.nativeEvent.layout.height;
   }, []);
-  const onDoorLayout = useCallback((e: LayoutChangeEvent) => {
-    door.current = e.nativeEvent.layout.height;
-  }, []);
+  const onDoorLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const before = door.current;
+      door.current = e.nativeEvent.layout.height;
+      // The door changed height under a list that had it out whole (a headline going to two lines
+      // as a task is completed): it stays out, by the same amount, rather than show its edge
+      // (bloque 14.2). A door inside stays inside: nothing moves.
+      if (before === 0 || before === door.current) return;
+      const out = before + DOOR_HANDLE_OVERHANG;
+      const cut = doorNow();
+      if (offset.current >= out && offset.current - out < cut.height - out) {
+        scrollTo(cut.height);
+      }
+    },
+    [doorNow, scrollTo],
+  );
   const onContentSizeChange = useCallback(
     (_width: number, height: number) => {
       content.current = height;

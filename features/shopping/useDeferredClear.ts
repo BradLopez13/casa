@@ -47,6 +47,8 @@ export function useDeferredClear(onCommit: () => void) {
     notify(t('shopping.cleared'), {
       label: t('shopping.undoClear'),
       testID: 'shopping.clear.undo',
+      // The rows it speaks of were at the end: the list moves so the pill does not cover them.
+      nudges: true,
       onPress: () => {
         if (controller.current?.undo()) setHidden(false);
       },

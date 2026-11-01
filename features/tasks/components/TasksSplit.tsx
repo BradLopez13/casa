@@ -57,6 +57,11 @@ export function TasksSplit({
           onSelect={screen.selectFilter}
         />
       </DoorHeader>
+    </>
+  );
+  // Under the quick add, never above it (bloque 14.2).
+  const bands = (
+    <>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : (
@@ -92,6 +97,7 @@ export function TasksSplit({
       right={
         <>
           <DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />
+          {bands}
           {sections.length > 0 ? (
             <>
               <TaskSections sections={sections} {...rows} />

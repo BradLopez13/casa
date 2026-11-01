@@ -326,6 +326,14 @@ describe('Hoy', () => {
     expect(screen.getByText(t('tasks.unsent'))).toBeTruthy();
   });
 
+  // Bloque 14 (P3): offline it said «Aún se está enviando» while nothing was on its way.
+  it('offline, a draft says it will be sent when the connection is back', () => {
+    onlineManager.setOnline(false);
+    renderToday([task('Regar', { draft: true })]);
+    fireEvent.click(screen.getByTestId('task-note.Regar'));
+    expect(screen.getByText(t('tasks.unsentOffline'))).toBeTruthy();
+  });
+
   it('keeps the door handle hint back while the box one shows', () => {
     phoneSize();
     hintsOpen('refresh', 'complete');

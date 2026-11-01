@@ -396,4 +396,19 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     );
     expect(read('features/offline/QueueBand.tsx')).toMatch(/useQueueSnapshot\(\)\.band/);
   });
+
+  // Bloque 14.2 (P1-1): the offline band came in above the quick add and moved the field under the
+  // finger. The bands go under the field, never inside the door above it.
+  it('the offline and queue bands go under the quick add, not in the door', () => {
+    for (const file of [
+      'app/(tabs)/today.tsx',
+      'app/(tabs)/tasks.tsx',
+      'features/tasks/components/TasksSplit.tsx',
+    ]) {
+      const door = /const door = \(([\s\S]*?)\n {2}\);/.exec(read(file))?.[1] ?? '';
+      expect(door, file).toMatch(/DoorHeader/);
+      expect(door, file).not.toMatch(/OfflineBand|QueueBand/);
+      expect(read(file), file).toMatch(/const bands = \(/);
+    }
+  });
 });

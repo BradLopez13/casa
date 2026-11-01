@@ -95,8 +95,6 @@ export function createDeferredDelete(messages: Messages) {
     notify(t(messages.deleted), {
       label: t(messages.undo),
       testID: 'notice.undo',
-      // It is gone from the list: nothing to uncover, the list does not move.
-      leftList: true,
       onPress: () => {
         // Already sent (the app went to the background, or the window just ended): say so rather
         // than pretend it came back.

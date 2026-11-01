@@ -27,7 +27,7 @@ describe('deleteItemWithUndo', () => {
     const { notify } = run(() => Promise.resolve());
     expect(hiddenItems.get().has('p1')).toBe(true);
     expect(notify.mock.calls[0]![0]).toBe(t('shopping.deleted'));
-    expect(notify.mock.calls[0]![1]?.leftList).toBe(true);
+    expect(notify.mock.calls[0]![1]?.nudges).toBeFalsy();
   });
 
   it('deletes when the notice goes; one already gone counts as deleted', async () => {

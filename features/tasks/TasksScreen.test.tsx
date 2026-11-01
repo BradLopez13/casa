@@ -256,6 +256,16 @@ describe('Tareas', () => {
     expect(screen.getByTestId('task-note.Fregar')).toBeTruthy();
   });
 
+  // Bloque 14.2 (P1-1): the band came in above the quick add, moved the field down as the finger
+  // landed, and the tap fell on the band: the field was not focused and what was typed was lost.
+  it('offline, the band goes under the quick add, never above it', () => {
+    onlineManager.setOnline(false);
+    renderTasks([task('Fregar', {})]);
+    const field = screen.getByTestId('tasks.quick-add');
+    const band = screen.getByTestId('tasks.offline');
+    expect(field.compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('online, there is no offline band', () => {
     renderTasks([task('Fregar', {})]);
     expect(screen.queryByTestId('tasks.offline')).toBeNull();

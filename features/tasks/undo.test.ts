@@ -17,7 +17,7 @@ describe('completeWithUndo', () => {
     expect(action?.label).toBe(t('tasks.undo'));
     expect(action?.testID).toBe('notice.undo');
     // The note went to the tray: the list does not move for it (decisión 1, 27 de octubre).
-    expect(action?.leftList).toBe(true);
+    expect(action?.nudges).toBeFalsy();
 
     action?.onPress();
     expect(toggle).toHaveBeenLastCalledWith({ id: 't1', done: false });
@@ -44,7 +44,7 @@ describe('reopenWithUndo', () => {
     expect(action?.label).toBe(t('tasks.undo'));
     expect(action?.testID).toBe('notice.undo');
     // The note is back in the list, where the notice may cover it.
-    expect(action?.leftList).toBeFalsy();
+    expect(action?.nudges).toBeFalsy();
 
     action?.onPress();
     expect(toggle).toHaveBeenLastCalledWith({ id: 't1', done: true });

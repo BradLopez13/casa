@@ -305,6 +305,7 @@
   "tasks.done": "Hecha.",
   "tasks.reopened": "Reabierta.",
   "tasks.unsent": "Aún se está enviando. Podrás editarla en cuanto llegue a la casa.",
+  "tasks.unsentOffline": "Se enviará cuando vuelva la conexión. Podrás editarla en cuanto llegue a la casa.",
   "tasks.deleted": "Tarea borrada.",
   "tasks.deleteFailed": "No se pudo borrar la tarea; ha vuelto a la lista. Inténtalo de nuevo.",
   "tasks.deleteFailedOffline": "No se pudo borrar la tarea: sin conexión. Ha vuelto a la lista; bórrala cuando vuelva.",

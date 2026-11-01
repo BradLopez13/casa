@@ -1,0 +1,78 @@
+appId: com.bradlopez13.casa
+# Bloque 14.2 (P1-1 del 1 de noviembre): offline, tapping a note still in the queue showed
+# «Aún se está enviando…», the list moved to uncover a note the notice did not speak of, and when
+# the notice went the door was left cut under the status bar. A notice with no note moves nothing.
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: fede@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# Three notes, so the list is not empty, all sent while online
+- tapOn:
+    id: today.quick-add
+- inputText: Regar las plantas
+- tapOn:
+    id: today.quick-add.submit
+- tapOn:
+    id: today.quick-add
+- inputText: Poner la lavadora
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Completar «Poner la lavadora»
+    timeout: 20000
+
+# Offline: the band comes in under the quick add; the first tap on the field focuses it
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+- tapOn:
+    id: today.quick-add
+- inputText: Barrer
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Barrer
+    timeout: 5000
+
+# The note still in the queue says so, and the door stays in view while and after the notice
+- tapOn: Barrer
+- extendedWaitUntil:
+    visible: Se enviará cuando vuelva la conexión.*
+    timeout: 5000
+- assertVisible:
+    id: today.door-line
+- extendedWaitUntil:
+    notVisible: Se enviará cuando vuelva la conexión.*
+    timeout: 15000
+- assertVisible:
+    id: today.door-line
+- assertVisible:
+    id: tasks.offline
+
+# Back online, the queue goes
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: Sin enviar
+    timeout: 30000

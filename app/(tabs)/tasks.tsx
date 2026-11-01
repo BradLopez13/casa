@@ -158,6 +158,12 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           onSelect={screen.selectFilter}
         />
       </DoorHeader>
+    </>
+  );
+  // Under the quick add, never above it: a band appearing never moves the field under a finger
+  // (bloque 14.2).
+  const bands = (
+    <>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : (
@@ -188,6 +194,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
               {/* At large text, upright, the pills are in the door beside the magnets. */}
               {pillsInDoor ? null : pills}
             </View>
+            {bands}
           </>
         }
         // The catalogue waits at the end of Todas: a way to find more, not a layer before the
