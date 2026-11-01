@@ -373,4 +373,27 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);
     expect(read('ui/components/FridgeRefresh.tsx')).toMatch(/height: VEIL_FADE/);
   });
+
+  // Bloque 14.1 (T15): «Sin enviar» read `onlineManager.isOnline()` inside a `useMutationState`
+  // filter, which only runs again when the queue changes: the mark went minutes late. What waits
+  // and what the band says come from the queue monitor, which listens to the connection.
+  it('what waits in the queue is read from the queue monitor, never from isOnline() in a filter', () => {
+    const code = ['app', 'features', 'ui'].flatMap((d) =>
+      readdirSync(path.join(ROOT, d), { recursive: true, encoding: 'utf8' })
+        .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+        .map((f) => rel(path.join(ROOT, d, f))),
+    );
+    const mixing = code.filter((f) => {
+      const text = read(f);
+      return /useMutationState\(/.test(text) && /isOnline\(\)/.test(text);
+    });
+    expect(mixing).toEqual([]);
+    expect(read('features/tasks/queries.ts')).toMatch(
+      /function useWaitingTasks[\s\S]*?useQueueSnapshot\(\)\.waiting/,
+    );
+    expect(read('features/shopping/queries.ts')).toMatch(
+      /function usePendingItemIds[\s\S]*?useQueueSnapshot\(\)\.waiting/,
+    );
+    expect(read('features/offline/QueueBand.tsx')).toMatch(/useQueueSnapshot\(\)\.band/);
+  });
 });

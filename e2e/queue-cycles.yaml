@@ -1,0 +1,104 @@
+appId: com.bradlopez13.casa
+# Bloque 14.1 (P1-2 del 1 de noviembre): a task made offline stayed «Sin enviar» with the
+# connection back in 3 of 9 tries. One try is not enough: three cycles of airplane mode in a row,
+# each with a task made offline, and each time the mark goes once the connection is back.
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: gala@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# Cycle 1
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+- tapOn:
+    id: today.quick-add
+- inputText: Ciclo uno
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Sin enviar
+    timeout: 5000
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: Sin enviar
+    timeout: 30000
+- assertNotVisible:
+    id: tasks.queue.retry
+
+# Cycle 2: a complete queued behind the create
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+- tapOn:
+    id: today.quick-add
+- inputText: Ciclo dos
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Sin enviar
+    timeout: 5000
+- tapOn: Completar «Ciclo dos»
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: Sin enviar
+    timeout: 30000
+- assertNotVisible:
+    id: tasks.queue.retry
+
+# Cycle 3: the app goes to the background while offline and comes back with the connection
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+- tapOn:
+    id: today.quick-add
+- inputText: Ciclo tres
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Sin enviar
+    timeout: 5000
+- pressKey: Home
+- setAirplaneMode: disabled
+- launchApp
+- extendedWaitUntil:
+    notVisible: Sin enviar
+    timeout: 30000
+- assertNotVisible:
+    id: tasks.queue.retry
+
+# All three reached the server: a refresh brings them back from it.
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 800
+- extendedWaitUntil:
+    visible: Ciclo uno
+    timeout: 20000
+- assertVisible: Ciclo tres
