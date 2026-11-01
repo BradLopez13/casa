@@ -56,12 +56,15 @@ const idOf = (m: AnyMutation) => (m.state.variables as { id?: unknown } | undefi
  *   moment; a queue that missed its turn stayed paused with a connection until the app was
  *   restarted. With a connection and the app in front, a queue that has not moved for
  *   `QUEUE_WATCH_MS` has its first change woken up, again every `QUEUE_WATCH_MS`; the connection
- *   and the focus coming back wake every change, not only the paused ones.
+ *   and the focus coming back wake every change, not only the paused ones. If the app is in front
+ *   (`isActive`) but TanStack still believes it is not, after `QUEUE_WATCH_MS` it is told.
  */
 export function createQueueMonitor(
   queryClient: QueryClient,
   isQueued: (key: MutationKey | undefined) => boolean,
   now: () => number = Date.now,
+  /** Whether the app is in front as the phone says (AppState), to check TanStack's own idea. */
+  isActive: () => boolean = () => focusManager.isFocused(),
 ): QueueMonitor {
   const cache = queryClient.getMutationCache();
   const listeners = new Set<() => void>();
@@ -71,6 +74,8 @@ export function createQueueMonitor(
   const moved = new Map<string, number>();
   /** Since when, with a connection, something waits and nothing went out. */
   let since: number | null = null;
+  /** Since when the app is in front while TanStack believes it is not. */
+  let unfocusedSince: number | null = null;
   let snapshot = NONE;
   let timer: ReturnType<typeof setInterval> | undefined;
 
@@ -121,8 +126,19 @@ export function createQueueMonitor(
 
   /** The first change of each queue that has not moved for a while is woken up. */
   const watch = () => {
-    if (!onlineManager.isOnline() || !focusManager.isFocused()) return;
     const t = now();
+    // TanStack resumes nothing without the focus, and learns it from AppState's events: if the
+    // app is in front and that event never came, the focus is put right, which resumes the queue.
+    if (isActive() && !focusManager.isFocused() && queued().length > 0) {
+      unfocusedSince ??= t;
+      if (t - unfocusedSince >= QUEUE_WATCH_MS) {
+        unfocusedSince = null;
+        focusManager.setFocused(true);
+      }
+    } else {
+      unfocusedSince = null;
+    }
+    if (!onlineManager.isOnline() || !focusManager.isFocused()) return;
     const heads = new Map<string, AnyMutation>();
     for (const m of cache
       .findAll({ status: 'pending' })

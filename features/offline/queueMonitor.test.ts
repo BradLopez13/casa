@@ -175,6 +175,34 @@ describe('queue monitor', () => {
     expect(waiting()).toEqual([]);
   });
 
+  // Candidate (c) of the hoja: TanStack only resumes with the focus, and it learns the focus from
+  // AppState's events. If the app is in front but that event never came, nothing resumes.
+  it('wakes the queue when the app is in front but the focus was never told', async () => {
+    stop();
+    let active = true;
+    monitor = createQueueMonitor(
+      queryClient,
+      (key) => key?.[0] === 'tasks',
+      Date.now,
+      () => active,
+    );
+    stop = monitor.start();
+    onlineManager.setOnline(false);
+    server.reachable = false;
+    create('a');
+    await vi.advanceTimersByTimeAsync(50);
+    focusManager.setFocused(false);
+    server.reachable = true;
+    onlineManager.setOnline(true);
+    // Not at once: an AppState event on its way gets its moment.
+    await vi.advanceTimersByTimeAsync(QUEUE_WATCH_MS - 2000);
+    expect(server.sent).toEqual([]);
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(server.sent).toEqual(['a']);
+    expect(focusManager.isFocused()).toBe(true);
+    active = false;
+  });
+
   it('keeps each household to its own queue', async () => {
     server.hang = true;
     create('a', 'h1');
