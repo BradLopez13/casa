@@ -1,12 +1,6 @@
 import { hiddenItems } from './deferredDelete';
-import {
-  useMutation,
-  useMutationState,
-  useQuery,
-  useQueryClient,
-  type QueryClient,
-} from '@tanstack/react-query';
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useCallback, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import {
@@ -19,7 +13,6 @@ import {
 import {
   addKey,
   boughtKey,
-  countsAsUnsent,
   invalidateShoppingWhenIdle,
   quantityKey,
   shoppingScope,
@@ -31,6 +24,7 @@ import {
   type QuantityContext,
   type QuantityVars,
 } from './offline';
+import { useQueueSnapshot } from '@/features/offline/useQueue';
 import { pendingShopping, withQueuedShopping } from './pending';
 
 export const shoppingKey = (householdId: string | undefined) => ['shopping', householdId] as const;
@@ -182,15 +176,11 @@ export function useClearBought(householdId: string | undefined) {
   });
 }
 
-/** Ids of the items with a shopping mutation still on its way to the server. */
-export function usePendingItemIds(): Set<string> {
-  const ids = useMutationState({
-    filters: { mutationKey: ['shopping'], status: 'pending' },
-    select: (m) =>
-      countsAsUnsent(m.options.mutationKey, m.state.isPaused)
-        ? (m.state.variables as { id?: string } | undefined)?.id
-        : undefined,
-  });
-  const key = ids.filter((id): id is string => id !== undefined).join('\n');
-  return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
+/**
+ * Ids of the items with a queued change waiting to reach the server (add, bought, quantity): their
+ * row says «Sin enviar». The same rule as the tasks (`useQueueSnapshot`, bloque 14.1): once it had
+ * to wait, until it arrives; a change at its first try is not marked.
+ */
+export function usePendingItemIds(): ReadonlySet<string> {
+  return useQueueSnapshot().waiting;
 }

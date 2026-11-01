@@ -1,5 +1,4 @@
 import {
-  onlineManager,
   useMutation,
   useMutationState,
   useQuery,
@@ -7,7 +6,7 @@ import {
   type MutateOptions,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
@@ -25,7 +24,7 @@ import {
 import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
 import { pendingTasks, withQueued } from './pending';
-import { isQueuedTaskMutation } from './offline';
+import { useQueueSnapshot } from '@/features/offline/useQueue';
 
 export { tasksKey };
 
@@ -171,21 +170,10 @@ export type ToggleRequest = Pick<ToggleVars, 'id' | 'done'>;
 /**
  * The tasks with a change waiting in the queue (a create, a complete or a reopen): their note says
  * «Sin enviar», open or done, as a shopping row does (bloque 11; the open note too, bloque 13).
- * Only while it waits: for the connection, or trying again after a failed try back online. A
- * change on its way at its first try would flash the mark on every tap.
+ * Once it had to wait (offline, a failed try, or still not sent after a moment) and until it
+ * reaches the server, also with the connection back (bloque 14.1: the mark went while the change
+ * was still in the queue). A change at its first try is not marked: no flash on every tap.
  */
 export function useWaitingTasks(): ReadonlySet<string> {
-  const ids = useMutationState({
-    filters: {
-      status: 'pending',
-      // Paused also means waiting its turn in the queue's scope: only without a connection is
-      // it waiting for the connection.
-      predicate: (m) =>
-        isQueuedTaskMutation(m.options.mutationKey) &&
-        ((m.state.isPaused && !onlineManager.isOnline()) || m.state.failureCount > 0),
-    },
-    select: (m) => (m.state.variables as { id?: string } | undefined)?.id ?? '',
-  });
-  const key = ids.filter((id) => id !== '').join('\n');
-  return useMemo(() => new Set(key === '' ? [] : key.split('\n')), [key]);
+  return useQueueSnapshot().waiting;
 }

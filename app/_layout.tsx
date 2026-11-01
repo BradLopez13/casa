@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
 import { forgetEndedHousehold } from '@/data/query/persist';
 import { queryClient, reportQueryErrorsTo, watchAppAndConnection } from '@/data/query/setup';
+import { keepQueueWatched } from '@/features/offline/useQueue';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
@@ -49,6 +50,8 @@ initTelemetry();
 void SplashScreen.preventAutoHideAsync();
 
 watchAppAndConnection();
+// The queue is watched from the start, whatever screen is up (bloque 14.1).
+keepQueueWatched(queryClient);
 reportQueryErrorsTo((error, report) => captureError(error, report));
 
 function MembershipError({
