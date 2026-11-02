@@ -150,6 +150,10 @@ reset role;
 
 -- Gus (plain member) creates one; once it is used up, Ana (owner, not the creator) another.
 -- (A valid pending invite is reused since bloque 15.2, so Gus's is expired first.)
+-- Whatever is still open is expired first: a valid pending invite would be handed out again.
+select tests.clear_auth();
+update public.household_invites set expires_at = now() - interval '1 hour'
+  where household_id = '00000000-0000-0000-0000-0000000000a1' and accepted_at is null and revoked_at is null;
 select tests.authenticate_as(:'gus');
 select invite_id as gus_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
 select tests.clear_auth();
