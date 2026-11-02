@@ -68,7 +68,9 @@ export async function configureBilling(userId: string, platform: Platform): Prom
   if (apiKey === null) return false;
   if (configuredFor === userId) return true;
   const purchases = await sdk();
-  purchases.configure({ apiKey, appUserID: userId });
+  // The SDK is configured once per process; another person signs in on it.
+  if (configuredFor === null) purchases.configure({ apiKey, appUserID: userId });
+  else await purchases.logIn(userId);
   configuredFor = userId;
   return true;
 }
@@ -87,13 +89,19 @@ export async function purchaseLicense(checkout: Checkout): Promise<PurchaseOutco
   const product = productFor(checkout.level);
   const offerings = await purchases.getOfferings();
   const offering = offerings.all[checkout.offering] ?? offerings.current;
+  // Play reports its products as «casas_2:mensual» (product:base plan).
   const pkg = offering?.availablePackages.find(
-    (p) => p.product.identifier === product || p.identifier === product,
+    (p) => p.product.identifier.split(':')[0] === product || p.identifier === product,
   );
   if (!pkg) return 'unavailable';
   try {
     await purchases.setAttributes({ household_id: checkout.householdId });
-    await purchases.purchasePackage(pkg);
+    // On Android a change of level replaces the subscription on sale: without the old product
+    // Play would sell a second one (revisión 15.6).
+    const active = (await purchases.getCustomerInfo()).activeSubscriptions.find(
+      (id) => id.split(':')[0] !== product,
+    );
+    await purchases.purchasePackage(pkg, null, active ? { oldProductIdentifier: active } : null);
     return 'purchased';
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'userCancelled' in error) {

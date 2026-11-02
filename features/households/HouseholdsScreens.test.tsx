@@ -278,3 +278,20 @@ describe('the licence screen and the stores (bloque 15.6)', () => {
     ).toBeTruthy();
   });
 });
+
+describe('restoring without the SDK (bloque 15.6)', () => {
+  it('says paying is not possible from the app yet', async () => {
+    vi.mocked(getHouseholdLicense).mockResolvedValue({
+      status: 'complimentary',
+      paidBy: 'me',
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    withClient(<LicenseScreen />, (client) => {
+      client.setQueryData(membershipKey, casa);
+      client.setQueryData(householdsKey, [casa]);
+    });
+    fireEvent.click(await screen.findByRole('button', { name: t('license.restore') }));
+    expect(await screen.findByText(t('license.checkoutLater'))).toBeTruthy();
+  });
+});

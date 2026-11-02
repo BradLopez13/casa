@@ -32,15 +32,15 @@ const base64url = (bytes: Uint8Array | ArrayBuffer): string => {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
-const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text);
+const utf8 = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder().encode(text);
 
-function pemToPkcs8(pem: string): Uint8Array {
+function pemToPkcs8(pem: string): Uint8Array<ArrayBuffer> {
   const body = pem
     .replace(/-----BEGIN [A-Z ]+-----/g, '')
     .replace(/-----END [A-Z ]+-----/g, '')
     .replace(/\s+/g, '');
   const binary = atob(body);
-  const bytes = new Uint8Array(binary.length);
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }

@@ -2,7 +2,7 @@
 -- licence a new household gets with the switch off and on, the write guard with every state,
 -- reading never blocked, my_households, the checkout and the billing webhook's door.
 begin;
-select plan(61);
+select plan(62);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -263,7 +263,8 @@ select is(pg_temp.licensed_as('trial', now() + interval '1 day', null), true, 'a
 select is(pg_temp.licensed_as('trial', now() - interval '1 minute', null), false, 'an ended trial is not');
 select is(pg_temp.licensed_as('past_due', null, now() - interval '6 days'), true, 'past_due within the 7-day grace is licensed');
 select is(pg_temp.licensed_as('past_due', null, now() - interval '8 days'), false, 'past_due beyond the grace is not');
-select is(pg_temp.licensed_as('canceled', null, now() + interval '1 day'), false, 'canceled is not');
+select is(pg_temp.licensed_as('canceled', null, now() + interval '1 day'), true, 'canceled with time left is licensed until then (bloque 15.6: a level gone down)');
+select is(pg_temp.licensed_as('canceled', null, now() - interval '1 day'), false, 'canceled past its end is not');
 
 -- The webhook's door with billing on.
 select tests.clear_auth();

@@ -190,7 +190,7 @@ isOneToOne: false
                     {
       foreignKeyName: "subscription_households_household_id_fkey"
       columns: ["household_id"]
-isOneToOne: false
+isOneToOne: true
       referencedRelation: "households"
       referencedColumns: ["id"]
     }
@@ -392,6 +392,9 @@ isOneToOne: false
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
+                           },
+"transfer_subscriptions":
+{ Args: { "p_event_at": string,"p_event_id": string,"p_from": (string)[],"p_to": string }; Returns: boolean
                            },
 "unhide_shopping_suggestion":
 { Args: { "p_household_id": string,"p_name": string }; Returns: undefined

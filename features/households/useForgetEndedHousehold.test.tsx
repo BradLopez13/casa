@@ -55,7 +55,7 @@ function renderProbe(households: Membership[] | undefined, membership: Membershi
 
 /** A change of `householdId` waiting for the connection, as the quick add leaves it offline. */
 function queue(householdId: string) {
-  void new MutationObserver(queryClient, {
+  void new MutationObserver<void, Error, { id: string; householdId: string }>(queryClient, {
     mutationKey: ['tasks', 'create'],
     networkMode: 'online',
     mutationFn: () => Promise.resolve(),

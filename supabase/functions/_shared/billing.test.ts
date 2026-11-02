@@ -26,7 +26,8 @@ const request = (body: unknown, auth: string | null = `Bearer ${SECRET}`) =>
 
 function deps(enabled: boolean) {
   const apply = vi.fn<(change: LicenseChange) => Promise<boolean>>(() => Promise.resolve(true));
-  return { secret: SECRET, billingEnabled: () => Promise.resolve(enabled), apply };
+  const transfer = vi.fn<(change: LicenseChange) => Promise<boolean>>(() => Promise.resolve(true));
+  return { secret: SECRET, billingEnabled: () => Promise.resolve(enabled), apply, transfer };
 }
 
 describe('authorized', () => {
@@ -46,6 +47,7 @@ describe('licenseChange', () => {
       householdId: HOUSEHOLD,
       eventId: null,
       productId: null,
+      transfer: null,
       status: 'active',
       periodEnd: '2026-11-26T00:00:00.000Z',
       subscriptionId: 'GPA.1',
@@ -148,17 +150,28 @@ describe('the seven events (bloque 15.6)', () => {
     expect(change('BILLING_ISSUE')).toMatchObject({ status: 'past_due' });
   });
 
-  it('a transfer keeps the state and names the new payer', () => {
-    const transferred = change('TRANSFER', {
-      app_user_id: undefined,
-      transferred_from: [PAYER],
-      transferred_to: ['00000000-0000-0000-0000-0000000000b2'],
-    });
-    expect(transferred).toMatchObject({
+  it('a transfer names who loses and who gains, with no subscription in it (as RevenueCat sends it)', async () => {
+    const payload = {
+      event: {
+        type: 'TRANSFER',
+        id: 'ev-t',
+        app_user_id: '00000000-0000-0000-0000-0000000000b2',
+        transferred_from: [PAYER],
+        transferred_to: ['00000000-0000-0000-0000-0000000000b2'],
+        event_timestamp_ms: Date.UTC(2026, 9, 26),
+        store: 'PLAY_STORE',
+      },
+    };
+    expect(licenseChange(payload)).toMatchObject({
+      transfer: { from: [PAYER], to: '00000000-0000-0000-0000-0000000000b2' },
+      eventId: 'ev-t',
       status: null,
-      paidBy: '00000000-0000-0000-0000-0000000000b2',
-      initial: false,
     });
+    const d = deps(true);
+    const response = await handleBillingWebhook(request(payload), d);
+    expect(await response.json()).toEqual({ applied: 'transfer' });
+    expect(d.transfer).toHaveBeenCalledWith(expect.objectContaining({ eventId: 'ev-t' }));
+    expect(d.apply).not.toHaveBeenCalled();
   });
 
   it('hands the id and the product to the server', async () => {

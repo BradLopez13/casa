@@ -28,6 +28,11 @@ export type LicenseChange = {
   status: 'active' | 'past_due' | 'canceled' | null;
   /** The provider's event id: applied once (bloque 15.6). */
   eventId: string | null;
+  /**
+   * A TRANSFER: who loses their subscriptions and who gains them (RevenueCat names people, not
+   * subscriptions, in it); the rest of the change is then empty.
+   */
+  transfer: { from: string[]; to: string } | null;
   /** The product bought (casas_n): the level, how many households it covers. */
   productId: string | null;
   periodEnd: string | null;
@@ -59,6 +64,9 @@ const STATUS_BY_EVENT: Record<string, LicenseChange['status']> = {
   TRANSFER: null,
 };
 
+const eventIdOf = (event: Record<string, unknown>): string | null =>
+  typeof event.id === 'string' || typeof event.id === 'number' ? String(event.id) : null;
+
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
 
@@ -74,21 +82,41 @@ export function licenseChange(body: unknown): LicenseChange | null {
   const type = String(event.type);
   if (!(type in STATUS_BY_EVENT)) return null;
   const status = STATUS_BY_EVENT[type] ?? null;
+  if (type === 'TRANSFER') {
+    const from = Array.isArray(event.transferred_from)
+      ? event.transferred_from.filter((id): id is string => typeof id === 'string' && UUID.test(id))
+      : [];
+    const to: unknown = Array.isArray(event.transferred_to)
+      ? (event.transferred_to as unknown[])[0]
+      : undefined;
+    if (from.length === 0 || typeof to !== 'string' || !UUID.test(to)) return null;
+    const at = event.event_timestamp_ms;
+    return {
+      householdId: null,
+      eventId: eventIdOf(event),
+      productId: null,
+      transfer: { from, to },
+      status: null,
+      periodEnd: null,
+      subscriptionId: '',
+      paidBy: to,
+      initial: false,
+      eventAt: typeof at === 'number' ? new Date(at).toISOString() : null,
+    };
+  }
   const subscription = event.original_transaction_id ?? event.transaction_id;
   if (typeof subscription !== 'string' || subscription === '') return null;
   const attributes = asRecord(event.subscriber_attributes);
   const householdId = asRecord(attributes?.household_id)?.value;
   const expires = event.expiration_at_ms;
   const at = event.event_timestamp_ms;
-  const transferredTo: unknown = Array.isArray(event.transferred_to)
-    ? (event.transferred_to as unknown[])[0]
-    : undefined;
-  const payer: unknown = type === 'TRANSFER' ? transferredTo : event.app_user_id;
+  const payer: unknown = event.app_user_id;
   const product: unknown =
     type === 'PRODUCT_CHANGE' ? (event.new_product_id ?? event.product_id) : event.product_id;
   return {
-    eventId: typeof event.id === 'string' || typeof event.id === 'number' ? String(event.id) : null,
+    eventId: eventIdOf(event),
     productId: typeof product === 'string' && product !== '' ? product : null,
+    transfer: null,
     householdId: typeof householdId === 'string' && UUID.test(householdId) ? householdId : null,
     status,
     periodEnd: typeof expires === 'number' ? new Date(expires).toISOString() : null,
@@ -104,6 +132,10 @@ export type WebhookDeps = {
   billingEnabled: () => Promise<boolean>;
   /** Whether a licence changed (false: unknown subscription, not the household's lead, stale). */
   apply: (change: LicenseChange) => Promise<boolean>;
+  /** A TRANSFER: moves every subscription of `from` to `to`; whether any moved. */
+  transfer: (
+    change: LicenseChange & { transfer: { from: string[]; to: string } },
+  ) => Promise<boolean>;
 };
 
 const json = (body: unknown, status = 200) =>
@@ -123,6 +155,11 @@ export async function handleBillingWebhook(req: Request, deps: WebhookDeps): Pro
   }
   const change = licenseChange(body);
   if (!change) return json({ ignored: 'no_change' });
+  if (change.transfer) {
+    return (await deps.transfer({ ...change, transfer: change.transfer }))
+      ? json({ applied: 'transfer' })
+      : json({ ignored: 'no_subscription' });
+  }
   return (await deps.apply(change))
     ? json({ applied: change.status })
     : json({ ignored: 'no_licence' });
