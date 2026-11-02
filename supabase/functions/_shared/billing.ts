@@ -24,7 +24,12 @@ function sameSecret(given: string, expected: string): boolean {
 export type LicenseChange = {
   /** The household the app tagged the purchase with; only a first purchase uses it. */
   householdId: string | null;
-  status: 'active' | 'past_due' | 'canceled';
+  /** Null keeps the subscription's state: a transfer to another person (bloque 15.6). */
+  status: 'active' | 'past_due' | 'canceled' | null;
+  /** The provider's event id: applied once (bloque 15.6). */
+  eventId: string | null;
+  /** The product bought (casas_n): the level, how many households it covers. */
+  productId: string | null;
   periodEnd: string | null;
   /** The subscription: every event after the first finds its household by it. */
   subscriptionId: string;
@@ -50,6 +55,8 @@ const STATUS_BY_EVENT: Record<string, LicenseChange['status']> = {
   PRODUCT_CHANGE: 'active',
   BILLING_ISSUE: 'past_due',
   EXPIRATION: 'canceled',
+  // The subscription moved to another person: the state stays, the payer changes.
+  TRANSFER: null,
 };
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -64,16 +71,22 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
 export function licenseChange(body: unknown): LicenseChange | null {
   const event = asRecord(asRecord(body)?.event);
   if (!event) return null;
-  const status = STATUS_BY_EVENT[String(event.type)];
-  if (!status) return null;
+  const type = String(event.type);
+  if (!(type in STATUS_BY_EVENT)) return null;
+  const status = STATUS_BY_EVENT[type] ?? null;
   const subscription = event.original_transaction_id ?? event.transaction_id;
   if (typeof subscription !== 'string' || subscription === '') return null;
   const attributes = asRecord(event.subscriber_attributes);
   const householdId = asRecord(attributes?.household_id)?.value;
   const expires = event.expiration_at_ms;
   const at = event.event_timestamp_ms;
-  const payer = event.app_user_id;
+  const transferredTo = Array.isArray(event.transferred_to) ? event.transferred_to[0] : undefined;
+  const payer = type === 'TRANSFER' ? transferredTo : event.app_user_id;
+  const product =
+    type === 'PRODUCT_CHANGE' ? (event.new_product_id ?? event.product_id) : event.product_id;
   return {
+    eventId: typeof event.id === 'string' || typeof event.id === 'number' ? String(event.id) : null,
+    productId: typeof product === 'string' && product !== '' ? product : null,
     householdId: typeof householdId === 'string' && UUID.test(householdId) ? householdId : null,
     status,
     periodEnd: typeof expires === 'number' ? new Date(expires).toISOString() : null,

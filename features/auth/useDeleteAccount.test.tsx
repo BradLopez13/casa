@@ -27,12 +27,13 @@ beforeEach(() => {
 describe('useDeleteAccount', () => {
   it('revokes the Apple token before the account goes', async () => {
     const order: string[] = [];
-    vi.mocked(revokeAppleSignIn).mockImplementation(async () => {
+    vi.mocked(revokeAppleSignIn).mockImplementation(() => {
       order.push('revoke');
-      return true;
+      return Promise.resolve(true);
     });
-    vi.mocked(deleteAccount).mockImplementation(async () => {
+    vi.mocked(deleteAccount).mockImplementation(() => {
       order.push('delete');
+      return Promise.resolve();
     });
     const client = new QueryClient();
     const { result } = renderHook(() => useDeleteAccount(), {

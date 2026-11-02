@@ -18,10 +18,11 @@ export async function storeAppleCode(code: string): Promise<void> {
 /** Whether Apple revoked the token; false when there was none, or the function could not. */
 export async function revokeAppleSignIn(): Promise<boolean> {
   try {
-    const { data, error } = await supabase.functions.invoke<{ revoked?: boolean }>('revoke-apple', {
+    const response = await supabase.functions.invoke('revoke-apple', {
       body: { action: 'revoke' },
     });
-    return !error && data?.revoked === true;
+    const data = response.data as { revoked?: unknown } | null;
+    return !response.error && data?.revoked === true;
   } catch {
     return false;
   }

@@ -164,3 +164,33 @@ describe('useForgetEndedHousehold', () => {
     expect(membershipEnd).not.toHaveBeenCalled();
   });
 });
+
+// Revisión 15.2: fetchHouseholds moves the membership on in its own render, before the list
+// arrives; the household to name is still the one that was on screen.
+describe('when the membership moves on a render before the list', () => {
+  it('still names the household that was on screen', async () => {
+    vi.mocked(membershipEnd).mockResolvedValue('deleted');
+    const view = renderProbe([critica, casa], critica);
+    act(() => {
+      queryClient.setQueryData(membershipKey, casa);
+      queryClient.setQueryData(householdsKey, [casa]);
+    });
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <NoticeProvider>
+          <Probe households={[critica, casa]} membership={casa} />
+        </NoticeProvider>
+      </QueryClientProvider>,
+    );
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <NoticeProvider>
+          <Probe households={[casa]} membership={casa} />
+        </NoticeProvider>
+      </QueryClientProvider>,
+    );
+    expect((await screen.findByTestId('notice')).textContent).toBe(
+      t('households.ended.deleted', { old: 'Critica Nov', next: 'Casa' }),
+    );
+  });
+});

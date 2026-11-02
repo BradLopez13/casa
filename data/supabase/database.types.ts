@@ -176,6 +176,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"subscription_households": {
+                  Row: {
+                    "chosen_at": string,"household_id": string,"position": number,"provider": string,"subscription_id": string
+                  }
+                  Insert: {
+                    "chosen_at"?: string,"household_id": string,"position": number,"provider": string,"subscription_id": string
+                  }
+                  Update: {
+                    "chosen_at"?: string,"household_id"?: string,"position"?: number,"provider"?: string,"subscription_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "subscription_households_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"task_occurrences": {
                   Row: {
                     "assignee_id": string | null,"completed_at": string | null,"completed_by": string | null,"created_at": string,"due_on": string | null,"generated_from": string | null,"household_id": string,"id": string,"series_id": string,"skipped_at": string | null,"skipped_by": string | null
@@ -256,10 +275,13 @@ isOneToOne: false
 { Args: { "p_token": string,"p_user_id": string }; Returns: undefined
                            },
 "apply_billing_event":
-{ Args: { "p_event_at": string,"p_household_id": string,"p_initial": boolean,"p_paid_by": string,"p_period_end": string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
+{ Args: { "p_event_at": string,"p_event_id"?: string,"p_household_id": string,"p_initial": boolean,"p_paid_by": string,"p_period_end": string,"p_product_id"?: string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
                            },
 "billing_enabled":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"choose_covered_households":
+{ Args: { "p_household_ids": (string)[],"p_provider": string,"p_subscription_id": string }; Returns: undefined
                            },
 "claim_push_batch":
 { Args: { "p_limit"?: number }; Returns: {
@@ -310,6 +332,11 @@ isOneToOne: false
 "my_households":
 { Args: Record<PropertyKey, never>; Returns: {
               "household_id": string,"joined_at": string,"license_ends_at": string,"license_status": string,"licensed": boolean,"member_count": number,"name": string,"role": string,"rooms": (string)[]
+            }[]
+                           },
+"my_subscription":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "current_period_end": string,"household_ids": (string)[],"level": number,"product_id": string,"provider": string,"status": string,"subscription_id": string
             }[]
                            },
 "preview_invite":

@@ -30,6 +30,8 @@ Deno.serve((req) => {
         p_paid_by: change.paidBy,
         p_initial: change.initial,
         p_event_at: change.eventAt,
+        p_product_id: change.productId,
+        p_event_id: change.eventId,
       });
       if (error) throw error;
       return data === true;

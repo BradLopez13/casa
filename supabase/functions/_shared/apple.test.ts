@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   appleClientSecret,
+  appleConfigFrom,
   appleRevokeRequest,
   appleTokenRequest,
   handleRevokeApple,
@@ -78,7 +79,7 @@ describe('the requests to Apple', () => {
 describe('handleRevokeApple', () => {
   const config: AppleConfig = { teamId: 't', keyId: 'k', privateKey: 'p', clientId: 'c' };
   const deps = () => ({
-    secret: async () => 'secret',
+    secret: () => Promise.resolve('secret'),
     fetch: vi.fn<(request: Request) => Promise<Response>>(),
     saveToken: vi.fn<(userId: string, token: string) => Promise<void>>(),
     loadToken: vi.fn<(userId: string) => Promise<string | null>>(),
@@ -143,5 +144,28 @@ describe('handleRevokeApple', () => {
   it('refuses an unknown action', async () => {
     const response = await handleRevokeApple(post({ action: 'x' }), 'u1', config, deps());
     expect(response.status).toBe(400);
+  });
+});
+
+describe('appleConfigFrom', () => {
+  const env = (values: Record<string, string>) => ({ get: (name: string) => values[name] });
+  const all = {
+    APPLE_TEAM_ID: 't',
+    APPLE_KEY_ID: 'k',
+    APPLE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
+    APPLE_BUNDLE_ID: 'com.bradlopez13.casa',
+  };
+
+  it('needs the four secrets, the client being the bundle id (a native token)', () => {
+    expect(appleConfigFrom(env(all))).toMatchObject({ clientId: 'com.bradlopez13.casa' });
+    for (const missing of Object.keys(all)) {
+      expect(appleConfigFrom(env({ ...all, [missing]: '' }))).toBeNull();
+    }
+  });
+
+  it('takes a key pasted as one line, with its line breaks written as \\n', () => {
+    expect(appleConfigFrom(env(all))?.privateKey).toBe(
+      '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----',
+    );
   });
 });

@@ -38,8 +38,11 @@ export type HouseholdLicense = {
   trialEndsAt: string | null;
 };
 
-/** What the billing provider needs to start paying for a household's licence. */
-export type Checkout = { provider: string; offering: string; householdId: string };
+/**
+ * What the billing provider needs to start paying for a household's licence: the offering, the
+ * household the person pays from, and the level (how many households they lead: casas_n).
+ */
+export type Checkout = { provider: string; offering: string; householdId: string; level: number };
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
 
@@ -308,9 +311,10 @@ export async function startHouseholdCheckout(householdId: string): Promise<Check
   const data = await unwrap(
     supabase.rpc('start_household_checkout', { p_household_id: householdId }),
   );
-  const row = data as { provider?: unknown; offering?: unknown };
+  const row = data as { provider?: unknown; offering?: unknown; level?: unknown };
   if (typeof row.provider !== 'string' || typeof row.offering !== 'string') {
     throw new AppError('UNKNOWN');
   }
-  return { provider: row.provider, offering: row.offering, householdId };
+  const level = typeof row.level === 'number' ? row.level : 1;
+  return { provider: row.provider, offering: row.offering, householdId, level };
 }

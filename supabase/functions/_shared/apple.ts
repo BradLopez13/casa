@@ -14,7 +14,10 @@ export type AppleConfig = {
   keyId: string;
   /** The .p8 as PEM (`-----BEGIN PRIVATE KEY-----…`). */
   privateKey: string;
-  /** The bundle id on iOS, the Services ID when the sign-in went through the browser (Android). */
+  /**
+   * The client the token was issued to: the bundle id, since only the native sign-in on iOS hands
+   * the app an authorization code (on Android Apple goes through Supabase, which never shows it).
+   */
   clientId: string;
 };
 
@@ -177,7 +180,7 @@ export function appleConfigFrom(env: {
   const teamId = env.get('APPLE_TEAM_ID');
   const keyId = env.get('APPLE_KEY_ID');
   const privateKey = env.get('APPLE_PRIVATE_KEY');
-  const clientId = env.get('APPLE_SERVICE_ID');
+  const clientId = env.get('APPLE_BUNDLE_ID');
   if (!teamId || !keyId || !privateKey || !clientId) return null;
   // A key pasted as one line keeps its line breaks as the two characters `\n`.
   return { teamId, keyId, privateKey: privateKey.replace(/\\n/g, '\n'), clientId };

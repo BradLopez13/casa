@@ -44,6 +44,8 @@ describe('licenseChange', () => {
   it('a purchase or a renewal makes the licence active until it expires', () => {
     expect(licenseChange(event('INITIAL_PURCHASE'))).toEqual({
       householdId: HOUSEHOLD,
+      eventId: null,
+      productId: null,
       status: 'active',
       periodEnd: '2026-11-26T00:00:00.000Z',
       subscriptionId: 'GPA.1',
@@ -114,5 +116,59 @@ describe('handleBillingWebhook', () => {
 
   it('a body that is not JSON is a bad request', async () => {
     expect((await handleBillingWebhook(request('{nope'), deps(true))).status).toBe(400);
+  });
+});
+
+// Bloque 15.6: a level per product (casas_n), every event once by its id, and the seven events
+// RevenueCat sends.
+describe('the seven events (bloque 15.6)', () => {
+  const change = (type: string, extra: Record<string, unknown> = {}) =>
+    licenseChange(event(type, { id: 'ev-1', product_id: 'casas_2', ...extra }));
+
+  it('carries the event id and the product, so the server applies it once at the right level', () => {
+    expect(change('INITIAL_PURCHASE')).toMatchObject({
+      eventId: 'ev-1',
+      productId: 'casas_2',
+      status: 'active',
+      initial: true,
+    });
+    expect(change('RENEWAL')).toMatchObject({ status: 'active', initial: false });
+  });
+
+  it('a product change carries the new product', () => {
+    expect(change('PRODUCT_CHANGE', { new_product_id: 'casas_3' })).toMatchObject({
+      status: 'active',
+      productId: 'casas_3',
+    });
+  });
+
+  it('a cancellation changes nothing; an expiry cancels; a billing issue is past_due', () => {
+    expect(change('CANCELLATION')).toBeNull();
+    expect(change('EXPIRATION')).toMatchObject({ status: 'canceled' });
+    expect(change('BILLING_ISSUE')).toMatchObject({ status: 'past_due' });
+  });
+
+  it('a transfer keeps the state and names the new payer', () => {
+    const transferred = change('TRANSFER', {
+      app_user_id: undefined,
+      transferred_from: [PAYER],
+      transferred_to: ['00000000-0000-0000-0000-0000000000b2'],
+    });
+    expect(transferred).toMatchObject({
+      status: null,
+      paidBy: '00000000-0000-0000-0000-0000000000b2',
+      initial: false,
+    });
+  });
+
+  it('hands the id and the product to the server', async () => {
+    const d = deps(true);
+    await handleBillingWebhook(
+      request(event('INITIAL_PURCHASE', { id: 'ev-9', product_id: 'casas_1' })),
+      d,
+    );
+    expect(d.apply).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: 'ev-9', productId: 'casas_1' }),
+    );
   });
 });

@@ -145,9 +145,16 @@ export function createQueueMonitor(
   const hold = () => {
     const active = isActive();
     if (holding && active && !wasActive) {
-      // Came to the front while held: the refetch a focus event would have brought.
+      // Came to the front while held: TanStack saw no focus event (the focus was already true),
+      // so what one brings is done here: the stale queries refetch, the retry window reopens and
+      // every wait is cut short (revisión 15.1).
       holding = false;
-      queryClient.getQueryCache().onFocus();
+      void queryClient.refetchQueries({ type: 'active', stale: true }).catch(() => undefined);
+      if (onlineManager.isOnline()) {
+        markOnline();
+        retryQueuedNow();
+        wakeAll();
+      }
     }
     wasActive = active;
     if (onlineManager.isOnline() && queued().length > 0) {

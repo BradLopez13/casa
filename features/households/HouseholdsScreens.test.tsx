@@ -187,8 +187,9 @@ describe('the licence screen (bloque 12)', () => {
     });
     vi.mocked(startHouseholdCheckout).mockResolvedValue({
       provider: 'revenuecat',
-      offering: 'household_monthly',
+      offering: 'default',
       householdId: 'casa',
+      level: 1,
     });
     withClient(<LicenseScreen />, seed(undefined));
     expect((await screen.findByTestId('license.state')).textContent).toBe(
@@ -238,5 +239,42 @@ describe('LicenseBand (bloque 12)', () => {
     expect(within(shown).getByText(t('license.band', { date: licenseDate(ended) }))).toBeTruthy();
     fireEvent.click(screen.getByTestId('license.band.open'));
     expect(nav.router.push).toHaveBeenCalledWith('/household/license');
+  });
+});
+
+// Bloque 15.6: the stores ask for «Restaurar compras» and «Gestionar suscripción»; the pay button
+// says the level.
+describe('the licence screen and the stores (bloque 15.6)', () => {
+  it('always offers to restore purchases and to manage the subscription in the store', async () => {
+    vi.mocked(getHouseholdLicense).mockResolvedValue({
+      status: 'complimentary',
+      paidBy: 'me',
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    withClient(<LicenseScreen />, (client) => {
+      client.setQueryData(membershipKey, casa);
+      client.setQueryData(householdsKey, [casa]);
+    });
+    expect(await screen.findByRole('button', { name: t('license.restore') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('license.manage') })).toBeTruthy();
+  });
+
+  it('with billing on, the pay button names the households the person leads', async () => {
+    vi.stubEnv('EXPO_PUBLIC_BILLING_ENABLED', 'true');
+    vi.mocked(getHouseholdLicense).mockResolvedValue({
+      status: 'trial',
+      paidBy: 'me',
+      currentPeriodEnd: null,
+      trialEndsAt: '2099-11-09T10:00:00Z',
+    });
+    const mama = { ...casa, householdId: 'mama', householdName: 'Casa de mamá' };
+    withClient(<LicenseScreen />, (client) => {
+      client.setQueryData(membershipKey, casa);
+      client.setQueryData(householdsKey, [casa, mama]);
+    });
+    expect(
+      await screen.findByRole('button', { name: t('license.payLevel', { count: 2 }) }),
+    ).toBeTruthy();
   });
 });

@@ -5,6 +5,7 @@ import { forgetEndedHousehold } from '@/data/query/persist';
 import { t } from '@/i18n';
 import { useNotice } from '@/ui/components/Notice';
 import { membershipEnd, type Membership } from './api';
+import { householdsKey } from './keys';
 import { setEndedNotice } from './endedNotice';
 
 type Seen = { householdId: string; householdName: string };
@@ -76,11 +77,12 @@ export function useForgetEndedHousehold(
   }, [client, households, notify]);
 
   useEffect(() => {
-    if (membership) {
-      seen.current = {
-        householdId: membership.householdId,
-        householdName: membership.householdName,
-      };
-    }
-  }, [membership]);
+    if (!membership) return;
+    // fetchHouseholds moves the membership on before the list arrives (two renders): while the
+    // list the cache holds already lacks the household seen, that one is still the one to name.
+    const list = client.getQueryData<readonly Membership[]>(householdsKey);
+    const was = seen.current;
+    if (was && list && !list.some((h) => h.householdId === was.householdId)) return;
+    seen.current = { householdId: membership.householdId, householdName: membership.householdName };
+  }, [client, membership]);
 }

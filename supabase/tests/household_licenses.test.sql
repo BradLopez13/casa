@@ -155,8 +155,9 @@ select ok(
 
 select is(
   public.start_household_checkout(:'eva_hid'),
-  jsonb_build_object('provider', 'revenuecat', 'offering', 'household_monthly', 'household_id', :'eva_hid'::uuid),
-  'and its lead gets what the provider needs to pay'
+  jsonb_build_object('provider', 'revenuecat', 'offering', 'default', 'household_id', :'eva_hid'::uuid,
+    'level', 1, 'product_id', 'casas_1'),
+  'and its lead gets what the provider needs to pay, with the level (bloque 15.6)'
 );
 
 select lives_ok(
@@ -321,9 +322,9 @@ select throws_ok(
   format($$select public.apply_billing_event(%L, 'complimentary', null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
   'P0001', 'INVALID_LICENSE_STATUS', 'the webhook cannot hand out a complimentary licence'
 );
-select throws_ok(
-  format($$select public.apply_billing_event(%L, null, null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
-  'P0001', 'INVALID_LICENSE_STATUS', 'nor a licence without a state'
+select is(
+  public.apply_billing_event(:'hid', null, null, 'revenuecat', 'sub_none', null, false, now()),
+  false, 'nor a licence without a state (bloque 15.6: only a transfer of a known subscription keeps it)'
 );
 reset role;
 

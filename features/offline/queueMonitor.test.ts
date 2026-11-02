@@ -345,7 +345,7 @@ describe('queue monitor', () => {
       // Behind, the connection comes back but the server does not answer: the tries back off.
       server.reachable = false;
       onlineManager.setOnline(true);
-      await vi.advanceTimersByTimeAsync(90_000);
+      await vi.advanceTimersByTimeAsync(92_000);
       expect(server.sent).toEqual([]);
       // Opened: the first try still fails, the server answers right after.
       active = true;
