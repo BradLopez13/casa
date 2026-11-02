@@ -33,11 +33,20 @@ onFlowComplete:
 - inputText: Nota 1
 - tapOn:
     id: today.quick-add.submit
-# The keyboard covers the list: down first.
-- hideKeyboard
-- extendedWaitUntil:
-    visible: Nota 1
+# The keyboard covers the list. It is closed by tapping the door line, never with hideKeyboard:
+# on Android that is a plain Back, which leaves the app when the tap did not open a keyboard.
+- tapOn:
+    id: today.door-line
+    retryIfNoChange: false
+# The offline band can push the first note under the tab bar on the emulator.
+- scrollUntilVisible:
+    element: Nota 1
+    direction: DOWN
     timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
 - evalScript: ${output.n = 1}
 - repeat:
     times: 8
@@ -48,7 +57,9 @@ onFlowComplete:
       - inputText: Nota ${output.n}
       - tapOn:
           id: today.quick-add.submit
-- hideKeyboard
+- tapOn:
+    id: today.door-line
+    retryIfNoChange: false
 - extendedWaitUntil:
     visible:
       id: tasks.offline

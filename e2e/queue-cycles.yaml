@@ -2,6 +2,16 @@ appId: com.bradlopez13.casa
 # Bloque 14.1 (P1-2 del 1 de noviembre): a task made offline stayed «Sin enviar» with the
 # connection back in 3 of 9 tries. One try is not enough: three cycles of airplane mode in a row,
 # each with a task made offline, and each time the mark goes once the connection is back.
+#
+# On the 320×640 emulator only a note or two fit under the door, so nothing here trusts a place on
+# the screen:
+# - each cycle starts from the door;
+# - a note is read by its label, which ends in «sin enviar» while it waits («Ciclo uno, tuya, Hoy,
+#   sin enviar»): scrolled to while offline, then waited for without it once the connection is back,
+#   so the check never passes because the mark fell off the screen;
+# - the keyboard is closed by tapping the door line, never with hideKeyboard (on Android that is a
+#   plain Back, which leaves the app when no keyboard is open). The tap also takes the focus off the
+#   quick add, so the keyboard does not come back over the list when the app does.
 onFlowComplete:
   - setAirplaneMode: disabled
 ---
@@ -24,7 +34,7 @@ onFlowComplete:
       id: today.door-line
     timeout: 20000
 
-# Cycle 1
+# Cycle 1: a task made offline
 - setAirplaneMode: enabled
 - extendedWaitUntil:
     visible:
@@ -35,24 +45,32 @@ onFlowComplete:
 - inputText: Ciclo uno
 - tapOn:
     id: today.quick-add.submit
-- hideKeyboard
-# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- tapOn:
+    id: today.door-line
+    retryIfNoChange: false
 - scrollUntilVisible:
-    element:
-      id: 'task-note\..*\.pending'
+    element: 'Ciclo uno, .*sin enviar'
     direction: DOWN
-    timeout: 5000
+    timeout: 10000
 - setAirplaneMode: disabled
-- extendedWaitUntil:
-    notVisible:
-      id: '(task-note|done-tray)\..*\.pending'
+- scrollUntilVisible:
+    element: 'Ciclo uno, (?!.*sin enviar).*'
+    direction: DOWN
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
-# The emulator screen holds one note: done, so the next cycle's note is the one in view.
+# Done, so the next cycle's note is the only one open.
 - tapOn: Completar «Ciclo uno»
+- scrollUntilVisible:
+    element: 'Reabrir «Ciclo uno», (?!.*sin enviar).*'
+    direction: DOWN
+    timeout: 30000
 
 # Cycle 2: a complete queued behind the create
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
 - setAirplaneMode: enabled
 - extendedWaitUntil:
     visible:
@@ -63,23 +81,31 @@ onFlowComplete:
 - inputText: Ciclo dos
 - tapOn:
     id: today.quick-add.submit
-- hideKeyboard
-# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- tapOn:
+    id: today.door-line
+    retryIfNoChange: false
 - scrollUntilVisible:
-    element:
-      id: 'task-note\..*\.pending'
+    element: 'Ciclo dos, .*sin enviar'
     direction: DOWN
-    timeout: 5000
+    timeout: 10000
 - tapOn: Completar «Ciclo dos»
+- scrollUntilVisible:
+    element: 'Reabrir «Ciclo dos», .*sin enviar'
+    direction: DOWN
+    timeout: 10000
 - setAirplaneMode: disabled
-- extendedWaitUntil:
-    notVisible:
-      id: '(task-note|done-tray)\..*\.pending'
+- scrollUntilVisible:
+    element: 'Reabrir «Ciclo dos», (?!.*sin enviar).*'
+    direction: DOWN
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
 
 # Cycle 3: the app goes to the background while offline and comes back with the connection
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
 - setAirplaneMode: enabled
 - extendedWaitUntil:
     visible:
@@ -90,31 +116,30 @@ onFlowComplete:
 - inputText: Ciclo tres
 - tapOn:
     id: today.quick-add.submit
-- hideKeyboard
-# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- tapOn:
+    id: today.door-line
+    retryIfNoChange: false
 - scrollUntilVisible:
-    element:
-      id: 'task-note\..*\.pending'
+    element: 'Ciclo tres, .*sin enviar'
     direction: DOWN
-    timeout: 5000
+    timeout: 10000
 - pressKey: Home
 - setAirplaneMode: disabled
-# Back to the app as it was, not a cold start: the list is still scrolled down to the mark, so
-# the door is out of view and the quick add, still in view, says the app is in front.
+# Back to the app as it was, not a cold start.
 - launchApp:
     stopApp: false
-- extendedWaitUntil:
-    visible:
-      id: today.quick-add
+- scrollUntilVisible:
+    element: 'Ciclo tres, .*'
+    direction: DOWN
     timeout: 20000
-- extendedWaitUntil:
-    notVisible:
-      id: '(task-note|done-tray)\..*\.pending'
+- scrollUntilVisible:
+    element: 'Ciclo tres, (?!.*sin enviar).*'
+    direction: DOWN
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
 
-# All three reached the server: a refresh brings them back from it.
+# All three reached the server: a refresh brings them back from it, none waiting.
 - scrollUntilVisible:
     element:
       id: today.door-line
@@ -123,15 +148,13 @@ onFlowComplete:
     start: 50%, 35%
     end: 50%, 85%
     duration: 800
-- extendedWaitUntil:
-    visible: Ciclo tres
+- scrollUntilVisible:
+    element: 'Ciclo tres, (?!.*sin enviar).*'
+    direction: DOWN
     timeout: 20000
-# The first two are done, in the tray under the list.
 - scrollUntilVisible:
-    element: '.*Ciclo dos.*'
+    element: 'Reabrir «Ciclo dos», (?!.*sin enviar).*'
     direction: DOWN
 - scrollUntilVisible:
-    element: '.*Ciclo uno.*'
+    element: 'Reabrir «Ciclo uno», (?!.*sin enviar).*'
     direction: DOWN
-- assertNotVisible:
-    id: '(task-note|done-tray)\..*\.pending'
