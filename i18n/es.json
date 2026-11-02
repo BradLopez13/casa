@@ -441,7 +441,6 @@
   "today.line.personNone": "A {name} no le toca nada hoy.",
   "today.line.leftOne": "Te queda 1 de antes.",
   "today.line.leftOther": "Te quedan {count} de antes.",
-  "today.line.noneTodayPart": "Nada para hoy",
   "today.line.noneTodayRest": "Nada para hoy; {rest}.",
   "today.line.allDoneRest": "Todo hecho por hoy; {rest}.",
   "today.line.restHouse": "a la casa",

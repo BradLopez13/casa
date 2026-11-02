@@ -89,16 +89,13 @@ export async function deleteShoppingItem(id: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('delete_shopping_item', { p_id: id }));
 }
 
-/** Drops a name from the household's usual suggestions (bloque 15.3); «Deshacer» calls the other. */
+/**
+ * Drops a name from the household's usual suggestions (bloque 15.3). «Deshacer» never reaches the
+ * server (the notice's timer is cancelled first); listing the name again shows it again.
+ */
 export async function hideShoppingSuggestion(householdId: string, name: string): Promise<void> {
   await unwrapMaybe(
     supabase.rpc('hide_shopping_suggestion', { p_household_id: householdId, p_name: name }),
-  );
-}
-
-export async function unhideShoppingSuggestion(householdId: string, name: string): Promise<void> {
-  await unwrapMaybe(
-    supabase.rpc('unhide_shopping_suggestion', { p_household_id: householdId, p_name: name }),
   );
 }
 

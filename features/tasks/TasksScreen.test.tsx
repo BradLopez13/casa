@@ -271,3 +271,29 @@ describe('Tareas', () => {
     expect(screen.queryByTestId('tasks.offline')).toBeNull();
   });
 });
+
+// Bloque 15.3 (P3-4): during a delete's «Deshacer» the headline said 10 and the section 9.
+describe('a task whose «Deshacer» is still up', () => {
+  it('still counts in the door line and in its section', async () => {
+    const { deleteWithUndo, showTask } = await import('./deferredDelete');
+    renderTasks([task('Fregar', { assigneeId: 'me' }), task('Barrer', { assigneeId: 'me' })]);
+    const line = () =>
+      screen.getByText((text) => text.startsWith(t('tasks.allLine.purpose'))).textContent;
+    expect(line()).toContain(t('tasks.allLine.mineOther', { count: 2 }));
+    act(() => {
+      deleteWithUndo({
+        id: 'Fregar',
+        remove: () => new Promise(() => undefined),
+        notify: () => undefined,
+        ms: 60_000,
+        schedule: () => () => undefined,
+        watchBackground: () => () => undefined,
+      });
+    });
+    expect(screen.queryByText('Fregar')).toBeNull();
+    expect(line()).toContain(t('tasks.allLine.mineOther', { count: 2 }));
+    const heading = screen.getAllByRole('heading').find((h) => h.getAttribute('aria-label'));
+    expect(heading?.getAttribute('aria-label')).toMatch(/2 tareas$/);
+    act(() => showTask('Fregar'));
+  });
+});

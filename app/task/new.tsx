@@ -36,7 +36,8 @@ function NewTaskScreen() {
   const householdId = useMembership().data?.householdId;
   const members = useMembers(householdId).data;
   // A home with no task yet: the example in the title says «Por ejemplo, …» (bloque 15.3).
-  const firstTask = useTasks(householdId).data?.length === 0;
+  const known = useTasks(householdId).data;
+  const firstTask = known !== undefined && known.length === 0;
   // Switched to another household meanwhile (bloque 12): the task would land in the wrong one.
   useCloseOnHouseholdSwitch(householdId, close);
   const marks = useMemo(() => memberMarks(members ?? []), [members]);

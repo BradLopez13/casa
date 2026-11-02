@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
+import { filterByAssignee } from '@/domain/tasks/views';
 import { addDays } from '@/domain/tasks/dates';
 import { dayHeading, dayInSentence } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
@@ -45,7 +46,10 @@ export default function TasksScreen() {
   const layout = useLayout();
   const screen = useTaskScreen();
   const { today, members, filtered, userId, assigneeId, tasksQuery } = screen;
-  const deleting = useDeletingTasks(screen.membership?.householdId);
+  // A delete whose «Deshacer» is still up counts as it was (DESIGN.md), under the same filter
+  // as the list.
+  const going = useDeletingTasks(screen.membership?.householdId);
+  const deleting = useMemo(() => filterByAssignee(going, assigneeId), [going, assigneeId]);
   // A link into Tareas may name a day (`casa://tasks?due=2026-10-23`): it chooses that pill.
   const { due } = useLocalSearchParams<{ due?: string }>();
   // The screen owns the chosen day (null is «Todas»), not either layout, so turning the tablet
@@ -74,6 +78,11 @@ export default function TasksScreen() {
 
   // The door counts the whole household, like Hoy's, so it can say what is left for everyone.
   const tasks = tasksQuery.data;
+  // With the task whose «Deshacer» is still up, as the sections (bloque 15.3, P3-4).
+  const counted = useMemo(
+    () => (going.length === 0 ? (tasks ?? []) : [...(tasks ?? []), ...going]),
+    [tasks, going],
+  );
   const filterName = members.find((m) => m.userId === assigneeId)?.displayName ?? '';
   const several = useSeveralHouseholds();
   const doorLine = useMemo(
@@ -81,7 +90,7 @@ export default function TasksScreen() {
       allLineText(
         allLine({
           // With a day pill chosen, that day only (bloque 14.5, P3).
-          tasks: day === null ? (tasks ?? []) : (tasks ?? []).filter((task) => task.dueOn === day),
+          tasks: day === null ? counted : counted.filter((task) => task.dueOn === day),
           today,
           userId,
           filter: assigneeId,
@@ -91,7 +100,7 @@ export default function TasksScreen() {
         day === null ? undefined : dayInSentence(day, today),
         day !== null && day !== today && day !== addDays(today, 1),
       ),
-    [tasks, today, userId, assigneeId, filterName, several, day],
+    [counted, today, userId, assigneeId, filterName, several, day],
   );
 
   const sections = useMemo(
@@ -121,6 +130,7 @@ export default function TasksScreen() {
     chooseDay: setChosen,
     empty,
     doorLine,
+    deleting,
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>

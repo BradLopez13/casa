@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { legalUrls, SITE_URL_DEFAULT } from './urls';
 
-const site = process.env.EXPO_PUBLIC_SITE_URL;
+const site = process.env.EXPO_PUBLIC_SITE_URL as string | undefined;
 afterEach(() => {
   process.env.EXPO_PUBLIC_SITE_URL = site;
 });

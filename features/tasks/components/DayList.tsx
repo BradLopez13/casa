@@ -88,6 +88,7 @@ export function DayList({ days, selected, onSelect, today, marks, names, total, 
       {earlier > 0 ? (
         <View
           testID="day-list.earlier"
+          accessible
           accessibilityLabel={t('tasks.pill.earlierLabel', { count: earlier })}
           style={{
             minHeight: MIN_TOUCH,

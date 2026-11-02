@@ -1,7 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { router } from 'expo-router';
 import ShoppingScreen from '@/app/(tabs)/shopping';
 import { AppError } from '@/data/supabase/errors';
@@ -253,6 +253,8 @@ describe('removing a usual suggestion', () => {
     lastUsedAt: '2026-10-20T08:00:00.000Z',
   };
 
+  afterEach(() => vi.useRealTimers());
+
   it('a long press takes it away at once and offers «Deshacer»', () => {
     vi.useFakeTimers();
     renderShopping([], [bread]);
@@ -271,6 +273,5 @@ describe('removing a usual suggestion', () => {
       fireEvent.click(screen.getByTestId('notice.undo'));
     });
     expect(screen.getByTestId('shopping.usual.bolsa aa')).toBeTruthy();
-    vi.useRealTimers();
   });
 });

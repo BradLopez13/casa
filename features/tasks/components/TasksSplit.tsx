@@ -31,10 +31,14 @@ export function TasksSplit({
   chooseDay,
   empty,
   doorLine,
+  deleting,
 }: TasksParts) {
   const { space } = useTheme();
   // What «Todas» counts: every open task of the filter, as the list and the door's line.
-  const open = useMemo(() => screen.filtered.filter(isOpen), [screen.filtered]);
+  const open = useMemo(
+    () => [...screen.filtered, ...deleting].filter(isOpen),
+    [screen.filtered, deleting],
+  );
   const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const rows = {

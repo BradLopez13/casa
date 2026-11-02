@@ -60,3 +60,20 @@ describe('allLine', () => {
     expect(all(tasks, me)).toEqual({ kind: 'nothingMine' });
   });
 });
+
+// Bloque 15.3 (P3-4): the line counts the task whose «Deshacer» is still up, as the sections do;
+// the screen hands it in with the rest.
+describe('allLine with a task in flight', () => {
+  it('counts it once it is in the list it gets', () => {
+    const going = task({ assigneeId: me });
+    expect(
+      allLine({
+        tasks: [task({ assigneeId: me }), going],
+        today,
+        userId: me,
+        filter: null,
+        filterName: '',
+      }),
+    ).toEqual({ kind: 'mine', count: 2 });
+  });
+});
