@@ -227,7 +227,7 @@
   "members.errors.CANNOT_REMOVE_SELF": "Para irte, usa «Salir de la casa».",
   "members.errors.NETWORK": "Sin conexión. Inténtalo de nuevo cuando vuelva.",
   "members.errors.UNKNOWN": "No se pudo completar. Inténtalo de nuevo en un momento.",
-  "invite.shareMessage": "Te invito a mi casa «{household}» en Nido.\n\nSi ya tienes Nido, copia este mensaje y pégalo en Ajustes → {join} (o toca el enlace, si se deja). Si no la tienes, instálala, entra y pégalo donde pone «¿Tienes un enlace?».\n\n{url}",
+  "invite.shareMessage": "Te invito a mi casa «{household}» en Nido.\n\nToca el enlace para unirte: abre Nido, o te lleva a instalarla. Si no se abre, copia este mensaje y pégalo en Nido, en Ajustes → {join} (o donde pone «¿Tienes un enlace?» si acabas de instalarla).\n\n{url}",
   "members.back": "Volver",
   "members.loading": "Cargando…",
   "tasks.due.today": "Hoy",

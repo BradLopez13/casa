@@ -26,7 +26,7 @@ describe('inviteFromClipboard (bloque 14.3)', () => {
     copied(
       `Te invito a mi casa «Casa» en Nido.\n\nSi ya tienes Nido…\n\ncasa://invite?token=${TOKEN}`,
     );
-    expect(await inviteFromClipboard('android')).toMatch(new RegExp(`invite\\?token=${TOKEN}$`));
+    expect(await inviteFromClipboard('android')).toMatch(new RegExp(`invite/?\\?token=${TOKEN}$`));
   });
 
   // Revisión de 14.3: copying your own invitation and then opening the screen filled it.

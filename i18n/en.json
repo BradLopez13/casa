@@ -227,7 +227,7 @@
   "members.errors.CANNOT_REMOVE_SELF": "To leave, use “Leave the home”.",
   "members.errors.NETWORK": "You're offline. Try again when you're back online.",
   "members.errors.UNKNOWN": "That didn't go through. Try again in a moment.",
-  "invite.shareMessage": "I’m inviting you to my home “{household}” on Nido.\n\nIf you have Nido, copy this message and paste it in Settings → {join} (or tap the link, if it lets you). If you don’t, install it, sign in and paste it where it says “Have a link?”.\n\n{url}",
+  "invite.shareMessage": "I’m inviting you to my home “{household}” on Nido.\n\nTap the link to join: it opens Nido, or takes you to install it. If it doesn’t open, copy this message and paste it in Nido, in Settings → {join} (or where it says “Have a link?” if you’ve just installed it).\n\n{url}",
   "members.back": "Back",
   "members.loading": "Loading…",
   "tasks.due.today": "Today",

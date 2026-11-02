@@ -1,9 +1,10 @@
 # Invitaciones con enlace https (lo que falta para la opción A)
 
-Decisión de Brad del 1 de noviembre de 2026: hasta el lanzamiento, la invitación se comparte con
-el mensaje en dos pasos y el enlace `casa://invite?token=…` en su propia línea (B). Todo lo de
-abajo está preparado para pasar a un enlace https que abre Nido si está instalada y, si no, una
-página con la tienda y los pasos (A).
+Decisión de Brad (1 y 2 de noviembre de 2026): hasta el lanzamiento, la invitación lleva un enlace
+https a esta web en GitHub Pages, `https://bradlopez13.github.io/casa/invite/?token=…`, con los dos
+pasos en el mensaje por si no se abre. La página abre Nido con un toque (o lleva a Google Play).
+Sin dominio propio no hay App Links: el enlace abre primero el navegador. Lo de abajo es para
+pasar a un dominio propio, donde el enlace abre Nido directamente (A).
 
 ## Lo que ya está hecho
 

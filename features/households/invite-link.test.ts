@@ -8,14 +8,18 @@ describe('buildInviteUrl', () => {
   it('builds the invite URL with the token query param', () => {
     const createUrl = (path: string, opts: { queryParams: Record<string, string> }) =>
       `casa://${path}?${new URLSearchParams(opts.queryParams).toString()}`;
-    expect(buildInviteUrl(TOKEN, createUrl)).toBe(`casa://invite?token=${TOKEN}`);
+    expect(buildInviteUrl(TOKEN, createUrl, null)).toBe(`casa://invite?token=${TOKEN}`);
   });
 
-  // Prepared for the domain (decisión 1, B now, A at launch): with a host, an https link.
-  it('builds an https link when the app has an invite host', () => {
+  // Decisión 1 (Brad, 2 de noviembre): a link a chat app lets you tap, on GitHub Pages until the
+  // domain exists.
+  it('builds an https link on the invite host, the GitHub Pages site by default', () => {
     const createUrl = () => 'casa://unused';
+    expect(buildInviteUrl(TOKEN, createUrl)).toBe(
+      `https://bradlopez13.github.io/casa/invite/?token=${TOKEN}`,
+    );
     expect(buildInviteUrl(TOKEN, createUrl, 'nido.example')).toBe(
-      `https://nido.example/invite?token=${TOKEN}`,
+      `https://nido.example/invite/?token=${TOKEN}`,
     );
   });
 });
@@ -69,6 +73,9 @@ casa://invite?token=${TOKEN}`;
 
   it('parses an https invite link', () => {
     expect(parseInviteToken(`https://nido.example/invite?token=${TOKEN}`)).toBe(TOKEN);
+    expect(parseInviteToken(`https://bradlopez13.github.io/casa/invite/?token=${TOKEN}`)).toBe(
+      TOKEN,
+    );
   });
 
   it('takes the first element of an array param', () => {

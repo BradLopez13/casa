@@ -199,7 +199,7 @@ describe('copying the invitation (bloque 14.3)', () => {
     const copied = vi.mocked(Clipboard.setStringAsync).mock.calls[0]![0];
     expect(copied).toContain('«Casa»');
     expect(copied).toContain(t('households.join'));
-    expect(copied.split('\n').at(-1)).toMatch(new RegExp(`invite\\?token=${token}$`));
+    expect(copied.split('\n').at(-1)).toMatch(new RegExp(`invite/?\\?token=${token}$`));
     expect(await screen.findByTestId('members.copied')).toBeTruthy();
   });
 });

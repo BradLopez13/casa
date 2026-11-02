@@ -5,17 +5,26 @@ const TOKEN_PATTERN = /^[0-9a-f]{48}$/;
 type CreateUrl = (path: string, opts: { queryParams: Record<string, string> }) => string;
 
 /**
- * Where the https invite links live once Nido has its domain (decisión 1 de Brad, 1 de noviembre:
- * B until the launch, A then). Unset, the link is the app's own `casa://invite?token=…`. Set it
- * (`EXPO_PUBLIC_INVITE_HOST=nido.app`) together with the domain's `.well-known` files and
- * `app.config.js` declares the App Links and Universal Links (`site/INVITACIONES.md`).
+ * Where the invitation links live (decisión 1 de Brad, 2 de noviembre: B with a link that can be
+ * tapped). Until Nido has its own domain, the project's GitHub Pages site, where `site/invite/`
+ * opens Nido with one tap or leads to Google Play; a chat app turns an https link into one that can
+ * be tapped, never `casa://`. With the domain at the launch, `EXPO_PUBLIC_INVITE_HOST=<domain>` and
+ * `app.config.js` declares the App Links and Universal Links too (`site/INVITACIONES.md`).
  */
+export const DEFAULT_INVITE_HOST = 'bradlopez13.github.io/casa';
 const rawHost: unknown = process.env.EXPO_PUBLIC_INVITE_HOST;
-export const INVITE_HOST = typeof rawHost === 'string' && rawHost !== '' ? rawHost : undefined;
+export const INVITE_HOST: string | undefined =
+  typeof rawHost === 'string' && rawHost !== '' ? rawHost : DEFAULT_INVITE_HOST;
 
 /** Pass `Linking.createURL` from expo-linking as `createUrl`. */
-export function buildInviteUrl(token: string, createUrl: CreateUrl, host = INVITE_HOST): string {
-  if (host !== undefined) return `https://${host}/invite?token=${token}`;
+/** `host` null: the app's own `casa://invite?token=…` (a development build, the tests). */
+export function buildInviteUrl(
+  token: string,
+  createUrl: CreateUrl,
+  host: string | null = INVITE_HOST ?? null,
+): string {
+  // `/invite/` with its slash: GitHub Pages serves the folder's page there without a redirect.
+  if (host !== null) return `https://${host}/invite/?token=${token}`;
   return createUrl('invite', { queryParams: { token } });
 }
 
