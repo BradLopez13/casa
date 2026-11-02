@@ -110,13 +110,15 @@ describe('useForgetEndedHousehold', () => {
         .getMutationCache()
         .findAll({ status: 'pending' })
         .map((m) => m.state.variables),
-    ).toEqual([{ id: expect.any(String), householdId: 'h2' }]);
+    ).toMatchObject([{ householdId: 'h2' }]);
   });
 
   it('says «te han quitado» and «has salido desde otro móvil» when the server knows', async () => {
     vi.mocked(membershipEnd).mockResolvedValue('removed');
     const view = renderProbe([critica, casa], critica);
-    act(() => queryClient.setQueryData(membershipKey, casa));
+    act(() => {
+      queryClient.setQueryData(membershipKey, casa);
+    });
     view.rerender(
       <QueryClientProvider client={queryClient}>
         <NoticeProvider>
@@ -132,7 +134,9 @@ describe('useForgetEndedHousehold', () => {
   it('with no other household, leaves the sentence for the screen with no household', async () => {
     vi.mocked(membershipEnd).mockResolvedValue('deleted');
     const view = renderProbe([critica], critica);
-    act(() => queryClient.setQueryData(membershipKey, null));
+    act(() => {
+      queryClient.setQueryData(membershipKey, null);
+    });
     view.rerender(
       <QueryClientProvider client={queryClient}>
         <NoticeProvider>

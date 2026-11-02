@@ -46,7 +46,9 @@ export function useForgetEndedHousehold(
   // The membership on screen before the list moved it on (fetchHouseholds does, at once).
   const seen = useRef<Seen | null>(null);
   const latest = useRef(membership);
-  latest.current = membership;
+  useEffect(() => {
+    latest.current = membership;
+  }, [membership]);
 
   useEffect(() => {
     const ended = endedHouseholdIds(cachedHouseholdIds(client), households);
