@@ -405,7 +405,7 @@
   "shopping.usualTitle": "¿Falta algo de lo de siempre?",
   "shopping.usualNone": "Aquí saldrá lo que compráis a menudo, para añadirlo de un toque.",
   "shopping.bought.empty": "Todavía no hay nada comprado",
-  "today.line.empty": "Nada para hoy",
+  "today.line.empty": "Nada para hoy.",
   "today.line.allDone": "Todo hecho por hoy.",
   "today.line.mineOne": "Te toca {count}.",
   "today.line.mineOther": "Te tocan {count}.",

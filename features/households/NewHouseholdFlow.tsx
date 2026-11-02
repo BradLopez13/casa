@@ -209,9 +209,9 @@ function CreateStep({
       return createHousehold(newName, householdId.current);
     },
   });
-  const [name, setName] = useState(
-    another ? t('onboarding.anotherDefaultName') : t('onboarding.defaultName'),
-  );
+  // Another household starts empty, with «Otra casa» as the example: filled in, it ended up the
+  // name of households nobody named (bloque 14.5, P3).
+  const [name, setName] = useState(another ? '' : t('onboarding.defaultName'));
   const [nameError, setNameError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
   const [link, setLink] = useState('');
@@ -316,6 +316,7 @@ function CreateStep({
         label={another ? t('onboarding.anotherNameLabel') : t('onboarding.nameLabel')}
         value={name}
         onChangeText={setName}
+        placeholder={another ? t('onboarding.anotherDefaultName') : undefined}
         error={nameError}
         returnKeyType="done"
         onSubmitEditing={() => {

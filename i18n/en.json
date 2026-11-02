@@ -405,7 +405,7 @@
   "shopping.usualTitle": "Need any of the usual?",
   "shopping.usualNone": "What you buy often will show up here, one tap to add it.",
   "shopping.bought.empty": "Nothing bought yet",
-  "today.line.empty": "Nothing for today",
+  "today.line.empty": "Nothing for today.",
   "today.line.allDone": "All done for today.",
   "today.line.mineOne": "You have {count}.",
   "today.line.mineOther": "You have {count}.",

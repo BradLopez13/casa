@@ -133,7 +133,7 @@ describe('todayLineText', () => {
 
   it('all done and empty', () => {
     expect(text({ kind: 'allDone' }).first).toBe('Todo hecho por hoy.');
-    expect(text({ kind: 'empty' }).first).toBe('Nada para hoy');
+    expect(text({ kind: 'empty' }).first).toBe('Nada para hoy.');
   });
 
   it('reads as one sentence in English too: no double stop, no capital after the semicolon', () => {

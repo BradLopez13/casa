@@ -230,7 +230,9 @@ describe('Crear otra casa (bloque 12)', () => {
     expect(screen.queryByLabelText('Nido')).toBeNull();
     const buttons = screen.getAllByRole('button');
     expect(buttons[0]?.getAttribute('aria-label')).toBe(t('onboarding.back'));
-    expect(nameField().value).toBe(t('onboarding.anotherDefaultName'));
+    // Empty, with «Otra casa» as the example (bloque 14.5, P3).
+    expect(nameField().value).toBe('');
+    expect(nameField().getAttribute('placeholder')).toBe(t('onboarding.anotherDefaultName'));
     expect(screen.queryByTestId('account-menu')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.back') }));
     expect(router.back).toHaveBeenCalled();
@@ -252,6 +254,7 @@ describe('Crear otra casa (bloque 12)', () => {
   it('on a server that still allows one household, says so', async () => {
     vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('ALREADY_IN_HOUSEHOLD'));
     renderOnboarding(<NewHouseholdFlow another />);
+    fireEvent.change(nameField(), { target: { value: 'Casa de mamá' } });
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.anotherCreate') }));
     expect((await screen.findByRole('alert')).textContent).toBe(
       t('onboarding.errors.ALREADY_IN_HOUSEHOLD'),
