@@ -70,3 +70,26 @@ export function memberMarks(members: readonly MarkInput[]): Map<string, MemberMa
     ]),
   );
 }
+
+/**
+ * The initials of a person's households for their magnets (bloque 14.5, P3): one letter, unless
+ * two households share it, and then two, so «Casa» and «Casa de prueba» are «Ca» and «CP», not two
+ * «C». The second letter is the start of the last word that says something (not «de», «la»…), or
+ * the next letter of the name.
+ */
+export function houseInitials(names: readonly string[]): string[] {
+  const first = names.map((name) => firstInitial(name).toLocaleUpperCase());
+  return names.map((name, i) => {
+    const own = first[i] ?? '';
+    if (first.filter((other) => other === own).length < 2) return own;
+    const words = name.trim().split(/\s+/);
+    const last = words
+      .slice(1)
+      .reverse()
+      .find((word) => Array.from(word).length > 2);
+    const second = last
+      ? firstInitial(last).toLocaleUpperCase()
+      : (Array.from(words[0] ?? '')[1] ?? '').toLocaleLowerCase();
+    return own + second;
+  });
+}

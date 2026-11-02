@@ -21,7 +21,6 @@ import { LicenseBand } from '@/features/households/LicenseBand';
 import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { QueueBand } from '@/features/offline/QueueBand';
-import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
 import { stripInDoor } from '@/ui/door';
 import { paneMode } from '@/ui/panes';
@@ -96,9 +95,10 @@ export default function TasksScreen() {
     [day, filtered, today],
   );
 
+  // The same quiet line as Hoy's and Compra's empty states, without a plate of its own
+  // (bloque 14.5, P3: three styles of empty state in a new household).
   const empty = (
-    <View style={{ gap: space(3), alignItems: 'flex-start' }}>
-      <SymbolPlate />
+    <View style={{ gap: space(4), alignItems: 'flex-start' }}>
       <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.empty')}</Text>
       <HelpLink entry="write" testID="tasks.help" />
     </View>

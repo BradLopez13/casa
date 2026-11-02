@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useIsOnline } from '@/data/query/online';
-import { firstInitial } from '@/domain/members/marks';
+import { houseInitials } from '@/domain/members/marks';
 import { t } from '@/i18n';
 import { announce } from '@/ui/a11y';
 import { actionIcons } from '@/ui/actionIcons';
@@ -33,6 +33,7 @@ export function HouseholdsSection({
   const router = useRouter();
   const online = useIsOnline();
   const several = households.length > 1;
+  const initials = houseInitials(households.map((household) => household.householdName));
   return (
     <View style={{ gap: space(2) }}>
       <Text
@@ -42,15 +43,9 @@ export function HouseholdsSection({
         {t(several ? 'households.title' : 'households.titleOne')}
       </Text>
       <View>
-        {households.map((household) => {
+        {households.map((household, index) => {
           const active = household.householdId === activeId;
-          const magnet = (
-            <HouseMagnet
-              size="sm"
-              initial={firstInitial(household.householdName)}
-              active={active}
-            />
-          );
+          const magnet = <HouseMagnet size="sm" initial={initials[index] ?? ''} active={active} />;
           // The one shown is where you are, not something to do (bloque 13, P3-8).
           if (active) {
             return (

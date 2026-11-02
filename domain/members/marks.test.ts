@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAGNET_COLORS, firstInitial, memberMarks } from './marks';
+import { MAGNET_COLORS, firstInitial, houseInitials, memberMarks } from './marks';
 
 const member = (userId: string, joinedAt: string, displayName = userId) => ({
   userId,
@@ -82,5 +82,14 @@ describe('firstInitial', () => {
   it('returns an empty string for an empty name', () => {
     expect(firstInitial('')).toBe('');
     expect(firstInitial('   ')).toBe('');
+  });
+});
+
+describe('houseInitials (bloque 14.5)', () => {
+  it('one letter each, unless two households share it', () => {
+    expect(houseInitials(['Casa', 'Piso'])).toEqual(['C', 'P']);
+    expect(houseInitials(['Casa', 'Casa de prueba'])).toEqual(['Ca', 'CP']);
+    expect(houseInitials(['Casa de mamá', 'Casa de la playa'])).toEqual(['CM', 'CP']);
+    expect(houseInitials(['casa'])).toEqual(['C']);
   });
 });

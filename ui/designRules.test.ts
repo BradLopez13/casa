@@ -215,7 +215,6 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   it('the symbol only appears where DESIGN.md allows it', () => {
     const allowed = [
       'features/settings/SettingsPieces.tsx',
-      'app/(tabs)/tasks.tsx',
       'features/tasks/components/DayDone.tsx',
       'features/tasks/components/MemberFilter.tsx',
       'ui/components/BrandHeader.tsx',

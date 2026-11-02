@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { dayCountLabel, type StripDay } from '@/domain/tasks/strip';
 import { dayPills } from '@/features/tasks/dayFilter';
 import { t } from '@/i18n';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { DOOR_MAX_SCALE } from '@/ui/door';
+import { clearOf, hasMoreBelow } from '@/ui/moreBelow';
 import { useReduceMotion, useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
 
@@ -36,6 +38,17 @@ export function DayPills({ days, today, chosen, names, onSelect, bleed = 'both' 
   // past the edge, and choosing one left it half out of view (fase 10b).
   const scroll = useRef<ScrollView>(null);
   const starts = useRef(new Map<string, number>());
+  // More pills past the right edge: the row fades out there, so the half pill reads as «there is
+  // more» (bloque 14.5, P3: in the compact door only «Todas» and half «Hoy» showed).
+  const size = useRef({ content: 0, offset: 0, viewport: 0 });
+  const [moreRight, setMoreRight] = useState(false);
+  const measure = (next: Partial<typeof size.current>) => {
+    size.current = { ...size.current, ...next };
+    const { content, offset, viewport } = size.current;
+    setMoreRight(hasMoreBelow(content, offset, viewport));
+  };
+  // In the door the row sits on the door's enamel; in the list, on the page.
+  const ground = bleed === 'right' ? colors.door : colors.page;
   const bringIn = (x: number, animated: boolean) =>
     scroll.current?.scrollTo({ x: Math.max(0, x - space(5)), animated });
   useEffect(() => {
@@ -45,70 +58,86 @@ export function DayPills({ days, today, chosen, names, onSelect, bleed = 'both' 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chosen]);
   return (
-    <ScrollView
-      ref={scroll}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      accessibilityRole="radiogroup"
-      accessibilityLabel={t('tasks.pill.label')}
-      // The row bleeds past the column so a half pill at the edge says there is more.
-      style={{
-        marginLeft: bleed === 'both' ? -space(5) : 0,
-        marginRight: -space(5),
-      }}
-      contentContainerStyle={{
-        paddingLeft: bleed === 'both' ? space(5) : 0,
-        paddingRight: space(5),
-        gap: space(2),
-      }}
-    >
-      {pills.map((pill) => {
-        const selected = pill.date === chosen;
-        const day = pill.date === null ? null : days.find((d) => d.date === pill.date);
-        return (
-          <Pressable
-            key={pill.date ?? 'all'}
-            testID={`tasks.pill.${pill.date ?? 'all'}`}
-            accessibilityRole="radio"
-            aria-checked={selected}
-            accessibilityLabel={day ? dayCountLabel(day, today, names) : t('tasks.pill.allLabel')}
-            onPress={() => onSelect(pill.date)}
-            onLayout={(event) => {
-              const key = pill.date ?? 'all';
-              const first = !starts.current.has(key);
-              starts.current.set(key, event.nativeEvent.layout.x);
-              // Opened on a chosen day (a link, a turn): the row starts there, without a slide.
-              if (first && selected && pill.date !== null)
-                bringIn(event.nativeEvent.layout.x, false);
-            }}
-            style={({ pressed }) => ({
-              minHeight: MIN_TOUCH,
-              paddingHorizontal: space(4),
-              justifyContent: 'center',
-              borderRadius: radii.pill,
-              borderWidth: 1.5,
-              borderColor: selected ? colors.selection : colors.outline,
-              backgroundColor: selected ? colors.selection : 'transparent',
-              opacity: pressedOpacity(pressed),
-            })}
-          >
-            {/* The door's old control, moved down: it keeps the door's text cap so the row
-                stays one line of pills at large text. */}
-            <Text
-              maxFontSizeMultiplier={DOOR_MAX_SCALE}
-              style={{
-                color: selected ? colors.onSelection : colors.ink,
-                fontSize: 15,
-                fontWeight: '600',
-                fontVariant: ['tabular-nums'],
+    <View>
+      <ScrollView
+        ref={scroll}
+        horizontal
+        scrollEventThrottle={100}
+        onScroll={(event) => measure({ offset: event.nativeEvent.contentOffset.x })}
+        onLayout={(event) => measure({ viewport: event.nativeEvent.layout.width })}
+        onContentSizeChange={(width) => measure({ content: width })}
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        accessibilityRole="radiogroup"
+        accessibilityLabel={t('tasks.pill.label')}
+        // The row bleeds past the column so a half pill at the edge says there is more.
+        style={{
+          marginLeft: bleed === 'both' ? -space(5) : 0,
+          marginRight: -space(5),
+        }}
+        contentContainerStyle={{
+          paddingLeft: bleed === 'both' ? space(5) : 0,
+          paddingRight: space(5),
+          gap: space(2),
+        }}
+      >
+        {pills.map((pill) => {
+          const selected = pill.date === chosen;
+          const day = pill.date === null ? null : days.find((d) => d.date === pill.date);
+          return (
+            <Pressable
+              key={pill.date ?? 'all'}
+              testID={`tasks.pill.${pill.date ?? 'all'}`}
+              accessibilityRole="radio"
+              aria-checked={selected}
+              accessibilityLabel={day ? dayCountLabel(day, today, names) : t('tasks.pill.allLabel')}
+              onPress={() => onSelect(pill.date)}
+              onLayout={(event) => {
+                const key = pill.date ?? 'all';
+                const first = !starts.current.has(key);
+                starts.current.set(key, event.nativeEvent.layout.x);
+                // Opened on a chosen day (a link, a turn): the row starts there, without a slide.
+                if (first && selected && pill.date !== null)
+                  bringIn(event.nativeEvent.layout.x, false);
               }}
+              style={({ pressed }) => ({
+                minHeight: MIN_TOUCH,
+                paddingHorizontal: space(4),
+                justifyContent: 'center',
+                borderRadius: radii.pill,
+                borderWidth: 1.5,
+                borderColor: selected ? colors.selection : colors.outline,
+                backgroundColor: selected ? colors.selection : 'transparent',
+                opacity: pressedOpacity(pressed),
+              })}
             >
-              {pill.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+              {/* The door's old control, moved down: it keeps the door's text cap so the row
+                stays one line of pills at large text. */}
+              <Text
+                maxFontSizeMultiplier={DOOR_MAX_SCALE}
+                style={{
+                  color: selected ? colors.onSelection : colors.ink,
+                  fontSize: 15,
+                  fontWeight: '600',
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {pill.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      {moreRight ? (
+        <LinearGradient
+          testID="tasks.pills.more"
+          pointerEvents="none"
+          colors={[clearOf(ground), ground]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ position: 'absolute', top: 0, bottom: 0, right: -space(5), width: space(8) }}
+        />
+      ) : null}
+    </View>
   );
 }
