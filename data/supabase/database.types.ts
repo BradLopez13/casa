@@ -51,13 +51,13 @@ isOneToOne: false
                   ]
                 },"household_members": {
                   Row: {
-                    "household_id": string,"id": string,"joined_at": string,"left_at": string | null,"role": string,"user_id": string
+                    "household_id": string,"id": string,"joined_at": string,"left_at": string | null,"left_by": string | null,"role": string,"user_id": string
                   }
                   Insert: {
-                    "household_id": string,"id"?: string,"joined_at"?: string,"left_at"?: string | null,"role": string,"user_id": string
+                    "household_id": string,"id"?: string,"joined_at"?: string,"left_at"?: string | null,"left_by"?: string | null,"role": string,"user_id": string
                   }
                   Update: {
-                    "household_id"?: string,"id"?: string,"joined_at"?: string,"left_at"?: string | null,"role"?: string,"user_id"?: string
+                    "household_id"?: string,"id"?: string,"joined_at"?: string,"left_at"?: string | null,"left_by"?: string | null,"role"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -294,6 +294,9 @@ isOneToOne: false
                            },
 "mark_push_result":
 { Args: { "p_dead_tokens": (string)[],"p_error": string,"p_failed": (number)[],"p_sent": (number)[] }; Returns: undefined
+                           },
+"membership_end":
+{ Args: { "p_household_id": string }; Returns: string
                            },
 "my_households":
 { Args: Record<PropertyKey, never>; Returns: {

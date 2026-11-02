@@ -13,6 +13,7 @@ import {
   type ActiveInvite,
   type Member,
   type Membership,
+  revokeInvite,
 } from './api';
 import { householdsKey, invitesKey, membersKey, membershipKey } from './keys';
 
@@ -24,6 +25,7 @@ vi.mock('./api', async (importOriginal) => ({
   listMembers: vi.fn(),
   listActiveInvites: vi.fn(),
   createInvite: vi.fn(),
+  revokeInvite: vi.fn(),
 }));
 vi.mock('expo-clipboard', () => ({ setStringAsync: vi.fn().mockResolvedValue(true) }));
 
@@ -201,5 +203,28 @@ describe('copying the invitation (bloque 14.3)', () => {
     expect(copied).toContain(t('households.join'));
     expect(copied.split('\n').at(-1)).toMatch(new RegExp(`invite/?\\?token=${token}$`));
     expect(await screen.findByTestId('members.copied')).toBeTruthy();
+  });
+});
+
+// Bloque 15.2 (P2-3, P3-7): the only thing that kills a shared link says so, and deleting the
+// household names who it affects.
+describe('what others feel (bloque 15.2)', () => {
+  it('«Anular invitación» says the shared link no longer works', async () => {
+    vi.mocked(revokeInvite).mockResolvedValue();
+    renderMembers({ invites: [invite] });
+    fireEvent.click(screen.getByTestId('members.revoke.i1'));
+    expect((await screen.findByTestId('notice')).textContent).toBe(t('members.revoked'));
+  });
+
+  it('«Borrar casa» names the people it is deleted for', () => {
+    renderMembers();
+    fireEvent.click(screen.getByTestId('members.delete-household'));
+    expect(screen.getByText(t('members.confirm.deleteMessageWith', { names: 'Bo' }))).toBeTruthy();
+  });
+
+  it('alone, «Borrar casa» says it is deleted for you', () => {
+    renderMembers({ cached: [members[0]!] });
+    fireEvent.click(screen.getByTestId('members.delete-household'));
+    expect(screen.getByText(t('members.confirm.deleteMessage'))).toBeTruthy();
   });
 });

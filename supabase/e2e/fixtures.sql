@@ -28,6 +28,8 @@
 --   zoe@e2e.dev   = Zoe, owner of "Piso Zoe" (several-households: creates a second household,
 --                   switches, invites, sees its licence and joins Yoli's with JOIN_TOKEN)
 --   yoli@e2e.dev  = Yoli, owner of "Piso Yoli" (several-households)
+--   omar@e2e.dev  = Omar, owner of "Piso Omar", with Olivia (olivia@e2e.dev), who also owns
+--                   "Piso Olivia" (household-ended: Omar deletes his through the API)
 --   demo@e2e.dev  = Demo, owner of "Casa de ejemplo" with Mar (mar@e2e.dev), tasks and shopping
 --                   already in it (e2e/store/screenshots.yaml, the store listing's screenshots)
 -- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
@@ -147,6 +149,22 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('gala@e2e.dev', 'Gala'), 'Piso Gala');
   perform pg_temp.e2e_household(pg_temp.e2e_user('fede@e2e.dev', 'Fede'), 'Piso Fede');
   perform pg_temp.e2e_household(pg_temp.e2e_user('zoe@e2e.dev', 'Zoe'), 'Piso Zoe');
+  -- The household that ends from the other side (bloque 15.2, household-ended).
+  declare
+    v_omar uuid := pg_temp.e2e_user('omar@e2e.dev', 'Omar');
+    v_olivia uuid := pg_temp.e2e_user('olivia@e2e.dev', 'Olivia');
+    v_piso_omar uuid := pg_temp.e2e_household(v_omar, 'Piso Omar');
+    v_series uuid;
+  begin
+    perform pg_temp.e2e_household(v_olivia, 'Piso Olivia');
+    insert into public.household_members (household_id, user_id, role)
+    values (v_piso_omar, v_olivia, 'member');
+    insert into public.task_series (household_id, title, room, created_by)
+    values (v_piso_omar, 'Regar las plantas de Omar', 'living_room', v_omar)
+    returning id into v_series;
+    insert into public.task_occurrences (series_id, household_id, due_on, assignee_id)
+    values (v_series, v_piso_omar, current_date, v_olivia);
+  end;
   -- The store listing's account (bloque 15.5): a home with something on every screen.
   declare
     v_demo uuid := pg_temp.e2e_user('demo@e2e.dev', 'Demo');

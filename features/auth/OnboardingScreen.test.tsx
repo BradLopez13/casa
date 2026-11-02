@@ -293,3 +293,16 @@ describe('the invitation field when the app comes back', () => {
     spy.mockRestore();
   });
 });
+
+// Bloque 15.2 (P2-2): with a single household that ended, the screen with none explains it.
+describe('after the only household ended', () => {
+  it('says so at the top', async () => {
+    const { setEndedNotice, clearEndedNotice } = await import('@/features/households/endedNotice');
+    setEndedNotice('Ya no estás en «Critica Nov»: la han borrado.');
+    renderOnboarding();
+    expect(screen.getByTestId('onboarding.ended').textContent).toBe(
+      'Ya no estás en «Critica Nov»: la han borrado.',
+    );
+    clearEndedNotice();
+  });
+});

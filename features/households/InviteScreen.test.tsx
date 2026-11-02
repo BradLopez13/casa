@@ -276,3 +276,17 @@ describe('Invitación: la cuenta tras «⋯»', () => {
     expect(nav.router.replace).not.toHaveBeenCalled();
   });
 });
+
+// Bloque 15.2 (P3-7): the tablet that just joined fell into «Nada para hoy.» without a word.
+describe('the welcome (bloque 15.2)', () => {
+  it('says which household you are in now, and with whom', async () => {
+    vi.mocked(acceptInvite).mockResolvedValue('h');
+    vi.mocked(listMyHouseholds).mockResolvedValue([membership]);
+    renderInvite();
+    fireEvent.click(await screen.findByRole('button', { name: t('invite.accept') }));
+    await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith('/'));
+    expect((await screen.findByTestId('notice')).textContent).toBe(
+      t('invite.welcome', { household: 'Casa', name: 'Ana' }),
+    );
+  });
+});

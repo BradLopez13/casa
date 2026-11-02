@@ -148,11 +148,16 @@ reset role;
 
 -- revoke_invite ---------------------------------------------------------------
 
--- Gus (plain member) creates one; Ana (owner, not the creator) another.
+-- Gus (plain member) creates one; once it is used up, Ana (owner, not the creator) another.
+-- (A valid pending invite is reused since bloque 15.2, so Gus's is expired first.)
 select tests.authenticate_as(:'gus');
 select invite_id as gus_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.clear_auth();
+update public.household_invites set expires_at = now() - interval '1 hour' where id = :'gus_inv';
 select tests.authenticate_as(:'ana');
 select invite_id as ana_inv from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+select tests.clear_auth();
+update public.household_invites set revoked_at = null where id = :'gus_inv';
 
 select tests.authenticate_as(:'gus');
 
@@ -242,6 +247,11 @@ select accepted_at as acc_at from public.household_invites
 
 select tests.authenticate_as(:'ana');
 select invite_id as old_inv, token as old_token from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset
+-- Expired, so the next create_invite makes a new one instead of handing this one out again
+-- (bloque 15.2: a valid pending invite is reused).
+select tests.clear_auth();
+update public.household_invites set expires_at = now() - interval '1 hour' where id = :'old_inv';
+select tests.authenticate_as(:'ana');
 -- The newest invite takes over the inv_ variables used by the accept_invite tests below.
 select * from public.create_invite('00000000-0000-0000-0000-0000000000a1') \gset inv_
 select tests.clear_auth();
@@ -264,7 +274,7 @@ select is(
 
 select ok(
   (select revoked_at is not null from public.household_invites where id = :'old_inv'),
-  'the previous invite is revoked'
+  'the previous invite, expired, is revoked'
 );
 
 select tests.authenticate_as(:'bob');
@@ -273,7 +283,7 @@ select throws_ok(
   format($$select public.accept_invite(%L)$$, :'old_token'),
   'P0001',
   'INVITE_INVALID',
-  'the token of a replaced invite can no longer be accepted'
+  'the token of an expired, replaced invite can no longer be accepted'
 );
 
 select tests.clear_auth();

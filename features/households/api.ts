@@ -199,6 +199,17 @@ export async function createInvite(
   return { token: row.token, expiresAt: row.expires_at };
 }
 
+/**
+ * Why the person is no longer in a household (bloque 15.2): the household was deleted, the owner
+ * removed them, or they left from another phone; null while they are still in it.
+ */
+export async function membershipEnd(
+  householdId: string,
+): Promise<'deleted' | 'removed' | 'left' | null> {
+  const reason = await unwrapMaybe(supabase.rpc('membership_end', { p_household_id: householdId }));
+  return reason === 'deleted' || reason === 'removed' || reason === 'left' ? reason : null;
+}
+
 export async function revokeInvite(inviteId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('revoke_invite', { p_invite_id: inviteId }));
 }

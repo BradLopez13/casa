@@ -10,6 +10,7 @@ import { AccountMenu } from '@/features/auth/AccountMenu';
 import { useSession } from '@/features/auth/SessionProvider';
 import { createHousehold, setHouseholdRooms } from '@/features/households/api';
 import { inviteFromClipboard } from '@/features/households/clipboardInvite';
+import { clearEndedNotice, useEndedNotice } from '@/features/households/endedNotice';
 import { parseInviteToken } from '@/features/households/invite-link';
 import { leaveToHome } from '@/features/households/leaveToHome';
 import { householdNameSchema } from '@/features/households/schemas';
@@ -245,6 +246,9 @@ function CreateStep({
     };
   }, [readsClipboard]);
   const notify = useNotice();
+  const ended = useEndedNotice();
+  // Read once: the next time this screen opens it is for a new household.
+  useEffect(() => () => clearEndedNotice(), []);
   const joinBlock = useRef<View>(null);
   const [signingOut, setSigningOut] = useState(false);
   const leave = () => {
@@ -317,6 +321,15 @@ function CreateStep({
       }
     >
       {another ? null : <ScreenTitle>{t('onboarding.title')}</ScreenTitle>}
+      {/* The only household ended from someone else's side (bloque 15.2): the screen says so. */}
+      {ended && !another ? (
+        <Text
+          testID="onboarding.ended"
+          style={{ color: colors.ink, fontSize: 16, fontWeight: '600' }}
+        >
+          {ended}
+        </Text>
+      ) : null}
       <Text style={{ color: colors.ink, fontSize: 16 }}>
         {another ? t('onboarding.anotherWelcome') : t('onboarding.welcome')}
       </Text>
