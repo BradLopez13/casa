@@ -36,9 +36,11 @@ onFlowComplete:
 - tapOn:
     id: today.quick-add.submit
 - hideKeyboard
-- extendedWaitUntil:
-    visible:
+# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- scrollUntilVisible:
+    element:
       id: 'task-note\..*\.pending'
+    direction: DOWN
     timeout: 5000
 - setAirplaneMode: disabled
 - extendedWaitUntil:
@@ -62,9 +64,11 @@ onFlowComplete:
 - tapOn:
     id: today.quick-add.submit
 - hideKeyboard
-- extendedWaitUntil:
-    visible:
+# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- scrollUntilVisible:
+    element:
       id: 'task-note\..*\.pending'
+    direction: DOWN
     timeout: 5000
 - tapOn: Completar «Ciclo dos»
 - setAirplaneMode: disabled
@@ -87,9 +91,11 @@ onFlowComplete:
 - tapOn:
     id: today.quick-add.submit
 - hideKeyboard
-- extendedWaitUntil:
-    visible:
+# The mark goes under the note: on the emulator screen it can fall under the tab bar.
+- scrollUntilVisible:
+    element:
       id: 'task-note\..*\.pending'
+    direction: DOWN
     timeout: 5000
 - pressKey: Home
 - setAirplaneMode: disabled

@@ -102,8 +102,11 @@ appId: com.bradlopez13.casa
     visible:
       id: members.copy-link
     timeout: 20000
+# «Invitación copiada» lasts 3 s and Android's own clipboard preview keeps the screen moving:
+# do not wait for it to settle, or the confirmation is gone before it is looked for.
 - tapOn:
     id: members.copy-link
+    waitToSettleTimeoutMs: 500
 - extendedWaitUntil:
     visible:
       id: members.copied
