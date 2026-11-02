@@ -122,7 +122,9 @@ export default function TodayScreen() {
       <DoorHeader
         eyebrow={t('today.title')}
         eyebrowDetail={{ long: longDateLabel(today), short: shortDateLabel(today) }}
-        heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
+        heading={
+          <TallyView line={line} names={screen.names} onSeeAll={() => screen.selectFilter(null)} />
+        }
         quickAdd={quickAdd}
       >
         <MemberFilter

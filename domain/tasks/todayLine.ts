@@ -9,10 +9,23 @@ export type TodayLine =
    * them apart; `household` is what is left for the whole home, or null when the filter is
    * already "Tú".
    */
-  | { kind: 'mine'; today: number; overdue: number; household: number | null }
+  | {
+      kind: 'mine';
+      today: number;
+      overdue: number;
+      household: number | null;
+      /**
+       * Whose the household's remainder is, when nothing is due today but yours from earlier days
+       * is (bloque 14.5, P2-2): the door then says it.
+       */
+      rest?: HouseholdRest;
+    }
   | { kind: 'household'; household: number }
   | { kind: 'nothingMine'; unassigned: number }
   | { kind: 'person'; name: string; count: number };
+
+/** The household's pending tasks that are not yours: how many unassigned, and each person's. */
+export type HouseholdRest = { unassigned: number; others: { id: string; count: number }[] };
 
 type Input = {
   /** Every task of the household, not only the filtered ones. */
@@ -48,9 +61,16 @@ export function todayLine({
   const mineOverdue = overdue.filter(isMine).length;
   const mine = mineToday + mineOverdue;
   if (filter === null) {
-    return mine > 0
-      ? { kind: 'mine', today: mineToday, overdue: mineOverdue, household: pending.length - mine }
-      : { kind: 'household', household: pending.length };
+    if (mine === 0) return { kind: 'household', household: pending.length };
+    const line = {
+      kind: 'mine' as const,
+      today: mineToday,
+      overdue: mineOverdue,
+      household: pending.length - mine,
+    };
+    return mineToday > 0
+      ? line
+      : { ...line, rest: householdRest(pending.filter((t) => !isMine(t))) };
   }
   if (filter === userId) {
     if (mine > 0) return { kind: 'mine', today: mineToday, overdue: mineOverdue, household: null };
@@ -61,4 +81,14 @@ export function todayLine({
     name: filterName,
     count: pending.filter((task) => task.assigneeId === filter).length,
   };
+}
+
+function householdRest(tasks: readonly TaskItem[]): HouseholdRest {
+  const counts = new Map<string, number>();
+  let unassigned = 0;
+  for (const task of tasks) {
+    if (task.assigneeId === null) unassigned += 1;
+    else counts.set(task.assigneeId, (counts.get(task.assigneeId) ?? 0) + 1);
+  }
+  return { unassigned, others: [...counts].map(([id, count]) => ({ id, count })) };
 }

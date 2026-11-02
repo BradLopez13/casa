@@ -43,12 +43,24 @@ describe('todayLine', () => {
     expect(line(tasks, null)).toEqual({ kind: 'mine', today: 1, overdue: 1, household: 2 });
   });
 
-  it('all filter, only overdue for me: today 0, so the door can say «Nada para hoy»', () => {
+  it('all filter, only overdue for me: today 0, and whose the rest is (bloque 14.5)', () => {
     expect(line([task({ assigneeId: me, dueOn: '2026-10-05' })], null)).toEqual({
       kind: 'mine',
       today: 0,
       overdue: 1,
       household: 0,
+      rest: { unassigned: 0, others: [] },
+    });
+    const tasks = [
+      task({ assigneeId: me, dueOn: '2026-10-05' }),
+      task({ assigneeId: other, dueOn: '2026-10-06' }),
+      task({ assigneeId: other }),
+      task(),
+    ];
+    expect(line(tasks, null)).toMatchObject({
+      today: 0,
+      household: 3,
+      rest: { unassigned: 1, others: [{ id: other, count: 2 }] },
     });
   });
 
