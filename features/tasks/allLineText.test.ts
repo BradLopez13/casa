@@ -6,8 +6,8 @@ const PURPOSE = 'Todo lo de la casa, por día.';
 describe('allLineText', () => {
   // Fase 10c: the line first says what the tab is for, so Tareas does not read as Hoy again.
   it('mine, singular and plural', () => {
-    expect(allLineText({ kind: 'mine', count: 1 })).toBe(`${PURPOSE} Te toca 1 en total.`);
-    expect(allLineText({ kind: 'mine', count: 5 })).toBe(`${PURPOSE} Te tocan 5 en total.`);
+    expect(allLineText({ kind: 'mine', count: 1 })).toBe(`${PURPOSE} En total, te toca 1.`);
+    expect(allLineText({ kind: 'mine', count: 5 })).toBe(`${PURPOSE} En total, te tocan 5.`);
   });
 
   it('household, singular and plural', () => {
@@ -38,7 +38,7 @@ describe('allLineText', () => {
 
   it('with several households, says it is this one’s (bloque 12)', () => {
     expect(allLineText({ kind: 'mine', count: 1 }, true)).toBe(
-      'Todo lo de esta casa, por día. Te toca 1 en total.',
+      'Todo lo de esta casa, por día. En total, te toca 1.',
     );
   });
 });

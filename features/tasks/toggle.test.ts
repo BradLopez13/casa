@@ -165,7 +165,7 @@ describe('buildToggleOptions', () => {
         .mutate(vars({ id: 'a', done: false }))
         .catch(() => undefined);
       expect(notify).toHaveBeenCalledWith(
-        'No se pudo reabrir: sin conexión. Inténtalo cuando vuelva.',
+        'Sin conexión. No se reabrió; inténtalo cuando vuelva la red.',
       );
     });
   });

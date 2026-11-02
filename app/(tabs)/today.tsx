@@ -70,7 +70,10 @@ export default function TodayScreen() {
       todayLine({ tasks: tasks ?? [], deleting, today, userId, filter: assigneeId, filterName }),
     [tasks, deleting, today, userId, assigneeId, filterName],
   );
-  const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
+  const sections = useMemo(
+    () => todaySections(filtered, today, deleting),
+    [filtered, today, deleting],
+  );
   const cards = todayCards({
     loaded: tasksQuery.isSuccess,
     // What is being deleted still counts until its «Deshacer» goes.

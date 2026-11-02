@@ -35,6 +35,7 @@ describe('doorFor', () => {
       maxHeight: null,
       holdsQuickAdd: false,
       beside: false,
+      purposeLine: true,
     });
   });
 
@@ -53,6 +54,7 @@ describe('doorFor', () => {
       // 844 wide is two panes: the quick add keeps its pane.
       holdsQuickAdd: false,
       beside: true,
+      purposeLine: true,
     });
     expect(doorFor(layoutFor(800, 499), 499)).toMatchObject({
       compact: true,
@@ -75,6 +77,7 @@ describe('doorFor', () => {
         maxHeight: 274,
         holdsQuickAdd: false,
         beside: true,
+        purposeLine: true,
       });
     });
 
@@ -227,5 +230,19 @@ describe('isLargeText', () => {
   it('turns the door on the .51 compact at the float 1.3', () => {
     expect(doorFor(layoutFor(375, 817), 817, Math.fround(1.3)).compact).toBe(true);
     expect(doorFor(layoutFor(375, 817), 817, 1.29).compact).toBe(false);
+  });
+});
+
+// Bloque 15.3 (P3-8): on a phone on its side at ×1.3, Tareas' purpose line left half a note.
+describe('purposeLine', () => {
+  const sideways = layoutFor(817, 375);
+  it('is dropped on a phone on its side in one column with large text', () => {
+    expect(doorFor(sideways, 375, 1.3).purposeLine).toBe(false);
+    expect(doorFor(sideways, 375, 1.6).purposeLine).toBe(false);
+  });
+  it('stays at the default text, held upright, and above two panes', () => {
+    expect(doorFor(sideways, 375, 1).purposeLine).toBe(true);
+    expect(doorFor(layoutFor(375, 817), 817, 1.3).purposeLine).toBe(true);
+    expect(doorFor(layoutFor(1143, 686), 686, 1.3).purposeLine).toBe(true);
   });
 });

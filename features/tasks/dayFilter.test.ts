@@ -92,3 +92,14 @@ describe('emptyDayText', () => {
     expect(emptyDayText('2026-10-23', today)).toBe('Nada para el viernes 23');
   });
 });
+
+// Bloque 15.3 (P3-4): the section counts the task in flight, as the headline does.
+describe('daySections with a task whose «Deshacer» is still up', () => {
+  it('counts it without a row', () => {
+    const sections = daySections([task({ title: 'Hoy' })], today, today, [
+      task({ title: 'Se va' }),
+    ]);
+    expect(sections[0]).toMatchObject({ key: today, count: 2 });
+    expect(sections[0]?.data).toHaveLength(1);
+  });
+});

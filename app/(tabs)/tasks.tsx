@@ -20,6 +20,7 @@ import { t } from '@/i18n';
 import { DoorHeader, useDoor } from '@/ui/components/DoorHeader';
 import { LicenseBand } from '@/features/households/LicenseBand';
 import { useSeveralHouseholds } from '@/features/households/queries';
+import { useDeletingTasks } from '@/features/tasks/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { QueueBand } from '@/features/offline/QueueBand';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
@@ -44,6 +45,7 @@ export default function TasksScreen() {
   const layout = useLayout();
   const screen = useTaskScreen();
   const { today, members, filtered, userId, assigneeId, tasksQuery } = screen;
+  const deleting = useDeletingTasks(screen.membership?.householdId);
   // A link into Tareas may name a day (`casa://tasks?due=2026-10-23`): it chooses that pill.
   const { due } = useLocalSearchParams<{ due?: string }>();
   // The screen owns the chosen day (null is «Todas»), not either layout, so turning the tablet
@@ -93,8 +95,11 @@ export default function TasksScreen() {
   );
 
   const sections = useMemo(
-    () => (day === null ? allSections(filtered, today) : daySections(filtered, day, today)),
-    [day, filtered, today],
+    () =>
+      day === null
+        ? allSections(filtered, today, deleting)
+        : daySections(filtered, day, today, deleting),
+    [day, filtered, today, deleting],
   );
 
   // The same quiet line as Hoy's and Compra's empty states, without a plate of its own
@@ -158,7 +163,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
       <DoorHeader
         eyebrow={t('tasks.title')}
         heading={day === null ? t('tasks.allHeadline') : dayHeading(day, today)}
-        secondary={doorLine}
+        secondary={doorLook.purposeLine ? doorLine : undefined}
         quickAdd={<DayQuickAdd screen={screen} day={day} hasNotes={sections.length > 0} />}
         strip={pills}
       >

@@ -3,7 +3,7 @@ import { dayHeading, dayInSentence, weekdayDay } from '@/domain/tasks/labels';
 import type { StripDay } from '@/domain/tasks/strip';
 import { isOpen, type TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
-import { tray, type TaskListSection } from './sections';
+import { tray, withGoing, type TaskListSection } from './sections';
 
 /** One pill of the row under the quick add of Tareas: «Todas» (`date` null) or one of the week's days. */
 export type DayPill = { date: string | null; label: string };
@@ -37,9 +37,16 @@ export function chosenPill(
  * The list filtered by a day: a section keyed by the date with the open tasks due then, and the
  * tray of what was done that day (on «Hoy», what is done today; bloque 13, P3-3).
  */
-export function daySections(tasks: TaskItem[], day: string, today: string): TaskListSection[] {
-  const due = tasks.filter((task) => isOpen(task) && task.dueOn === day);
-  const done = tasks.filter(
+export function daySections(
+  tasks: TaskItem[],
+  day: string,
+  today: string,
+  deleting: readonly TaskItem[] = [],
+): TaskListSection[] {
+  // A task whose «Deshacer» is still up counts, without a row (bloque 15.3, P3-4).
+  const { all, going } = withGoing(tasks, deleting);
+  const due = all.filter((task) => isOpen(task) && task.dueOn === day);
+  const done = all.filter(
     (task) =>
       task.completedAt !== null &&
       task.skippedAt === null &&
@@ -51,7 +58,7 @@ export function daySections(tasks: TaskItem[], day: string, today: string): Task
       key: day,
       title: dayHeading(day, today),
       count: due.length,
-      data: due.map((task) => ({ kind: 'note', task })),
+      data: due.flatMap((task) => (going.has(task.id) ? [] : [{ kind: 'note' as const, task }])),
     });
   }
   if (done.length > 0) {
