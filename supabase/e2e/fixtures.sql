@@ -178,14 +178,14 @@ begin
         case when v_task.completed_at is null then null else v_task.assignee end
       );
     end loop;
-    insert into public.shopping_items (household_id, name, quantity, created_by, bought_at, bought_by)
+    insert into public.shopping_items (id, household_id, name, quantity, created_by, bought_at, bought_by)
     values
-      (v_casa, 'Leche', '2', v_demo, null, null),
-      (v_casa, 'Pan', null, v_mar, null, null),
-      (v_casa, 'Tomates', '1 kg', v_demo, null, null),
-      (v_casa, 'Huevos', '12', v_mar, null, null),
-      (v_casa, 'Café', null, v_demo, now() - interval '3 days', v_demo),
-      (v_casa, 'Arroz', null, v_mar, now() - interval '3 days', v_mar);
+      (gen_random_uuid(), v_casa, 'Leche', '2', v_demo, null, null),
+      (gen_random_uuid(), v_casa, 'Pan', null, v_mar, null, null),
+      (gen_random_uuid(), v_casa, 'Tomates', '1 kg', v_demo, null, null),
+      (gen_random_uuid(), v_casa, 'Huevos', '12', v_mar, null, null),
+      (gen_random_uuid(), v_casa, 'Café', null, v_demo, now() - interval '3 days', v_demo),
+      (gen_random_uuid(), v_casa, 'Arroz', null, v_mar, now() - interval '3 days', v_mar);
   end;
   declare
     v_yoli uuid := pg_temp.e2e_user('yoli@e2e.dev', 'Yoli');
