@@ -39,7 +39,6 @@ type AnyMutation = Mutation;
 
 const NONE: QueueSnapshot = { waiting: new Set(), band: 'none' };
 
-const scopeOf = (m: AnyMutation) => m.options.scope?.id ?? `#${m.mutationId}`;
 const idOf = (m: AnyMutation) => (m.state.variables as { id?: unknown } | undefined)?.id;
 
 /**
@@ -70,8 +69,8 @@ export function createQueueMonitor(
   const listeners = new Set<() => void>();
   /** Changes that waited once: marked until they settle. */
   const waited = new WeakSet<AnyMutation>();
-  /** When each queue last moved (any change of one of its mutations). */
-  const moved = new Map<string, number>();
+  /** Each queue's first change and when it last moved: only that one holds the queue up. */
+  const heads = new Map<string, { id: number; at: number }>();
   /** Since when, with a connection, something waits and nothing went out. */
   let since: number | null = null;
   /** Since when the app is in front while TanStack believes it is not. */
@@ -103,7 +102,12 @@ export function createQueueMonitor(
       }
     }
     let band: QueueBandState = 'none';
-    if (online && waiting.size > 0) {
+    // The 30 s only run with the app in front: nothing is tried behind it, so coming back after a
+    // while must not say at once that nothing could be sent.
+    if (online && waiting.size > 0 && !focusManager.isFocused()) {
+      since = null;
+      band = 'sending';
+    } else if (online && waiting.size > 0) {
       since ??= t;
       band = t - since >= QUEUE_STUCK_MS ? 'stuck' : 'sending';
     } else {
@@ -139,21 +143,20 @@ export function createQueueMonitor(
       unfocusedSince = null;
     }
     if (!onlineManager.isOnline() || !focusManager.isFocused()) return;
-    const heads = new Map<string, AnyMutation>();
-    for (const m of cache
-      .findAll({ status: 'pending' })
-      .sort((a, b) => a.mutationId - b.mutationId)) {
-      if (!heads.has(scopeOf(m))) heads.set(scopeOf(m), m);
+    const firsts = new Map<string, AnyMutation>();
+    for (const m of queued()) {
+      const scope = m.options.scope?.id;
+      if (scope !== undefined && !firsts.has(scope)) firsts.set(scope, m);
     }
-    for (const [scope, head] of heads) {
-      if (!isQueued(head.options.mutationKey) && !queued().some((m) => scopeOf(m) === scope)) {
-        continue;
-      }
-      const last = moved.get(scope) ?? t;
-      if (!moved.has(scope)) moved.set(scope, t);
-      if (t - last >= QUEUE_WATCH_MS) {
-        moved.set(scope, t);
-        void head.continue().catch(() => undefined);
+    for (const scope of [...heads.keys()]) if (!firsts.has(scope)) heads.delete(scope);
+    for (const [scope, first] of firsts) {
+      const known = heads.get(scope);
+      if (known?.id !== first.mutationId) {
+        // A new first change: its 10 s start now.
+        heads.set(scope, { id: first.mutationId, at: t });
+      } else if (t - known.at >= QUEUE_WATCH_MS) {
+        heads.set(scope, { id: first.mutationId, at: t });
+        void first.continue().catch(() => undefined);
       }
     }
   };
@@ -164,7 +167,7 @@ export function createQueueMonitor(
     if (queued().length === 0 && timer !== undefined) {
       clearInterval(timer);
       timer = undefined;
-      moved.clear();
+      heads.clear();
     }
   };
 
@@ -175,8 +178,11 @@ export function createQueueMonitor(
   return {
     start() {
       const offCache = cache.subscribe((event) => {
-        if (event.type === 'updated' || event.type === 'added') {
-          moved.set(scopeOf(event.mutation as AnyMutation), now());
+        if (event.type === 'updated') {
+          // Only the first change of a queue moving counts as the queue moving.
+          const scope = event.mutation.options.scope?.id;
+          const head = scope === undefined ? undefined : heads.get(scope);
+          if (head?.id === event.mutation.mutationId) head.at = now();
           if (
             event.type === 'updated' &&
             event.action.type === 'success' &&
@@ -195,7 +201,12 @@ export function createQueueMonitor(
         compute();
       });
       const offFocus = focusManager.subscribe((focused) => {
-        if (focused && onlineManager.isOnline()) wakeAll();
+        // Back in front: every wait between two tries is cut short and the queues go on.
+        if (focused && onlineManager.isOnline()) {
+          retryQueuedNow();
+          wakeAll();
+        }
+        compute();
       });
       compute();
       ensureTicking();

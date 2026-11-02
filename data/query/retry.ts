@@ -82,26 +82,32 @@ export function retryQueuedNow(): void {
 }
 
 /**
- * How many times each run of a change has been tried, by the context TanStack gives its function:
- * one object per run (`execute`), the same on every retry of that run.
+ * How many times each run of a change has been tried and when its last try ended, by the context
+ * TanStack gives its function: one object per run (`execute`), the same on every retry of it.
  */
-const tries = new WeakMap<object, number>();
+const tries = new WeakMap<object, { count: number; endedAt: number }>();
 
 /**
  * A queued change's function, with the wait between two tries inside it instead of in TanStack's
  * `retryDelay` (which the queued changes set to 0): TanStack's timer cannot be cut short, and
  * «Reintentar» waited for it, up to 15 s (bloque 14.1, T5). The first try goes at once; each next
- * one waits `retryDelayOnNetwork`, or less if `retryQueuedNow` comes first. A change restored after
- * a restart is a new run and starts over.
+ * one waits what is left of `retryDelayOnNetwork` since the last try ended (a pause in between,
+ * offline or in the background, counts), or less if `retryQueuedNow` comes first. A change
+ * restored after a restart is a new run and starts over.
  */
 export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
   return async (vars, run) => {
-    if (run !== undefined) {
-      const done = tries.get(run) ?? 0;
-      tries.set(run, done + 1);
-      if (done > 0) await waitBetweenTries(retryDelayOnNetwork(done - 1));
+    if (run === undefined) return fn(vars);
+    const before = tries.get(run);
+    if (before !== undefined) {
+      const left = retryDelayOnNetwork(before.count - 1) - (Date.now() - before.endedAt);
+      if (left > 0) await waitBetweenTries(left);
     }
-    return fn(vars);
+    try {
+      return await fn(vars);
+    } finally {
+      tries.set(run, { count: (before?.count ?? 0) + 1, endedAt: Date.now() });
+    }
   };
 }
 

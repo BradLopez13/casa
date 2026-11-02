@@ -410,5 +410,10 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
       expect(door, file).not.toMatch(/OfflineBand|QueueBand/);
       expect(read(file), file).toMatch(/const bands = \(/);
     }
+    // Compra: in one column the field is in the door and the band under it; in two panes the
+    // band goes in the left pane, under the field.
+    const shopping = read('app/(tabs)/shopping.tsx');
+    expect(shopping).toMatch(/header=\{door\(null\)\}/);
+    expect(shopping).toMatch(/<AddItemField entry=\{entry\} \/>[\s\S]{0,300}<OfflineBand/);
   });
 });

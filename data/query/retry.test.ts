@@ -142,3 +142,31 @@ describe('queuedFn', () => {
     expect(calls).toBe(4);
   });
 });
+
+describe('queuedFn after a pause', () => {
+  // Revisión de 14.1: the wait used to run again after a pause, as if no time had passed.
+  it('waits only what is left of the wait since the last try ended', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      let calls = 0;
+      const fn = queuedFn((_vars: object) => {
+        calls++;
+        return Promise.resolve();
+      });
+      const run = {};
+      await fn({}, run);
+      const second = fn({}, run);
+      await vi.advanceTimersByTimeAsync(1000);
+      await second;
+      // Two tries done; the next would wait 2 s. The app was away for a minute.
+      vi.advanceTimersByTime(60_000);
+      const third = fn({}, run);
+      await vi.advanceTimersByTimeAsync(0);
+      await third;
+      expect(calls).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

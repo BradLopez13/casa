@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
+import { createQueueMonitor } from './queueMonitor';
 
 /**
  * Bloque 14.1 (P1-2 del 1 de noviembre): a change made offline stayed unsent with the connection
@@ -23,14 +24,14 @@ type Vars = { id: string; householdId: string };
 
 /** A fake server: answers after `latency` ms, or fails as NETWORK while the internet is down. */
 function fakeServer() {
-  const state = { reachable: true, latency: 300, hang: false, sent: new Set<string>() };
+  const state = { reachable: true, latency: 300, hang: false, sent: [] as string[] };
   const fn = async ({ id }: Vars) => {
     const reachableAtStart = state.reachable;
     // A request with no answer fails as NETWORK after 15 s (`fetchWithTimeout`).
     await new Promise((resolve) => setTimeout(resolve, state.hang ? 15_000 : state.latency));
     if (state.hang) throw new AppError('NETWORK');
     if (!reachableAtStart || !state.reachable) throw new AppError('NETWORK');
-    state.sent.add(id);
+    state.sent.push(id);
   };
   return { state, fn };
 }
@@ -48,10 +49,13 @@ function setup(onMutateMs: () => number) {
       await new Promise((resolve) => setTimeout(resolve, onMutateMs()));
     },
   };
+  // The app's queue monitor runs on every client, as the root layout keeps it (bloque 14.1).
+  let stopMonitor = () => undefined as void;
   const client = () => {
     const queryClient = new QueryClient();
     queryClient.setMutationDefaults(['tasks', 'create'], options);
     queryClient.mount();
+    stopMonitor = createQueueMonitor(queryClient, (key) => key?.[0] === 'tasks').start();
     return queryClient;
   };
   let queryClient = client();
@@ -70,6 +74,7 @@ function setup(onMutateMs: () => number) {
       shouldDehydrateQuery: () => false,
       shouldDehydrateMutation: (m) => m.state.status === 'pending',
     });
+    stopMonitor();
     queryClient.unmount();
     queryClient = client();
     hydrate(queryClient, {
@@ -81,7 +86,8 @@ function setup(onMutateMs: () => number) {
     }
   };
   const pending = () => queryClient.getMutationCache().findAll({ status: 'pending' });
-  return { server, create, restart, pending };
+  const created = () => Array.from({ length: n }, (_, i) => `t${i + 1}`);
+  return { server, create, restart, pending, created, stop: () => stopMonitor() };
 }
 
 /** A tiny seeded random, so a failing sequence can be replayed. */
@@ -137,7 +143,9 @@ describe('the queue goes once the phone is online', () => {
 
   it.each(Array.from({ length: 1000 }, (_, i) => i + 1))('sequence %i', async (seed) => {
     const jitter = random(seed * 7919);
-    const { server, create, restart, pending } = setup(() => Math.floor(jitter() * 40));
+    const { server, create, restart, pending, created, stop } = setup(() =>
+      Math.floor(jitter() * 40),
+    );
     const steps = sequence(seed);
     for (const step of steps) {
       switch (step.kind) {
@@ -191,6 +199,12 @@ describe('the queue goes once the phone is online', () => {
       paused: m.state.isPaused,
       failures: m.state.failureCount,
     }));
-    expect({ left, steps }).toEqual({ left: [], steps });
+    // Everything reached the server, each change in the order it was made. A change in flight
+    // when the app was killed is sent again (the server takes it once, by its id): only the first
+    // arrival of each counts for the order.
+    const { sent } = server.state;
+    const firstArrivals = sent.filter((id, i) => sent.indexOf(id) === i);
+    stop();
+    expect({ left, firstArrivals, steps }).toEqual({ left: [], firstArrivals: created(), steps });
   });
 });

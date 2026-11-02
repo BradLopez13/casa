@@ -1,7 +1,9 @@
 appId: com.bradlopez13.casa
 # Bloque 14.2 (P1-1 del 1 de noviembre): offline, tapping a note still in the queue showed
-# «Aún se está enviando…», the list moved to uncover a note the notice did not speak of, and when
-# the notice went the door was left cut under the status bar. A notice with no note moves nothing.
+# «Aún se está enviando…»; the list moved to uncover its last note, which the notice did not
+# speak of, and the door was left cut under the status bar. With nine notes the pill covers the
+# last one, so the old rule would move the list. The first tap on the quick add right after the
+# connection goes must focus the field (the offline band used to push it down under the finger).
 onFlowComplete:
   - setAirplaneMode: disabled
 ---
@@ -24,40 +26,38 @@ onFlowComplete:
       id: today.door-line
     timeout: 20000
 
-# Three notes, so the list is not empty, all sent while online
-- tapOn:
-    id: today.quick-add
-- inputText: Regar las plantas
-- tapOn:
-    id: today.quick-add.submit
-- tapOn:
-    id: today.quick-add
-- inputText: Poner la lavadora
-- tapOn:
-    id: today.quick-add.submit
-- hideKeyboard
-- extendedWaitUntil:
-    visible: Completar «Poner la lavadora»
-    timeout: 20000
-
-# Offline: the band comes in under the quick add; the first tap on the field focuses it
+# The connection goes, and the quick add is tapped at once
 - setAirplaneMode: enabled
+- tapOn:
+    id: today.quick-add
+- inputText: Nota 1
+- tapOn:
+    id: today.quick-add.submit
+- extendedWaitUntil:
+    visible: Nota 1
+    timeout: 5000
+- evalScript: ${output.n = 1}
+- repeat:
+    times: 8
+    commands:
+      - evalScript: ${output.n = output.n + 1}
+      - tapOn:
+          id: today.quick-add
+      - inputText: Nota ${output.n}
+      - tapOn:
+          id: today.quick-add.submit
+- hideKeyboard
 - extendedWaitUntil:
     visible:
       id: tasks.offline
     timeout: 20000
-- tapOn:
-    id: today.quick-add
-- inputText: Barrer
-- tapOn:
-    id: today.quick-add.submit
-- hideKeyboard
-- extendedWaitUntil:
-    visible: Barrer
-    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
 
-# The note still in the queue says so, and the door stays in view while and after the notice
-- tapOn: Barrer
+# A note still in the queue says so, and the list does not move: the door stays in view
+- tapOn: Nota 1
 - extendedWaitUntil:
     visible: Se enviará cuando vuelva la conexión.*
     timeout: 5000
@@ -68,11 +68,10 @@ onFlowComplete:
     timeout: 15000
 - assertVisible:
     id: today.door-line
-- assertVisible:
-    id: tasks.offline
 
 # Back online, the queue goes
 - setAirplaneMode: disabled
 - extendedWaitUntil:
-    notVisible: Sin enviar
-    timeout: 30000
+    notVisible:
+      id: 'task-note\..*\.pending'
+    timeout: 60000

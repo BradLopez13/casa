@@ -381,17 +381,7 @@ function ShoppingSplit({
       leftRef={leftRef}
       leftScrollProps={leftNudge.listProps}
       leftEndPadding={leftNudge.endPadding}
-      header={
-        <>
-          {door(null)}
-          {band ? (
-            <OfflineBand label={t('offline.showingLast')} />
-          ) : (
-            <QueueBand testID="shopping.queue" />
-          )}
-          <LicenseBand />
-        </>
-      }
+      header={door(null)}
       leftTestID="shopping.pane.pending"
       revealFocusedField
       rightTestID="shopping.pane.bought"
@@ -402,6 +392,16 @@ function ShoppingSplit({
       left={
         <View style={pane}>
           <AddItemField entry={entry} />
+          {/* Under the field, never above it: a band appearing never moves it under a finger
+              (bloque 14.2). */}
+          <View>
+            {band ? (
+              <OfflineBand label={t('offline.showingLast')} />
+            ) : (
+              <QueueBand testID="shopping.queue" />
+            )}
+            <LicenseBand />
+          </View>
           {panes.leftState || pending.length === 0 ? stateView : null}
           {panes.pendingSheet ? (
             <ShoppingSheet flush pending={pending} bought={NO_ITEMS} {...sheet} />

@@ -1,5 +1,5 @@
 import { focusManager, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { shouldPersistMutation } from './persistence';
 import { createQueueMonitor, type QueueMonitor, type QueueSnapshot } from './queueMonitor';
@@ -49,12 +49,17 @@ export function keepQueueWatched(queryClient: QueryClient): () => void {
 /** What the queue says now: the ids waiting («Sin enviar») and the band, kept up to date. */
 export function useQueueSnapshot(): QueueSnapshot {
   const entry = held(useQueryClient());
-  return useSyncExternalStore((listener) => {
-    const release = hold(entry);
-    const off = entry.monitor.subscribe(listener);
-    return () => {
-      off();
-      release();
-    };
-  }, entry.monitor.getSnapshot);
+  // Stable, so React does not subscribe again on every render of every note.
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      const release = hold(entry);
+      const off = entry.monitor.subscribe(listener);
+      return () => {
+        off();
+        release();
+      };
+    },
+    [entry],
+  );
+  return useSyncExternalStore(subscribe, entry.monitor.getSnapshot);
 }

@@ -203,6 +203,52 @@ describe('queue monitor', () => {
     active = false;
   });
 
+  // Revisión de 14.1: the watch itself, without the connection event to lean on (NetInfo said
+  // «online» without TanStack hearing it).
+  it('wakes the first change of a queue that has not moved in 10 s, and only then', async () => {
+    onlineManager.setOnline(false);
+    server.reachable = false;
+    create('a');
+    create('b');
+    await vi.advanceTimersByTimeAsync(50);
+    server.reachable = true;
+    // Online as far as anyone asks, but no event: neither TanStack nor the monitor hear it.
+    const online = vi.spyOn(onlineManager, 'isOnline').mockReturnValue(true);
+    await vi.advanceTimersByTimeAsync(QUEUE_WATCH_MS - 2000);
+    expect(server.sent).toEqual([]);
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(server.sent).toEqual(['a', 'b']);
+    online.mockRestore();
+  });
+
+  it('is not fooled by changes added behind a stuck first one', async () => {
+    onlineManager.setOnline(false);
+    server.reachable = false;
+    create('a');
+    await vi.advanceTimersByTimeAsync(50);
+    server.reachable = true;
+    const online = vi.spyOn(onlineManager, 'isOnline').mockReturnValue(true);
+    // A new change every 4 s used to restart the 10 s for the whole queue.
+    for (const id of ['b', 'c', 'd', 'e']) {
+      create(id);
+      await vi.advanceTimersByTimeAsync(4000);
+    }
+    expect(server.sent).toEqual(['a', 'b', 'c', 'd', 'e']);
+    online.mockRestore();
+  });
+
+  // Revisión de 14.1: the 30 s ran while the app was behind, where nothing is tried.
+  it('does not say «No se pudo enviar» on coming back after a while behind', async () => {
+    server.reachable = false;
+    create('a');
+    await vi.advanceTimersByTimeAsync(3000);
+    focusManager.setFocused(false);
+    await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS + 30_000);
+    focusManager.setFocused(true);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(monitor.getSnapshot().band).toBe('sending');
+  });
+
   it('keeps each household to its own queue', async () => {
     server.hang = true;
     create('a', 'h1');

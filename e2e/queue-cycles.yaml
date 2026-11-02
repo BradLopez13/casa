@@ -37,11 +37,13 @@ onFlowComplete:
     id: today.quick-add.submit
 - hideKeyboard
 - extendedWaitUntil:
-    visible: Sin enviar
+    visible:
+      id: 'task-note\..*\.pending'
     timeout: 5000
 - setAirplaneMode: disabled
 - extendedWaitUntil:
-    notVisible: Sin enviar
+    notVisible:
+      id: '(task-note|done-tray)\..*\.pending'
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
@@ -59,12 +61,14 @@ onFlowComplete:
     id: today.quick-add.submit
 - hideKeyboard
 - extendedWaitUntil:
-    visible: Sin enviar
+    visible:
+      id: 'task-note\..*\.pending'
     timeout: 5000
 - tapOn: Completar «Ciclo dos»
 - setAirplaneMode: disabled
 - extendedWaitUntil:
-    notVisible: Sin enviar
+    notVisible:
+      id: '(task-note|done-tray)\..*\.pending'
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
@@ -82,13 +86,21 @@ onFlowComplete:
     id: today.quick-add.submit
 - hideKeyboard
 - extendedWaitUntil:
-    visible: Sin enviar
+    visible:
+      id: 'task-note\..*\.pending'
     timeout: 5000
 - pressKey: Home
 - setAirplaneMode: disabled
-- launchApp
+# Back to the app as it was, not a cold start.
+- launchApp:
+    stopApp: false
 - extendedWaitUntil:
-    notVisible: Sin enviar
+    visible:
+      id: today.door-line
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible:
+      id: '(task-note|done-tray)\..*\.pending'
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
@@ -102,3 +114,5 @@ onFlowComplete:
     visible: Ciclo uno
     timeout: 20000
 - assertVisible: Ciclo tres
+- assertNotVisible:
+    id: '(task-note|done-tray)\..*\.pending'
