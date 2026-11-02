@@ -40,11 +40,14 @@ const LIMITS = {
 describe.each(['es', 'en'] as const)('store/%s/ficha.md', (lang) => {
   const markdown = ficha(lang);
 
-  it.each(LIMITS[lang])('«%s» stays within %i characters', (title, limit) => {
-    const text = section(markdown, title);
-    expect(text.length).toBeGreaterThan(0);
-    expect(text.length).toBeLessThanOrEqual(limit);
-  });
+  it.each([...LIMITS[lang]] as [string, number][])(
+    '«%s» stays within %i characters',
+    (title, limit) => {
+      const text = section(markdown, title);
+      expect(text.length).toBeGreaterThan(0);
+      expect(text.length).toBeLessThanOrEqual(limit);
+    },
+  );
 
   it('keeps the keywords as a comma list without spaces, as App Store Connect counts them', () => {
     const keywords = section(markdown, lang === 'es' ? 'Palabras clave' : 'Keywords');
