@@ -14,14 +14,15 @@ export type ErrorReport = {
  * reporting: an answer the app does not know (`UNKNOWN`: an RPC broken by a migration, a 5xx) and
  * any queued change the queue dropped, whose note was undone on someone's phone. Only the key's
  * leading words, the codes and the status: never variables, which carry product and task names.
- * A connection that failed, or a queue let go on signing out, is not a fault.
+ * A connection that failed, or a queue let go on signing out (`QUEUE_DROPPED`), is not a fault;
+ * a NOT_AUTHENTICATED the server answered is (bloque 15.1, P2-6).
  */
 export function errorReport(
   error: unknown,
   where: { key: readonly unknown[] | undefined; queued: boolean },
 ): ErrorReport | null {
   const appError = toAppError(error);
-  if (appError.code === 'NETWORK' || appError.code === 'NOT_AUTHENTICATED') return null;
+  if (appError.code === 'NETWORK' || appError.code === 'QUEUE_DROPPED') return null;
   if (appError.code !== 'UNKNOWN' && !where.queued) return null;
   const words = (where.key ?? []).filter((part): part is string => typeof part === 'string');
   // A household or task id after the feature's name says nothing useful and is left out.

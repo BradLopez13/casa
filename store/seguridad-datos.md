@@ -5,17 +5,17 @@ algo nuevo, esto y la política de privacidad cambian en el mismo PR.
 
 ## Qué sale del móvil, a dónde y por qué
 
-| Dato                                               | A dónde                    | Para qué                           | Obligatorio | Cifrado en tránsito | Se puede borrar             |
-| -------------------------------------------------- | -------------------------- | ---------------------------------- | ----------- | ------------------- | --------------------------- |
-| Correo electrónico                                 | Supabase (auth)            | La cuenta, entrar, recuperar clave | Sí          | Sí (HTTPS)          | Sí, «Borrar mi cuenta»      |
-| Nombre que eliges mostrar                          | Supabase                   | Que la casa sepa quién es quién    | Sí          | Sí                  | Sí                          |
-| Identificador de Google o Apple (si entras así)    | Supabase (auth)            | Entrar                             | No          | Sí                  | Sí                          |
-| Tareas, compra, nombre de la casa, invitaciones    | Supabase                   | Compartirlo con la casa            | Sí          | Sí                  | Sí (la casa, a los 30 días) |
-| Zona horaria e idioma                              | Supabase                   | Recordatorios a su hora, correos   | Sí          | Sí                  | Sí                          |
-| Token de notificaciones (Expo Push)                | Supabase → Expo → FCM/APNs | Avisos de la casa                  | No          | Sí                  | Sí, al borrar la cuenta     |
-| Informes de errores (versión, modelo, dónde falló) | Sentry                     | Arreglar fallos                    | No          | Sí                  | Se borran solos (retención) |
-| Rendimiento (1 de cada 5 sesiones)                 | Sentry                     | Ver qué va lento                   | No          | Sí                  | Se borran solos             |
-| Suscripción (estado, fechas, id de compra)         | RevenueCat → Supabase      | Saber si la licencia está al día   | No          | Sí                  | Cuando la tienda la cierra  |
+| Dato                                               | A dónde                    | Para qué                           | Obligatorio                    | Cifrado en tránsito | Se puede borrar             |
+| -------------------------------------------------- | -------------------------- | ---------------------------------- | ------------------------------ | ------------------- | --------------------------- |
+| Correo electrónico                                 | Supabase (auth)            | La cuenta, entrar, recuperar clave | Sí                             | Sí (HTTPS)          | Sí, «Borrar mi cuenta»      |
+| Nombre que eliges mostrar                          | Supabase                   | Que la casa sepa quién es quién    | Sí                             | Sí                  | Sí                          |
+| Identificador de Google o Apple (si entras así)    | Supabase (auth)            | Entrar                             | No                             | Sí                  | Sí                          |
+| Tareas, compra, nombre de la casa, invitaciones    | Supabase                   | Compartirlo con la casa            | Sí                             | Sí                  | Sí (la casa, a los 30 días) |
+| Zona horaria e idioma                              | Supabase                   | Recordatorios a su hora, correos   | Sí                             | Sí                  | Sí                          |
+| Token de notificaciones (Expo Push)                | Supabase → Expo → FCM/APNs | Avisos de la casa                  | No                             | Sí                  | Sí, al borrar la cuenta     |
+| Informes de errores (versión, modelo, dónde falló) | Sentry                     | Arreglar fallos                    | Sí (sin forma de desactivarlo) | Sí                  | Se borran solos (retención) |
+| Rendimiento (1 de cada 5 sesiones)                 | Sentry                     | Ver qué va lento                   | Sí (sin forma de desactivarlo) | Sí                  | Se borran solos             |
+| Suscripción (estado, fechas, id de compra)         | RevenueCat → Supabase      | Saber si la licencia está al día   | No                             | Sí                  | Cuando la tienda la cierra  |
 
 Nada de esto se usa para publicidad ni se vende. No hay SDK de analítica ni de anuncios. No se
 leen contactos, ubicación, fotos, cámara ni micrófono. El portapapeles solo se lee en Android,
@@ -35,8 +35,8 @@ al abrir «Unirme con un enlace», para rellenar la invitación copiada, y no sa
   - **Mensajes / otro contenido generado por el usuario:** tareas, lista de la compra, nombre de
     la casa. Recopilados, no compartidos (se ven dentro de la casa). Fines: funcionamiento.
   - **Información de la app y rendimiento:** registros de fallos, diagnósticos. Recopilados, no
-    compartidos (Sentry trata por cuenta nuestra). Opcionales. Fines: analítica (rendimiento),
-    estabilidad.
+    compartidos (Sentry trata por cuenta nuestra). Obligatorios (la app no deja desactivarlos).
+    Fines: analítica (rendimiento), estabilidad.
   - **Compras:** historial de compras (la suscripción). Recopilados, no compartidos (RevenueCat
     trata por cuenta nuestra). Opcionales. Fines: funcionamiento de la app.
   - **Identificadores de dispositivo:** no (el token push es por instalación y no identifica el
@@ -48,9 +48,10 @@ false`); sesión en el almacén seguro del móvil.
 
 - **Data Linked to You** (vinculados a la identidad): Contact Info → Email Address, Name;
   User Content → Other User Content (tareas y compra); Identifiers → User ID; Purchases →
-  Purchase History.
-- **Data Not Linked to You**: Diagnostics → Crash Data, Performance Data (Sentry recibe un
-  id interno, no el correo ni el nombre).
+  Purchase History; Diagnostics → Crash Data, Performance Data (Sentry recibe el id interno de
+  la cuenta, `Sentry.setUser({ id })` en `data/telemetry/sentry.ts`: para Apple eso es
+  «vinculado», aunque no lleve el correo ni el nombre).
+- **Data Not Linked to You**: ninguno.
 - **Data Used to Track You**: ninguno. No hay seguimiento entre apps ni webs; no se pide
   App Tracking Transparency.
 - Fines por tipo: App Functionality para todo; Analytics solo para Diagnostics.

@@ -45,7 +45,7 @@ export const retryOnNetwork = (failureCount: number, error: AppError) => {
   const appError = toAppError(error);
   const again = failureCount < NETWORK_RETRY_LIMIT && isTransient(appError, isSignedIn());
   // The token expired and could not be refreshed: ask for a new one before the next try (T1).
-  if (again && appError.status === 401) refreshSoon();
+  if (again && (appError.status === 401 || appError.code === 'NOT_AUTHENTICATED')) refreshSoon();
   return again;
 };
 
@@ -121,13 +121,13 @@ export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: obj
     // Taken out of the cache (a household left, a sign-out): it never goes again (T6), also when
     // that happened while it waited between two tries.
     const letGo = () => typeof vars === 'object' && vars !== null && abandoned.has(vars);
-    if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+    if (letGo()) throw new AppError('QUEUE_DROPPED');
     if (run === undefined) return fn(vars);
     const before = tries.get(run);
     if (before !== undefined) {
       const left = retryDelayOnNetwork(before.count - 1) - (Date.now() - before.endedAt);
       if (left > 0) await waitBetweenTries(left);
-      if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+      if (letGo()) throw new AppError('QUEUE_DROPPED');
     }
     try {
       return await fn(vars);

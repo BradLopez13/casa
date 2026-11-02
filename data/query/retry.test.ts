@@ -195,7 +195,7 @@ describe('a queued change taken out of the cache (bloque 14.4, T6)', () => {
     const fn = queuedFn(send);
     const vars = { id: 'a' };
     abandonQueued({ state: { variables: vars } });
-    await expect(fn(vars, {})).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+    await expect(fn(vars, {})).rejects.toMatchObject({ code: 'QUEUE_DROPPED' });
     expect(send).not.toHaveBeenCalled();
   });
 });
@@ -217,10 +217,33 @@ describe('a queued change taken out of the cache while it waits between tries (r
       // Waiting its second; the household is left meanwhile.
       abandonQueued({ state: { variables: vars } });
       await vi.advanceTimersByTimeAsync(1000);
-      expect(await second).toMatchObject({ code: 'NOT_AUTHENTICATED' });
+      expect(await second).toMatchObject({ code: 'QUEUE_DROPPED' });
       expect(send).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
+    }
+  });
+});
+
+// Bloque 15.1 (P2-6): the server's NOT_AUTHENTICATED with the person still signed in is the 401
+// in another coat: the change stays and a token is asked for.
+describe('a NOT_AUTHENTICATED from the server with someone signed in', () => {
+  it('keeps the change and refreshes the session', async () => {
+    const { setSessionUser } = await import('./sessionUser');
+    const refresh = vi.fn();
+    refreshSessionWith(refresh);
+    setSessionUser('ana');
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + 60_000);
+    try {
+      expect(retryOnNetwork(0, new AppError('NOT_AUTHENTICATED'))).toBe(true);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      // A change let go of locally is not the server's answer: it never goes again.
+      expect(retryOnNetwork(0, new AppError('QUEUE_DROPPED'))).toBe(false);
+    } finally {
+      vi.useRealTimers();
+      setSessionUser(undefined);
+      refreshSessionWith(() => undefined);
     }
   });
 });

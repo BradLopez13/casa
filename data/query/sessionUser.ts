@@ -38,10 +38,14 @@ export function isSignedIn(): boolean {
  */
 export function assertQueuedBy(userId: string | null | undefined): void {
   if (userId == null || current === undefined) return;
-  if (current !== userId) throw new AppError('NOT_AUTHENTICATED');
+  if (current !== userId) throw new AppError('QUEUE_DROPPED');
 }
 
-/** The change was dropped because its person signed out: nothing to roll back or say. */
+/**
+ * The change was let go on this phone (its person signed out, its household was left): nothing
+ * to roll back or say. A NOT_AUTHENTICATED the server answered is not this (bloque 15.1, P2-6):
+ * with someone signed in it is tried again, and final only once nobody is.
+ */
 export function droppedOnSignOut(error: unknown): boolean {
-  return toAppError(error).code === 'NOT_AUTHENTICATED';
+  return toAppError(error).code === 'QUEUE_DROPPED';
 }

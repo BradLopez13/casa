@@ -27,7 +27,7 @@ describe('errorReport (bloque 13, T-2)', () => {
     expect(errorReport(new AppError('NETWORK'), { key: ['tasks'], queued: true })).toBeNull();
     // Signed out: the queue let it go on purpose.
     expect(
-      errorReport(new AppError('NOT_AUTHENTICATED'), { key: ['tasks', 'toggle'], queued: true }),
+      errorReport(new AppError('QUEUE_DROPPED'), { key: ['tasks', 'toggle'], queued: true }),
     ).toBeNull();
   });
 
@@ -37,5 +37,15 @@ describe('errorReport (bloque 13, T-2)', () => {
       queued: false,
     });
     expect(JSON.stringify(report)).not.toContain('Leche');
+  });
+});
+
+// Bloque 15.1 (P2-6): a NOT_AUTHENTICATED the server answered is a fault worth a report; only
+// the queue letting a change go (QUEUE_DROPPED) is silent.
+describe('a NOT_AUTHENTICATED from the server', () => {
+  it('is reported for a queued change, as any final server answer', () => {
+    expect(
+      errorReport(new AppError('NOT_AUTHENTICATED'), { key: ['tasks', 'toggle'], queued: true }),
+    ).toMatchObject({ code: 'NOT_AUTHENTICATED', queued: true });
   });
 });

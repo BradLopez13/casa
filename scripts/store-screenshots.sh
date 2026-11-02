@@ -4,7 +4,7 @@
 #   pnpm store:screenshots                 # phone profile, light and dark
 #   PROFILE=tablet pnpm store:screenshots  # 10" tablet, landscape
 #
-# Needs: the local Supabase stack with the E2E fixtures (`pnpm db:reset && pnpm e2e:fixtures`),
+# Needs: the local Supabase stack (the script resets it and loads the E2E fixtures itself),
 # `.env.e2e` (`pnpm e2e:env`), the E2E build installed on a running emulator or phone
 # (`E2E=1 ARCH=x86_64 pnpm android:release`, then `adb install`), and Maestro on the PATH. The
 # flow signs in as demo@e2e.dev («Casa de ejemplo») and saves PNGs in store/screenshots/<profile>/,
@@ -34,6 +34,9 @@ restore() {
 trap restore EXIT
 
 for theme in claro oscuro; do
+  # The same home for both themes: the fixtures go back in before each run.
+  pnpm --silent db:reset > /dev/null
+  pnpm --silent e2e:fixtures > /dev/null
   if [ "$theme" = oscuro ]; then adb shell cmd uimode night yes > /dev/null; else adb shell cmd uimode night no > /dev/null; fi
   sleep 2
   maestro test -e OUT="$out" -e THEME="$theme" e2e/store/screenshots.yaml

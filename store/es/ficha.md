@@ -35,7 +35,7 @@ PENSADA PARA TODA LA FAMILIA
 Texto grande que de verdad se lee, botones que se tocan sin apuntar, lector de pantalla cuidado y recordatorios a la hora que elijas. Sin publicidad y sin vender datos.
 
 CÓMO EMPIEZA
-Creas tu casa en un minuto, invitas con un enlace por WhatsApp y cada persona entra con su cuenta. La licencia va incluida por ahora; cuando se active el cobro, cada casa tendrá 14 días de prueba.
+Creas tu casa en un minuto, invitas con un enlace por WhatsApp y cada persona entra con su cuenta. La licencia va incluida por ahora; cuando se active el cobro, cada cuenta nueva tendrá 14 días de prueba por casa.
 
 ## Palabras clave · App Store (100)
 

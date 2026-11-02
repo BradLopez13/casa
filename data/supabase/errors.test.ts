@@ -146,3 +146,20 @@ describe('isTransient', () => {
     expect(error.serverCode).toBe('PGRST003');
   });
 });
+
+// Bloque 15.1 (P2-6): the token expired without refreshing and supabase-js sent the change with
+// the anonymous key; the RPC answered NOT_AUTHENTICATED (a 400, not a 401) and the change was
+// dropped as a sign-out, without undoing the note, without a notice and without Sentry.
+describe('a NOT_AUTHENTICATED answered by the server', () => {
+  const notAuthenticated = (status: number) =>
+    toAppError({ code: 'P0001', message: 'NOT_AUTHENTICATED', details: null, hint: null }, status);
+
+  it('is tried again while someone is signed in, as a 401 is', () => {
+    expect(isTransient(notAuthenticated(400), true)).toBe(true);
+    expect(isTransient(new AppError('NOT_AUTHENTICATED'), true)).toBe(true);
+  });
+
+  it('is final once nobody is signed in', () => {
+    expect(isTransient(notAuthenticated(400), false)).toBe(false);
+  });
+});

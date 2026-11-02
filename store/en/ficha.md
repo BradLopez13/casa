@@ -35,7 +35,7 @@ MADE FOR THE WHOLE FAMILY
 Large text that is actually readable, buttons you tap without aiming, a cared-for screen reader and reminders at the time you choose. No ads and no data sold.
 
 HOW IT STARTS
-Create your home in a minute, invite with a link over WhatsApp and everyone signs in with their own account. The licence is included for now; once billing starts, every home gets a 14-day trial.
+Create your home in a minute, invite with a link over WhatsApp and everyone signs in with their own account. The licence is included for now; once billing starts, every new account gets a 14-day trial per home.
 
 ## Keywords · App Store (100)
 

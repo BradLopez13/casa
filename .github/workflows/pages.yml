@@ -32,11 +32,7 @@ jobs:
         env:
           APP_STORE_ID: ${{ vars.APP_STORE_ID }}
           PLAY_URL: ${{ vars.PLAY_URL }}
-        run: |
-          for page in site/index.html site/invite/index.html; do
-            sed -i "s#data-app-store-id=\"\"#data-app-store-id=\"${APP_STORE_ID}\"#; s#data-play-url=\"\"#data-play-url=\"${PLAY_URL}\"#" "$page"
-          done
-          grep -o 'data-[a-z-]*="[^"]*"' site/invite/index.html
+        run: bash scripts/site-store-links.sh site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

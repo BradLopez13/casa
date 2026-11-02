@@ -208,3 +208,39 @@ describe('the queue goes once the phone is online', () => {
     expect({ left, firstArrivals, steps }).toEqual({ left: [], firstArrivals: created(), steps });
   });
 });
+
+// Bloque 15.1 (decisión 1 A): the phone is put away after marking the shopping; the queue goes
+// without the app ever coming back to the front.
+describe('the queue with the app behind for good', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    onlineManager.setOnline(true);
+    focusManager.setFocused(true);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    onlineManager.setOnline(true);
+    focusManager.setFocused(undefined);
+  });
+
+  it('empties with the connection back, never in front again', async () => {
+    const { server, create, pending, created, stop } = setup(() => 10);
+    server.state.reachable = false;
+    onlineManager.setOnline(false);
+    create();
+    create();
+    await vi.advanceTimersByTimeAsync(100);
+    focusManager.setFocused(false);
+    await vi.advanceTimersByTimeAsync(30_000);
+    server.state.reachable = true;
+    onlineManager.setOnline(true);
+    await vi.advanceTimersByTimeAsync(20_000);
+    const left = pending().map((m) => (m.state.variables as Vars).id);
+    const { sent } = server.state;
+    stop();
+    expect({ left, sent: sent.filter((id, i) => sent.indexOf(id) === i) }).toEqual({
+      left: [],
+      sent: created(),
+    });
+  });
+});

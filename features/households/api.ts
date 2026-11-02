@@ -78,7 +78,9 @@ function toLicense(
  */
 export async function listMyHouseholds(): Promise<Membership[]> {
   const userId = await sessionUserId();
-  if (!userId) return [];
+  // «I do not know», never «none» (bloque 15.1, P3-10): an empty list would read as every
+  // household ended and forget their queues (useForgetEndedHousehold).
+  if (!userId) throw new AppError('NOT_AUTHENTICATED');
 
   let result;
   try {

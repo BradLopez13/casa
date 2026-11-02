@@ -53,7 +53,7 @@ describe('parseInviteToken', () => {
     expect(parseInviteToken(`exp://192.168.1.10:8081/--/invite?token=${TOKEN}`)).toBe(TOKEN);
   });
 
-  it('rejects short, uppercase or missing tokens', () => {
+  it('rejects short or missing tokens, and takes an uppercase one', () => {
     expect(parseInviteToken(TOKEN.slice(1))).toBeNull();
     // The keyboard may capitalise a pasted token (bloque 15.5, P3-6d): it still counts.
     expect(parseInviteToken(TOKEN.toUpperCase())).toBe(TOKEN);
