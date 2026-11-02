@@ -245,6 +245,9 @@ describe('buildShoppingMutationDefaults', () => {
     expect(defaults.bought.retry).toBe(defaults.add.retry);
     expect(defaults.quantity.retry).toBe(defaults.add.retry);
     expect(defaults.add.retryDelay).toBe(QUEUED_RETRY_DELAY);
+    // Bloque 14.4 (T4): a dropped add reaches Sentry like the others.
+    expect(defaults.add.meta).toEqual(defaults.bought.meta);
+    expect(defaults.add.meta).toEqual({ queued: true });
   });
 
   it('reverts and explains a network error when it is final', async () => {

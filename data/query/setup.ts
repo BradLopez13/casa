@@ -28,6 +28,20 @@ function report(error: unknown, key: readonly unknown[] | undefined, queued: boo
   if (found) reporter(error, found);
 }
 
+/**
+ * Saving or restoring the offline queue on the device failed (bloque 14.4, T3: a full disk, a
+ * broken write): Sentry hears it, with the step and nothing of what was queued.
+ */
+export function reportQueueStorage(error: unknown, step: 'save' | 'restore'): void {
+  reporter(error, {
+    key: `queue/${step}`,
+    code: 'QUEUE_STORAGE',
+    status: undefined,
+    serverCode: undefined,
+    queued: true,
+  });
+}
+
 /** The app's one query client. A queued mutation says so in its meta (`QUEUED_META`). */
 export const queryClient = new QueryClient({
   defaultOptions: appQueryDefaults,

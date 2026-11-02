@@ -4,6 +4,7 @@ import {
   markOnline,
   NETWORK_RETRY_LIMIT,
   NETWORK_RETRY_MAX_MS,
+  abandonQueued,
   queuedFn,
   RECONNECT_RETRY_MS,
   RECONNECT_WINDOW_MS,
@@ -183,5 +184,18 @@ describe('a 401 asks for a fresh token (bloque 14.4, T1)', () => {
     expect(retryOnNetwork(0, new AppError('NETWORK'))).toBe(true);
     expect(refresh).toHaveBeenCalledTimes(1);
     refreshSessionWith(() => undefined);
+  });
+});
+
+describe('a queued change taken out of the cache (bloque 14.4, T6)', () => {
+  // Removing a mutation from TanStack's cache does not stop its retries: after leaving a
+  // household its change went on and failed with NOT_A_MEMBER and a notice.
+  it('never reaches the server again, and fails as dropped (no notice, no report)', async () => {
+    const send = vi.fn(() => Promise.resolve());
+    const fn = queuedFn(send);
+    const vars = { id: 'a' };
+    abandonQueued({ state: { variables: vars } });
+    await expect(fn(vars, {})).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+    expect(send).not.toHaveBeenCalled();
   });
 });

@@ -180,6 +180,40 @@ describe('the queue on the device keeps every change (review of bloque 13)', () 
   });
 });
 
+describe('a damaged queue (bloque 14.4, T3)', () => {
+  // A broken entry made `hydrate` throw; the next save then wrote the queue in memory, maybe
+  // empty, over the one on the device, and every change in it was lost without a word.
+  it('restores the good changes, leaves out the broken one and keeps a copy of it all', async () => {
+    const before = new QueryClient();
+    queueAdd(before, 'p1', 'casa');
+    queueAdd(before, 'p2', 'casa');
+    await vi.waitFor(() => expect(pendingIds(before)).toHaveLength(2));
+    await saveQueue(before, 'ana');
+    const saved = JSON.parse(store.get(queueKey('ana'))!) as { v: number; mutations: unknown[] };
+    saved.mutations.splice(1, 0, { state: 'not a state' }, null);
+    const damaged = JSON.stringify(saved);
+    store.set(queueKey('ana'), damaged);
+    const restarted = new QueryClient();
+    expect(await restoreQueue(restarted, 'ana')).toBe(2);
+    expect(pendingIds(restarted).sort()).toEqual(['p1', 'p2']);
+    expect(store.get(`${queueKey('ana')}-unread`)).toBe(damaged);
+  });
+
+  it('keeps a copy aside when restoring fails, so the first save cannot lose it', async () => {
+    const before = new QueryClient();
+    queueAdd(before, 'p1', 'casa');
+    await vi.waitFor(() => expect(pendingIds(before)).toHaveLength(1));
+    await saveQueue(before, 'ana');
+    const stored = store.get(queueKey('ana'))!;
+    const restarted = new QueryClient();
+    vi.spyOn(restarted.getMutationCache(), 'build').mockImplementation(() => {
+      throw new Error('broken');
+    });
+    await expect(restoreQueue(restarted, 'ana')).rejects.toThrow('broken');
+    expect(store.get(`${queueKey('ana')}-unread`)).toBe(stored);
+  });
+});
+
 describe('queueScope (bloque 13, Aud P3-1)', () => {
   it('gives each household its own queue, per kind', () => {
     expect(queueScope(['shopping', 'bought'], { householdId: 'casa' })).toEqual({

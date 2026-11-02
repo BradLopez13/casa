@@ -1,6 +1,6 @@
 // Pure: no react-native import, so Vitest can check it.
 import { onlineManager } from '@tanstack/react-query';
-import { isTransient, toAppError, type AppError } from '@/data/supabase/errors';
+import { AppError, isTransient, toAppError } from '@/data/supabase/errors';
 import { isSignedIn } from './sessionUser';
 
 /**
@@ -118,6 +118,10 @@ const tries = new WeakMap<object, { count: number; endedAt: number }>();
  */
 export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
   return async (vars, run) => {
+    // Taken out of the cache (a household left, a sign-out): it never goes again (T6).
+    if (typeof vars === 'object' && vars !== null && abandoned.has(vars)) {
+      throw new AppError('NOT_AUTHENTICATED');
+    }
     if (run === undefined) return fn(vars);
     const before = tries.get(run);
     if (before !== undefined) {
@@ -130,6 +134,20 @@ export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: obj
       tries.set(run, { count: (before?.count ?? 0) + 1, endedAt: Date.now() });
     }
   };
+}
+
+/** The variables of the queued changes taken out of the cache: TanStack keeps retrying them. */
+const abandoned = new WeakSet<object>();
+
+/**
+ * A queued change is taken out of the cache (bloque 14.4, T6): removing it does not stop the tries
+ * TanStack already has under way, so its function would go to the server again (after leaving a
+ * household, with NOT_A_MEMBER and its notice). From now on it fails as dropped, which says
+ * nothing and reports nothing (`droppedOnSignOut`). Call it before `remove` or `clear`.
+ */
+export function abandonQueued(mutation: { state: { variables?: unknown } }): void {
+  const vars = mutation.state.variables;
+  if (typeof vars === 'object' && vars !== null) abandoned.add(vars);
 }
 
 /** The retry delay TanStack keeps for the queued changes: none, the wait is in `queuedFn`. */

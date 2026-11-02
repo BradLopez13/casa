@@ -117,6 +117,55 @@ export function draftShoppingItem(
 export const resolvedKey = (householdId: string) => ['shopping-resolved', householdId];
 type Resolved = Readonly<Record<string, string>>;
 
+/** The item a product id stands for now: the one an add offline was merged into, or itself. */
+export function resolvedItemId(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  id: string,
+): string {
+  if (householdId === undefined) return id;
+  return queryClient.getQueryData<Resolved>(resolvedKey(householdId))?.[id] ?? id;
+}
+
+/** How long an edit, a delete or a clear waits for the household's queue before going anyway. */
+export const QUEUE_WAIT_MS = 10_000;
+
+/**
+ * Resolves once the household's queued shopping changes (add, bought, quantity) have gone, or
+ * after `QUEUE_WAIT_MS` (bloque 14.4, T7). Editing, deleting and clearing used to wait in the
+ * queue's own scope, without any limit behind a change that kept failing; now they go after it in
+ * the normal case and never hang.
+ */
+export function afterShoppingQueue(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  ms = QUEUE_WAIT_MS,
+): Promise<void> {
+  const cache = queryClient.getMutationCache();
+  const busy = () =>
+    cache
+      .findAll({ status: 'pending' })
+      .some(
+        (m) =>
+          isQueuedShoppingMutation(m.options.mutationKey) &&
+          (householdId === undefined ||
+            (m.state.variables as { householdId?: string } | undefined)?.householdId ===
+              householdId),
+      );
+  if (!busy()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    const unsubscribe = cache.subscribe(() => {
+      if (!busy()) done();
+    });
+  });
+}
+
 /**
  * Several shopping mutations of a household can be in flight: refetch its list once, after its
  * last one settles; another household's queue no longer holds it back (bloque 13).
@@ -183,6 +232,8 @@ export function buildShoppingMutationDefaults(
   const add: MutationOptions<string, AppError, AddVars, AddContext> = {
     mutationKey: addKey,
     scope: SHOPPING_SCOPE,
+    // A dropped add reaches Sentry like a dropped bought or quantity (bloque 14.4, T4).
+    meta: QUEUED_META,
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
     retry: retryOnNetwork,

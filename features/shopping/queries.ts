@@ -12,9 +12,11 @@ import {
 } from './api';
 import {
   addKey,
+  afterShoppingQueue,
   boughtKey,
   invalidateShoppingWhenIdle,
   quantityKey,
+  resolvedItemId,
   shoppingScope,
   shoppingQueryOptions,
   type AddContext,
@@ -100,15 +102,18 @@ export function useSetBought(householdId: string | undefined) {
 
 export type EditVars = { id: string; name: string; quantity: string | null };
 
-// Edits, deletes and clears only run online: they are not persisted, so they never outlive
-// the app. They share the scope so they reach the server after any queued add or bought.
+// Edits, deletes and clears only run online: they are not persisted, so they never outlive the
+// app. They go after the household's queued changes, but never wait for them more than a while
+// (`afterShoppingQueue`, bloque 14.4, T7), and reach the item an add was merged into.
 export function useEditItem(householdId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, EditVars>({
     mutationKey: ['shopping', 'edit'],
-    scope: shoppingScope(householdId),
     networkMode: 'online',
-    mutationFn: ({ id, name, quantity }) => updateShoppingItem(id, name, quantity),
+    mutationFn: async ({ id, name, quantity }) => {
+      await afterShoppingQueue(queryClient, householdId);
+      return updateShoppingItem(resolvedItemId(queryClient, householdId, id), name, quantity);
+    },
     onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });
 }
@@ -123,8 +128,8 @@ export function useSetQuantity(householdId: string | undefined) {
 
 /**
  * Deletes a product once its «Deshacer» has gone (decisión 2, bloque 13), outside any screen: the
- * product sheet is closed by then. In the household's queue, so it reaches the server after an add
- * or a quantity still on its way; offline it fails at once and the product comes back.
+ * product sheet is closed by then. After an add or a quantity of the household still on its way,
+ * for a while at most (T7); offline it fails at once and the product comes back.
  */
 export function deleteItemNow(
   queryClient: QueryClient,
@@ -135,8 +140,10 @@ export function deleteItemNow(
     .getMutationCache()
     .build<void, AppError, void, unknown>(queryClient, {
       mutationKey: ['shopping', 'delete'],
-      scope: shoppingScope(householdId),
-      mutationFn: () => deleteShoppingItem(id),
+      mutationFn: async () => {
+        await afterShoppingQueue(queryClient, householdId);
+        return deleteShoppingItem(resolvedItemId(queryClient, householdId, id));
+      },
       // Out of the cache first: a refetch that fails (offline right after) must not bring it back.
       onSuccess: () => {
         if (householdId === undefined) return;
@@ -157,9 +164,11 @@ export function useClearBought(householdId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation<void, AppError, { householdId: string }, { before?: ShoppingItem[] }>({
     mutationKey: ['shopping', 'clear'],
-    scope: shoppingScope(householdId),
     networkMode: 'online',
-    mutationFn: ({ householdId }) => clearBoughtItems(householdId),
+    mutationFn: async ({ householdId }) => {
+      await afterShoppingQueue(queryClient, householdId);
+      return clearBoughtItems(householdId);
+    },
     onMutate: async ({ householdId }) => {
       const key = shoppingKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
