@@ -66,10 +66,14 @@ onFlowComplete:
 - waitForAnimationToEnd:
     timeout: 3000
 - stopApp
-- launchApp
-- extendedWaitUntil:
-    visible: Poner la lavadora
-    timeout: 30000
+# With the same retry as the first start (Android can kill it as it starts).
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp
+      - extendedWaitUntil:
+          visible: Poner la lavadora
+          timeout: 30000
 - assertVisible:
     id: tasks.offline
 # On a small screen the tray sits below the fold: scroll down to it, then back to the door.

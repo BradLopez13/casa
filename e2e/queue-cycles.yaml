@@ -125,13 +125,17 @@ onFlowComplete:
     timeout: 10000
 - pressKey: Home
 - setAirplaneMode: disabled
-# Back to the app as it was, not a cold start.
-- launchApp:
-    stopApp: false
-- scrollUntilVisible:
-    element: 'Ciclo tres, .*'
-    direction: DOWN
-    timeout: 20000
+# Back to the app as it was, not a cold start. If Android killed it meanwhile it starts cold,
+# with the same retry as the first start.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: false
+      - scrollUntilVisible:
+          element: 'Ciclo tres, .*'
+          direction: DOWN
+          timeout: 20000
 - scrollUntilVisible:
     element: 'Ciclo tres, (?!.*sin enviar).*'
     direction: DOWN

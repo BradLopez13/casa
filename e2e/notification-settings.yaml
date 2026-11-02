@@ -61,12 +61,16 @@ appId: com.bradlopez13.casa
     timeout: 20000
 
 # Both survive a restart: reminders on the phone, notices on the server
-- launchApp:
-    stopApp: true
-- extendedWaitUntil:
-    visible:
-      id: today.door-line
-    timeout: 20000
+# A cold start, so with the same retry as the first one (Android can kill it as it starts).
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: today.door-line
+          timeout: 20000
 - tapOn:
     id: tab.settings
 - scrollUntilVisible:
