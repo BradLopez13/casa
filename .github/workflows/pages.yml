@@ -24,6 +24,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # The store links of the landing and the invitation page come from the repository's
+      # variables (Settings → Secrets and variables → Actions → Variables): APP_STORE_ID (the
+      # number of apps.apple.com/app/id…) and PLAY_URL (the listing, or the closed-test opt-in
+      # link). Empty, the pages say the app is not in that store yet (LANZAMIENTO.md).
+      - name: Fill the store links
+        env:
+          APP_STORE_ID: ${{ vars.APP_STORE_ID }}
+          PLAY_URL: ${{ vars.PLAY_URL }}
+        run: |
+          for page in site/index.html site/invite/index.html; do
+            sed -i "s#data-app-store-id=\"\"#data-app-store-id=\"${APP_STORE_ID}\"#; s#data-play-url=\"\"#data-play-url=\"${PLAY_URL}\"#" "$page"
+          done
+          grep -o 'data-[a-z-]*="[^"]*"' site/invite/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
