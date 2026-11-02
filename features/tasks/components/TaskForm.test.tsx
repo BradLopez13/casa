@@ -220,3 +220,20 @@ describe('TaskForm', () => {
     expect(after(picker, screen.getByTestId('task-form.prop.assignee'))).toBe(true);
   });
 });
+
+// Bloque 15.3 (P3-5): the example in the title field could read as a title already typed.
+describe('the title example', () => {
+  it('says «Por ejemplo, …» in the first task of a home', () => {
+    renderForm({ firstTask: true });
+    expect(screen.getByTestId('task-form.title').getAttribute('placeholder')).toBe(
+      t('taskForm.titlePlaceholderFirst'),
+    );
+  });
+
+  it('is the bare example afterwards', () => {
+    renderForm();
+    expect(screen.getByTestId('task-form.title').getAttribute('placeholder')).toBe(
+      t('taskForm.titlePlaceholder'),
+    );
+  });
+});

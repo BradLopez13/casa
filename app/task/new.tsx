@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { memberMarks } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership } from '@/features/households/queries';
+import { useTasks } from '@/features/tasks/queries';
 import { useCloseOnHouseholdSwitch } from '@/features/households/useCloseOnSwitch';
 import { newTaskId, type TaskInput } from '@/features/tasks/api';
 import { buildCreateOptions } from '@/features/tasks/create';
@@ -34,6 +35,8 @@ function NewTaskScreen() {
   const { userId } = useSession();
   const householdId = useMembership().data?.householdId;
   const members = useMembers(householdId).data;
+  // A home with no task yet: the example in the title says «Por ejemplo, …» (bloque 15.3).
+  const firstTask = useTasks(householdId).data?.length === 0;
   // Switched to another household meanwhile (bloque 12): the task would land in the wrong one.
   useCloseOnHouseholdSwitch(householdId, close);
   const marks = useMemo(() => memberMarks(members ?? []), [members]);
@@ -63,6 +66,7 @@ function NewTaskScreen() {
     <TaskForm
       title={t('taskForm.newTitle')}
       isNew
+      firstTask={firstTask}
       initial={initial}
       members={members ?? []}
       marks={marks}

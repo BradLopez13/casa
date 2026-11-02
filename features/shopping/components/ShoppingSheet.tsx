@@ -355,9 +355,12 @@ export function ShoppingSheet({
 export function EmptyList({
   usual,
   onAdd,
+  onRemove,
 }: {
   usual: readonly HistoryEntry[];
   onAdd: (name: string) => void;
+  /** Press and hold (or the «Quitar» action): the name leaves «lo de siempre» (bloque 15.3). */
+  onRemove: (entry: HistoryEntry) => void;
 }) {
   const { colors, radii, noteEdge, shadows, space } = useTheme();
   // The note and its basket stay with nothing usual yet (a new household): only what it says
@@ -386,8 +389,19 @@ export function EmptyList({
               key={entry.normalizedName}
               testID={`shopping.usual.${entry.normalizedName}`}
               onPress={() => onAdd(entry.name)}
+              onLongPress={() => onRemove(entry)}
               accessibilityRole="button"
               accessibilityLabel={t('shopping.a11y.addSuggestion', { name: entry.name })}
+              accessibilityHint={t('shopping.a11y.suggestionHint')}
+              accessibilityActions={[
+                {
+                  name: 'remove',
+                  label: t('shopping.a11y.removeSuggestion', { name: entry.name }),
+                },
+              ]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === 'remove') onRemove(entry);
+              }}
               style={({ pressed }) => ({
                 minHeight: MIN_TOUCH,
                 flexDirection: 'row',

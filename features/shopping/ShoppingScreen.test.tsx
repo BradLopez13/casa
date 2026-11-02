@@ -243,3 +243,34 @@ describe('Compra', () => {
     expect(screen.queryByTestId('shopping.offline')).toBeNull();
   });
 });
+
+// Bloque 15.3 (P3-9): a test product or a typo stayed in «¿Falta algo de lo de siempre?» for ever.
+describe('removing a usual suggestion', () => {
+  const bread: HistoryEntry = {
+    name: 'Bolsa aa',
+    normalizedName: 'bolsa aa',
+    uses: 4,
+    lastUsedAt: '2026-10-20T08:00:00.000Z',
+  };
+
+  it('a long press takes it away at once and offers «Deshacer»', async () => {
+    vi.useFakeTimers();
+    renderShopping([], [bread]);
+    const pill = screen.getByTestId('shopping.usual.bolsa aa');
+    expect(pill.getAttribute('aria-label')).toBe(
+      t('shopping.a11y.addSuggestion', { name: 'Bolsa aa' }),
+    );
+    act(() => {
+      fireEvent.mouseDown(pill);
+      vi.advanceTimersByTime(700);
+    });
+    expect(screen.queryByTestId('shopping.usual.bolsa aa')).toBeNull();
+    expect(screen.getByTestId('notice').textContent).toContain(t('shopping.usualRemoved'));
+    expect(screen.getByTestId('notice.undo')).toBeTruthy();
+    act(() => {
+      fireEvent.click(screen.getByTestId('notice.undo'));
+    });
+    expect(screen.getByTestId('shopping.usual.bolsa aa')).toBeTruthy();
+    vi.useRealTimers();
+  });
+});

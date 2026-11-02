@@ -32,6 +32,7 @@ import { isScreenReaderOn } from '@/ui/a11y';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
+import { useSheetFoot } from '@/ui/components/sheetFootContext';
 import { PinnedNote } from '@/ui/components/PinnedNote';
 import { PropertyMagnet } from '@/features/tasks/components/PropertyMagnets';
 import { Screen } from '@/ui/components/Screen';
@@ -199,6 +200,7 @@ function EditForm({
   onDelete: () => void;
 }) {
   const { colors, space } = useTheme();
+  const foot = useSheetFoot();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const { scroll, reveal } = useRevealFocusedField();
@@ -340,6 +342,7 @@ function EditForm({
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, as on the task
               sheet. */}
           <View
+            onLayout={foot.onLayout}
             style={{
               paddingHorizontal: space(5),
               paddingTop: space(3),

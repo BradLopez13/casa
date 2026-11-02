@@ -20,6 +20,10 @@ type Props = {
   today: string;
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
+  /** Every open task of the filter, dated or not: what «Todas» lists and the door's line counts. */
+  total: number;
+  /** Of them, the ones due before today: a row of their own, since the seven days leave them out. */
+  earlier: number;
 };
 
 /** Wide enough for "30" in the display face, so the names start on one line. */
@@ -30,13 +34,15 @@ const NUMBER_COLUMN = 32;
  * name, who has something that day and how many open tasks. The chosen row is a filled block,
  * the rest sit flat on the page, so the choice reads by shape as well as colour.
  */
-export function DayList({ days, selected, onSelect, today, marks, names }: Props) {
+export function DayList({ days, selected, onSelect, today, marks, names, total, earlier }: Props) {
   const { colors, radii, space } = useTheme();
   // Name and count grow with the system text; once a name may run to two lines, the number sits
   // level with its first line instead of floating in the middle.
   const align = isLargeText(useWindowDimensions().fontScale) ? 'flex-start' : 'center';
   const allSelected = selected === null;
-  const all = days.reduce((sum, day) => sum + day.count, 0);
+  // «Todas» counts what the list under it shows (bloque 15.3, P2-5): the tablet said «Todas 0»
+  // with four tasks from earlier days on the right.
+  const all = total;
   return (
     <View style={{ gap: space(1) }}>
       <Pressable
@@ -79,6 +85,35 @@ export function DayList({ days, selected, onSelect, today, marks, names }: Props
           {all}
         </Text>
       </Pressable>
+      {earlier > 0 ? (
+        <View
+          testID="day-list.earlier"
+          accessibilityLabel={t('tasks.pill.earlierLabel', { count: earlier })}
+          style={{
+            minHeight: MIN_TOUCH,
+            flexDirection: 'row',
+            alignItems: align,
+            gap: space(3),
+            paddingVertical: space(2),
+            paddingHorizontal: space(3),
+          }}
+        >
+          <View style={{ minWidth: NUMBER_COLUMN }} />
+          <Text style={{ flex: 1, color: colors.muted, fontSize: 16 }}>
+            {t('tasks.pill.earlier')}
+          </Text>
+          <Text
+            style={{
+              color: colors.ink,
+              fontSize: 16,
+              fontWeight: '600',
+              fontVariant: ['tabular-nums'],
+            }}
+          >
+            {earlier}
+          </Text>
+        </View>
+      ) : null}
       {days.map((day) => {
         const isSelected = day.date === selected;
         const isToday = day.date === today;

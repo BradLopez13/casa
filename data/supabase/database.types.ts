@@ -138,6 +138,25 @@ isOneToOne: false
       referencedColumns: ["user_id"]
     }
                   ]
+                },"shopping_hidden_suggestions": {
+                  Row: {
+                    "hidden_at": string,"hidden_by": string | null,"household_id": string,"normalized_name": string
+                  }
+                  Insert: {
+                    "hidden_at"?: string,"hidden_by"?: string | null,"household_id": string,"normalized_name": string
+                  }
+                  Update: {
+                    "hidden_at"?: string,"hidden_by"?: string | null,"household_id"?: string,"normalized_name"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shopping_hidden_suggestions_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"shopping_items": {
                   Row: {
                     "bought_at": string | null,"bought_by": string | null,"cleared_at": string | null,"created_at": string,"created_by": string | null,"household_id": string,"id": string,"name": string,"normalized_name": string | null,"quantity": string | null
@@ -267,6 +286,9 @@ isOneToOne: false
 "delete_task":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"hide_shopping_suggestion":
+{ Args: { "p_household_id": string,"p_name": string }; Returns: undefined
+                           },
 "leave_household":
 { Args: { "p_household_id": string }; Returns: undefined
                            },
@@ -331,6 +353,9 @@ isOneToOne: false
                            },
 "transfer_ownership":
 { Args: { "p_household_id": string,"p_new_owner_id": string }; Returns: undefined
+                           },
+"unhide_shopping_suggestion":
+{ Args: { "p_household_id": string,"p_name": string }; Returns: undefined
                            },
 "unregister_push_token":
 { Args: { "p_token": string }; Returns: undefined

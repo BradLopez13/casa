@@ -84,3 +84,28 @@ describe('QuantityPill', () => {
     expect(markHintSeen).toHaveBeenCalledWith('quantity');
   });
 });
+
+// Bloque 15.3 (P3-1): the open stepper showed «1» in ink for a quantity that is none, and went
+// back to «—» on closing without saving anything.
+describe('the open stepper with no quantity', () => {
+  it('shows «—», never a «1» that looks real', () => {
+    render(
+      <NoticeProvider>
+        <QuantityPill
+          itemId="i1"
+          name="Pan"
+          quantity={null}
+          open
+          onOpen={vi.fn()}
+          onClose={vi.fn()}
+          onCommit={vi.fn()}
+          onEdit={vi.fn()}
+          flushRef={{ current: null }}
+        />
+      </NoticeProvider>,
+    );
+    const stepper = screen.getByTestId('shopping.item.i1.quantity.stepper');
+    expect(stepper.textContent).toContain('—');
+    expect(stepper.textContent).not.toContain('1');
+  });
+});
