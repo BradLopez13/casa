@@ -132,7 +132,7 @@
       <p class="gris">La invitación vale 7 días y una sola vez.</p>
     </main>
     <script>
-      // The token never leaves this page: it only goes into the link that opens Nido.
+      // The page sends the token nowhere else: it only goes into the link that opens Nido.
       (function () {
         var token = new URLSearchParams(location.search).get('token') || '';
         if (!/^[0-9a-f]{48}$/.test(token)) {

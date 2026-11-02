@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { inviteFromClipboard } from './clipboardInvite';
+import { inviteFromClipboard, rememberOwnInvite } from './clipboardInvite';
 
 vi.mock('expo-clipboard', () => ({
   hasStringAsync: vi.fn(),
@@ -22,11 +22,19 @@ describe('inviteFromClipboard (bloque 14.3)', () => {
     expect(await inviteFromClipboard('android')).toBe(`casa://invite?token=${TOKEN}`);
   });
 
-  it('takes the token out of a whole message copied from a chat', async () => {
+  it('puts the link alone in the field when a whole message was copied from a chat', async () => {
     copied(
       `Te invito a mi casa «Casa» en Nido.\n\nSi ya tienes Nido…\n\ncasa://invite?token=${TOKEN}`,
     );
-    expect(await inviteFromClipboard('android')).toBe(TOKEN);
+    expect(await inviteFromClipboard('android')).toMatch(new RegExp(`invite\\?token=${TOKEN}$`));
+  });
+
+  // Revisión de 14.3: copying your own invitation and then opening the screen filled it.
+  it('leaves out an invitation made on this phone', async () => {
+    const mine = 'ef'.repeat(24);
+    rememberOwnInvite(mine);
+    copied(`casa://invite?token=${mine}`);
+    expect(await inviteFromClipboard('android')).toBeNull();
   });
 
   it('leaves the field alone when the clipboard holds something else, or nothing', async () => {

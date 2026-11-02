@@ -16,7 +16,9 @@ function googleServicesFile() {
  * @param {string | undefined} host
  */
 function inviteLinks(host) {
-  if (!host) return { android: {}, ios: {} };
+  // A host with a path (a GitHub Pages project site) cannot be verified: App Links and Universal
+  // Links are checked at the root of the domain.
+  if (!host || host.includes('/')) return { android: {}, ios: {} };
   return {
     android: {
       intentFilters: [

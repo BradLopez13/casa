@@ -89,8 +89,9 @@ describe('app.config.js with an invite host', () => {
     };
   };
 
-  it('declares nothing without a host', () => {
+  it('declares nothing without a host, nor for a host with a path', () => {
     expect(inviteLinks(undefined)).toEqual({ android: {}, ios: {} });
+    expect(inviteLinks('bradlopez13.github.io/casa')).toEqual({ android: {}, ios: {} });
   });
 
   it('declares verified App Links and Universal Links for the host', () => {

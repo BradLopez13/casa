@@ -26,6 +26,8 @@ appId: com.bradlopez13.casa
 # Expired invite: the preview says so before accepting, and there is nothing to accept
 - tapOn:
     id: onboarding.link
+# The field may come filled from the clipboard (bloque 14.3): it is cleared first.
+- eraseText: 100
 - inputText: b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
 - hideKeyboard
 - tapOn:
