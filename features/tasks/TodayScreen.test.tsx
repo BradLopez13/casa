@@ -326,6 +326,13 @@ describe('Hoy', () => {
     expect(screen.getByText(t('tasks.unsent'))).toBeTruthy();
   });
 
+  // Bloque 14.5 (P2-3, decisión 4 A): the bare ring of «sin asignar» looked like Compra's box.
+  it('an unassigned task carries a filled magnet with a figure, not a bare ring', () => {
+    renderToday([task('Fregar', { assigneeId: null }), task('Barrer', {})]);
+    expect(screen.getByTestId('task-note.Fregar.nobody')).toBeTruthy();
+    expect(screen.queryByTestId('task-note.Barrer.nobody')).toBeNull();
+  });
+
   // Bloque 14 (P3): offline it said «Aún se está enviando» while nothing was on its way.
   it('offline, a draft says it will be sent when the connection is back', () => {
     onlineManager.setOnline(false);
