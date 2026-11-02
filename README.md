@@ -134,7 +134,7 @@ Lee `.env` y `.env.local`, regenera `android/` con `expo prebuild --clean` (una 
 
 ### Builds de EAS
 
-Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):
+Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. Todas las variables, con una línea cada una y el paso de `LANZAMIENTO.md` del que salen, están en `.env.example`; con las que aún no existen vacías, la app y los scripts se comportan como hoy. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):
 
 | Variable                                               | Tipo en EAS                                     |
 | ------------------------------------------------------ | ----------------------------------------------- |

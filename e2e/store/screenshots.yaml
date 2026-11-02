@@ -1,0 +1,87 @@
+# The store listing's screenshots (store/capturas.md), taken on the E2E build with the listing
+# account of the fixtures (demo@e2e.dev, «Casa de ejemplo»). Run by scripts/store-screenshots.sh,
+# once per profile and theme, with OUT pointing at store/screenshots/<profile>/ and THEME at
+# «claro» or «oscuro». Outside the CI shards on purpose (e2e/config.yaml lists e2e/*.yaml only).
+appId: com.bradlopez13.casa
+env:
+  OUT: store/screenshots/phone
+  THEME: claro
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+- runFlow:
+    file: ../subflows/sign-in.yaml
+    env:
+      EMAIL: demo@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+# The first-use hints would show in the shots: this account has seen them (fixtures).
+- takeScreenshot: ${OUT}/01-hoy-${THEME}
+
+- tapOn:
+    id: tab.tasks
+- extendedWaitUntil:
+    visible:
+      id: tasks.quick-add
+    timeout: 10000
+- takeScreenshot: ${OUT}/02-tareas-${THEME}
+
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible:
+      id: shopping.add
+    timeout: 10000
+- takeScreenshot: ${OUT}/03-compra-${THEME}
+
+- tapOn:
+    id: tab.today
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 10000
+- tapOn: Regar las plantas
+- extendedWaitUntil:
+    visible:
+      id: task-form.save
+    timeout: 10000
+- takeScreenshot: ${OUT}/04-tarea-${THEME}
+- tapOn:
+    id: task-form.cancel
+
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 15000
+- tapOn:
+    id: today.quick-add
+- inputText: Comprar bombillas
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible:
+      text: Comprar bombillas
+    timeout: 10000
+- takeScreenshot: ${OUT}/05-sin-red-${THEME}
+- setAirplaneMode: disabled
+
+- tapOn:
+    id: tab.settings
+- extendedWaitUntil:
+    visible:
+      id: settings.members
+    timeout: 10000
+- takeScreenshot: ${OUT}/06-ajustes-${THEME}
