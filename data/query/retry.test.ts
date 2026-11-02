@@ -210,11 +210,14 @@ describe('a queued change taken out of the cache while it waits between tries (r
       const vars = { id: 'b' };
       const run = {};
       await fn(vars, run);
-      const second = fn(vars, run);
+      const second = fn(vars, run).then(
+        () => null,
+        (error: unknown) => error,
+      );
       // Waiting its second; the household is left meanwhile.
       abandonQueued({ state: { variables: vars } });
       await vi.advanceTimersByTimeAsync(1000);
-      await expect(second).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+      expect(await second).toMatchObject({ code: 'NOT_AUTHENTICATED' });
       expect(send).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

@@ -1,6 +1,5 @@
-import { MutationObserver, QueryClient } from '@tanstack/react-query';
+import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { onlineManager } from '@tanstack/react-query';
 import {
   afterShoppingQueue,
   dropQueuedQuantities,

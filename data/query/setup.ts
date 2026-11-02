@@ -8,39 +8,11 @@ import {
 } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 import { appQueryDefaults } from './defaults';
-import { errorReport, type ErrorReport } from '@/data/telemetry/queryErrors';
+import { reportQueryError as report } from './report';
 import { markOnline } from './retry';
 import { queueLog, queueLogOn, startQueueLog } from './queueLog';
 
-type Reporter = (error: unknown, report: ErrorReport) => void;
-let reporter: Reporter = () => undefined;
-
-/**
- * Where a failed query or mutation worth knowing about goes (Sentry, from the root layout):
- * unknown answers and queued changes the queue dropped (bloque 13, T-2; `errorReport`).
- */
-export function reportQueryErrorsTo(next: Reporter): void {
-  reporter = next;
-}
-
-function report(error: unknown, key: readonly unknown[] | undefined, queued: boolean): void {
-  const found = errorReport(error, { key, queued });
-  if (found) reporter(error, found);
-}
-
-/**
- * Saving or restoring the offline queue on the device failed (bloque 14.4, T3: a full disk, a
- * broken write): Sentry hears it, with the step and nothing of what was queued.
- */
-export function reportQueueStorage(error: unknown, step: 'save' | 'restore'): void {
-  reporter(error, {
-    key: `queue/${step}`,
-    code: 'QUEUE_STORAGE',
-    status: undefined,
-    serverCode: undefined,
-    queued: true,
-  });
-}
+export { reportQueryErrorsTo, reportQueueStorage } from './report';
 
 /** The app's one query client. A queued mutation says so in its meta (`QUEUED_META`). */
 export const queryClient = new QueryClient({

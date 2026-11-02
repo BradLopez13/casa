@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { forgetCachedData } from '@/data/query/persist';
-import { reportQueueStorage } from '@/data/query/setup';
+import { reportQueueStorage } from '@/data/query/report';
 import {
   countStoredQueue,
   forgetQueue,
