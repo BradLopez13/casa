@@ -99,12 +99,13 @@ onFlowComplete:
     timeout: 5000
 - pressKey: Home
 - setAirplaneMode: disabled
-# Back to the app as it was, not a cold start.
+# Back to the app as it was, not a cold start: the list is still scrolled down to the mark, so
+# the door is out of view and the quick add, still in view, says the app is in front.
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
     visible:
-      id: today.door-line
+      id: today.quick-add
     timeout: 20000
 - extendedWaitUntil:
     notVisible:
@@ -114,6 +115,10 @@ onFlowComplete:
     id: tasks.queue.retry
 
 # All three reached the server: a refresh brings them back from it.
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
 - swipe:
     start: 50%, 35%
     end: 50%, 85%
