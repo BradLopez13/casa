@@ -139,6 +139,8 @@ appId: com.bradlopez13.casa
     timeout: 20000
 - tapOn:
     id: onboarding.link
+# The field may come filled from the clipboard (bloque 14.3): it is cleared first.
+- eraseText: 100
 - inputText: casa://invite?token=d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4
 - hideKeyboard
 - tapOn:
