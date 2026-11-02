@@ -430,7 +430,11 @@ describe('sheet feet (bloque 15.3)', () => {
       );
     });
     const missing = feet.filter((file) => !/useSheetFoot\(\)/.test(read(file)));
-    // The licence's foot is on a tab-less screen that shows no notice of its own.
-    expect(missing).toEqual(['app/household/license.tsx']);
+    // The licence's foot is on a tab-less screen that shows no notice of its own; the households
+    // section's rule is a divider inside Ajustes, not a foot.
+    expect(missing).toEqual([
+      'app/household/license.tsx',
+      'features/households/HouseholdsSection.tsx',
+    ]);
   });
 });
