@@ -632,6 +632,8 @@
   "today.line.thisHouseholdPartOne": "{count} left for this home",
   "today.line.thisHouseholdPartOther": "{count} left for this home",
   "tasks.allLine.purposeThis": "Everything in this home, by day.",
+  "tasks.allLine.purposeDay": "What is on {day} in the home.",
+  "tasks.allLine.purposeDayThis": "What is on {day} in this home.",
   "shopping.doorHintThis": "Everyone in this home sees what you add here.",
   "today.line.thisHouseholdOne": "{count} left for this home.",
   "today.line.thisHouseholdOther": "{count} left for this home.",

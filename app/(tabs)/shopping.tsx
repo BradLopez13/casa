@@ -40,6 +40,7 @@ import {
   useSetBought,
   useSetQuantity,
   useShoppingHistory,
+  useDeletingItems,
   useShoppingItems,
 } from '@/features/shopping/queries';
 import {
@@ -120,6 +121,7 @@ export default function ShoppingScreen() {
   const [flash, setFlash] = useState<Flash | null>(null);
 
   const items = itemsQuery.data ?? NO_ITEMS;
+  const deleting = useDeletingItems(householdId);
   const history = historyQuery.data ?? NO_HISTORY;
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
@@ -243,8 +245,12 @@ export default function ShoppingScreen() {
     stateView = (
       <View style={{ gap: space(4) }}>
         <EmptyList
-          // Back from the shop, what is in the bag is not offered again (bloque 13).
-          usual={usual(history, new Set(items.map((entry) => entry.normalizedName)))}
+          // Back from the shop, what is in the bag is not offered again (bloque 13), nor a product
+          // whose «Deshacer» is still up (bloque 14.5).
+          usual={usual(
+            history,
+            new Set([...items, ...deleting].map((entry) => entry.normalizedName)),
+          )}
           onAdd={(name) => entry.submit(name)}
         />
         <HelpLink entry="shopping" testID="shopping.help" />

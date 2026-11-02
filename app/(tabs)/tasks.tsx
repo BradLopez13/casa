@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
-import { dayHeading } from '@/domain/tasks/labels';
+import { dayHeading, dayInSentence } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
 import { allLineText } from '@/features/tasks/allLineText';
 import { chosenPill, daySections } from '@/features/tasks/dayFilter';
@@ -77,10 +77,18 @@ export default function TasksScreen() {
   const doorLine = useMemo(
     () =>
       allLineText(
-        allLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
+        allLine({
+          // With a day pill chosen, that day only (bloque 14.5, P3).
+          tasks: day === null ? (tasks ?? []) : (tasks ?? []).filter((task) => task.dueOn === day),
+          today,
+          userId,
+          filter: assigneeId,
+          filterName,
+        }),
         several,
+        day === null ? undefined : dayInSentence(day, today),
       ),
-    [tasks, today, userId, assigneeId, filterName, several],
+    [tasks, today, userId, assigneeId, filterName, several, day],
   );
 
   const sections = useMemo(

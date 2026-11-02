@@ -42,3 +42,14 @@ describe('allLineText', () => {
     );
   });
 });
+
+describe('allLineText with a day pill chosen (bloque 14.5, P3)', () => {
+  it('says what it filters, and counts that day', () => {
+    expect(allLineText({ kind: 'mine', count: 2 }, false, 'hoy')).toBe(
+      'Lo de hoy en la casa. Te tocan 2.',
+    );
+    expect(allLineText({ kind: 'empty' }, true, 'mañana')).toBe(
+      'Lo de mañana en esta casa. Nada pendiente.',
+    );
+  });
+});

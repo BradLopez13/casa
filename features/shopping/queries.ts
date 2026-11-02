@@ -77,6 +77,27 @@ export function useShoppingItems(householdId: string | undefined) {
   });
 }
 
+/**
+ * The products deleted on screen whose «Deshacer» is still up, as the cache last had them: «lo de
+ * siempre» does not offer them back while they may yet come back (bloque 14.5, P3).
+ */
+export function useDeletingItems(householdId: string | undefined): readonly ShoppingItem[] {
+  const queryClient = useQueryClient();
+  const hidden = useSyncExternalStore(hiddenItems.subscribe, hiddenItems.get);
+  const { data } = useQuery({
+    ...shoppingItemsQueryOptions(queryClient, householdId as string),
+    enabled: householdId !== undefined,
+    select: useCallback(
+      (items: ShoppingItem[]) =>
+        hidden.size === 0 ? NO_DELETING : items.filter((item) => hidden.has(item.id)),
+      [hidden],
+    ),
+  });
+  return data ?? NO_DELETING;
+}
+
+const NO_DELETING: readonly ShoppingItem[] = [];
+
 export function useShoppingHistory(householdId: string | undefined) {
   return useQuery({
     ...shoppingHistoryQueryOptions(householdId as string),
