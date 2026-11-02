@@ -10,8 +10,9 @@ export function enabledProviders(): SocialProvider[] {
   // generated env types.
   const google: unknown = process.env.EXPO_PUBLIC_AUTH_GOOGLE;
   const apple: unknown = process.env.EXPO_PUBLIC_AUTH_APPLE;
+  const googleIos: unknown = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   return visibleProviders({
-    env: { google: asString(google), apple: asString(apple) },
+    env: { google: asString(google), apple: asString(apple), googleIos: asString(googleIos) },
     platform: Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web',
     inExpoGo: Constants.executionEnvironment === ExecutionEnvironment.StoreClient,
   });

@@ -8,6 +8,12 @@ export type AuthErrorCode =
   | 'EMAIL_NOT_CONFIRMED'
   | 'RATE_LIMITED'
   | 'OAUTH_CANCELLED'
+  /** A Google or Apple sign-in with the email of a password account (bloque 15.4). */
+  | 'SOCIAL_EMAIL_TAKEN'
+  /** The Google or Apple identity is already linked to another account. */
+  | 'IDENTITY_TAKEN'
+  /** Supabase has not got that provider switched on. */
+  | 'PROVIDER_OFF'
   | 'NETWORK'
   | 'UNKNOWN';
 

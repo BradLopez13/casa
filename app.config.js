@@ -34,11 +34,35 @@ function inviteLinks(host) {
   };
 }
 
+/**
+ * The Google Sign-In config plugin, only with the iOS URL scheme it demands (bloque 15.4): it
+ * throws without one, and Android needs no plugin, so until EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME
+ * exists the plugin stays out and the iOS prebuild passes.
+ * @param {Record<string, string | undefined>} env
+ * @returns {[string, { iosUrlScheme: string }] | null}
+ */
+function googlePlugin(env) {
+  const scheme = env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+  if (!scheme) return null;
+  return ['@react-native-google-signin/google-signin', { iosUrlScheme: scheme }];
+}
+
+/**
+ * GoogleService-Info.plist (Firebase on iOS): an EAS file variable, as the Android json.
+ * @param {Record<string, string | undefined>} env
+ */
+function googleServicesPlist(env) {
+  return env.GOOGLE_SERVICES_PLIST || undefined;
+}
+
 /** @param {{ config: import('expo/config').ExpoConfig }} ctx */
 module.exports = ({ config }) => {
   assertBuildEnv(process.env);
   const file = googleServicesFile();
+  const plist = googleServicesPlist(process.env);
+  const google = googlePlugin(process.env);
   const links = inviteLinks(process.env.EXPO_PUBLIC_INVITE_HOST);
+  const plugins = [...(config.plugins ?? []), ...(google ? [google] : [])];
   return {
     ...config,
     android: {
@@ -46,18 +70,17 @@ module.exports = ({ config }) => {
       ...(file ? { googleServicesFile: file } : {}),
       ...links.android,
     },
-    ios: { ...config.ios, ...links.ios },
+    ios: { ...config.ios, ...(plist ? { googleServicesFile: plist } : {}), ...links.ios },
     // The E2E build is a release build that talks plain http to the local Supabase stack
     // (10.0.2.2 from the emulator), so Android must allow cleartext traffic. Normal builds
     // are unchanged.
     plugins:
       process.env.E2E === '1'
-        ? [
-            ...(config.plugins ?? []),
-            ['expo-build-properties', { android: { usesCleartextTraffic: true } }],
-          ]
-        : config.plugins,
+        ? [...plugins, ['expo-build-properties', { android: { usesCleartextTraffic: true } }]]
+        : plugins,
   };
 };
 
 module.exports.inviteLinks = inviteLinks;
+module.exports.googlePlugin = googlePlugin;
+module.exports.googleServicesPlist = googleServicesPlist;

@@ -4,6 +4,7 @@ import { supabase } from '@/data/supabase/client';
 import { AuthFailure } from '../errors';
 import { toSocialFailure } from './failure';
 import { appleFullName } from './nonce';
+import { storeAppleCode } from './revoke';
 
 function randomNonce(): string {
   return Array.from(Crypto.getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -28,6 +29,8 @@ export async function signInWithApple(): Promise<void> {
       nonce,
     });
     if (error) throw error;
+    // The code Apple's revoke needs later (bloque 15.4), kept by the function; never blocks.
+    if (credential.authorizationCode) void storeAppleCode(credential.authorizationCode);
     // Apple only sends the name the first time; keep it, but never block the sign-in on it.
     const name = appleFullName(credential.fullName);
     if (name) {

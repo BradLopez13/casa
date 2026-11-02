@@ -246,6 +246,15 @@ isOneToOne: false
 "add_shopping_item":
 { Args: { "p_household_id": string,"p_id": string,"p_name": string,"p_quantity": string }; Returns: string
                            },
+"apple_token_forget":
+{ Args: { "p_user_id": string }; Returns: undefined
+                           },
+"apple_token_load":
+{ Args: { "p_user_id": string }; Returns: string
+                           },
+"apple_token_save":
+{ Args: { "p_token": string,"p_user_id": string }; Returns: undefined
+                           },
 "apply_billing_event":
 { Args: { "p_event_at": string,"p_household_id": string,"p_initial": boolean,"p_paid_by": string,"p_period_end": string,"p_provider": string,"p_status": string,"p_subscription_id": string }; Returns: boolean
                            },
