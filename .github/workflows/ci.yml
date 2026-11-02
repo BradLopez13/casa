@@ -49,6 +49,9 @@ jobs:
       - run: pnpm test
       - run: pnpm expo export --platform android --output-dir dist/android
       - run: pnpm expo export --platform ios --output-dir dist/ios
+      # The iOS project is generated on every run (no Mac needed): a config plugin that breaks
+      # the prebuild is seen here, not the day of the first eas build (bloque 15.7).
+      - run: CI=1 pnpm expo prebuild --platform ios --no-install
 
   db:
     runs-on: ubuntu-latest

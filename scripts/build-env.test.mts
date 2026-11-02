@@ -62,3 +62,30 @@ describe('assertBuildEnv', () => {
     expect(() => assertBuildEnv(env)).toThrow(/GOOGLE_SERVICES_JSON/);
   });
 });
+
+// Bloque 15.7: the queue log is for the test phones only, and every new variable is optional.
+describe('assertBuildEnv in production', () => {
+  it('refuses EXPO_PUBLIC_QUEUE_LOG, which writes the queue to the console', () => {
+    const env = { ...complete, EAS_BUILD_PROFILE: 'production', EXPO_PUBLIC_QUEUE_LOG: '1' };
+    expect(() => assertBuildEnv(env)).toThrow(/EXPO_PUBLIC_QUEUE_LOG/);
+    expect(() => assertBuildEnv({ ...env, EAS_BUILD_PROFILE: 'preview' })).not.toThrow();
+  });
+
+  it('asks for none of the store, sign-in or billing variables: empty, the app is as today', () => {
+    const env = {
+      ...complete,
+      EAS_BUILD_PROFILE: 'production',
+      EXPO_PUBLIC_AUTH_GOOGLE: '',
+      EXPO_PUBLIC_AUTH_APPLE: '',
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: '',
+      EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME: '',
+      EXPO_PUBLIC_REVENUECAT_IOS_KEY: '',
+      EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: '',
+      EXPO_PUBLIC_BILLING_ENABLED: '',
+      EXPO_PUBLIC_INVITE_HOST: '',
+      EXPO_PUBLIC_SITE_URL: '',
+      GOOGLE_SERVICES_PLIST: '',
+    };
+    expect(() => assertBuildEnv(env)).not.toThrow();
+  });
+});

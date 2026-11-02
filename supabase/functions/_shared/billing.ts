@@ -80,9 +80,11 @@ export function licenseChange(body: unknown): LicenseChange | null {
   const householdId = asRecord(attributes?.household_id)?.value;
   const expires = event.expiration_at_ms;
   const at = event.event_timestamp_ms;
-  const transferredTo = Array.isArray(event.transferred_to) ? event.transferred_to[0] : undefined;
-  const payer = type === 'TRANSFER' ? transferredTo : event.app_user_id;
-  const product =
+  const transferredTo: unknown = Array.isArray(event.transferred_to)
+    ? (event.transferred_to as unknown[])[0]
+    : undefined;
+  const payer: unknown = type === 'TRANSFER' ? transferredTo : event.app_user_id;
+  const product: unknown =
     type === 'PRODUCT_CHANGE' ? (event.new_product_id ?? event.product_id) : event.product_id;
   return {
     eventId: typeof event.id === 'string' || typeof event.id === 'number' ? String(event.id) : null,

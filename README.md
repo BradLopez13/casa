@@ -153,6 +153,10 @@ Sentry solo informa desde builds de release con DSN: sin datos personales, sin g
 
 Con Expo Go, el móvil y el ordenador deben estar en la misma red Wi-Fi. Los enlaces de invitación en Expo Go son de tipo `exp://`; si el sistema no los abre en la app, la pantalla de onboarding tiene un campo para pegar el enlace. En una build propia el esquema es `casa://invite?token=…`.
 
+### Publicar en las tiendas
+
+Todo lo que depende de las cuentas de Google Play, Apple Developer, Firebase, RevenueCat y Expo se lee de variables con nombre fijo; `LANZAMIENTO.md` lista, en orden, lo que hay que hacer en cada una, qué variable sale de cada paso y dónde se pone. `release.yml` compila y envía con `eas build` y `eas submit` cuando hay `EXPO_TOKEN`; sin él, lo dice y termina en verde. `CHANGELOG.md` lleva las versiones publicadas.
+
 ## Flujo de Git
 
 Cada tarea se hace en una rama `task-NN-<slug>` creada desde `main`. Se abre un PR, se espera a que pasen `app`, `db` y `e2e-android`, y se integra con rebase, de modo que `main` queda lineal y conserva los commits de cada tarea. Los commits siguen Conventional Commits en inglés (`feat:`, `fix:`, `test:`, `ci:`, `docs:`, `refactor:`, con ámbito opcional como `feat(db):`) y cada uno pasa `pnpm check`: el test y el código que lo hace pasar van juntos.
