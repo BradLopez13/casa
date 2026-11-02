@@ -161,16 +161,16 @@ describe('doorFor', () => {
   });
 
   describe('large text on a phone on its side', () => {
-    // At ×1,3 and up the compact door's hierarchy, controls and day strip need more than 40 %:
-    // the quick add leaves for the list and the door may take 45 %, so the strip stays whole.
-    it('moves the quick add out and lets the door take 45 %', () => {
+    // At ×1,3 and up the door may take 45 %. The quick add stays in its right column, as at ×1,0:
+    // out of the door it took a row of its own and left no note whole (bloque 14.5, P2-4).
+    it('keeps the quick add in the door and lets the door take 45 %', () => {
       expect(doorFor(layoutFor(817, 375), 375, 1.3)).toMatchObject({
         compact: true,
-        holdsQuickAdd: false,
+        holdsQuickAdd: true,
         maxHeight: Math.floor(375 * 0.45),
       });
       expect(doorFor(layoutFor(817, 375), 375, 2)).toMatchObject({
-        holdsQuickAdd: false,
+        holdsQuickAdd: true,
         maxHeight: Math.floor(375 * 0.45),
       });
     });

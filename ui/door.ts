@@ -24,7 +24,8 @@ export type Door = {
   maxHeight: number | null;
   /**
    * The quick add sits inside the door, under its controls: on a short window in one column,
-   * where a field under the door would take the list's only row. Above two panes it stays put.
+   * where a field under the door would take the list's only row, at any text size (bloque 14.5).
+   * Above two panes it stays put.
    */
   holdsQuickAdd: boolean;
   /**
@@ -113,7 +114,9 @@ export function doorFor(
     maxHeight: Math.floor(
       windowHeight * (largeText ? COMPACT_MAX_SHARE_LARGE_TEXT : COMPACT_MAX_SHARE),
     ),
-    holdsQuickAdd: layout.shortHeight && !layout.twoPane && !largeText,
+    // Also at large text (bloque 14.5, P2-4): out of the door it took a row of its own and, at
+    // ×1.3 on a phone on its side, left no note whole; beside the headline it costs nothing.
+    holdsQuickAdd: layout.shortHeight && !layout.twoPane,
     beside,
   };
 }
