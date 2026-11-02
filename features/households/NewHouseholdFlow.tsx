@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AppState, Pressable, Text, View } from 'react-native';
 import type { AppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import { signOut } from '@/features/auth/api';
@@ -226,13 +226,22 @@ function CreateStep({
   useEffect(() => {
     if (!readsClipboard) return;
     let live = true;
-    void inviteFromClipboard().then((found) => {
-      if (!live || found === null || typed.current !== '') return;
-      setLink(found);
-      setPasted(true);
+    const read = () => {
+      void inviteFromClipboard().then((found) => {
+        if (!live || found === null || typed.current !== '') return;
+        setLink(found);
+        setPasted(true);
+      });
+    };
+    read();
+    // Back from the chat where the message was copied, with the field still empty: read again
+    // (bloque 15.5, P3-6d).
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') read();
     });
     return () => {
       live = false;
+      sub.remove();
     };
   }, [readsClipboard]);
   const notify = useNotice();

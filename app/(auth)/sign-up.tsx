@@ -12,6 +12,7 @@ import {
 } from '@/features/auth/password-pair';
 import { signUpSchema } from '@/features/auth/schemas';
 import { usePendingInvite } from '@/features/households/pending-invite';
+import { openLegal } from '@/features/legal/open';
 import { SocialButtons } from '@/features/auth/social/SocialButtons';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
@@ -187,6 +188,29 @@ export default function SignUpScreen() {
         onPress={() => void submit()}
         loading={loading}
       />
+      {/* What creating the account accepts, with both pages a tap away (bloque 15.5: Apple and
+          Google ask for it in apps with an account). */}
+      <View testID="sign-up.legal" style={{ gap: space(1) }}>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>{t('auth.signUp.legal')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space(4) }}>
+          <Button
+            testID="sign-up.terms"
+            title={t('legal.terms')}
+            variant="tertiary"
+            width="hug"
+            flush
+            onPress={() => void openLegal('terms')}
+          />
+          <Button
+            testID="sign-up.privacy"
+            title={t('legal.privacy')}
+            variant="tertiary"
+            width="hug"
+            flush
+            onPress={() => void openLegal('privacy')}
+          />
+        </View>
+      </View>
       <View
         style={{
           flexDirection: 'row',

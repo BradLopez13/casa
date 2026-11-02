@@ -8,6 +8,12 @@ import { householdsKey, membersKey, membershipKey } from '@/features/households/
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 
+// The legal pages open in the browser: here only that they are asked for.
+vi.mock('@/features/legal/open', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/legal/open')>()),
+  openLegal: vi.fn(),
+}));
+
 vi.mock('@/features/auth/SessionProvider', () => ({
   useSession: () => ({ status: 'signed-in', userId: 'me' }),
 }));
@@ -187,5 +193,19 @@ describe('Ajustes', () => {
     await vi.waitFor(() =>
       expect(screen.getByTestId('settings.household-name').textContent).toContain('Casa de mamá'),
     );
+  });
+});
+
+// Bloque 15.5: the stores ask for the policy and the terms to be reachable inside the app.
+describe('legal links', () => {
+  it('has the privacy policy and the terms under Cuenta, and they open the site', async () => {
+    const { openLegal } = await import('@/features/legal/open');
+    renderSettings(members);
+    const privacy = screen.getByTestId('settings.privacy');
+    const terms = screen.getByTestId('settings.terms');
+    expect(privacy.getAttribute('aria-label')).toBe(t('legal.privacy'));
+    expect(terms.getAttribute('aria-label')).toBe(t('legal.terms'));
+    fireEvent.click(terms);
+    expect(vi.mocked(openLegal)).toHaveBeenCalledWith('terms');
   });
 });

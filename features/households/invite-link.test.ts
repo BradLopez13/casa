@@ -55,8 +55,9 @@ describe('parseInviteToken', () => {
 
   it('rejects short, uppercase or missing tokens', () => {
     expect(parseInviteToken(TOKEN.slice(1))).toBeNull();
-    expect(parseInviteToken(TOKEN.toUpperCase())).toBeNull();
-    expect(parseInviteToken(`casa://invite?token=${TOKEN.toUpperCase()}`)).toBeNull();
+    // The keyboard may capitalise a pasted token (bloque 15.5, P3-6d): it still counts.
+    expect(parseInviteToken(TOKEN.toUpperCase())).toBe(TOKEN);
+    expect(parseInviteToken(`casa://invite?token=${TOKEN.toUpperCase()}`)).toBe(TOKEN);
     expect(parseInviteToken('casa://invite')).toBeNull();
     expect(parseInviteToken('')).toBeNull();
     expect(parseInviteToken(undefined)).toBeNull();

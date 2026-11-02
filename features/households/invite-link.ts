@@ -1,6 +1,7 @@
 import { t } from '@/i18n';
 
-const TOKEN_PATTERN = /^[0-9a-f]{48}$/;
+// Any case: a keyboard may capitalise a pasted token (bloque 15.5, P3-6d); it is kept lower.
+const TOKEN_PATTERN = /^[0-9a-f]{48}$/i;
 
 type CreateUrl = (path: string, opts: { queryParams: Record<string, string> }) => string;
 
@@ -45,5 +46,5 @@ export function parseInviteToken(input: string | string[] | undefined): string |
   const text = raw.trim();
   const match = /[?&]token=([^&#\s]*)/.exec(text);
   const candidate = match?.[1] ?? text;
-  return TOKEN_PATTERN.test(candidate) ? candidate : null;
+  return TOKEN_PATTERN.test(candidate) ? candidate.toLowerCase() : null;
 }
