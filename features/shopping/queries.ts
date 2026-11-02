@@ -13,6 +13,7 @@ import {
 import {
   addKey,
   afterShoppingQueue,
+  dropQueuedQuantities,
   boughtKey,
   invalidateShoppingWhenIdle,
   quantityKey,
@@ -133,7 +134,10 @@ export function useEditItem(householdId: string | undefined) {
     networkMode: 'online',
     mutationFn: async ({ id, name, quantity }) => {
       await afterShoppingQueue(queryClient, householdId);
-      return updateShoppingItem(resolvedItemId(queryClient, householdId, id), name, quantity);
+      const target = resolvedItemId(queryClient, householdId, id);
+      await updateShoppingItem(target, name, quantity);
+      // What the sheet saved is the last word on its quantity.
+      dropQueuedQuantities(queryClient, householdId, target);
     },
     onSettled: () => invalidateShoppingWhenIdle(queryClient, householdId),
   });

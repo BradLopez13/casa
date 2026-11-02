@@ -122,6 +122,8 @@ describe('isTransient', () => {
     expect(isTransient(answer(401, 'PGRST301'), true)).toBe(true);
     expect(isTransient(answer(401, 'PGRST302'), true)).toBe(true);
     expect(isTransient(answer(401, 'PGRST303'), true)).toBe(true);
+    // Nobody signed in: an expired JWT is no one's to refresh (the anonymous 42501 stays, above).
+    expect(isTransient(answer(401, 'PGRST303'), false)).toBe(false);
     // A 403 is a real «no», whoever asks.
     expect(isTransient(answer(403, '42501'), true)).toBe(false);
     expect(isTransient(answer(403, '42501'), false)).toBe(false);

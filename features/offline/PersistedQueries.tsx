@@ -82,12 +82,18 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
     restored.current = buster;
     void (async () => {
       if (userId) {
-        // A restore that fails keeps the stored queue aside first (`restoreQueue`) and says so.
-        await restoreQueue(queryClient, userId).catch((e: unknown) => {
-          reportQueueStorage(e, 'restore');
-          return 0;
-        });
-        startSavingQueue(userId);
+        // A queue that cannot be read is kept aside and reported; a device that cannot be read at
+        // all is not saved over this time, or the first save would wipe it (bloque 14.4, T3).
+        const restored = await restoreQueue(queryClient, userId, () =>
+          reportQueueStorage(new Error('Queue damaged'), 'restore'),
+        ).then(
+          () => true,
+          (e: unknown) => {
+            reportQueueStorage(e, 'restore');
+            return false;
+          },
+        );
+        if (restored) startSavingQueue(userId);
       }
       await resumeQueues(queryClient);
     })();

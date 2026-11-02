@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { forgetCachedData } from '@/data/query/persist';
+import { reportQueueStorage } from '@/data/query/setup';
 import {
   countStoredQueue,
   forgetQueue,
@@ -39,7 +40,10 @@ export async function handleSignedOut({
     return;
   }
   // Taken from the cache before it is cleared: the last tap may not have been saved yet.
-  const kept = owned ? saveQueue(queryClient, previous).catch(() => undefined) : undefined;
+  // A save that fails is reported, never silent (bloque 14.4, T3).
+  const kept = owned
+    ? saveQueue(queryClient, previous).catch((e: unknown) => reportQueueStorage(e, 'save'))
+    : undefined;
   forgetCachedData(queryClient);
   await Promise.all([kept, releasePushLocally().catch(() => undefined)]);
   if (!previous) return;

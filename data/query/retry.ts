@@ -118,15 +118,16 @@ const tries = new WeakMap<object, { count: number; endedAt: number }>();
  */
 export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
   return async (vars, run) => {
-    // Taken out of the cache (a household left, a sign-out): it never goes again (T6).
-    if (typeof vars === 'object' && vars !== null && abandoned.has(vars)) {
-      throw new AppError('NOT_AUTHENTICATED');
-    }
+    // Taken out of the cache (a household left, a sign-out): it never goes again (T6), also when
+    // that happened while it waited between two tries.
+    const letGo = () => typeof vars === 'object' && vars !== null && abandoned.has(vars);
+    if (letGo()) throw new AppError('NOT_AUTHENTICATED');
     if (run === undefined) return fn(vars);
     const before = tries.get(run);
     if (before !== undefined) {
       const left = retryDelayOnNetwork(before.count - 1) - (Date.now() - before.endedAt);
       if (left > 0) await waitBetweenTries(left);
+      if (letGo()) throw new AppError('NOT_AUTHENTICATED');
     }
     try {
       return await fn(vars);

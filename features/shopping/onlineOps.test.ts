@@ -1,6 +1,14 @@
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { afterShoppingQueue, QUEUE_WAIT_MS, resolvedItemId, resolvedKey } from './offline';
+import { onlineManager } from '@tanstack/react-query';
+import {
+  afterShoppingQueue,
+  dropQueuedQuantities,
+  QUEUE_WAIT_MS,
+  quantityKey,
+  resolvedItemId,
+  resolvedKey,
+} from './offline';
 
 vi.mock('./api', () => ({}));
 
@@ -60,5 +68,45 @@ describe('Compra online operations', () => {
     finish();
     await vi.advanceTimersByTimeAsync(10);
     expect(done).toBe(true);
+  });
+
+  // Revisión de 14.4: offline, a delete waited 10 s for adds that could not go, then failed.
+  it('do not wait for changes paused offline', async () => {
+    onlineManager.setOnline(false);
+    try {
+      const client = new QueryClient();
+      void new MutationObserver<void, Error, { householdId: string }>(client, {
+        mutationKey: ['shopping', 'add'],
+        networkMode: 'online',
+        mutationFn: () => Promise.resolve(),
+      })
+        .mutate({ householdId: 'casa' })
+        .catch(() => undefined);
+      await expect(afterShoppingQueue(client, 'casa')).resolves.toBeUndefined();
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  // Revisión de 14.4: a quantity stuck in the queue arrived after an edit made in the sheet and
+  // put the old quantity back.
+  it('an edit saved lets go the quantities still queued for that product', () => {
+    const client = new QueryClient();
+    client.setQueryData(resolvedKey('casa'), { local: 'server' });
+    const queued = (id: string) =>
+      void new MutationObserver<void, Error, { id: string; householdId: string }>(client, {
+        mutationKey: quantityKey,
+        mutationFn: () => new Promise<void>(() => undefined),
+      })
+        .mutate({ id, householdId: 'casa' })
+        .catch(() => undefined);
+    queued('local');
+    queued('other');
+    dropQueuedQuantities(client, 'casa', 'server');
+    const left = client
+      .getMutationCache()
+      .findAll({ status: 'pending' })
+      .map((m) => (m.state.variables as { id: string }).id);
+    expect(left).toEqual(['other']);
   });
 });

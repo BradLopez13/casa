@@ -136,8 +136,13 @@ begin
     raise exception 'TOO_MANY_HOUSEHOLDS' using errcode = 'P0001';
   end if;
 
-  insert into public.households (id, name, created_by)
-  values (v_id, v_name, v_user);
+  begin
+    insert into public.households (id, name, created_by)
+    values (v_id, v_name, v_user);
+  exception when unique_violation then
+    -- Someone else's request took the same id at the same moment: not this person's household.
+    raise exception 'NOT_A_MEMBER' using errcode = 'P0001';
+  end;
 
   insert into public.household_members (household_id, user_id, role)
   values (v_id, v_user, 'owner');

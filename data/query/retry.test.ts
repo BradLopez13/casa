@@ -199,3 +199,25 @@ describe('a queued change taken out of the cache (bloque 14.4, T6)', () => {
     expect(send).not.toHaveBeenCalled();
   });
 });
+
+describe('a queued change taken out of the cache while it waits between tries (revisión 14.4)', () => {
+  it('does not go when the wait ends', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      const send = vi.fn(() => Promise.resolve());
+      const fn = queuedFn(send);
+      const vars = { id: 'b' };
+      const run = {};
+      await fn(vars, run);
+      const second = fn(vars, run);
+      // Waiting its second; the household is left meanwhile.
+      abandonQueued({ state: { variables: vars } });
+      await vi.advanceTimersByTimeAsync(1000);
+      await expect(second).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

@@ -133,7 +133,7 @@ const TRANSIENT_SERVER_CODES: ReadonlySet<string> = new Set([
 export function isTransient(error: AppError, signedIn: boolean): boolean {
   if (error.code === 'NETWORK') return true;
   const { status, serverCode } = error;
-  if (status === 401) return true;
+  if (status === 401 && signedIn) return true;
   if (status !== undefined && TRANSIENT_STATUSES.has(status)) return true;
   if (serverCode === undefined) return false;
   if (TRANSIENT_SERVER_CODES.has(serverCode)) return true;

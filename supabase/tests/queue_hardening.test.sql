@@ -1,7 +1,7 @@
 -- Bloque 14.4: a quantity changed offline leaves a name someone else changed (T2), and creating a
 -- household twice with the same id is the same household (T8).
 begin;
-select plan(11);
+select plan(14);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bea@test.dev', 'Bea') as bea \gset
@@ -34,6 +34,13 @@ select is(
   'nor a second membership'
 );
 
+select is(
+  (select count(*) from public.household_licenses
+   where household_id = '00000000-0000-0000-0000-00000000c001'),
+  1::bigint,
+  'and keeps one licence for it'
+);
+
 select isnt(
   public.create_household('Otra'),
   null,
@@ -46,6 +53,24 @@ select throws_ok(
   $$select public.create_household('Mía', '00000000-0000-0000-0000-00000000c001')$$,
   'P0001', 'NOT_A_MEMBER',
   'someone else''s id is not taken, nor its household opened'
+);
+
+-- A household deleted keeps its id: sending it again does not bring it back.
+select tests.authenticate_as(:'ana');
+select public.create_household('Para borrar', '00000000-0000-0000-0000-00000000c002');
+select public.delete_household('00000000-0000-0000-0000-00000000c002');
+
+select throws_ok(
+  $$select public.create_household('Para borrar', '00000000-0000-0000-0000-00000000c002')$$,
+  'P0001', 'NOT_A_MEMBER',
+  'a deleted household is not created again with the same id'
+);
+
+select is(
+  (select count(*) from public.household_members
+   where household_id = '00000000-0000-0000-0000-00000000c002' and left_at is null),
+  0::bigint,
+  'nor does anyone end up in it'
 );
 
 -- T2 · update_shopping_item with no name ------------------------------------------------------

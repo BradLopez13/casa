@@ -3,6 +3,7 @@ import { QUEUED_META, touches } from '@/data/query/queue';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import {
   offlineFirstQueryOptions,
+  abandonQueued,
   QUEUED_RETRY_DELAY,
   queuedFn,
   retryOnNetwork,
@@ -127,6 +128,32 @@ export function resolvedItemId(
   return queryClient.getQueryData<Resolved>(resolvedKey(householdId))?.[id] ?? id;
 }
 
+/**
+ * An edit of a product reached the server: the quantities still queued for it are let go, or one
+ * stuck in the queue would arrive later and put the old quantity back (revisión de 14.4). The
+ * queue is then woken, as the first change of it may have been one of them.
+ */
+export function dropQueuedQuantities(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  itemId: string,
+): void {
+  const cache = queryClient.getMutationCache();
+  const stale = cache.findAll({ status: 'pending', mutationKey: quantityKey }).filter((m) => {
+    const vars = m.state.variables as QuantityVars | undefined;
+    return (
+      vars !== undefined &&
+      (householdId === undefined || vars.householdId === householdId) &&
+      resolvedItemId(queryClient, vars.householdId, vars.id) === itemId
+    );
+  });
+  for (const mutation of stale) {
+    abandonQueued(mutation);
+    cache.remove(mutation);
+  }
+  if (stale.length > 0) void queryClient.resumePausedMutations();
+}
+
 /** How long an edit, a delete or a clear waits for the household's queue before going anyway. */
 export const QUEUE_WAIT_MS = 10_000;
 
@@ -143,15 +170,14 @@ export function afterShoppingQueue(
 ): Promise<void> {
   const cache = queryClient.getMutationCache();
   const busy = () =>
-    cache
-      .findAll({ status: 'pending' })
-      .some(
-        (m) =>
-          isQueuedShoppingMutation(m.options.mutationKey) &&
-          (householdId === undefined ||
-            (m.state.variables as { householdId?: string } | undefined)?.householdId ===
-              householdId),
-      );
+    cache.findAll({ status: 'pending' }).some(
+      (m) =>
+        // A change paused (offline, or waiting its turn) is not on its way: nothing to wait for.
+        !m.state.isPaused &&
+        isQueuedShoppingMutation(m.options.mutationKey) &&
+        (householdId === undefined ||
+          (m.state.variables as { householdId?: string } | undefined)?.householdId === householdId),
+    );
   if (!busy()) return Promise.resolve();
   return new Promise((resolve) => {
     const done = () => {

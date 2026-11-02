@@ -199,6 +199,23 @@ describe('a damaged queue (bloque 14.4, T3)', () => {
     expect(store.get(`${queueKey('ana')}-unread`)).toBe(damaged);
   });
 
+  // Revisión de 14.4: a read that failed was taken as an empty queue, and the first save wiped it.
+  it('fails when the device cannot be read, instead of taking the queue as empty', async () => {
+    store.set(queueKey('ana'), JSON.stringify({ v: QUEUE_SCHEMA, mutations: [] }));
+    vi.mocked(AsyncStorage.getItem).mockRejectedValueOnce(new Error('disk'));
+    await expect(restoreQueue(new QueryClient(), 'ana')).rejects.toThrow('disk');
+  });
+
+  it('says when entries were left out or the queue could not be read', async () => {
+    const damaged = vi.fn();
+    store.set(queueKey('ana'), '{"v":1,"mutations":[nul');
+    await restoreQueue(new QueryClient(), 'ana', damaged);
+    expect(damaged).toHaveBeenCalledTimes(1);
+    store.set(queueKey('ana'), JSON.stringify({ v: QUEUE_SCHEMA, mutations: [null] }));
+    await restoreQueue(new QueryClient(), 'ana', damaged);
+    expect(damaged).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps a copy aside when restoring fails, so the first save cannot lose it', async () => {
     const before = new QueryClient();
     queueAdd(before, 'p1', 'casa');
