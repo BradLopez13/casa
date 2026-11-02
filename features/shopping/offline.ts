@@ -286,19 +286,18 @@ export function buildShoppingMutationDefaults(
     networkMode: 'online',
     retry: retryOnNetwork,
     retryDelay: QUEUED_RETRY_DELAY,
-    mutationFn: queuedFn(
-      async ({ id, householdId, name, quantity: value, userId }: QuantityVars) => {
-        assertQueuedBy(userId);
-        const target = resolve(householdId, id);
-        // Bought (here or by someone else) or gone from a list that is here before its turn:
-        // nothing left to change. Without the list in the cache it goes all the same, and the
-        // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
-        const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
-        const item = list?.find((i) => i.id === target);
-        if (list !== undefined && (!item || item.boughtAt !== null)) return;
-        await updateShoppingItem(target, name, value);
-      },
-    ),
+    mutationFn: queuedFn(async ({ id, householdId, quantity: value, userId }: QuantityVars) => {
+      assertQueuedBy(userId);
+      const target = resolve(householdId, id);
+      // Bought (here or by someone else) or gone from a list that is here before its turn:
+      // nothing left to change. Without the list in the cache it goes all the same, and the
+      // server says if the item is gone (bloque 13, Aud P3-4: it used to do nothing, silently).
+      const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
+      const item = list?.find((i) => i.id === target);
+      if (list !== undefined && (!item || item.boughtAt !== null)) return;
+      // Only the quantity: the name may have changed on another phone meanwhile (T2).
+      await updateShoppingItem(target, null, value);
+    }),
     onMutate: async ({ id, householdId, quantity: value }) => {
       const key = listKey(householdId);
       const target = resolve(householdId, id);

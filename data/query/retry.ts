@@ -41,8 +41,29 @@ export const NETWORK_RETRY_LIMIT = (7 * 24 * 60 * 60_000) / NETWORK_RETRY_MAX_MS
  * answer (5xx, 429, a token mid-refresh, a serialization clash: `isTransient`) is tried again
  * the same way (bloque 13, P2-2); any other answer from the server is final.
  */
-export const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRY_LIMIT && isTransient(toAppError(error), isSignedIn());
+export const retryOnNetwork = (failureCount: number, error: AppError) => {
+  const appError = toAppError(error);
+  const again = failureCount < NETWORK_RETRY_LIMIT && isTransient(appError, isSignedIn());
+  // The token expired and could not be refreshed: ask for a new one before the next try (T1).
+  if (again && appError.status === 401) refreshSoon();
+  return again;
+};
+
+/** How the session is refreshed (`supabase.auth.refreshSession`, set by the root layout). */
+let refreshSession: () => void = () => undefined;
+let refreshedAt = -Infinity;
+/** At most one refresh every 5 s, whatever the number of changes waiting. */
+export const SESSION_REFRESH_MS = 5000;
+
+export function refreshSessionWith(refresh: () => void): void {
+  refreshSession = refresh;
+}
+
+function refreshSoon(now = Date.now()): void {
+  if (now - refreshedAt < SESSION_REFRESH_MS) return;
+  refreshedAt = now;
+  refreshSession();
+}
 
 /**
  * Each try waits twice as long as the last, from 1 s up to 15 s; for a minute after the connection

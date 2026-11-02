@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -199,8 +200,15 @@ function CreateStep({
   const router = useRouter();
   const queryClient = useQueryClient();
   // Not useHouseholdMutation: refreshing the membership now would send the guard to Hoy before
-  // the rooms step.
-  const create = useMutation<string, AppError, string>({ mutationFn: createHousehold });
+  // the rooms step. The household's id is given here and kept until it is created: tapping again
+  // after an answer that never came is the same household, not a second one (bloque 14.4, T8).
+  const householdId = useRef<string | null>(null);
+  const create = useMutation<string, AppError, string>({
+    mutationFn: (newName) => {
+      householdId.current ??= Crypto.randomUUID();
+      return createHousehold(newName, householdId.current);
+    },
+  });
   const [name, setName] = useState(
     another ? t('onboarding.anotherDefaultName') : t('onboarding.defaultName'),
   );
@@ -213,7 +221,10 @@ function CreateStep({
   const [pasted, setPasted] = useState(false);
   // What the person typed, for the clipboard's answer to arrive after it without overwriting it.
   const typed = useRef('');
+  // Only where someone comes to join (onboarding, «Unirme con un enlace»), not on «Crear otra casa».
+  const readsClipboard = !another || focusLink;
   useEffect(() => {
+    if (!readsClipboard) return;
     let live = true;
     void inviteFromClipboard().then((found) => {
       if (!live || found === null || typed.current !== '') return;
@@ -223,7 +234,7 @@ function CreateStep({
     return () => {
       live = false;
     };
-  }, []);
+  }, [readsClipboard]);
   const notify = useNotice();
   const joinBlock = useRef<View>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -354,7 +365,11 @@ function CreateStep({
           onSubmitEditing={submitJoin}
         />
         {pasted ? (
-          <Text testID="onboarding.link-pasted" style={{ color: colors.muted, fontSize: 14 }}>
+          <Text
+            testID="onboarding.link-pasted"
+            accessibilityLiveRegion="polite"
+            style={{ color: colors.muted, fontSize: 14 }}
+          >
             {t('onboarding.linkPasted')}
           </Text>
         ) : null}

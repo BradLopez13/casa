@@ -106,6 +106,22 @@ describe('Crear tu hogar', () => {
     expect(nameField().value).toBe('Casa');
   });
 
+  // Bloque 14.4 (T8): the request reached the server but its answer did not; tapping again made
+  // a second household. The same id goes again, and the server answers with the same household.
+  it('sends the same household id again when trying again after no answer', async () => {
+    vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('NETWORK'));
+    renderOnboarding();
+    fireEvent.change(nameField(), { target: { value: 'Casa' } });
+    fireEvent.click(createButton());
+    await screen.findByRole('alert');
+    vi.mocked(createHousehold).mockResolvedValueOnce('h');
+    fireEvent.click(createButton());
+    await vi.waitFor(() => expect(createHousehold).toHaveBeenCalledTimes(2));
+    const [first, second] = vi.mocked(createHousehold).mock.calls;
+    expect(first?.[1]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(second?.[1]).toBe(first?.[1]);
+  });
+
   it('a link that is not an invitation is marked on its field and goes nowhere', () => {
     renderOnboarding();
     fireEvent.change(linkField(), { target: { value: 'https://example.com/hola' } });

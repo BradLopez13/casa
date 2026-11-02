@@ -362,7 +362,7 @@ describe('restart', () => {
     vi.mocked(updateShoppingItem).mockResolvedValue(undefined);
     onlineManager.setOnline(true);
     await resumeShoppingQueue(after.queryClient);
-    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', null, '3');
   });
 
   it('resends an add that was in flight when the app closed', async () => {
@@ -417,7 +417,7 @@ describe('restart', () => {
     onlineManager.setOnline(true);
     await queryClient.resumePausedMutations();
     await Promise.all([added, changed, second]);
-    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', null, '3');
   });
 
   it('keeps only the resolutions a pending bought still needs', async () => {

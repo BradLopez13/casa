@@ -9,6 +9,7 @@ import {
   RECONNECT_WINDOW_MS,
   retryDelayOnNetwork,
   retryOnNetwork,
+  refreshSessionWith,
   retryQueuedNow,
 } from './retry';
 
@@ -168,5 +169,19 @@ describe('queuedFn after a pause', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('a 401 asks for a fresh token (bloque 14.4, T1)', () => {
+  it('keeps the change and refreshes the session, at most once every 5 s', () => {
+    const refresh = vi.fn();
+    refreshSessionWith(refresh);
+    const expired = new AppError('UNKNOWN', undefined, { status: 401, serverCode: 'PGRST303' });
+    expect(retryOnNetwork(0, expired)).toBe(true);
+    expect(retryOnNetwork(1, expired)).toBe(true);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(retryOnNetwork(0, new AppError('NETWORK'))).toBe(true);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    refreshSessionWith(() => undefined);
   });
 });
