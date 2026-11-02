@@ -47,7 +47,7 @@ onFlowComplete:
     id: today.quick-add.submit
 - tapOn:
     id: today.door-line
-    retryIfNoChange: false
+    retryTapIfNoChange: false
 - scrollUntilVisible:
     element: 'Ciclo uno, .*sin enviar'
     direction: DOWN
@@ -83,7 +83,7 @@ onFlowComplete:
     id: today.quick-add.submit
 - tapOn:
     id: today.door-line
-    retryIfNoChange: false
+    retryTapIfNoChange: false
 - scrollUntilVisible:
     element: 'Ciclo dos, .*sin enviar'
     direction: DOWN
@@ -118,7 +118,7 @@ onFlowComplete:
     id: today.quick-add.submit
 - tapOn:
     id: today.door-line
-    retryIfNoChange: false
+    retryTapIfNoChange: false
 - scrollUntilVisible:
     element: 'Ciclo tres, .*sin enviar'
     direction: DOWN

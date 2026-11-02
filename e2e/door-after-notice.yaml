@@ -37,7 +37,7 @@ onFlowComplete:
 # on Android that is a plain Back, which leaves the app when the tap did not open a keyboard.
 - tapOn:
     id: today.door-line
-    retryIfNoChange: false
+    retryTapIfNoChange: false
 # The offline band can push the first note under the tab bar on the emulator.
 - scrollUntilVisible:
     element: Nota 1
@@ -59,7 +59,7 @@ onFlowComplete:
           id: today.quick-add.submit
 - tapOn:
     id: today.door-line
-    retryIfNoChange: false
+    retryTapIfNoChange: false
 - extendedWaitUntil:
     visible:
       id: tasks.offline
