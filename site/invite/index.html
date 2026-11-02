@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Te invitan a una casa · Nido</title>
+    <style>
+      :root {
+        --papel: #f3f4f0;
+        --pizarra: #2e3b41;
+        --tinta: #1e2a2f;
+        --gris: #505c63;
+        --posit: #f2d04b;
+        --nota: #fdf8e6;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --papel: #151b1e;
+          --tinta: #ecefea;
+          --gris: #a7b2b5;
+          --nota: #1e272b;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font:
+          17px/1.5 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      header {
+        background: var(--pizarra);
+        color: #f3f4f0;
+        padding: 32px 16px 28px;
+      }
+      main,
+      header > div {
+        max-width: 560px;
+        margin: 0 auto;
+      }
+      main {
+        padding: 24px 16px 48px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+      header p {
+        margin: 8px 0 0;
+        color: #dce3e1;
+      }
+      .nota {
+        background: var(--nota);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin: 0 0 20px;
+        box-shadow: 0 4px 10px rgba(30, 42, 47, 0.12);
+      }
+      .boton {
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 999px;
+        padding: 14px 20px;
+        font-weight: 600;
+        margin: 12px 0;
+      }
+      .principal {
+        background: var(--posit);
+        color: #1e2a2f;
+      }
+      .secundario {
+        border: 1.5px solid currentColor;
+        color: var(--tinta);
+      }
+      ol {
+        padding-left: 22px;
+        margin: 8px 0 0;
+      }
+      li {
+        margin: 6px 0;
+      }
+      .gris {
+        color: var(--gris);
+        font-size: 15px;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Te invitan a una casa en Nido</h1>
+        <p>Nido reparte las tareas y la compra de una casa entre quienes viven en ella.</p>
+      </div>
+    </header>
+    <main>
+      <div class="nota" id="con-app">
+        <strong>¿Ya tienes Nido?</strong>
+        <a class="boton principal" id="abrir" href="casa://invite">Abrir la invitación en Nido</a>
+      </div>
+      <div class="nota">
+        <strong>¿Aún no la tienes?</strong>
+        <ol>
+          <li>
+            Instala Nido:
+            <a
+              class="boton secundario"
+              href="https://play.google.com/store/apps/details?id=com.bradlopez13.casa"
+              >Google Play</a
+            >
+          </li>
+          <li>
+            Entra y pega el mensaje de la invitación donde pone «¿Tienes un enlace?». Si ya tienes
+            una casa, en Ajustes → Unirme con un enlace.
+          </li>
+        </ol>
+      </div>
+      <p class="gris" id="sin-token" hidden>
+        A este enlace le falta la invitación. Pide a quien te invitó que te la envíe de nuevo.
+      </p>
+      <p class="gris">La invitación vale 7 días y una sola vez.</p>
+    </main>
+    <script>
+      // The token never leaves this page: it only goes into the link that opens Nido.
+      (function () {
+        var token = new URLSearchParams(location.search).get('token') || '';
+        if (!/^[0-9a-f]{48}$/.test(token)) {
+          document.getElementById('con-app').hidden = true;
+          document.getElementById('sin-token').hidden = false;
+          return;
+        }
+        var android = /Android/i.test(navigator.userAgent);
+        var store = 'https://play.google.com/store/apps/details?id=com.bradlopez13.casa';
+        document.getElementById('abrir').href = android
+          ? 'intent://invite?token=' +
+            token +
+            '#Intent;scheme=casa;package=com.bradlopez13.casa;S.browser_fallback_url=' +
+            encodeURIComponent(store) +
+            ';end'
+          : 'casa://invite?token=' + token;
+      })();
+    </script>
+  </body>
+</html>

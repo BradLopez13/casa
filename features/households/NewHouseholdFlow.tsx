@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { AppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
@@ -8,6 +8,7 @@ import { signOut } from '@/features/auth/api';
 import { AccountMenu } from '@/features/auth/AccountMenu';
 import { useSession } from '@/features/auth/SessionProvider';
 import { createHousehold, setHouseholdRooms } from '@/features/households/api';
+import { inviteFromClipboard } from '@/features/households/clipboardInvite';
 import { parseInviteToken } from '@/features/households/invite-link';
 import { leaveToHome } from '@/features/households/leaveToHome';
 import { householdNameSchema } from '@/features/households/schemas';
@@ -207,6 +208,22 @@ function CreateStep({
   const [formError, setFormError] = useState<string | undefined>();
   const [link, setLink] = useState('');
   const [linkError, setLinkError] = useState<string | undefined>();
+  // An invitation copied from a chat fills the field when the screen opens (bloque 14.3), and a
+  // line says where it came from; anything typed first wins.
+  const [pasted, setPasted] = useState(false);
+  // What the person typed, for the clipboard's answer to arrive after it without overwriting it.
+  const typed = useRef('');
+  useEffect(() => {
+    let live = true;
+    void inviteFromClipboard().then((found) => {
+      if (!live || found === null || typed.current !== '') return;
+      setLink(found);
+      setPasted(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
   const notify = useNotice();
   const joinBlock = useRef<View>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -322,7 +339,11 @@ function CreateStep({
           // With the keyboard up, «Unirme» comes into view with the field (bloque 13, P2-6).
           revealBlock={joinBlock}
           value={link}
-          onChangeText={setLink}
+          onChangeText={(text) => {
+            typed.current = text;
+            setLink(text);
+            setPasted(false);
+          }}
           error={linkError}
           keyboardType="url"
           autoFocus={focusLink}
@@ -332,6 +353,11 @@ function CreateStep({
           returnKeyType="done"
           onSubmitEditing={submitJoin}
         />
+        {pasted ? (
+          <Text testID="onboarding.link-pasted" style={{ color: colors.muted, fontSize: 14 }}>
+            {t('onboarding.linkPasted')}
+          </Text>
+        ) : null}
         <Button
           testID="onboarding.join"
           title={t('onboarding.join')}

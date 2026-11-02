@@ -1,13 +1,35 @@
+import { t } from '@/i18n';
+
 const TOKEN_PATTERN = /^[0-9a-f]{48}$/;
 
 type CreateUrl = (path: string, opts: { queryParams: Record<string, string> }) => string;
 
+/**
+ * Where the https invite links live once Nido has its domain (decisión 1 de Brad, 1 de noviembre:
+ * B until the launch, A then). Unset, the link is the app's own `casa://invite?token=…`. Set it
+ * (`EXPO_PUBLIC_INVITE_HOST=nido.app`) together with the domain's `.well-known` files and
+ * `app.config.js` declares the App Links and Universal Links (`site/INVITACIONES.md`).
+ */
+const rawHost: unknown = process.env.EXPO_PUBLIC_INVITE_HOST;
+export const INVITE_HOST = typeof rawHost === 'string' && rawHost !== '' ? rawHost : undefined;
+
 /** Pass `Linking.createURL` from expo-linking as `createUrl`. */
-export function buildInviteUrl(token: string, createUrl: CreateUrl): string {
+export function buildInviteUrl(token: string, createUrl: CreateUrl, host = INVITE_HOST): string {
+  if (host !== undefined) return `https://${host}/invite?token=${token}`;
   return createUrl('invite', { queryParams: { token } });
 }
 
-/** Accepts a bare token or any URL containing `token=`; returns it only if well formed. */
+/**
+ * The message an invitation is shared or copied with (bloque 14.3, P1-3): who invites to which
+ * home, how to join in two steps (tap the link, or install Nido and paste this message in «Unirme
+ * con un enlace»), and the link alone on the last line, so a chat app turns it into a link and
+ * never runs it into the sentence. The whole message, pasted, is a valid invitation.
+ */
+export function inviteMessage(url: string, household: string): string {
+  return t('invite.shareMessage', { household, url, join: t('households.join') });
+}
+
+/** Accepts a bare token or any text containing `token=` (a link, the whole message). */
 export function parseInviteToken(input: string | string[] | undefined): string | null {
   const raw = Array.isArray(input) ? input[0] : input;
   if (typeof raw !== 'string') return null;
