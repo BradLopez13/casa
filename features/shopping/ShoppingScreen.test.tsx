@@ -253,7 +253,7 @@ describe('removing a usual suggestion', () => {
     lastUsedAt: '2026-10-20T08:00:00.000Z',
   };
 
-  it('a long press takes it away at once and offers «Deshacer»', async () => {
+  it('a long press takes it away at once and offers «Deshacer»', () => {
     vi.useFakeTimers();
     renderShopping([], [bread]);
     const pill = screen.getByTestId('shopping.usual.bolsa aa');

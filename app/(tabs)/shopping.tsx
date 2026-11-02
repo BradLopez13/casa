@@ -63,7 +63,6 @@ import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { useNotice } from '@/ui/components/Notice';
 import { noticeDuration } from '@/ui/components/noticeTiming';
-import { isScreenReaderOn } from '@/ui/a11y';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
@@ -72,7 +71,7 @@ import { useNoticeNudge } from '@/ui/useNoticeNudge';
 import { useListEndPadding } from '@/ui/useTabBarClearance';
 import type { SheetRow } from '@/features/shopping/sheetRows';
 import { actionIcons } from '@/ui/actionIcons';
-import { announce } from '@/ui/a11y';
+import { announce, isScreenReaderOn } from '@/ui/a11y';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
