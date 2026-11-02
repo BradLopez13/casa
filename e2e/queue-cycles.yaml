@@ -47,6 +47,8 @@ onFlowComplete:
     timeout: 30000
 - assertNotVisible:
     id: tasks.queue.retry
+# The emulator screen holds one note: done, so the next cycle's note is the one in view.
+- tapOn: Completar «Ciclo uno»
 
 # Cycle 2: a complete queued behind the create
 - setAirplaneMode: enabled
@@ -111,8 +113,14 @@ onFlowComplete:
     end: 50%, 85%
     duration: 800
 - extendedWaitUntil:
-    visible: Ciclo uno
+    visible: Ciclo tres
     timeout: 20000
-- assertVisible: Ciclo tres
+# The first two are done, in the tray under the list.
+- scrollUntilVisible:
+    element: '.*Ciclo dos.*'
+    direction: DOWN
+- scrollUntilVisible:
+    element: '.*Ciclo uno.*'
+    direction: DOWN
 - assertNotVisible:
     id: '(task-note|done-tray)\..*\.pending'

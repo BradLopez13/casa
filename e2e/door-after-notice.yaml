@@ -33,6 +33,8 @@ onFlowComplete:
 - inputText: Nota 1
 - tapOn:
     id: today.quick-add.submit
+# The keyboard covers the list: down first.
+- hideKeyboard
 - extendedWaitUntil:
     visible: Nota 1
     timeout: 5000
