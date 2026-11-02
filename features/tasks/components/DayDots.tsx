@@ -12,7 +12,10 @@ type DotsProps = {
   ring?: string;
 };
 
-/** One dot per person with something that day, plus an empty ring for unassigned tasks. */
+/**
+ * One dot per person with something that day, plus a grey one for unassigned tasks: filled, like
+ * the «sin asignar» magnet, never the bare ring of a box to tick (bloque 14.5, decisión 4 A).
+ */
 export function DayDots({ day, marks, ring }: DotsProps) {
   const { colors, space } = useTheme();
   const edge = ring
@@ -50,8 +53,8 @@ export function DayDots({ day, marks, ring }: DotsProps) {
             width: DOT,
             height: DOT,
             borderRadius: DOT / 2,
-            borderWidth: 1,
-            borderColor: ring ?? colors.outline,
+            backgroundColor: colors.muted,
+            ...(ring ? { borderWidth: 1, borderColor: ring } : null),
           }}
         />
       ) : null}

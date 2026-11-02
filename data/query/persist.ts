@@ -3,6 +3,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { dehydrate, type DehydrateOptions, type QueryClient } from '@tanstack/react-query';
 import { pickActive } from '@/features/households/active';
 import { householdsKey, membershipKey } from '@/features/households/keys';
+import { abandonQueued } from './retry';
 
 /**
  * The on-device copy of the query cache: the shopping list, its history and its queue, the
@@ -35,6 +36,8 @@ export function saveCacheNow(
 
 /** Signing out: forgets everything cached, in memory and on the device. */
 export function forgetCachedData(queryClient: QueryClient): void {
+  // Tries already under way would go on after the clear (T6): they are let go first.
+  for (const mutation of queryClient.getMutationCache().getAll()) abandonQueued(mutation);
   queryClient.clear();
   void persister.removeClient();
 }
@@ -59,6 +62,7 @@ function removeHouseholdData(queryClient: QueryClient, householdId?: string): vo
   for (const mutation of queued) {
     const variables = mutation.state.variables as { householdId?: unknown } | undefined;
     if (householdId === undefined || variables?.householdId === householdId) {
+      abandonQueued(mutation);
       mutations.remove(mutation);
     }
   }

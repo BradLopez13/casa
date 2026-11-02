@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useIsOnline } from '@/data/query/online';
 import { View } from 'react-native';
 import type { MemberMark } from '@/domain/members/marks';
 import type { TaskListRow } from '@/features/tasks/sections';
@@ -46,12 +47,14 @@ export function TaskRow({
   const hint =
     !first || row.kind !== 'note' ? null : boxHint ? 'complete' : swipeHint ? 'swipe' : null;
   const waiting = useWaitingTasks();
+  const online = useIsOnline();
   // A note created here that the server has not confirmed yet is not there to edit: its sheet
   // waits until it is (fase 10e). Ticking it off still works: it queues behind its create. What
   // the server has opens, whatever the queue still holds (bloque 13, P1-2).
   const openTask = (task: { id: string; draft?: true }) => {
     if (task.draft) {
-      notify(t('tasks.unsent'));
+      // Offline nothing is on its way: it will be (bloque 14, P3).
+      notify(t(online ? 'tasks.unsent' : 'tasks.unsentOffline'));
       return;
     }
     router.push({ pathname: '/task/[id]', params: { id: task.id } });

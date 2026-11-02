@@ -23,6 +23,8 @@
 --   wanda@e2e.dev = Wanda, owner of "Piso Wanda", with Xavi (xavi@e2e.dev) (leave-household)
 --   yago@e2e.dev  = Yago, owner of "Piso Yago" (quantity)
 --   hugo@e2e.dev  = Hugo, owner of "Piso Hugo" (help)
+--   gala@e2e.dev  = Gala, owner of "Piso Gala" (queue-cycles)
+--   fede@e2e.dev  = Fede, owner of "Piso Fede" (door-after-notice)
 --   zoe@e2e.dev   = Zoe, owner of "Piso Zoe" (several-households: creates a second household,
 --                   switches, invites, sees its licence and joins Yoli's with JOIN_TOKEN)
 --   yoli@e2e.dev  = Yoli, owner of "Piso Yoli" (several-households)
@@ -140,6 +142,8 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('vera@e2e.dev', 'Vera'), 'Piso Vera');
   perform pg_temp.e2e_household(pg_temp.e2e_user('yago@e2e.dev', 'Yago'), 'Piso Yago');
   perform pg_temp.e2e_household(pg_temp.e2e_user('hugo@e2e.dev', 'Hugo'), 'Piso Hugo');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('gala@e2e.dev', 'Gala'), 'Piso Gala');
+  perform pg_temp.e2e_household(pg_temp.e2e_user('fede@e2e.dev', 'Fede'), 'Piso Fede');
   perform pg_temp.e2e_household(pg_temp.e2e_user('zoe@e2e.dev', 'Zoe'), 'Piso Zoe');
   declare
     v_yoli uuid := pg_temp.e2e_user('yoli@e2e.dev', 'Yoli');

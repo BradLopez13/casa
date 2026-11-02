@@ -106,6 +106,22 @@ describe('Crear tu hogar', () => {
     expect(nameField().value).toBe('Casa');
   });
 
+  // Bloque 14.4 (T8): the request reached the server but its answer did not; tapping again made
+  // a second household. The same id goes again, and the server answers with the same household.
+  it('sends the same household id again when trying again after no answer', async () => {
+    vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('NETWORK'));
+    renderOnboarding();
+    fireEvent.change(nameField(), { target: { value: 'Casa' } });
+    fireEvent.click(createButton());
+    await screen.findByRole('alert');
+    vi.mocked(createHousehold).mockResolvedValueOnce('h');
+    fireEvent.click(createButton());
+    await vi.waitFor(() => expect(createHousehold).toHaveBeenCalledTimes(2));
+    const [first, second] = vi.mocked(createHousehold).mock.calls;
+    expect(first?.[1]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(second?.[1]).toBe(first?.[1]);
+  });
+
   it('a link that is not an invitation is marked on its field and goes nowhere', () => {
     renderOnboarding();
     fireEvent.change(linkField(), { target: { value: 'https://example.com/hola' } });
@@ -214,7 +230,9 @@ describe('Crear otra casa (bloque 12)', () => {
     expect(screen.queryByLabelText('Nido')).toBeNull();
     const buttons = screen.getAllByRole('button');
     expect(buttons[0]?.getAttribute('aria-label')).toBe(t('onboarding.back'));
-    expect(nameField().value).toBe(t('onboarding.anotherDefaultName'));
+    // Empty, with «Otra casa» as the example (bloque 14.5, P3).
+    expect(nameField().value).toBe('');
+    expect(nameField().getAttribute('placeholder')).toBe(t('onboarding.anotherDefaultName'));
     expect(screen.queryByTestId('account-menu')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.back') }));
     expect(router.back).toHaveBeenCalled();
@@ -236,6 +254,7 @@ describe('Crear otra casa (bloque 12)', () => {
   it('on a server that still allows one household, says so', async () => {
     vi.mocked(createHousehold).mockRejectedValueOnce(new AppError('ALREADY_IN_HOUSEHOLD'));
     renderOnboarding(<NewHouseholdFlow another />);
+    fireEvent.change(nameField(), { target: { value: 'Casa de mamá' } });
     fireEvent.click(screen.getByRole('button', { name: t('onboarding.anotherCreate') }));
     expect((await screen.findByRole('alert')).textContent).toBe(
       t('onboarding.errors.ALREADY_IN_HOUSEHOLD'),

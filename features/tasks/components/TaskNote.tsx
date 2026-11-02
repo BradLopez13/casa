@@ -166,13 +166,32 @@ export function TaskNote({
       {/* The magnet only says whose task it is; the box on the right completes it. The reader
           hears whose it is in the note's own label, right after the title. */}
       <Animated.View style={[{ marginLeft: -magnetSizes.md / 2 }, magnetStyle]}>
+        {/* Nobody's: a magnet of its own, filled in grey with a figure, not the bare ring that
+            is the box to tick in Compra (bloque 14.5, P2-3, decisión 4 A). */}
         <Magnet
           size="md"
           decorative
-          variant={mark ? 'filled' : 'empty'}
           color={mark?.color ?? 'teal'}
           initial={mark?.initial ?? ''}
           accessibilityLabel={assigneeName ?? ''}
+          glyph={
+            mark
+              ? undefined
+              : {
+                  fill: colors.muted,
+                  highlight: true,
+                  node: (
+                    <View testID={`task-note.${task.id}.nobody`}>
+                      <Ionicons
+                        name="person"
+                        size={Math.round(magnetSizes.md * 0.55)}
+                        color={colors.page}
+                        accessible={false}
+                      />
+                    </View>
+                  ),
+                }
+          }
         />
       </Animated.View>
       <ReanimatedSwipeable

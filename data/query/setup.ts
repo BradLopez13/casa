@@ -8,24 +8,11 @@ import {
 } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 import { appQueryDefaults } from './defaults';
-import { errorReport, type ErrorReport } from '@/data/telemetry/queryErrors';
+import { reportQueryError as report } from './report';
 import { markOnline } from './retry';
+import { queueLog, queueLogOn, startQueueLog } from './queueLog';
 
-type Reporter = (error: unknown, report: ErrorReport) => void;
-let reporter: Reporter = () => undefined;
-
-/**
- * Where a failed query or mutation worth knowing about goes (Sentry, from the root layout):
- * unknown answers and queued changes the queue dropped (bloque 13, T-2; `errorReport`).
- */
-export function reportQueryErrorsTo(next: Reporter): void {
-  reporter = next;
-}
-
-function report(error: unknown, key: readonly unknown[] | undefined, queued: boolean): void {
-  const found = errorReport(error, { key, queued });
-  if (found) reporter(error, found);
-}
+export { reportQueryErrorsTo, reportQueueStorage } from './report';
 
 /** The app's one query client. A queued mutation says so in its meta (`QUEUED_META`). */
 export const queryClient = new QueryClient({
@@ -51,6 +38,7 @@ export function watchAppAndConnection(): void {
   onlineManager.subscribe((online) => {
     if (online) markOnline();
   });
+  if (queueLogOn) startQueueLog(queryClient);
   if (Platform.OS === 'web') return;
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -60,6 +48,9 @@ export function watchAppAndConnection(): void {
   });
   onlineManager.setEventListener((setOnline) =>
     NetInfo.addEventListener((state) => {
+      if (queueLogOn) {
+        queueLog(`netinfo connected=${state.isConnected} reachable=${state.isInternetReachable}`);
+      }
       setOnline(state.isConnected === true && state.isInternetReachable !== false);
     }),
   );

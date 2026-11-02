@@ -18,10 +18,13 @@ export type NoticeAction = {
   /** The notice went away without its action: timed out, closed, replaced or left on its tab. */
   onExpire?: () => void;
   /**
-   * The note it speaks of left the list (completed into the tray, deleted): nothing to uncover,
-   * so the list does not move for it (decisión 1 de Brad, 27 de octubre).
+   * The list may move so the pill does not cover its last row («Bolsa vaciada»: the rows it speaks
+   * of are at the end). Any other notice leaves its room at the list's end and moves nothing: the
+   * note completed or deleted left the list, the one reopened went up to its section, and a notice
+   * with no note («Aún se está enviando…», «Ahora estás en Casa.») has nothing to uncover
+   * (decisión 1 de Brad, 27 de octubre; bloque 14.2).
    */
-  leftList?: boolean;
+  nudges?: boolean;
 };
 type Notify = (message: string, action?: NoticeAction) => void;
 /** ms null: no timer, the notice waits (a screen reader is on and there is an action to reach). */
@@ -116,7 +119,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   return (
     <NoticeContext.Provider value={notify}>
       <NoticeShownContext.Provider value={notice !== null}>
-        <NoticeNudgesContext.Provider value={notice !== null && !notice.action?.leftList}>
+        <NoticeNudgesContext.Provider value={notice?.action?.nudges === true}>
           {children}
         </NoticeNudgesContext.Provider>
       </NoticeShownContext.Provider>

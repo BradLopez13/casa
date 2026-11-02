@@ -1,6 +1,6 @@
 // Pure: no react-native import, so Vitest can check it.
 import { onlineManager } from '@tanstack/react-query';
-import { isTransient, toAppError, type AppError } from '@/data/supabase/errors';
+import { AppError, isTransient, toAppError } from '@/data/supabase/errors';
 import { isSignedIn } from './sessionUser';
 
 /**
@@ -23,6 +23,7 @@ let onlineSince = -Infinity;
  */
 export function markOnline(now = Date.now()): void {
   onlineSince = now;
+  retryQueuedNow();
 }
 
 /**
@@ -40,8 +41,29 @@ export const NETWORK_RETRY_LIMIT = (7 * 24 * 60 * 60_000) / NETWORK_RETRY_MAX_MS
  * answer (5xx, 429, a token mid-refresh, a serialization clash: `isTransient`) is tried again
  * the same way (bloque 13, P2-2); any other answer from the server is final.
  */
-export const retryOnNetwork = (failureCount: number, error: AppError) =>
-  failureCount < NETWORK_RETRY_LIMIT && isTransient(toAppError(error), isSignedIn());
+export const retryOnNetwork = (failureCount: number, error: AppError) => {
+  const appError = toAppError(error);
+  const again = failureCount < NETWORK_RETRY_LIMIT && isTransient(appError, isSignedIn());
+  // The token expired and could not be refreshed: ask for a new one before the next try (T1).
+  if (again && appError.status === 401) refreshSoon();
+  return again;
+};
+
+/** How the session is refreshed (`supabase.auth.refreshSession`, set by the root layout). */
+let refreshSession: () => void = () => undefined;
+let refreshedAt = -Infinity;
+/** At most one refresh every 5 s, whatever the number of changes waiting. */
+export const SESSION_REFRESH_MS = 5000;
+
+export function refreshSessionWith(refresh: () => void): void {
+  refreshSession = refresh;
+}
+
+function refreshSoon(now = Date.now()): void {
+  if (now - refreshedAt < SESSION_REFRESH_MS) return;
+  refreshedAt = now;
+  refreshSession();
+}
 
 /**
  * Each try waits twice as long as the last, from 1 s up to 15 s; for a minute after the connection
@@ -68,3 +90,78 @@ export const offlineFirstQueryOptions = {
   networkMode: 'offlineFirst',
   retry: retryOnceOnline,
 } as const;
+
+/** The waits of the queued changes between two tries, each with the way to cut it short. */
+const waits = new Set<() => void>();
+
+/**
+ * Cuts short every wait between two tries of a queued change: they try again now. «Reintentar»
+ * (`QueueBand`) and the connection coming back (`markOnline`) call it (bloque 14.1, T5).
+ */
+export function retryQueuedNow(): void {
+  for (const wake of [...waits]) wake();
+}
+
+/**
+ * How many times each run of a change has been tried and when its last try ended, by the context
+ * TanStack gives its function: one object per run (`execute`), the same on every retry of it.
+ */
+const tries = new WeakMap<object, { count: number; endedAt: number }>();
+
+/**
+ * A queued change's function, with the wait between two tries inside it instead of in TanStack's
+ * `retryDelay` (which the queued changes set to 0): TanStack's timer cannot be cut short, and
+ * «Reintentar» waited for it, up to 15 s (bloque 14.1, T5). The first try goes at once; each next
+ * one waits what is left of `retryDelayOnNetwork` since the last try ended (a pause in between,
+ * offline or in the background, counts), or less if `retryQueuedNow` comes first. A change
+ * restored after a restart is a new run and starts over.
+ */
+export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
+  return async (vars, run) => {
+    // Taken out of the cache (a household left, a sign-out): it never goes again (T6), also when
+    // that happened while it waited between two tries.
+    const letGo = () => typeof vars === 'object' && vars !== null && abandoned.has(vars);
+    if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+    if (run === undefined) return fn(vars);
+    const before = tries.get(run);
+    if (before !== undefined) {
+      const left = retryDelayOnNetwork(before.count - 1) - (Date.now() - before.endedAt);
+      if (left > 0) await waitBetweenTries(left);
+      if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+    }
+    try {
+      return await fn(vars);
+    } finally {
+      tries.set(run, { count: (before?.count ?? 0) + 1, endedAt: Date.now() });
+    }
+  };
+}
+
+/** The variables of the queued changes taken out of the cache: TanStack keeps retrying them. */
+const abandoned = new WeakSet<object>();
+
+/**
+ * A queued change is taken out of the cache (bloque 14.4, T6): removing it does not stop the tries
+ * TanStack already has under way, so its function would go to the server again (after leaving a
+ * household, with NOT_A_MEMBER and its notice). From now on it fails as dropped, which says
+ * nothing and reports nothing (`droppedOnSignOut`). Call it before `remove` or `clear`.
+ */
+export function abandonQueued(mutation: { state: { variables?: unknown } }): void {
+  const vars = mutation.state.variables;
+  if (typeof vars === 'object' && vars !== null) abandoned.add(vars);
+}
+
+/** The retry delay TanStack keeps for the queued changes: none, the wait is in `queuedFn`. */
+export const QUEUED_RETRY_DELAY = 0;
+
+function waitBetweenTries(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const wake = () => {
+      clearTimeout(timer);
+      waits.delete(wake);
+      resolve();
+    };
+    const timer = setTimeout(wake, ms);
+    waits.add(wake);
+  });
+}

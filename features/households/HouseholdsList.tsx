@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { firstInitial } from '@/domain/members/marks';
+import { houseInitials } from '@/domain/members/marks';
 import { t } from '@/i18n';
 import { announce } from '@/ui/a11y';
 import { actionIcons } from '@/ui/actionIcons';
@@ -49,9 +49,11 @@ export function HouseholdsList({
     onLeave?.();
     router.push(path);
   };
+  // Two households with the same initial get two letters each (bloque 14.5, P3).
+  const initials = houseInitials(households.map((household) => household.householdName));
   return (
     <View style={{ gap: space(4) }}>
-      {households.map((household) => {
+      {households.map((household, index) => {
         const active = household.householdId === activeId;
         const details = householdDetails(household, active);
         return (
@@ -70,10 +72,7 @@ export function HouseholdsList({
             }}
             style={({ pressed }) => ({ opacity: pressedOpacity(pressed) })}
           >
-            <PinnedNote
-              side="left"
-              pin={{ house: { initial: firstInitial(household.householdName), active } }}
-            >
+            <PinnedNote side="left" pin={{ house: { initial: initials[index] ?? '', active } }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
                 <View style={{ flex: 1, gap: space(1) }}>
                   <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>

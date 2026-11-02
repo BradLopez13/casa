@@ -79,7 +79,7 @@ type Props = {
   pending: ShoppingItem[];
   bought: ShoppingItem[];
   /** Items with a change still on its way to the server. */
-  unsentIds: Set<string>;
+  unsentIds: ReadonlySet<string>;
   marks: Map<string, MemberMark>;
   names: Map<string, string>;
   /** The current user, so a row they bought reads «comprado por ti». */

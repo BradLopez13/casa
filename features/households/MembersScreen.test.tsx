@@ -1,11 +1,13 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as Clipboard from 'expo-clipboard';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MembersScreen from '@/app/household/members';
 import { AppError } from '@/data/supabase/errors';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 import {
+  createInvite,
   listActiveInvites,
   listMembers,
   type ActiveInvite,
@@ -21,7 +23,9 @@ vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api')>()),
   listMembers: vi.fn(),
   listActiveInvites: vi.fn(),
+  createInvite: vi.fn(),
 }));
+vi.mock('expo-clipboard', () => ({ setStringAsync: vi.fn().mockResolvedValue(true) }));
 
 const owner: Membership = {
   householdId: 'h',
@@ -181,5 +185,21 @@ describe('Miembros', () => {
   it('online, there is no offline band', () => {
     renderMembers();
     expect(screen.queryByTestId('members.offline')).toBeNull();
+  });
+});
+
+describe('copying the invitation (bloque 14.3)', () => {
+  // P1-3: «Copiar enlace» copied the bare casa:// link; pasted in a chat, nothing said how to join.
+  it('copies the whole message, ending with the link on its own line', async () => {
+    const token = 'ab'.repeat(24);
+    vi.mocked(createInvite).mockResolvedValue({ token, expiresAt: '2026-11-09T08:00:00Z' });
+    renderMembers({ invites: [] });
+    fireEvent.click(screen.getByTestId('members.copy-link'));
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalled());
+    const copied = vi.mocked(Clipboard.setStringAsync).mock.calls[0]![0];
+    expect(copied).toContain('«Casa»');
+    expect(copied).toContain(t('households.join'));
+    expect(copied.split('\n').at(-1)).toMatch(new RegExp(`invite/?\\?token=${token}$`));
+    expect(await screen.findByTestId('members.copied')).toBeTruthy();
   });
 });

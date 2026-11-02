@@ -1,6 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useContext, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHint } from '@/features/hints/hints';
 import { t } from '@/i18n';
@@ -167,6 +174,18 @@ export function DoorHeader({
       ? eyebrowDetail.short
       : eyebrowDetail.long
     : null;
+  // The household's name went to the next line: the « · » before it would hang at the end of the
+  // first one (bloque 14.5, P3), so it goes, and the name keeps a line of its own (or taking the
+  // dot away could bring it back up without its dot). Kept for this name, date, door, width and
+  // text size.
+  const houseFit = household
+    ? `${household.name}@${detail ?? ''}@${door.compact ? 'c' : 'f'}@${windowWidth}@${fontScale}`
+    : null;
+  const [houseDown, setHouseDown] = useState<string | null>(null);
+  const houseWrapped = houseFit !== null && houseDown === houseFit;
+  const onHouseLayout = (event: LayoutChangeEvent) => {
+    if (houseFit !== null && event.nativeEvent.layout.y > 2) setHouseDown(houseFit);
+  };
   const labelStyle = {
     color: colors.muted,
     fontFamily: displayFontBold,
@@ -190,7 +209,7 @@ export function DoorHeader({
     >
       {/* A no-break space: the label never breaks right after «HOY ·». */}
       {detail ? `${eyebrow}\u00A0· ${detail}` : eyebrow}
-      {household ? '\u00A0·' : null}
+      {household && !houseWrapped ? '\u00A0·' : null}
     </Text>
   );
   // The household's name follows on the same line, or on the next when it does not fit: never
@@ -220,6 +239,7 @@ export function DoorHeader({
       {household.onPress ? (
         <Pressable
           testID="door.household"
+          onLayout={onHouseLayout}
           accessibilityRole="button"
           accessibilityLabel={t('households.door', { household: household.name })}
           onPress={household.onPress}
@@ -230,6 +250,7 @@ export function DoorHeader({
             alignItems: 'center',
             gap: 2,
             opacity: pressedOpacity(pressed),
+            ...(houseWrapped ? { flexBasis: '100%' } : null),
           })}
         >
           {householdName}
@@ -241,7 +262,13 @@ export function DoorHeader({
           />
         </Pressable>
       ) : (
-        <View testID="door.household">{householdName}</View>
+        <View
+          testID="door.household"
+          onLayout={onHouseLayout}
+          style={houseWrapped ? { flexBasis: '100%' } : undefined}
+        >
+          {householdName}
+        </View>
       )}
     </View>
   ) : (

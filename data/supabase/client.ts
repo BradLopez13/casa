@@ -5,6 +5,7 @@ import { AppState, Platform } from 'react-native';
 import { secureStore } from '../secure-store';
 import { createChunkedStorage } from './chunked-storage';
 import { missingConfig } from './config';
+import { loggedFetch, queueLogOn } from '../query/queueLog';
 import { withTimeout } from './fetchWithTimeout';
 import type { Database } from './database.types';
 
@@ -33,7 +34,7 @@ export const supabase = createClient<Database>(
       flowType: 'pkce',
     },
     // A request with no answer in 15 s fails as NETWORK instead of spinning for ever.
-    global: { fetch: withTimeout(fetch) },
+    global: { fetch: withTimeout(queueLogOn ? loggedFetch(fetch) : fetch) },
   },
 );
 

@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["EQUIPO.com.bradlopez13.casa"],
+        "components": [{ "/": "/invite*", "comment": "Las invitaciones a una casa" }]
+      }
+    ]
+  }
+}

@@ -42,3 +42,18 @@ describe('allLineText', () => {
     );
   });
 });
+
+describe('allLineText with a day pill chosen (bloque 14.5, P3)', () => {
+  it('says what it filters, and counts that day', () => {
+    expect(allLineText({ kind: 'mine', count: 2 }, false, 'hoy')).toBe(
+      'Lo de hoy en la casa. Te tocan 2.',
+    );
+    expect(allLineText({ kind: 'empty' }, true, 'mañana')).toBe(
+      'Lo de mañana en esta casa. Nada pendiente.',
+    );
+    // A day with its name takes «del» (revisión de 14.5).
+    expect(allLineText({ kind: 'mine', count: 1 }, false, 'sábado 11', true)).toBe(
+      'Lo del sábado 11 en la casa. Te toca 1.',
+    );
+  });
+});

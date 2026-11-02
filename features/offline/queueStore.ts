@@ -74,21 +74,45 @@ export async function saveQueue(queryClient: QueryClient, userId: string): Promi
   await AsyncStorage.setItem(queueKey(userId), JSON.stringify({ v: QUEUE_SCHEMA, mutations }));
 }
 
-/** The stored queue in today's shape; null for one this build cannot read (left as it is). */
-function migrate(raw: unknown): Stored | null {
+/** A change as `hydrate` needs it: a key, and a state with its status and variables. */
+function isEntry(entry: unknown): boolean {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const { mutationKey, state } = entry as { mutationKey?: unknown; state?: unknown };
+  if (!Array.isArray(mutationKey) || typeof state !== 'object' || state === null) return false;
+  const { status } = state as { status?: unknown };
+  return typeof status === 'string' && 'variables' in state;
+}
+
+/**
+ * The stored queue in today's shape, with the entries that cannot be read left out (bloque 14.4,
+ * T3: one broken entry made the whole restore fail); null for a queue this build cannot read at all
+ * (left as it is). `damaged` says whether something was left out.
+ */
+function migrate(raw: unknown): { mutations: Stored; damaged: boolean } | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const { v, mutations } = raw as { v?: unknown; mutations?: unknown };
   if (v !== QUEUE_SCHEMA || !Array.isArray(mutations)) return null;
-  return mutations as Stored;
+  const good = mutations.filter(isEntry) as Stored;
+  return { mutations: good, damaged: good.length !== mutations.length };
 }
 
-async function readStored(userId: string): Promise<Stored | null> {
+type Read = { mutations: Stored; damaged: boolean } | { unreadable: 'newer' | 'broken' };
+
+/**
+ * The person's stored queue. A device that cannot be read throws: taken as an empty queue, the
+ * first save would wipe what is there (revisión de 14.4). A queue that is there but cannot be
+ * parsed, or comes from a newer build, says so.
+ */
+async function readStored(userId: string): Promise<Read> {
+  const raw = await AsyncStorage.getItem(queueKey(userId));
+  if (raw === null) return { mutations: [], damaged: false };
+  let parsed: unknown;
   try {
-    const raw = await AsyncStorage.getItem(queueKey(userId));
-    return raw === null ? [] : migrate(JSON.parse(raw));
+    parsed = JSON.parse(raw);
   } catch {
-    return null;
+    return { unreadable: 'broken' };
   }
+  return migrate(parsed) ?? { unreadable: 'newer' };
 }
 
 /**
@@ -106,7 +130,12 @@ async function keepUnreadable(userId: string): Promise<void> {
 
 /** How many changes the person had waiting on this phone, without taking them in. */
 export async function countStoredQueue(userId: string): Promise<number> {
-  return (await readStored(userId))?.length ?? 0;
+  try {
+    const read = await readStored(userId);
+    return 'mutations' in read ? read.mutations.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 /** Signing out on purpose: the person was told what it costs. */
@@ -140,7 +169,12 @@ function minus<T extends Identified>(from: readonly T[], already: readonly Ident
  * cache itself, each in its household's queue and never twice. Says how many changes wait.
  * `resumeQueues` sends them afterwards.
  */
-export async function restoreQueue(queryClient: QueryClient, userId: string): Promise<number> {
+export async function restoreQueue(
+  queryClient: QueryClient,
+  userId: string,
+  /** Something stored could not be read and was copied aside (a broken write, a broken entry). */
+  onDamaged: () => void = () => undefined,
+): Promise<number> {
   const cache = queryClient.getMutationCache();
   // Older builds kept the queue in the cache, in one queue for every household: taken out and
   // put back in its household's.
@@ -151,8 +185,12 @@ export async function restoreQueue(queryClient: QueryClient, userId: string): Pr
   );
   const adopted = legacy.size > 0 ? queuedNow(queryClient, legacy) : [];
   for (const mutation of legacy) cache.remove(mutation);
-  const stored = await readStored(userId);
-  if (stored === null) await keepUnreadable(userId);
+  const read = await readStored(userId);
+  // What cannot be read, all of it or a part, is copied aside before saving starts over it.
+  const damaged = 'mutations' in read ? read.damaged : read.unreadable === 'broken';
+  if (!('mutations' in read) || read.damaged) await keepUnreadable(userId);
+  if (damaged) onDamaged();
+  const stored = 'mutations' in read ? read.mutations : null;
   // The same change may be in two places (the cache an older build kept and its own key, or the
   // cache already holding it): taken once. Within one source a repeat is a real change (bought,
   // put back, bought again), so repeats are counted, never collapsed.
@@ -164,6 +202,14 @@ export async function restoreQueue(queryClient: QueryClient, userId: string): Pr
     ...mutation,
     scope: queueScope(mutation.mutationKey, mutation.state.variables) ?? mutation.scope,
   }));
-  if (incoming.length > 0) hydrate(queryClient, { mutations: incoming, queries: [] });
+  if (incoming.length > 0) {
+    try {
+      hydrate(queryClient, { mutations: incoming, queries: [] });
+    } catch (error) {
+      // Restoring failed: the stored queue is kept aside, so the first save cannot lose it.
+      await keepUnreadable(userId);
+      throw error;
+    }
+  }
   return cache.findAll({ status: 'pending' }).filter((m) => isQueued(m.options.mutationKey)).length;
 }

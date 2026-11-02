@@ -41,6 +41,11 @@ type TodayParts = {
   screen: Screen;
   door: ReactElement;
   quickAdd: ReactElement;
+  /**
+   * The offline, queue and licence bands: under the quick add, never above it, so one appearing
+   * never moves the field under a finger (bloque 14.2: the tap fell on the band and was lost).
+   */
+  bands: ReactElement;
   sections: TaskListSection[];
   cards: TodayCards;
   invite: ReactNode;
@@ -117,7 +122,9 @@ export default function TodayScreen() {
       <DoorHeader
         eyebrow={t('today.title')}
         eyebrowDetail={{ long: longDateLabel(today), short: shortDateLabel(today) }}
-        heading={<TallyView line={line} onSeeAll={() => screen.selectFilter(null)} />}
+        heading={
+          <TallyView line={line} names={screen.names} onSeeAll={() => screen.selectFilter(null)} />
+        }
         quickAdd={quickAdd}
       >
         <MemberFilter
@@ -128,6 +135,10 @@ export default function TodayScreen() {
           onSelect={screen.selectFilter}
         />
       </DoorHeader>
+    </>
+  );
+  const bands = (
+    <>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : (
@@ -137,7 +148,7 @@ export default function TodayScreen() {
     </>
   );
 
-  const parts: TodayParts = { screen, door, quickAdd, sections, cards, invite, nothing };
+  const parts: TodayParts = { screen, door, quickAdd, bands, sections, cards, invite, nothing };
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
       {paneMode(layout) === 'split' ? <TodaySplit {...parts} /> : <TodayStack {...parts} />}
@@ -150,7 +161,16 @@ export default function TodayScreen() {
  * runs edge to edge; every row, heading and empty state keeps to the column (`useOneColumn`), as
  * the door is the list's header and the list's own padding would take it in too.
  */
-function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
+function TodayStack({
+  screen,
+  door,
+  quickAdd,
+  bands,
+  sections,
+  cards,
+  invite,
+  nothing,
+}: TodayParts) {
   const { space } = useTheme();
   const endPadding = useListEndPadding();
   const column = useOneColumn();
@@ -178,6 +198,7 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
             {holdsQuickAdd ? null : (
               <View style={[column, { paddingTop: space(4) }]}>{quickAdd}</View>
             )}
+            {bands}
           </>
         }
         ListEmptyComponent={
@@ -229,7 +250,16 @@ function TodayStack({ screen, door, quickAdd, sections, cards, invite, nothing }
  * household's cards on the right, under a fixed door. The door is outside any scroll, so the
  * left pane takes the pull-to-refresh.
  */
-function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }: TodayParts) {
+function TodaySplit({
+  screen,
+  door,
+  quickAdd,
+  bands,
+  sections,
+  cards,
+  invite,
+  nothing,
+}: TodayParts) {
   const { colors, space } = useTheme();
   const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
@@ -260,6 +290,7 @@ function TodaySplit({ screen, door, quickAdd, sections, cards, invite, nothing }
       left={
         <>
           {quickAdd}
+          {bands}
           {left.length > 0 ? (
             <TaskSections sections={left} {...rows} />
           ) : (

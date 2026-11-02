@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appQueryDefaults } from '@/data/query/defaults';
-import { retryDelayOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY_DELAY } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
@@ -16,7 +16,6 @@ import {
   addKey,
   boughtKey,
   buildShoppingMutationDefaults,
-  countsAsUnsent,
   resumeShoppingQueue,
   shoppingQueryOptions,
   quantityKey,
@@ -245,7 +244,10 @@ describe('buildShoppingMutationDefaults', () => {
     expect(retry(0, new AppError('INVALID_ITEM_NAME'))).toBe(false);
     expect(defaults.bought.retry).toBe(defaults.add.retry);
     expect(defaults.quantity.retry).toBe(defaults.add.retry);
-    expect(defaults.add.retryDelay).toBe(retryDelayOnNetwork);
+    expect(defaults.add.retryDelay).toBe(QUEUED_RETRY_DELAY);
+    // Bloque 14.4 (T4): a dropped add reaches Sentry like the others.
+    expect(defaults.add.meta).toEqual(defaults.bought.meta);
+    expect(defaults.add.meta).toEqual({ queued: true });
   });
 
   it('reverts and explains a network error when it is final', async () => {
@@ -363,7 +365,7 @@ describe('restart', () => {
     vi.mocked(updateShoppingItem).mockResolvedValue(undefined);
     onlineManager.setOnline(true);
     await resumeShoppingQueue(after.queryClient);
-    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', null, '3');
   });
 
   it('resends an add that was in flight when the app closed', async () => {
@@ -418,7 +420,7 @@ describe('restart', () => {
     onlineManager.setOnline(true);
     await queryClient.resumePausedMutations();
     await Promise.all([added, changed, second]);
-    expect(updateShoppingItem).toHaveBeenCalledWith('x', 'Leche', '3');
+    expect(updateShoppingItem).toHaveBeenCalledWith('x', null, '3');
   });
 
   it('keeps only the resolutions a pending bought still needs', async () => {
@@ -595,14 +597,5 @@ describe('the quantity default', () => {
       .mockResolvedValueOnce(undefined);
     await quantity(vars);
     expect(updateShoppingItem).toHaveBeenCalledTimes(2);
-  });
-});
-
-describe('countsAsUnsent', () => {
-  it('shows a queued add or bought, and a quantity save only while it waits offline', () => {
-    expect(countsAsUnsent(addKey, false)).toBe(true);
-    expect(countsAsUnsent(boughtKey, false)).toBe(true);
-    expect(countsAsUnsent(quantityKey, false)).toBe(false);
-    expect(countsAsUnsent(quantityKey, true)).toBe(true);
   });
 });

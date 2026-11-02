@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '@/data/supabase/errors';
 import {
   markOnline,
   NETWORK_RETRY_LIMIT,
   NETWORK_RETRY_MAX_MS,
+  abandonQueued,
+  queuedFn,
   RECONNECT_RETRY_MS,
   RECONNECT_WINDOW_MS,
   retryDelayOnNetwork,
   retryOnNetwork,
+  refreshSessionWith,
+  retryQueuedNow,
 } from './retry';
 
 describe('retryOnNetwork', () => {
@@ -60,5 +64,163 @@ describe('retryDelayOnNetwork', () => {
       NETWORK_RETRY_MAX_MS,
     );
     expect(RECONNECT_RETRY_MS).toBe(1000);
+  });
+});
+
+describe('queuedFn', () => {
+  // Bloque 14.1 (T5): «Reintentar» only resumed what was paused; a change waiting between two tries
+  // waited for the timer already set, up to 15 s. The wait now lives in the change's own function,
+  // where «Reintentar» and the connection coming back cut it short.
+  it('goes at once the first time and waits between tries', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      const calls: number[] = [];
+      const fn = queuedFn((_vars: { id: string }) => {
+        calls.push(Date.now());
+        return Promise.resolve();
+      });
+      const vars = { id: 'a' };
+      const run = {};
+      const start = Date.now();
+      await fn(vars, run);
+      expect(calls).toEqual([start]);
+      const second = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(calls).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await second;
+      expect(calls).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tries again at once when asked (Reintentar) or when the connection comes back', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      let calls = 0;
+      const fn = queuedFn((_vars: object) => {
+        calls++;
+        return Promise.resolve();
+      });
+      const vars = {};
+      const run = {};
+      await fn(vars, run);
+      const second = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(1000);
+      await second;
+      const third = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(calls).toBe(2);
+      retryQueuedNow();
+      await vi.advanceTimersByTimeAsync(0);
+      await third;
+      expect(calls).toBe(3);
+      const fourth = fn(vars, run);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(calls).toBe(3);
+      markOnline();
+      await vi.advanceTimersByTimeAsync(0);
+      await fourth;
+      expect(calls).toBe(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('starts over on a new run (a change sent again after a restart, a direct call)', async () => {
+    let calls = 0;
+    const fn = queuedFn((_vars: object) => {
+      calls++;
+      return Promise.resolve();
+    });
+    const vars = {};
+    await fn(vars, {});
+    await fn(vars, {});
+    await fn(vars);
+    await fn(vars);
+    expect(calls).toBe(4);
+  });
+});
+
+describe('queuedFn after a pause', () => {
+  // Revisión de 14.1: the wait used to run again after a pause, as if no time had passed.
+  it('waits only what is left of the wait since the last try ended', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      let calls = 0;
+      const fn = queuedFn((_vars: object) => {
+        calls++;
+        return Promise.resolve();
+      });
+      const run = {};
+      await fn({}, run);
+      const second = fn({}, run);
+      await vi.advanceTimersByTimeAsync(1000);
+      await second;
+      // Two tries done; the next would wait 2 s. The app was away for a minute.
+      vi.advanceTimersByTime(60_000);
+      const third = fn({}, run);
+      await vi.advanceTimersByTimeAsync(0);
+      await third;
+      expect(calls).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('a 401 asks for a fresh token (bloque 14.4, T1)', () => {
+  it('keeps the change and refreshes the session, at most once every 5 s', () => {
+    const refresh = vi.fn();
+    refreshSessionWith(refresh);
+    const expired = new AppError('UNKNOWN', undefined, { status: 401, serverCode: 'PGRST303' });
+    expect(retryOnNetwork(0, expired)).toBe(true);
+    expect(retryOnNetwork(1, expired)).toBe(true);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(retryOnNetwork(0, new AppError('NETWORK'))).toBe(true);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    refreshSessionWith(() => undefined);
+  });
+});
+
+describe('a queued change taken out of the cache (bloque 14.4, T6)', () => {
+  // Removing a mutation from TanStack's cache does not stop its retries: after leaving a
+  // household its change went on and failed with NOT_A_MEMBER and a notice.
+  it('never reaches the server again, and fails as dropped (no notice, no report)', async () => {
+    const send = vi.fn(() => Promise.resolve());
+    const fn = queuedFn(send);
+    const vars = { id: 'a' };
+    abandonQueued({ state: { variables: vars } });
+    await expect(fn(vars, {})).rejects.toMatchObject({ code: 'NOT_AUTHENTICATED' });
+    expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('a queued change taken out of the cache while it waits between tries (revisión 14.4)', () => {
+  it('does not go when the wait ends', async () => {
+    vi.useFakeTimers();
+    try {
+      markOnline(-RECONNECT_WINDOW_MS);
+      const send = vi.fn(() => Promise.resolve());
+      const fn = queuedFn(send);
+      const vars = { id: 'b' };
+      const run = {};
+      await fn(vars, run);
+      const second = fn(vars, run).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      // Waiting its second; the household is left meanwhile.
+      abandonQueued({ state: { variables: vars } });
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(await second).toMatchObject({ code: 'NOT_AUTHENTICATED' });
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,7 +1,13 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { QUEUED_META, touches } from '@/data/query/queue';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
-import { offlineFirstQueryOptions, retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import {
+  offlineFirstQueryOptions,
+  abandonQueued,
+  QUEUED_RETRY_DELAY,
+  queuedFn,
+  retryOnNetwork,
+} from '@/data/query/retry';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
@@ -47,15 +53,6 @@ export type QuantityVars = {
   userId?: string;
 };
 export type QuantityContext = { previous: ShoppingItem | undefined };
-
-/**
- * Whether a shopping mutation still on its way marks its row as unsent. A quantity save is a
- * short online request: it only counts once it waits for the connection, so the icon does not
- * jump in beside the stepper on every save.
- */
-export function countsAsUnsent(mutationKey: MutationKey | undefined, isPaused: boolean): boolean {
-  return mutationKey?.[1] === quantityKey[1] ? isPaused : true;
-}
 
 /**
  * The queued shopping mutations, add, bought and the quantity: theirs are the only shopping
@@ -120,6 +117,80 @@ export function draftShoppingItem(
  */
 export const resolvedKey = (householdId: string) => ['shopping-resolved', householdId];
 type Resolved = Readonly<Record<string, string>>;
+
+/** The item a product id stands for now: the one an add offline was merged into, or itself. */
+export function resolvedItemId(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  id: string,
+): string {
+  if (householdId === undefined) return id;
+  return queryClient.getQueryData<Resolved>(resolvedKey(householdId))?.[id] ?? id;
+}
+
+/**
+ * An edit of a product reached the server: the quantities still queued for it are let go, or one
+ * stuck in the queue would arrive later and put the old quantity back (revisión de 14.4). The
+ * queue is then woken, as the first change of it may have been one of them.
+ */
+export function dropQueuedQuantities(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  itemId: string,
+): void {
+  const cache = queryClient.getMutationCache();
+  const stale = cache.findAll({ status: 'pending', mutationKey: quantityKey }).filter((m) => {
+    const vars = m.state.variables as QuantityVars | undefined;
+    return (
+      vars !== undefined &&
+      (householdId === undefined || vars.householdId === householdId) &&
+      resolvedItemId(queryClient, vars.householdId, vars.id) === itemId
+    );
+  });
+  for (const mutation of stale) {
+    abandonQueued(mutation);
+    cache.remove(mutation);
+  }
+  if (stale.length > 0) void queryClient.resumePausedMutations();
+}
+
+/** How long an edit, a delete or a clear waits for the household's queue before going anyway. */
+export const QUEUE_WAIT_MS = 10_000;
+
+/**
+ * Resolves once the household's queued shopping changes (add, bought, quantity) have gone, or
+ * after `QUEUE_WAIT_MS` (bloque 14.4, T7). Editing, deleting and clearing used to wait in the
+ * queue's own scope, without any limit behind a change that kept failing; now they go after it in
+ * the normal case and never hang.
+ */
+export function afterShoppingQueue(
+  queryClient: QueryClient,
+  householdId: string | undefined,
+  ms = QUEUE_WAIT_MS,
+): Promise<void> {
+  const cache = queryClient.getMutationCache();
+  const busy = () =>
+    cache.findAll({ status: 'pending' }).some(
+      (m) =>
+        // A change paused (offline, or waiting its turn) is not on its way: nothing to wait for.
+        !m.state.isPaused &&
+        isQueuedShoppingMutation(m.options.mutationKey) &&
+        (householdId === undefined ||
+          (m.state.variables as { householdId?: string } | undefined)?.householdId === householdId),
+    );
+  if (!busy()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    const unsubscribe = cache.subscribe(() => {
+      if (!busy()) done();
+    });
+  });
+}
 
 /**
  * Several shopping mutations of a household can be in flight: refetch its list once, after its
@@ -187,14 +258,16 @@ export function buildShoppingMutationDefaults(
   const add: MutationOptions<string, AppError, AddVars, AddContext> = {
     mutationKey: addKey,
     scope: SHOPPING_SCOPE,
+    // A dropped add reaches Sentry like a dropped bought or quantity (bloque 14.4, T4).
+    meta: QUEUED_META,
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, name, quantity, userId }: AddVars) => {
       assertQueuedBy(userId);
       return addShoppingItem(id, householdId, name, quantity);
-    },
+    }),
     onMutate: async (vars) => {
       const { id, householdId } = vars;
       const key = listKey(householdId);
@@ -239,11 +312,11 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, bought: value, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, bought: value, userId }: BoughtVars) => {
       assertQueuedBy(userId);
       return setItemBought(resolve(householdId, id), value);
-    },
+    }),
     onMutate: async ({ id, householdId, bought: value, userId }) => {
       const key = listKey(householdId);
       await queryClient.cancelQueries({ queryKey: key });
@@ -289,8 +362,8 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, name, quantity: value, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, quantity: value, userId }: QuantityVars) => {
       assertQueuedBy(userId);
       const target = resolve(householdId, id);
       // Bought (here or by someone else) or gone from a list that is here before its turn:
@@ -299,8 +372,9 @@ export function buildShoppingMutationDefaults(
       const list = queryClient.getQueryData<ShoppingItem[]>(listKey(householdId));
       const item = list?.find((i) => i.id === target);
       if (list !== undefined && (!item || item.boughtAt !== null)) return;
-      await updateShoppingItem(target, name, value);
-    },
+      // Only the quantity: the name may have changed on another phone meanwhile (T2).
+      await updateShoppingItem(target, null, value);
+    }),
     onMutate: async ({ id, householdId, quantity: value }) => {
       const key = listKey(householdId);
       const target = resolve(householdId, id);

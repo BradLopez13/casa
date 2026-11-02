@@ -215,7 +215,6 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
   it('the symbol only appears where DESIGN.md allows it', () => {
     const allowed = [
       'features/settings/SettingsPieces.tsx',
-      'app/(tabs)/tasks.tsx',
       'features/tasks/components/DayDone.tsx',
       'features/tasks/components/MemberFilter.tsx',
       'ui/components/BrandHeader.tsx',
@@ -372,5 +371,48 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(read('app/(tabs)/shopping.tsx')).toMatch(/header=\{header\}/);
     expect(read('ui/useNoticeNudge.ts')).toMatch(/noticeScroll\(/);
     expect(read('ui/components/FridgeRefresh.tsx')).toMatch(/height: VEIL_FADE/);
+  });
+
+  // Bloque 14.1 (T15): «Sin enviar» read `onlineManager.isOnline()` inside a `useMutationState`
+  // filter, which only runs again when the queue changes: the mark went minutes late. What waits
+  // and what the band says come from the queue monitor, which listens to the connection.
+  it('what waits in the queue is read from the queue monitor, never from isOnline() in a filter', () => {
+    const code = ['app', 'features', 'ui'].flatMap((d) =>
+      readdirSync(path.join(ROOT, d), { recursive: true, encoding: 'utf8' })
+        .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+        .map((f) => rel(path.join(ROOT, d, f))),
+    );
+    const mixing = code.filter((f) => {
+      const text = read(f);
+      return /useMutationState\(/.test(text) && /isOnline\(\)/.test(text);
+    });
+    expect(mixing).toEqual([]);
+    expect(read('features/tasks/queries.ts')).toMatch(
+      /function useWaitingTasks[\s\S]*?useQueueSnapshot\(\)\.waiting/,
+    );
+    expect(read('features/shopping/queries.ts')).toMatch(
+      /function usePendingItemIds[\s\S]*?useQueueSnapshot\(\)\.waiting/,
+    );
+    expect(read('features/offline/QueueBand.tsx')).toMatch(/useQueueSnapshot\(\)\.band/);
+  });
+
+  // Bloque 14.2 (P1-1): the offline band came in above the quick add and moved the field under the
+  // finger. The bands go under the field, never inside the door above it.
+  it('the offline and queue bands go under the quick add, not in the door', () => {
+    for (const file of [
+      'app/(tabs)/today.tsx',
+      'app/(tabs)/tasks.tsx',
+      'features/tasks/components/TasksSplit.tsx',
+    ]) {
+      const door = /const door = \(([\s\S]*?)\n {2}\);/.exec(read(file))?.[1] ?? '';
+      expect(door, file).toMatch(/DoorHeader/);
+      expect(door, file).not.toMatch(/OfflineBand|QueueBand/);
+      expect(read(file), file).toMatch(/const bands = \(/);
+    }
+    // Compra: in one column the field is in the door and the band under it; in two panes the
+    // band goes in the left pane, under the field.
+    const shopping = read('app/(tabs)/shopping.tsx');
+    expect(shopping).toMatch(/header=\{door\(null\)\}/);
+    expect(shopping).toMatch(/<AddItemField entry=\{entry\} \/>[\s\S]{0,300}<OfflineBand/);
   });
 });

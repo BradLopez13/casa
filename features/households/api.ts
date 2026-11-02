@@ -155,8 +155,12 @@ export async function listActiveInvites(householdId: string): Promise<ActiveInvi
   }));
 }
 
-export async function createHousehold(name: string): Promise<string> {
-  return unwrap(supabase.rpc('create_household', { p_name: name }));
+/**
+ * Creates a household with the id the app gave it: sent again after an answer that never came
+ * (a weak signal), it is the same household, not a second one (bloque 14.4, T8).
+ */
+export async function createHousehold(name: string, id: string): Promise<string> {
+  return unwrap(supabase.rpc('create_household', { p_name: name, p_id: id }));
 }
 
 /**

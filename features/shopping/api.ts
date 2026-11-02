@@ -66,15 +66,20 @@ export async function setItemBought(id: string, bought: boolean): Promise<void> 
   await unwrapMaybe(supabase.rpc('set_item_bought', { p_id: id, p_bought: bought }));
 }
 
+/**
+ * Saves a product's name and quantity. A null name leaves the name as it is on the server: the
+ * quantity changed from the row (queued offline) must not put back a name another member changed
+ * meanwhile (bloque 14.4, T2).
+ */
 export async function updateShoppingItem(
   id: string,
-  name: string,
+  name: string | null,
   quantity: string | null,
 ): Promise<void> {
   await unwrapMaybe(
     supabase.rpc('update_shopping_item', {
       p_id: id,
-      p_name: name,
+      p_name: nullable(name),
       p_quantity: nullable(quantity),
     }),
   );

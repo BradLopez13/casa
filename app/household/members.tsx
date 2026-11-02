@@ -15,7 +15,8 @@ import {
   transferOwnership,
   type Membership,
 } from '@/features/households/api';
-import { buildInviteUrl } from '@/features/households/invite-link';
+import { rememberOwnInvite } from '@/features/households/clipboardInvite';
+import { buildInviteUrl, inviteMessage } from '@/features/households/invite-link';
 import { MemberRow } from '@/features/households/MemberRow';
 import {
   useHouseholdMutation,
@@ -108,9 +109,11 @@ export default function MembersScreen() {
     setError(undefined);
     try {
       const { token } = await invite.mutateAsync(householdId);
+      rememberOwnInvite(token);
       const url = buildInviteUrl(token, Linking.createURL);
-      // Dismissing the share sheet is not an error; Share.share resolves either way.
-      await Share.share({ message: t('invite.shareMessage', { url }) });
+      // Dismissing the share sheet is not an error; Share.share resolves either way. The message
+      // says how to join and ends with the link on its own line (bloque 14.3).
+      await Share.share({ message: inviteMessage(url, membership?.householdName ?? '') });
     } catch (e) {
       setError(memberErrorMessage(e, true));
     } finally {
@@ -127,7 +130,10 @@ export default function MembersScreen() {
     setCopied(false);
     try {
       const { token } = await invite.mutateAsync(householdId);
-      await Clipboard.setStringAsync(buildInviteUrl(token, Linking.createURL));
+      rememberOwnInvite(token);
+      // The whole message, not the bare link: what is pasted in a chat says how to join.
+      const url = buildInviteUrl(token, Linking.createURL);
+      await Clipboard.setStringAsync(inviteMessage(url, membership?.householdName ?? ''));
       setCopied(true);
     } catch (e) {
       setError(memberErrorMessage(e, true));

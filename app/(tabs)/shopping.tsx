@@ -40,6 +40,7 @@ import {
   useSetBought,
   useSetQuantity,
   useShoppingHistory,
+  useDeletingItems,
   useShoppingItems,
 } from '@/features/shopping/queries';
 import {
@@ -120,6 +121,7 @@ export default function ShoppingScreen() {
   const [flash, setFlash] = useState<Flash | null>(null);
 
   const items = itemsQuery.data ?? NO_ITEMS;
+  const deleting = useDeletingItems(householdId);
   const history = historyQuery.data ?? NO_HISTORY;
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
@@ -243,8 +245,12 @@ export default function ShoppingScreen() {
     stateView = (
       <View style={{ gap: space(4) }}>
         <EmptyList
-          // Back from the shop, what is in the bag is not offered again (bloque 13).
-          usual={usual(history, new Set(items.map((entry) => entry.normalizedName)))}
+          // Back from the shop, what is in the bag is not offered again (bloque 13), nor a product
+          // whose «Deshacer» is still up (bloque 14.5).
+          usual={usual(
+            history,
+            new Set([...items, ...deleting].map((entry) => entry.normalizedName)),
+          )}
           onAdd={(name) => entry.submit(name)}
         />
         <HelpLink entry="shopping" testID="shopping.help" />
@@ -381,17 +387,7 @@ function ShoppingSplit({
       leftRef={leftRef}
       leftScrollProps={leftNudge.listProps}
       leftEndPadding={leftNudge.endPadding}
-      header={
-        <>
-          {door(null)}
-          {band ? (
-            <OfflineBand label={t('offline.showingLast')} />
-          ) : (
-            <QueueBand testID="shopping.queue" />
-          )}
-          <LicenseBand />
-        </>
-      }
+      header={door(null)}
       leftTestID="shopping.pane.pending"
       revealFocusedField
       rightTestID="shopping.pane.bought"
@@ -402,6 +398,16 @@ function ShoppingSplit({
       left={
         <View style={pane}>
           <AddItemField entry={entry} />
+          {/* Under the field, never above it: a band appearing never moves it under a finger
+              (bloque 14.2). */}
+          <View>
+            {band ? (
+              <OfflineBand label={t('offline.showingLast')} />
+            ) : (
+              <QueueBand testID="shopping.queue" />
+            )}
+            <LicenseBand />
+          </View>
           {panes.leftState || pending.length === 0 ? stateView : null}
           {panes.pendingSheet ? (
             <ShoppingSheet flush pending={pending} bought={NO_ITEMS} {...sheet} />

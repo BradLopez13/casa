@@ -1,6 +1,6 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
 import { QUEUED_META } from '@/data/query/queue';
-import { retryDelayOnNetwork, retryOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import type { AppError } from '@/data/supabase/errors';
 import type { TaskInput } from '@/domain/tasks/input';
@@ -61,11 +61,11 @@ export function buildCreateOptions(
     meta: QUEUED_META,
     networkMode: 'online',
     retry: retryOnNetwork,
-    retryDelay: retryDelayOnNetwork,
-    mutationFn: async ({ id, householdId, input, userId }) => {
+    retryDelay: QUEUED_RETRY_DELAY,
+    mutationFn: queuedFn(async ({ id, householdId, input, userId }: CreateVars) => {
       assertQueuedBy(userId);
       return createTask(id, householdId, input);
-    },
+    }),
     onMutate: async (vars) => {
       const key = tasksKey(vars.householdId);
       await queryClient.cancelQueries({ queryKey: key });

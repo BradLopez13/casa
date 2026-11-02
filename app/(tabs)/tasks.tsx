@@ -2,7 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
-import { dayHeading } from '@/domain/tasks/labels';
+import { addDays } from '@/domain/tasks/dates';
+import { dayHeading, dayInSentence } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
 import { allLineText } from '@/features/tasks/allLineText';
 import { chosenPill, daySections } from '@/features/tasks/dayFilter';
@@ -21,7 +22,6 @@ import { LicenseBand } from '@/features/households/LicenseBand';
 import { useSeveralHouseholds } from '@/features/households/queries';
 import { OfflineBand } from '@/ui/components/OfflineBand';
 import { QueueBand } from '@/features/offline/QueueBand';
-import { SymbolPlate } from '@/ui/components/SymbolPlate';
 import { FridgeRefresh } from '@/ui/components/FridgeRefresh';
 import { stripInDoor } from '@/ui/door';
 import { paneMode } from '@/ui/panes';
@@ -77,10 +77,19 @@ export default function TasksScreen() {
   const doorLine = useMemo(
     () =>
       allLineText(
-        allLine({ tasks: tasks ?? [], today, userId, filter: assigneeId, filterName }),
+        allLine({
+          // With a day pill chosen, that day only (bloque 14.5, P3).
+          tasks: day === null ? (tasks ?? []) : (tasks ?? []).filter((task) => task.dueOn === day),
+          today,
+          userId,
+          filter: assigneeId,
+          filterName,
+        }),
         several,
+        day === null ? undefined : dayInSentence(day, today),
+        day !== null && day !== today && day !== addDays(today, 1),
       ),
-    [tasks, today, userId, assigneeId, filterName, several],
+    [tasks, today, userId, assigneeId, filterName, several, day],
   );
 
   const sections = useMemo(
@@ -88,10 +97,13 @@ export default function TasksScreen() {
     [day, filtered, today],
   );
 
+  // The same quiet line as Hoy's and Compra's empty states, without a plate of its own
+  // (bloque 14.5, P3: three styles of empty state in a new household).
   const empty = (
-    <View style={{ gap: space(3), alignItems: 'flex-start' }}>
-      <SymbolPlate />
-      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.empty')}</Text>
+    <View style={{ gap: space(4), alignItems: 'flex-start' }}>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {t(several ? 'tasks.emptyThis' : 'tasks.empty')}
+      </Text>
       <HelpLink entry="write" testID="tasks.help" />
     </View>
   );
@@ -158,6 +170,12 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
           onSelect={screen.selectFilter}
         />
       </DoorHeader>
+    </>
+  );
+  // Under the quick add, never above it: a band appearing never moves the field under a finger
+  // (bloque 14.2).
+  const bands = (
+    <>
       {screen.showStaleBand ? (
         <OfflineBand label={t('offline.showingLast')} testID="tasks.offline" />
       ) : (
@@ -188,6 +206,7 @@ function TasksStack({ screen, strip, sections, day, chooseDay, empty, doorLine }
               {/* At large text, upright, the pills are in the door beside the magnets. */}
               {pillsInDoor ? null : pills}
             </View>
+            {bands}
           </>
         }
         // The catalogue waits at the end of Todas: a way to find more, not a layer before the

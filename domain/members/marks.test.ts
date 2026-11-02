@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAGNET_COLORS, firstInitial, memberMarks } from './marks';
+import { MAGNET_COLORS, firstInitial, houseInitials, memberMarks } from './marks';
 
 const member = (userId: string, joinedAt: string, displayName = userId) => ({
   userId,
@@ -82,5 +82,23 @@ describe('firstInitial', () => {
   it('returns an empty string for an empty name', () => {
     expect(firstInitial('')).toBe('');
     expect(firstInitial('   ')).toBe('');
+  });
+});
+
+describe('houseInitials (bloque 14.5)', () => {
+  it('one letter each, unless two households share it', () => {
+    expect(houseInitials(['Casa', 'Piso'])).toEqual(['C', 'P']);
+    expect(houseInitials(['Casa', 'Casa de prueba'])).toEqual(['Ca', 'CP']);
+    expect(houseInitials(['Casa de mamá', 'Casa de la playa'])).toEqual(['CM', 'CP']);
+    expect(houseInitials(['casa'])).toEqual(['C']);
+  });
+
+  // Revisión de 14.5: pairs that still came out the same.
+  it('never gives two households the same magnet', () => {
+    expect(houseInitials(['Casa', 'Casa 2'])).toEqual(['Ca', 'C2']);
+    expect(houseInitials(['Casa', 'Campo'])).toEqual(['Ca', 'Cm']);
+    expect(houseInitials(['Casa de prueba', 'Casa de playa'])).toEqual(['CP', 'Ca']);
+    const three = houseInitials(['Casa', 'Casa', 'Casa']);
+    expect(new Set(three).size).toBe(3);
   });
 });

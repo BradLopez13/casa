@@ -122,17 +122,22 @@ const TRANSIENT_SERVER_CODES: ReadonlySet<string> = new Set([
 /**
  * Whether a queued change that got this error should be tried again (bloque 13, P2-2): no answer
  * at all, a server that could not answer (502, 503, 504, 408, 429) or one of the codes that pass
- * on their own; a permission denied too, but only without a session, when supabase-js sent the
- * request with the anonymous key because the refresh failed. Anything else the server says is
- * final, a plain 500 included: an RPC broken by a migration would hold the queue for a week.
+ * on their own. Any 401 too (bloque 14.4, T1): a token that expired and could not be refreshed
+ * (a weak signal after a long time in the background) makes supabase-js send the change with the
+ * anonymous key, or PostgREST say the JWT expired (`PGRST301/302/303`), while someone is signed
+ * in; the queue asks for a refresh and tries again (`retryOnNetwork`). A change made by someone
+ * who is no longer signed in never goes (`assertQueuedBy`). A 403 is a real «no». Anything else the
+ * server says is final, a plain 500 included: an RPC broken by a migration would hold the queue
+ * for a week.
  */
 export function isTransient(error: AppError, signedIn: boolean): boolean {
   if (error.code === 'NETWORK') return true;
   const { status, serverCode } = error;
+  if (status === 401 && signedIn) return true;
   if (status !== undefined && TRANSIENT_STATUSES.has(status)) return true;
   if (serverCode === undefined) return false;
   if (TRANSIENT_SERVER_CODES.has(serverCode)) return true;
-  return serverCode === '42501' && !signedIn;
+  return serverCode === '42501' && !signedIn && status !== 403;
 }
 
 /**

@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { householdsKey, membershipKey } from '@/features/households/keys';
 import { forgetHouseholdData, saveCacheNow } from './persist';
+import { queuedFn } from './retry';
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
@@ -57,6 +58,25 @@ describe('forgetHouseholdData (bloque 12)', () => {
     expect(forgetHouseholdData(client, 'casa')).toBeNull();
     expect(client.getQueryData(membershipKey)).toBeNull();
     expect(queuedFor(client)).toEqual([]);
+  });
+});
+
+describe('a queued change of a household left (bloque 14.4, T6)', () => {
+  // TanStack goes on with the tries of a mutation taken out of its cache: it reached the server
+  // after leaving and said NOT_A_MEMBER with a notice.
+  it('never reaches the server once the household is forgotten', async () => {
+    const client = twoHouseholds();
+    const send = vi.fn(() => Promise.resolve());
+    const fn = queuedFn(send);
+    const mutation = client
+      .getMutationCache()
+      .findAll()
+      .find((m) => (m.state.variables as { householdId: string }).householdId === 'mama')!;
+    forgetHouseholdData(client, 'mama');
+    await expect(fn(mutation.state.variables as object, {})).rejects.toMatchObject({
+      code: 'NOT_AUTHENTICATED',
+    });
+    expect(send).not.toHaveBeenCalled();
   });
 });
 

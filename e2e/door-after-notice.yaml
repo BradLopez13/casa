@@ -1,0 +1,90 @@
+appId: com.bradlopez13.casa
+# Bloque 14.2 (P1-1 del 1 de noviembre): offline, tapping a note still in the queue showed
+# «Aún se está enviando…»; the list moved to uncover its last note, which the notice did not
+# speak of, and the door was left cut under the status bar. With nine notes the pill covers the
+# last one, so the old rule would move the list. The first tap on the quick add right after the
+# connection goes must focus the field (the offline band used to push it down under the finger).
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: fede@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# The connection goes, and the quick add is tapped at once
+- setAirplaneMode: enabled
+- tapOn:
+    id: today.quick-add
+- inputText: Nota 1
+- tapOn:
+    id: today.quick-add.submit
+# The keyboard covers the list. It is closed by tapping the door line, never with hideKeyboard:
+# on Android that is a plain Back, which leaves the app when the tap did not open a keyboard.
+- tapOn:
+    id: today.door-line
+    retryTapIfNoChange: false
+# The offline band can push the first note under the tab bar on the emulator.
+- scrollUntilVisible:
+    element: Nota 1
+    direction: DOWN
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
+- evalScript: ${output.n = 1}
+- repeat:
+    times: 8
+    commands:
+      - evalScript: ${output.n = output.n + 1}
+      - tapOn:
+          id: today.quick-add
+      - inputText: Nota ${output.n}
+      - tapOn:
+          id: today.quick-add.submit
+- tapOn:
+    id: today.door-line
+    retryTapIfNoChange: false
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: today.door-line
+    direction: UP
+
+# A note still in the queue says so, and the list does not move: the door stays in view
+- tapOn: Nota 1
+- extendedWaitUntil:
+    visible: Se enviará cuando vuelva la conexión.*
+    timeout: 5000
+- assertVisible:
+    id: today.door-line
+- extendedWaitUntil:
+    notVisible: Se enviará cuando vuelva la conexión.*
+    timeout: 15000
+- assertVisible:
+    id: today.door-line
+
+# Back online, the queue goes
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible:
+      id: 'task-note\..*\.pending'
+    timeout: 60000

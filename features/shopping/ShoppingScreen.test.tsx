@@ -11,6 +11,7 @@ import { membersKey, membershipKey } from '@/features/households/keys';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 import { listShoppingItems, shoppingHistory } from './api';
+import { deleteItemWithUndo, showItem } from './deferredDelete';
 import { shoppingHistoryKey, shoppingKey } from './queries';
 
 vi.mock('@/features/auth/SessionProvider', () => ({
@@ -137,6 +138,31 @@ describe('Compra', () => {
     // The bag's quantity carries the scale, as the list's does.
     const quantity = screen.getByTestId('shopping.item.Leche.bought-quantity');
     expect(quantity.querySelector('[data-icon="scale-outline"]')).not.toBeNull();
+  });
+
+  // Bloque 14.5 (P3): a product just deleted showed up in «¿Falta algo de lo de siempre?» while
+  // its «Deshacer» was still up.
+  it('does not offer back a product whose «Deshacer» is still up', async () => {
+    const bread: HistoryEntry = {
+      name: 'Pan',
+      normalizedName: 'pan',
+      uses: 4,
+      lastUsedAt: '2026-10-20T08:00:00.000Z',
+    };
+    renderShopping([item('Pan')], [bread]);
+    act(() => {
+      deleteItemWithUndo({
+        id: 'Pan',
+        remove: () => new Promise(() => undefined),
+        notify: () => undefined,
+        ms: 60_000,
+        schedule: () => () => undefined,
+        watchBackground: () => () => undefined,
+      });
+    });
+    expect(await screen.findByTestId('shopping.help')).toBeTruthy();
+    expect(screen.queryByTestId('shopping.usual.pan')).toBeNull();
+    act(() => showItem('Pan'));
   });
 
   it('keeps the note with its basket in a new household, with nothing usual yet', () => {

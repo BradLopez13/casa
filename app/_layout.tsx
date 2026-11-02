@@ -12,6 +12,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
 import { forgetEndedHousehold } from '@/data/query/persist';
 import { queryClient, reportQueryErrorsTo, watchAppAndConnection } from '@/data/query/setup';
+import { keepQueueWatched } from '@/features/offline/useQueue';
+import { refreshSessionWith } from '@/data/query/retry';
 import { toAppError } from '@/data/supabase/errors';
 import { signOut } from '@/features/auth/api';
 import { t } from '@/i18n';
@@ -35,7 +37,7 @@ import { onNotificationTapped } from '@/features/reminders/notifications';
 import { useReminders } from '@/features/reminders/useReminders';
 import { PersistedQueries } from '@/features/offline/PersistedQueries';
 import { actionIcons } from '@/ui/actionIcons';
-import { configProblem } from '@/data/supabase/client';
+import { configProblem, supabase } from '@/data/supabase/client';
 import {
   captureError,
   initTelemetry,
@@ -49,6 +51,10 @@ initTelemetry();
 void SplashScreen.preventAutoHideAsync();
 
 watchAppAndConnection();
+// The queue is watched from the start, whatever screen is up (bloque 14.1).
+keepQueueWatched(queryClient);
+// A queued change answered with a 401 asks for a fresh token before its next try (bloque 14.4).
+refreshSessionWith(() => void supabase.auth.refreshSession().catch(() => undefined));
 reportQueryErrorsTo((error, report) => captureError(error, report));
 
 function MembershipError({

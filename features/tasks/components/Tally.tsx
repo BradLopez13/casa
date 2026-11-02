@@ -14,10 +14,21 @@ import { useTheme } from '@/ui/theme';
  * Rounded 800 at the door's headline size, the number a point larger in the same colour, and
  * under it, muted, what is left for the household. The end of the day is the brand's figures.
  */
-export function TallyView({ line, onSeeAll }: { line: TodayLine; onSeeAll?: () => void }) {
+export function TallyView({
+  line,
+  onSeeAll,
+  names,
+}: {
+  line: TodayLine;
+  onSeeAll?: () => void;
+  /** The members' names, for the line that says whose the rest of the house is. */
+  names?: ReadonlyMap<string, string>;
+}) {
   const { colors, space } = useTheme();
   const type = useDoorType();
-  const { first, number, second } = todayLineText(line, useSeveralHouseholds());
+  const { first, number, second } = todayLineText(line, useSeveralHouseholds(), (id) =>
+    names?.get(id),
+  );
   const label = second === null ? first : `${first} ${second}`;
 
   const seeAll = line.kind === 'nothingMine' && line.unassigned > 0 && onSeeAll;

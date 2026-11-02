@@ -114,6 +114,21 @@ describe('isTransient', () => {
     expect(isTransient(answer(403, '42501'), true)).toBe(false);
   });
 
+  // Bloque 14.4 (T1): the token expired while the app was in the background and its refresh
+  // failed on a weak signal; supabase-js sent the change with the anonymous key, the server said
+  // 401 and the change was dropped as final although someone was signed in.
+  it('keeps any 401 while someone is signed in: the token is refreshed and the change goes', () => {
+    expect(isTransient(answer(401, '42501'), true)).toBe(true);
+    expect(isTransient(answer(401, 'PGRST301'), true)).toBe(true);
+    expect(isTransient(answer(401, 'PGRST302'), true)).toBe(true);
+    expect(isTransient(answer(401, 'PGRST303'), true)).toBe(true);
+    // Nobody signed in: an expired JWT is no one's to refresh (the anonymous 42501 stays, above).
+    expect(isTransient(answer(401, 'PGRST303'), false)).toBe(false);
+    // A 403 is a real «no», whoever asks.
+    expect(isTransient(answer(403, '42501'), true)).toBe(false);
+    expect(isTransient(answer(403, '42501'), false)).toBe(false);
+  });
+
   it('takes anything else the server says as final', () => {
     expect(isTransient(answer(400, 'P0001'), true)).toBe(false);
     // A function broken by a migration answers 500 every time.

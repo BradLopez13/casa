@@ -48,7 +48,7 @@ class FakeScroll {
   private onDrag: () => void = () => undefined;
   constructor(
     readonly viewport: number,
-    readonly door: number,
+    public door: number,
   ) {}
   listen(onScroll: (y: number) => void, onDrag: () => void) {
     this.onScroll = onScroll;
@@ -91,7 +91,13 @@ function List({ items, list, shown }: { items: number; list: FakeScroll; shown: 
   const nudge = useNoticeNudge((y) => list.ask(y));
   const content = list.door + items + listEndPadding(base, shown) + nudge.endPadding;
   const first = useRef(true);
+  const door = useRef(list.door);
   useLayoutEffect(() => {
+    if (door.current !== list.door) {
+      // The door changed height (a headline on two lines): the content above the list with it.
+      door.current = list.door;
+      nudge.onDoorLayout(layout(list.door));
+    }
     if (first.current) {
       first.current = false;
       nudge.listProps.onLayout(layout(list.viewport));
@@ -109,12 +115,12 @@ function List({ items, list, shown }: { items: number; list: FakeScroll; shown: 
   return null;
 }
 
-type Props = { items: number; list: FakeScroll; shown: boolean; leftList?: boolean };
+type Props = { items: number; list: FakeScroll; shown: boolean; still?: boolean };
 
-function Screen({ leftList = false, ...props }: Props) {
+function Screen({ still = false, ...props }: Props) {
   return (
     <NoticeShownContext.Provider value={props.shown}>
-      <NoticeNudgesContext.Provider value={props.shown && !leftList}>
+      <NoticeNudgesContext.Provider value={props.shown && !still}>
         <List {...props} />
       </NoticeNudgesContext.Provider>
     </NoticeShownContext.Provider>
@@ -166,8 +172,8 @@ describe.each(GEOMETRIES)('useNoticeNudge with $name and a short list', (geometr
     const { list, step } = setUp(long, geometry);
     act(() => list.drag(list.furthest));
     expect(list.doorWhole).toBe(true);
-    step({ items: long, shown: true, leftList: true });
-    step({ items: long - HEADER - NOTE, shown: true, leftList: true });
+    step({ items: long, shown: true, still: true });
+    step({ items: long - HEADER - NOTE, shown: true, still: true });
     expect(list.doorWhole).toBe(true);
     step({ items: long - HEADER - NOTE, shown: false });
     expect(list.doorWhole).toBe(true);
@@ -178,8 +184,8 @@ describe('useNoticeNudge with a notice whose note left the list (decisión 1, A)
   // Decisión 1 de Brad (27 de octubre, A): a note that left the list has nothing to uncover.
   it('does not move the list when the note completed went to the tray', () => {
     const { list, step } = setUp(OPEN_LIST);
-    step({ items: OPEN_LIST, shown: true, leftList: true });
-    step({ items: COMPLETED_LIST, shown: true, leftList: true });
+    step({ items: OPEN_LIST, shown: true, still: true });
+    step({ items: COMPLETED_LIST, shown: true, still: true });
     expect(list.offset).toBe(0);
     step({ items: COMPLETED_LIST, shown: false });
     expect(list.offset).toBe(0);
@@ -188,8 +194,8 @@ describe('useNoticeNudge with a notice whose note left the list (decisión 1, A)
 
   it('does not move the list when the note was deleted, nor when the notice goes', () => {
     const { list, step } = setUp(OPEN_LIST);
-    step({ items: OPEN_LIST, shown: true, leftList: true });
-    step({ items: OPEN_LIST - HEADER - NOTE, shown: true, leftList: true });
+    step({ items: OPEN_LIST, shown: true, still: true });
+    step({ items: OPEN_LIST - HEADER - NOTE, shown: true, still: true });
     step({ items: OPEN_LIST - HEADER - NOTE, shown: false });
     expect(list.asked).toBe(0);
   });
@@ -197,8 +203,8 @@ describe('useNoticeNudge with a notice whose note left the list (decisión 1, A)
   it('keeps a list someone scrolled where they left it when the note leaves it', () => {
     const { list, step } = setUp(OPEN_LIST);
     act(() => list.drag(60));
-    step({ items: OPEN_LIST, shown: true, leftList: true });
-    step({ items: COMPLETED_LIST, shown: true, leftList: true });
+    step({ items: OPEN_LIST, shown: true, still: true });
+    step({ items: COMPLETED_LIST, shown: true, still: true });
     step({ items: COMPLETED_LIST, shown: false });
     expect(list.offset).toBe(60);
     expect(list.asked).toBe(0);
@@ -210,8 +216,8 @@ describe('useNoticeNudge with a notice whose note left the list (decisión 1, A)
     step({ items: COMPLETED_LIST, shown: true });
     step({ items: OPEN_LIST, shown: true });
     const asked = list.asked;
-    step({ items: OPEN_LIST, shown: true, leftList: true });
-    step({ items: COMPLETED_LIST, shown: true, leftList: true });
+    step({ items: OPEN_LIST, shown: true, still: true });
+    step({ items: COMPLETED_LIST, shown: true, still: true });
     expect(list.asked).toBe(asked);
     expect(list.doorWhole).toBe(true);
   });
@@ -227,5 +233,60 @@ describe('useNoticeNudge and the person', () => {
     step({ items: long, shown: false });
     expect(list.asked).toBe(asked);
     expect(list.offset).toBe(450);
+  });
+});
+
+describe('useNoticeNudge with a notice that speaks of no note (bloque 14.2)', () => {
+  // «Aún se está enviando…», «Ahora estás en Casa.», an error: nothing to uncover.
+  it('does not move a short list, nor when the notice goes', () => {
+    const { list, step } = setUp(OPEN_LIST);
+    step({ items: OPEN_LIST, shown: true, still: true });
+    step({ items: OPEN_LIST, shown: false });
+    expect(list.asked).toBe(0);
+    expect(list.doorWhole).toBe(true);
+  });
+
+  it('leaves a list the person scrolled where it was', () => {
+    const long = OPEN_LIST + 8 * NOTE;
+    const { list, step } = setUp(long);
+    act(() => list.drag(520));
+    step({ items: long, shown: true, still: true });
+    step({ items: long, shown: false });
+    expect(list.offset).toBe(520);
+    expect(list.asked).toBe(0);
+  });
+
+  // P2-1: Tareas scrolled down to «Hechas», a note reopened goes up to its day.
+  it('does not move Tareas scrolled to «Hechas» when a note is reopened', () => {
+    const long = OPEN_LIST + 8 * NOTE;
+    const { list, step } = setUp(long);
+    act(() => list.drag(list.furthest));
+    const at = list.offset;
+    step({ items: long, shown: true, still: true });
+    step({ items: long - DONE_NOTE + NOTE, shown: true, still: true });
+    step({ items: long - DONE_NOTE + NOTE, shown: false });
+    expect(list.asked).toBe(0);
+    expect(list.offset).toBe(at);
+    expect(list.doorWhole).toBe(true);
+  });
+});
+
+describe('useNoticeNudge when the door changes height', () => {
+  // The headline goes to two lines (or back) under a list that had the door just out.
+  it('keeps the door out when it grows under a list that had it out', () => {
+    const long = OPEN_LIST + 8 * NOTE;
+    const { list, step } = setUp(long);
+    act(() => list.drag(list.door + DOOR_HANDLE_OVERHANG));
+    list.door += 38;
+    step({ items: long, shown: false });
+    expect(list.doorWhole).toBe(true);
+  });
+
+  it('leaves a door inside whole when it grows or shrinks', () => {
+    const { list, step } = setUp(OPEN_LIST);
+    list.door += 38;
+    step({ items: OPEN_LIST, shown: false });
+    expect(list.offset).toBe(0);
+    expect(list.asked).toBe(0);
   });
 });

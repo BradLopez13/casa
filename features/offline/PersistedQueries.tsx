@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { persister, saveCacheNow } from '@/data/query/persist';
-import { PERSIST_MAX_AGE_MS, queryClient } from '@/data/query/setup';
+import { PERSIST_MAX_AGE_MS, queryClient, reportQueueStorage } from '@/data/query/setup';
 import { useSession } from '@/features/auth/SessionProvider';
 import {
   addKey,
@@ -53,7 +53,7 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
         void saveCacheNow(queryClient, buster, persistDehydrateOptions);
       }
       if (state !== 'active' && userId && savingQueueOf(userId)) {
-        void saveQueue(queryClient, userId).catch(() => undefined);
+        void saveQueue(queryClient, userId).catch((e) => reportQueueStorage(e, 'save'));
       }
     });
     return () => subscription.remove();
@@ -66,7 +66,8 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
       if (!savingQueueOf(userId)) return;
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (savingQueueOf(userId)) void saveQueue(queryClient, userId).catch(() => undefined);
+        if (savingQueueOf(userId))
+          void saveQueue(queryClient, userId).catch((e) => reportQueueStorage(e, 'save'));
       }, QUEUE_SAVE_MS);
     });
     return () => {
@@ -81,8 +82,18 @@ export function PersistedQueries({ children }: { children: ReactNode }) {
     restored.current = buster;
     void (async () => {
       if (userId) {
-        await restoreQueue(queryClient, userId).catch(() => 0);
-        startSavingQueue(userId);
+        // A queue that cannot be read is kept aside and reported; a device that cannot be read at
+        // all is not saved over this time, or the first save would wipe it (bloque 14.4, T3).
+        const restored = await restoreQueue(queryClient, userId, () =>
+          reportQueueStorage(new Error('Queue damaged'), 'restore'),
+        ).then(
+          () => true,
+          (e: unknown) => {
+            reportQueueStorage(e, 'restore');
+            return false;
+          },
+        );
+        if (restored) startSavingQueue(userId);
       }
       await resumeQueues(queryClient);
     })();
