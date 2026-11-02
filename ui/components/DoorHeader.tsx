@@ -175,10 +175,11 @@ export function DoorHeader({
       : eyebrowDetail.long
     : null;
   // The household's name went to the next line: the « · » before it would hang at the end of the
-  // first one (bloque 14.5, P3), so it goes. Kept for this name, width and text size, or taking the
-  // dot away could bring the name back up and the dot with it, over and over.
+  // first one (bloque 14.5, P3), so it goes, and the name keeps a line of its own (or taking the
+  // dot away could bring it back up without its dot). Kept for this name, date, door, width and
+  // text size.
   const houseFit = household
-    ? `${household.name}@${detail ?? ''}@${windowWidth}@${fontScale}`
+    ? `${household.name}@${detail ?? ''}@${door.compact ? 'c' : 'f'}@${windowWidth}@${fontScale}`
     : null;
   const [houseDown, setHouseDown] = useState<string | null>(null);
   const houseWrapped = houseFit !== null && houseDown === houseFit;
@@ -249,6 +250,7 @@ export function DoorHeader({
             alignItems: 'center',
             gap: 2,
             opacity: pressedOpacity(pressed),
+            ...(houseWrapped ? { flexBasis: '100%' } : null),
           })}
         >
           {householdName}
@@ -260,7 +262,11 @@ export function DoorHeader({
           />
         </Pressable>
       ) : (
-        <View testID="door.household" onLayout={onHouseLayout}>
+        <View
+          testID="door.household"
+          onLayout={onHouseLayout}
+          style={houseWrapped ? { flexBasis: '100%' } : undefined}
+        >
           {householdName}
         </View>
       )}

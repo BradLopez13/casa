@@ -92,4 +92,13 @@ describe('houseInitials (bloque 14.5)', () => {
     expect(houseInitials(['Casa de mamá', 'Casa de la playa'])).toEqual(['CM', 'CP']);
     expect(houseInitials(['casa'])).toEqual(['C']);
   });
+
+  // Revisión de 14.5: pairs that still came out the same.
+  it('never gives two households the same magnet', () => {
+    expect(houseInitials(['Casa', 'Casa 2'])).toEqual(['Ca', 'C2']);
+    expect(houseInitials(['Casa', 'Campo'])).toEqual(['Ca', 'Cm']);
+    expect(houseInitials(['Casa de prueba', 'Casa de playa'])).toEqual(['CP', 'Ca']);
+    const three = houseInitials(['Casa', 'Casa', 'Casa']);
+    expect(new Set(three).size).toBe(3);
+  });
 });

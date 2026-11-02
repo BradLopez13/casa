@@ -17,13 +17,17 @@ export function HouseMagnet({
   size?: MagnetSize;
 }) {
   const { colors } = useTheme();
+  // Two letters (two households with the same initial) go smaller and never wrap (bloque 14.5).
+  const two = Array.from(initial).length > 1;
   const letter = (
     <Text
       maxFontSizeMultiplier={1.6}
+      numberOfLines={1}
+      adjustsFontSizeToFit={two}
       style={{
         color: active ? colors.onSelection : colors.ink,
         fontFamily: displayFont,
-        fontSize: magnetInitialSizes[size],
+        fontSize: Math.round(magnetInitialSizes[size] * (two ? 0.75 : 1)),
         lineHeight: Math.round(magnetInitialSizes[size] * 1.25),
         textAlign: 'center',
         ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),

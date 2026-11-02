@@ -36,7 +36,7 @@ type Props = {
    * Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member
    * colour. An empty magnet draws it inside its bare ring (a property with no value, fase 10f).
    */
-  glyph?: { node: ReactNode; fill: string };
+  glyph?: { node: ReactNode; fill: string; highlight?: boolean };
 };
 
 const RING = 2;
@@ -66,7 +66,7 @@ export function Magnet({
   const fill = look?.fill ?? (empty ? 'transparent' : (glyph?.fill ?? colors.magnet[color]));
   // Two stacked Views: Android allows one elevation per View, so ambient outside, contact inside.
   const depth = raised ? shadows.magnet : null;
-  const showHighlight = raised && !glyph;
+  const showHighlight = raised && (!glyph || glyph.highlight === true);
 
   const disc = (
     <View

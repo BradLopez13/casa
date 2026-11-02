@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { weekStrip } from '@/domain/tasks/strip';
+import { addDays } from '@/domain/tasks/dates';
 import { dayHeading, dayInSentence } from '@/domain/tasks/labels';
 import { allLine } from '@/domain/tasks/weekLine';
 import { allLineText } from '@/features/tasks/allLineText';
@@ -86,6 +87,7 @@ export default function TasksScreen() {
         }),
         several,
         day === null ? undefined : dayInSentence(day, today),
+        day !== null && day !== today && day !== addDays(today, 1),
       ),
     [tasks, today, userId, assigneeId, filterName, several, day],
   );
@@ -99,7 +101,9 @@ export default function TasksScreen() {
   // (bloque 14.5, P3: three styles of empty state in a new household).
   const empty = (
     <View style={{ gap: space(4), alignItems: 'flex-start' }}>
-      <Text style={{ color: colors.muted, fontSize: 16 }}>{t('tasks.empty')}</Text>
+      <Text style={{ color: colors.muted, fontSize: 16 }}>
+        {t(several ? 'tasks.emptyThis' : 'tasks.empty')}
+      </Text>
       <HelpLink entry="write" testID="tasks.help" />
     </View>
   );

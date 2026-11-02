@@ -6,12 +6,27 @@ import { t } from '@/i18n';
  * fase 10c; «Todo lo de esta casa» with several households, bloque 12), then how much is pending,
  * dated or not. Spanish plural: 1 is singular, the rest plural.
  */
-export function allLineText(line: WeekLine, several = false, day?: string): string {
+export function allLineText(
+  line: WeekLine,
+  several = false,
+  day?: string,
+  /** A day with its name («sábado 11»): «Lo del sábado 11», not «Lo de sábado 11». */
+  named = false,
+): string {
   // With a day pill chosen, the line says what it filters (bloque 14.5, P3): «Lo de hoy en la casa.»
   const purpose =
     day === undefined
       ? t(several ? 'tasks.allLine.purposeThis' : 'tasks.allLine.purpose')
-      : t(several ? 'tasks.allLine.purposeDayThis' : 'tasks.allLine.purposeDay', { day });
+      : t(
+          named
+            ? several
+              ? 'tasks.allLine.purposeDayNamedThis'
+              : 'tasks.allLine.purposeDayNamed'
+            : several
+              ? 'tasks.allLine.purposeDayThis'
+              : 'tasks.allLine.purposeDay',
+          { day },
+        );
   return `${purpose} ${count(line, day !== undefined)}`;
 }
 

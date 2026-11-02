@@ -71,25 +71,43 @@ export function memberMarks(members: readonly MarkInput[]): Map<string, MemberMa
   );
 }
 
+/** Words that say nothing about a household: «Casa de la playa» is told apart by «playa». */
+const FILLER = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'a', 'en', 'the', 'of', 'and']);
+
+/** Letters and digits of a word, one per grapheme-ish code point, without marks or modifiers. */
+const signs = (text: string) => Array.from(text).filter((c) => /[\p{L}\p{N}]/u.test(c));
+
 /**
  * The initials of a person's households for their magnets (bloque 14.5, P3): one letter, unless
  * two households share it, and then two, so «Casa» and «Casa de prueba» are «Ca» and «CP», not two
- * «C». The second letter is the start of the last word that says something (not «de», «la»…), or
- * the next letter of the name.
+ * «C». The second sign comes, in order, from the start of a later word that says something
+ * («prueba», «2»), then from the name's own next letters; a pair still taken gets a number.
  */
 export function houseInitials(names: readonly string[]): string[] {
   const first = names.map((name) => firstInitial(name).toLocaleUpperCase());
-  return names.map((name, i) => {
+  const taken = new Set<string>();
+  const out = names.map((_, i) => {
     const own = first[i] ?? '';
-    if (first.filter((other) => other === own).length < 2) return own;
-    const words = name.trim().split(/\s+/);
-    const last = words
-      .slice(1)
-      .reverse()
-      .find((word) => Array.from(word).length > 2);
-    const second = last
-      ? firstInitial(last).toLocaleUpperCase()
-      : (Array.from(words[0] ?? '')[1] ?? '').toLocaleLowerCase();
-    return own + second;
+    const shared = first.filter((other) => other === own).length > 1;
+    if (!shared) taken.add(own);
+    return shared ? null : own;
   });
+  names.forEach((name, i) => {
+    if (out[i] !== null) return;
+    const own = first[i] ?? '';
+    const words = name.trim().split(/\s+/);
+    const later = words
+      .slice(1)
+      .filter((word) => !FILLER.has(word.toLocaleLowerCase()))
+      .map((word) => (signs(word)[0] ?? '').toLocaleUpperCase());
+    const next = signs(words.join(''))
+      .slice(1)
+      .map((c) => c.toLocaleLowerCase());
+    const candidates = [...later, ...next].filter((c) => c !== '').map((c) => own + c);
+    let pick = candidates.find((c) => !taken.has(c));
+    for (let n = 2; pick === undefined; n++) if (!taken.has(own + n)) pick = own + n;
+    taken.add(pick);
+    out[i] = pick;
+  });
+  return out as string[];
 }

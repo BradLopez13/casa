@@ -179,6 +179,7 @@ export function TaskNote({
               ? undefined
               : {
                   fill: colors.muted,
+                  highlight: true,
                   node: (
                     <View testID={`task-note.${task.id}.nobody`}>
                       <Ionicons

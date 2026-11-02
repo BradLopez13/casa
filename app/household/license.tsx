@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@/data/supabase/errors';
-import { firstInitial } from '@/domain/members/marks';
+import { houseInitials } from '@/domain/members/marks';
 import { useSession } from '@/features/auth/SessionProvider';
 import { startHouseholdCheckout, type HouseholdLicense } from '@/features/households/api';
 import {
@@ -12,7 +12,12 @@ import {
   licensePrice,
   purchaseLicense,
 } from '@/features/households/billing';
-import { useHouseholdLicense, useMembers, useMembership } from '@/features/households/queries';
+import {
+  useHouseholdLicense,
+  useHouseholds,
+  useMembers,
+  useMembership,
+} from '@/features/households/queries';
 import { t } from '@/i18n';
 import { Button } from '@/ui/components/Button';
 import { LoadError } from '@/ui/components/LoadError';
@@ -46,6 +51,14 @@ export default function LicenseScreen() {
   const notify = useNotice();
   const { userId } = useSession();
   const membership = useMembership().data;
+  // The same magnet as in «Tus casas»: two letters when another household shares its initial.
+  const households = useHouseholds().data ?? [];
+  const names = households.map((h) => h.householdName);
+  const initial = membership
+    ? (houseInitials(names.includes(membership.householdName) ? names : [membership.householdName])[
+        Math.max(0, names.indexOf(membership.householdName))
+      ] ?? '')
+    : '';
   const householdId = membership?.householdId;
   const license = useHouseholdLicense(householdId);
   const members = useMembers(householdId).data ?? [];
@@ -122,11 +135,7 @@ export default function LicenseScreen() {
             onRetry={() => void license.refetch()}
           />
         ) : membership && shown ? (
-          <PinnedNote
-            side="left"
-            testID="license.note"
-            pin={{ house: { initial: firstInitial(membership.householdName), active: true } }}
-          >
+          <PinnedNote side="left" testID="license.note" pin={{ house: { initial, active: true } }}>
             <View>
               <Text style={{ color: colors.muted, fontSize: 15 }}>{t('license.of')}</Text>
               <Text style={{ color: colors.ink, fontFamily: displayFontBold, fontSize: 17 }}>

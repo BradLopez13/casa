@@ -37,7 +37,10 @@ function Choice({ name, children }: { name: string; children: ReactNode }) {
 
 const NOBODY_SLOP = Math.max(0, Math.ceil((MIN_TOUCH - magnetSizes.md) / 2));
 
-/** The «Sin asignar» choice: a plain circle with a person outline, not the empty magnet of a task. */
+/**
+ * The «Sin asignar» choice: the same magnet an unassigned task carries on its note, filled in grey
+ * with a figure (bloque 14.5, decisión 4), so what is chosen is what the note shows.
+ */
 function NobodyChoice({ selected, onPress }: { selected: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return (
@@ -65,13 +68,17 @@ function NobodyChoice({ selected, onPress }: { selected: boolean; onPress: () =>
             width: magnetSizes.md,
             height: magnetSizes.md,
             borderRadius: magnetSizes.md / 2,
-            borderWidth: 1.5,
-            borderColor: colors.outline,
+            backgroundColor: colors.muted,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="person-outline" size={20} color={colors.muted} accessible={false} />
+          <Ionicons
+            name="person"
+            size={Math.round(magnetSizes.md * 0.55)}
+            color={colors.page}
+            accessible={false}
+          />
         </View>
       </View>
     </Pressable>
