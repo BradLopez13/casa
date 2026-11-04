@@ -7,6 +7,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { isParked, parkedSnapshot, subscribeParked , offlineFirstQueryOptions } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
@@ -21,7 +22,6 @@ import {
   type ToggleVars,
 } from './toggle';
 
-import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
 import { pendingTasks, withQueued } from './pending';
 import { useQueueSnapshot } from '@/features/offline/useQueue';
@@ -149,11 +149,21 @@ export function useToggleTask(
   const options = buildToggleOptions(queryClient, notify);
   // A toggle waiting for the connection is done on screen: the note can be tapped back (an undo
   // queues behind it), so only one actually on its way, and a provisional note, is busy.
-  const sending = useMutationState({
-    filters: { mutationKey: TOGGLE_KEY, status: 'pending' },
-    select: (m) => (m.state.isPaused ? null : (m.state.variables as ToggleVars).id),
-  });
-  const isBusy = (id: string) => isProvisional({ id }) || sending.includes(id);
+  // Re-render when the queue changes and when a toggle parks to wait (revisión 15.1); the
+  // mutations themselves are read now, so their variables are the ones `isParked` knows.
+  useMutationState({ filters: { mutationKey: TOGGLE_KEY, status: 'pending' } });
+  useSyncExternalStore(subscribeParked, parkedSnapshot, parkedSnapshot);
+  const isBusy = (id: string) =>
+    isProvisional({ id }) ||
+    queryClient
+      .getMutationCache()
+      .findAll({ mutationKey: TOGGLE_KEY, status: 'pending' })
+      .some(
+        (m) =>
+          !m.state.isPaused &&
+          !isParked(m.state.variables) &&
+          (m.state.variables as ToggleVars | undefined)?.id === id,
+      );
   // True when the toggle went (or waits for the connection, as the shopping «comprado» does).
   const toggle = ({ id, done }: ToggleRequest): boolean => {
     if (householdId === undefined || userId === null || isProvisional({ id })) return false;

@@ -150,10 +150,15 @@ export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: obj
         count += 1;
         const wait = retryDelayOnNetwork(count - 1);
         if (queueLogOn) queueLog(`try ${count} failed ${appError.code}: again in ${wait} ms`);
-        await waitBetweenTries(wait);
-        if (letGo()) throw new AppError('QUEUE_DROPPED');
-        await untilOnline();
-        if (letGo()) throw new AppError('QUEUE_DROPPED');
+        park(vars, true);
+        try {
+          await waitBetweenTries(wait);
+          if (letGo()) throw new AppError('QUEUE_DROPPED');
+          await untilOnline();
+          if (letGo()) throw new AppError('QUEUE_DROPPED');
+        } finally {
+          park(vars, false);
+        }
       }
     }
   };
@@ -172,6 +177,38 @@ export function abandonQueued(mutation: { state: { variables?: unknown } }): voi
   const vars = mutation.state.variables;
   if (typeof vars === 'object' && vars !== null) abandoned.add(vars);
 }
+
+/** The variables of the queued changes waiting inside `queuedFn` (between tries or for the connection). */
+const parked = new Set<object>();
+const parkedListeners = new Set<() => void>();
+let parkedVersion = 0;
+
+function park(vars: unknown, on: boolean): void {
+  if (typeof vars !== 'object' || vars === null) return;
+  if (on) parked.add(vars);
+  else parked.delete(vars);
+  parkedVersion += 1;
+  for (const listener of [...parkedListeners]) listener();
+}
+
+/**
+ * Whether a queued change waits inside `queuedFn`, between two tries or for the connection: like
+ * a change TanStack paused, it is not on its way (revisión 15.1: with the tries out of TanStack,
+ * `isPaused` stays false while a change waits for the connection after a failed try, so a toggle
+ * kept its note busy offline and a delete in Compra waited 10 s for it).
+ */
+export function isParked(vars: unknown): boolean {
+  return typeof vars === 'object' && vars !== null && parked.has(vars);
+}
+
+/** Called whenever a queued change parks or goes on (for `useSyncExternalStore`). */
+export function subscribeParked(listener: () => void): () => void {
+  parkedListeners.add(listener);
+  return () => parkedListeners.delete(listener);
+}
+
+/** Changes on every park and unpark: the snapshot for `useSyncExternalStore`. */
+export const parkedSnapshot = (): number => parkedVersion;
 
 /** The retry TanStack keeps for the queued changes: none, the tries are in `queuedFn`. */
 export const QUEUED_RETRY = false;
@@ -196,8 +233,16 @@ function waitBetweenTries(ms: number): Promise<void> {
       waits.delete(wake);
       resolve();
     };
-    if (waiter === undefined) timer = setTimeout(wake, ms);
-    else void waiter(ms).then(wake, wake);
+    // A waiter that fails (the native module gone with a reload) falls back to the timer: the
+    // change waits, it is never dropped for it (revisión 15.1).
+    let native: Promise<void> | undefined;
+    try {
+      native = waiter?.(ms);
+    } catch {
+      native = undefined;
+    }
+    if (native === undefined) timer = setTimeout(wake, ms);
+    else void native.then(wake, () => (timer = setTimeout(wake, ms)));
     waits.add(wake);
   });
 }

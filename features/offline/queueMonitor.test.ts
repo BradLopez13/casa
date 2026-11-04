@@ -274,6 +274,11 @@ describe('queue monitor', () => {
     focusManager.setFocused(true);
     await vi.advanceTimersByTimeAsync(100);
     expect(monitor.getSnapshot().band).toBe('sending');
+    // The 30 s start on coming back to the front.
+    await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS - 2000);
+    expect(monitor.getSnapshot().band).toBe('sending');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(monitor.getSnapshot().band).toBe('stuck');
   });
 
   it('keeps each household to its own queue', async () => {

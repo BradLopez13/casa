@@ -12,6 +12,7 @@ import {
   retryDelayOnNetwork,
   retryOnNetwork,
   refreshSessionWith,
+  isParked,
   retryQueuedNow,
   setQueueWaiter,
 } from './retry';
@@ -363,6 +364,76 @@ describe('a queued change tries again on its own (bloque 15.1, revisión en el .
     abandonQueued({ state: { variables: vars } });
     onlineManager.setOnline(true);
     await vi.advanceTimersByTimeAsync(1000);
+    expect(await run).toMatchObject({ code: 'QUEUE_DROPPED' });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Revisión de 15.1: with the tries inside queuedFn, TanStack no longer pauses a change that waits
+// for the connection, so «paused» stopped meaning «not on its way»: a toggle waiting offline kept
+// its note busy (no undo) and a delete in Compra waited 10 s for it.
+describe('a queued change waiting inside its function is parked (revisión 15.1)', () => {
+  afterEach(() => {
+    setQueueWaiter(undefined);
+    onlineManager.setOnline(true);
+    vi.useRealTimers();
+  });
+
+  it('while it waits between tries or for the connection, and not once it tries again', async () => {
+    vi.useFakeTimers();
+    markOnline(-RECONNECT_WINDOW_MS);
+    let calls = 0;
+    const fn = queuedFn((_vars: object) => {
+      calls++;
+      return calls === 1 ? Promise.reject(new AppError('NETWORK')) : Promise.resolve('ok');
+    });
+    const vars = {};
+    const run = fn(vars, {});
+    expect(isParked(vars)).toBe(false);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(isParked(vars)).toBe(true);
+    onlineManager.setOnline(false);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(isParked(vars)).toBe(true);
+    onlineManager.setOnline(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await run).toBe('ok');
+    expect(isParked(vars)).toBe(false);
+  });
+
+  it('a waiter that fails falls back to a timer instead of dropping the change', async () => {
+    vi.useFakeTimers();
+    markOnline(-RECONNECT_WINDOW_MS);
+    setQueueWaiter(() => {
+      throw new Error('module gone');
+    });
+    let calls = 0;
+    const fn = queuedFn((_vars: object) => {
+      calls++;
+      return calls === 1 ? Promise.reject(new AppError('NETWORK')) : Promise.resolve('ok');
+    });
+    const run = fn({}, {});
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(await run).toBe('ok');
+  });
+
+  it('a change let go of while it waits for the connection does not go when it comes back', async () => {
+    vi.useFakeTimers();
+    markOnline(-RECONNECT_WINDOW_MS);
+    const send = vi.fn(() => Promise.reject(new AppError('NETWORK')));
+    const fn = queuedFn(send);
+    const vars = { id: 'd' };
+    const run = fn(vars, {}).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    onlineManager.setOnline(false);
+    // The wait between tries ends offline: now it waits for the connection.
+    await vi.advanceTimersByTimeAsync(2000);
+    abandonQueued({ state: { variables: vars } });
+    onlineManager.setOnline(true);
+    await vi.advanceTimersByTimeAsync(0);
     expect(await run).toMatchObject({ code: 'QUEUE_DROPPED' });
     expect(send).toHaveBeenCalledTimes(1);
   });
