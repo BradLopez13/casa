@@ -26,7 +26,8 @@ function fill(env: Record<string, string>) {
   };
 }
 
-describe('site-store-links.sh', () => {
+// Each case runs the script in a shell: under a loaded machine it took over 5 s once (bloque 15).
+describe('site-store-links.sh', { timeout: 20_000 }, () => {
   it('writes both links as they are, `&` and `/` included, on both pages', () => {
     const play = 'https://play.google.com/store/apps/details?id=com.bradlopez13.casa&hl=es';
     const { landing, invite } = fill({ APP_STORE_ID: '6451234567', PLAY_URL: play });
