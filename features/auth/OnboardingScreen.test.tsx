@@ -217,7 +217,9 @@ describe('Crear tu hogar: las estancias', () => {
     await toRoomsStep();
     const proceed = screen.getByRole('button', { name: t('onboarding.roomsContinue') });
     fireEvent.click(proceed);
-    expect((await screen.findByRole('alert')).textContent).toBe(t('onboarding.errors.NETWORK'));
+    // Under a full run the alert can take over a second (bloque 15: it timed out once at 1112 ms).
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
+    expect(alert.textContent).toBe(t('onboarding.errors.NETWORK'));
     expect(busy(proceed)).toBe(false);
   });
 });
