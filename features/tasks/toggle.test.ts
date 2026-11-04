@@ -161,7 +161,11 @@ describe('buildToggleOptions', () => {
       const { queryClient, notify, options } = setup();
       queryClient.setQueryData(key, [doneA]);
       vi.mocked(reopenTask).mockRejectedValue(new AppError('NETWORK'));
-      await new MutationObserver(queryClient, { ...options, retry: false })
+      // The queue gave up (a week of tries, `queuedFn`): the error reaches TanStack as final.
+      await new MutationObserver(queryClient, {
+        ...options,
+        mutationFn: () => Promise.reject(new AppError('NETWORK')),
+      })
         .mutate(vars({ id: 'a', done: false }))
         .catch(() => undefined);
       expect(notify).toHaveBeenCalledWith(

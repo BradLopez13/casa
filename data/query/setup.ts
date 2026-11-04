@@ -9,8 +9,9 @@ import {
 import { AppState, Platform } from 'react-native';
 import { appQueryDefaults } from './defaults';
 import { reportQueryError as report } from './report';
-import { markOnline } from './retry';
+import { markOnline, setQueueWaiter } from './retry';
 import { queueLog, queueLogOn, startQueueLog } from './queueLog';
+import { backgroundWait } from '@/modules/background-wait';
 
 export { reportQueryErrorsTo, reportQueueStorage } from './report';
 
@@ -39,6 +40,9 @@ export function watchAppAndConnection(): void {
     if (online) markOnline();
   });
   if (queueLogOn) startQueueLog(queryClient);
+  // Behind, Android fires no JS timer: the queue waits between two tries on a native one
+  // (bloque 15.1, `modules/background-wait`).
+  if (backgroundWait !== null) setQueueWaiter(backgroundWait);
   if (Platform.OS === 'web') return;
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state) => {

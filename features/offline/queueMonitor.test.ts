@@ -6,7 +6,7 @@ import {
   type MutationOptions,
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import {
   createQueueMonitor,
@@ -37,8 +37,7 @@ describe('queue monitor', () => {
   const optionsFor = (own: Server): MutationOptions<void, AppError, Vars> => ({
     mutationKey: ['tasks', 'create'],
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id }: Vars) => {
       if (own.hang) await new Promise(() => undefined);
       await new Promise((resolve) => setTimeout(resolve, own.latency));

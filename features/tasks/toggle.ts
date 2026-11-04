@@ -6,7 +6,7 @@ import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { QUEUED_META, touches } from '@/data/query/queue';
-import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
 import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
@@ -106,8 +106,7 @@ export function buildToggleOptions(
     scope: TASKS_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     // The moment and the day of the tap: the note keeps its time when it arrives, and the server
     // moves a recurring task on from the day it was marked (bloque 11).
     mutationFn: queuedFn(async ({ id, done, at, userId }: ToggleVars) => {

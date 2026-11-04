@@ -8,7 +8,7 @@ import {
   type MutationOptions,
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import { createQueueMonitor } from './queueMonitor';
 
@@ -41,8 +41,7 @@ function setup(onMutateMs: () => number) {
   const options: MutationOptions<void, AppError, Vars> = {
     mutationKey: ['tasks', 'create'],
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(server.fn),
     // `cancelQueries` and the optimistic note: the create awaits before its request starts.
     onMutate: async () => {

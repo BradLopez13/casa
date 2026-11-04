@@ -96,6 +96,8 @@ export function createQueueMonitor(
     const t = now();
     const online = onlineManager.isOnline();
     const waiting = new Set<string>();
+    /** When the earliest waiting change started trying: the 30 s count from there. */
+    let startedAt = t;
     for (const m of queued()) {
       const { isPaused, failureCount, submittedAt } = m.state;
       if (
@@ -105,6 +107,7 @@ export function createQueueMonitor(
         (submittedAt > 0 && t - submittedAt >= QUEUE_GRACE_MS)
       ) {
         waited.add(m);
+        if (submittedAt > 0) startedAt = Math.min(startedAt, submittedAt);
         const id = idOf(m);
         if (typeof id === 'string') waiting.add(id);
       }
@@ -117,7 +120,7 @@ export function createQueueMonitor(
       since = null;
       band = 'sending';
     } else if (online && waiting.size > 0) {
-      since ??= t;
+      since ??= startedAt;
       band = t - since >= QUEUE_STUCK_MS ? 'stuck' : 'sending';
     } else {
       since = null;

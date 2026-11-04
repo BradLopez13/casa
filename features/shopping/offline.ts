@@ -4,9 +4,8 @@ import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
 import {
   offlineFirstQueryOptions,
   abandonQueued,
-  QUEUED_RETRY_DELAY,
+  QUEUED_RETRY,
   queuedFn,
-  retryOnNetwork,
 } from '@/data/query/retry';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
@@ -262,8 +261,7 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, name, quantity, userId }: AddVars) => {
       assertQueuedBy(userId);
       return addShoppingItem(id, householdId, name, quantity);
@@ -311,8 +309,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, bought: value, userId }: BoughtVars) => {
       assertQueuedBy(userId);
       return setItemBought(resolve(householdId, id), value);
@@ -361,8 +358,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, quantity: value, userId }: QuantityVars) => {
       assertQueuedBy(userId);
       const target = resolve(householdId, id);
