@@ -82,6 +82,7 @@ function renderToday(tasks?: TaskItem[]) {
       </NoticeProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 /** The window at `width` × `height`: react-native-web measures the document element. */
@@ -228,6 +229,38 @@ describe('Hoy', () => {
     expect(await screen.findByText('Regar')).toBeTruthy();
     await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
     expect(createTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('a quick add that fails puts what was typed back in the field', async () => {
+    let fail: (error: unknown) => void = () => undefined;
+    vi.mocked(createTask).mockReturnValue(new Promise((_, reject) => (fail = reject)));
+    renderToday([]);
+    const field = screen.getByTestId<HTMLInputElement>('today.quick-add');
+    fireEvent.change(field, { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('today.quick-add.submit'));
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(field.value).toBe('');
+    act(() => fail(new AppError('UNKNOWN')));
+    await vi.waitFor(() => expect(field.value).toBe('Regar'));
+  });
+
+  // Prueba del 4 de noviembre: a quick add made offline in a household deleted meanwhile was let
+  // go of with the household (QUEUE_DROPPED), and its text came back into the quick add of the
+  // household the app had just moved to, ready to be added to the wrong one.
+  it('does not put it back when the change was let go of, nor when the household is gone', async () => {
+    let fail: (error: unknown) => void = () => undefined;
+    vi.mocked(createTask).mockReturnValue(new Promise((_, reject) => (fail = reject)));
+    renderToday([]);
+    const field = screen.getByTestId<HTMLInputElement>('today.quick-add');
+    fireEvent.change(field, { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('today.quick-add.submit'));
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(screen.getByText('Regar')).toBeTruthy();
+    await act(async () => {
+      fail(new AppError('QUEUE_DROPPED'));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(field.value).toBe('');
   });
 
   // Bloque 11 (11.6): with the field empty the «+» opens the full form, for today and for you.

@@ -58,6 +58,18 @@ describe('creating a task, queued like a shopping add (fase 10e)', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  // Prueba del 4 de noviembre: the household was deleted while this change waited offline; it
+  // said «Ya no estás en esta casa.» three seconds before the notice that names both households
+  // and the lost changes.
+  it('takes the note out without a notice of its own when the person is no longer in the household', async () => {
+    const { queryClient, run, notify } = setup();
+    queryClient.setQueryData<TaskItem[]>(key, []);
+    vi.mocked(createTask).mockImplementation(() => Promise.reject(new AppError('NOT_A_MEMBER')));
+    await run().catch(() => undefined);
+    expect(queryClient.getQueryData<TaskItem[]>(key)).toEqual([]);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('a final error takes the note out and says so', async () => {
     const { queryClient, run, notify } = setup();
     queryClient.setQueryData<TaskItem[]>(key, []);

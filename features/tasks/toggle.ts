@@ -7,7 +7,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { QUEUED_META, touches } from '@/data/query/queue';
 import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
-import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { assertQueuedBy, droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
 import { markFresh } from './freshIds';
@@ -146,7 +146,7 @@ export function buildToggleOptions(
           return successor ? [...restored, successor] : restored;
         });
       }
-      notify(explainToggleError(error, done));
+      if (!householdGone(error)) notify(explainToggleError(error, done));
       await invalidateIfStale(queryClient, error);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in

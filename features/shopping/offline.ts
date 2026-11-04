@@ -1,6 +1,6 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { QUEUED_META, touches } from '@/data/query/queue';
-import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { assertQueuedBy, droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import {
   offlineFirstQueryOptions,
   abandonQueued,
@@ -248,6 +248,7 @@ export function buildShoppingMutationDefaults(
   };
   // A household without its licence says so (bloque 12); anything else names what was not saved.
   const syncFailed = (name: string, error: unknown) =>
+    householdGone(error) ||
     notify(
       toAppError(error).code === 'LICENSE_REQUIRED'
         ? t('errors.LICENSE_REQUIRED')
@@ -391,7 +392,7 @@ export function buildShoppingMutationDefaults(
           current ? applyQuantity(current, resolve(householdId, id), previous.quantity) : current,
         );
       }
-      notify(shoppingErrorMessage(error));
+      if (!householdGone(error)) notify(shoppingErrorMessage(error));
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).

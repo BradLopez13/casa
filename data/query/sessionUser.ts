@@ -49,3 +49,13 @@ export function assertQueuedBy(userId: string | null | undefined): void {
 export function droppedOnSignOut(error: unknown): boolean {
   return toAppError(error).code === 'QUEUE_DROPPED';
 }
+
+/**
+ * The server refused a queued change because the person is no longer in its household (deleted,
+ * removed, left from another phone): the change is rolled back, and the household's own notice
+ * says what happened and how many changes were lost (`useForgetEndedHousehold`), so the change
+ * says nothing of its own (prueba del 4 de noviembre: «Ya no estás en esta casa.» came first).
+ */
+export function householdGone(error: unknown): boolean {
+  return toAppError(error).code === 'NOT_A_MEMBER';
+}

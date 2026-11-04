@@ -240,6 +240,20 @@ describe('queue monitor', () => {
   });
 
   // Revisión de 14.1: the 30 s ran while the app was behind, where nothing is tried.
+  // Prueba del 4 de noviembre: a change made offline two minutes before said «No se pudo enviar»
+  // as soon as the connection came back (the 30 s counted from the tap, not from the connection).
+  it('does not say «No se pudo enviar» at once for a change made offline a while ago', async () => {
+    onlineManager.setOnline(false);
+    server.reachable = false;
+    create('a');
+    await vi.advanceTimersByTimeAsync(120_000);
+    onlineManager.setOnline(true);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(monitor.getSnapshot().band).toBe('sending');
+    await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS);
+    expect(monitor.getSnapshot().band).toBe('stuck');
+  });
+
   it('does not say «No se pudo enviar» on coming back after a while behind', async () => {
     server.reachable = false;
     stop();

@@ -1,7 +1,7 @@
 import type { MutationOptions, QueryClient } from '@tanstack/react-query';
 import { QUEUED_META } from '@/data/query/queue';
 import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
-import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { assertQueuedBy, droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import type { AppError } from '@/data/supabase/errors';
 import type { TaskInput } from '@/domain/tasks/input';
 import type { TaskItem } from '@/domain/tasks/views';
@@ -90,7 +90,7 @@ export function buildCreateOptions(
       queryClient.setQueryData<TaskItem[]>(tasksKey(householdId), (current) =>
         current?.filter((task) => task.id !== id),
       );
-      notify(taskErrorMessage(error));
+      if (!householdGone(error)) notify(taskErrorMessage(error));
       await invalidateIfStale(queryClient, error);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in

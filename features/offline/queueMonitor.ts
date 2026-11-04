@@ -80,6 +80,11 @@ export function createQueueMonitor(
   const heads = new Map<string, { id: number; at: number }>();
   /** Since when, with a connection, something waits and nothing went out. */
   let since: number | null = null;
+  /** When the connection last came back and the app last came to the front: the 30 s start there. */
+  let onlineAt = now();
+  let activeAt = now();
+  let wasOnlineC = onlineManager.isOnline();
+  let wasActiveC = isActive();
   /** Whether the monitor holds TanStack's focus for the queue while the app is behind. */
   let holding = false;
   let wasActive = isActive();
@@ -95,6 +100,11 @@ export function createQueueMonitor(
   const compute = () => {
     const t = now();
     const online = onlineManager.isOnline();
+    const active = isActive();
+    if (online && !wasOnlineC) onlineAt = t;
+    if (active && !wasActiveC) activeAt = t;
+    wasOnlineC = online;
+    wasActiveC = active;
     const waiting = new Set<string>();
     /** When the earliest waiting change started trying: the 30 s count from there. */
     let startedAt = t;
@@ -120,7 +130,7 @@ export function createQueueMonitor(
       since = null;
       band = 'sending';
     } else if (online && waiting.size > 0) {
-      since ??= startedAt;
+      since ??= Math.max(startedAt, onlineAt, activeAt);
       band = t - since >= QUEUE_STUCK_MS ? 'stuck' : 'sending';
     } else {
       since = null;

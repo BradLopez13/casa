@@ -1,3 +1,4 @@
+import { droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
@@ -194,7 +195,11 @@ export function QuickAdd({
     create.mutate(
       { id, householdId, userId, input: task },
       {
-        onError: () => {
+        onError: (error) => {
+          // Let go of with its household, or refused because the person is no longer in it: it
+          // belongs nowhere now, and the field may already be another household's (prueba del 4
+          // de noviembre). The household's own notice says what was lost.
+          if (droppedOnSignOut(error) || householdGone(error)) return;
           // What was typed comes back, with its dismissed chips, only if nothing was typed since.
           if (latest.current === '') {
             latest.current = typed;
