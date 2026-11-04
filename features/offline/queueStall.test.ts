@@ -8,7 +8,7 @@ import {
   type MutationOptions,
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
+import { QUEUED_RETRY, queuedFn, setQueueWaiter } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import { createQueueMonitor } from './queueMonitor';
 
@@ -220,6 +220,59 @@ describe('the queue with the app behind for good', () => {
     vi.useRealTimers();
     onlineManager.setOnline(true);
     focusManager.setFocused(undefined);
+  });
+
+  // Ciclo 17 en el .51 (4 de noviembre): behind, Android delivers the network's events and the
+  // answers but fires no JS timer, and the first try failed as the connection came back (the
+  // handover from mobile data to wifi). The retry waited on a frozen timer until the app was
+  // opened. Here no timer is ever advanced: the queue empties only through the waiter the app
+  // sets (native on Android) and the events.
+  it('empties behind although no JS timer fires, when the first try fails', async () => {
+    const released: (() => void)[] = [];
+    setQueueWaiter(() => new Promise<void>((resolve) => released.push(resolve)));
+    try {
+      const { server, create, pending, created, stop } = setup(() => 0);
+      // Latency 0: the fake server answers in a microtask, like an answer delivered by native.
+      server.state.latency = 0;
+      server.state.reachable = false;
+      onlineManager.setOnline(false);
+      create();
+      await vi.advanceTimersByTimeAsync(0);
+      focusManager.setFocused(false);
+      // The connection comes back; the first try fails (the handover), the next one gets through.
+      onlineManager.setOnline(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(server.state.sent).toEqual([]);
+      expect(released).toHaveLength(1);
+      server.state.reachable = true;
+      released[0]?.();
+      await vi.advanceTimersByTimeAsync(0);
+      const left = pending().map((m) => (m.state.variables as Vars).id);
+      stop();
+      expect({ left, sent: server.state.sent }).toEqual({ left: [], sent: created() });
+    } finally {
+      setQueueWaiter(undefined);
+    }
+  });
+
+  it('with a JS timer instead, the same change waits for the app to be opened', async () => {
+    const { server, create, pending, stop } = setup(() => 0);
+    server.state.latency = 0;
+    server.state.reachable = false;
+    onlineManager.setOnline(false);
+    create();
+    await vi.advanceTimersByTimeAsync(0);
+    focusManager.setFocused(false);
+    onlineManager.setOnline(true);
+    await vi.advanceTimersByTimeAsync(0);
+    server.state.reachable = true;
+    // Behind, the second of the retry never comes: the change is still there.
+    expect(pending().map((m) => (m.state.variables as Vars).id)).toEqual(['t1']);
+    // Opened: the frozen timers fire and it goes (the retry wait, then the server's answer).
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(10);
+    stop();
+    expect({ left: pending().length, sent: server.state.sent }).toEqual({ left: 0, sent: ['t1'] });
   });
 
   it('empties with the connection back, never in front again', async () => {
