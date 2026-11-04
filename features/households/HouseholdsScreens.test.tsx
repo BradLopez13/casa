@@ -245,7 +245,43 @@ describe('LicenseBand (bloque 12)', () => {
 // Bloque 15.6: the stores ask for «Restaurar compras» and «Gestionar suscripción»; the pay button
 // says the level.
 describe('the licence screen and the stores (bloque 15.6)', () => {
-  it('always offers to restore purchases and to manage the subscription in the store', async () => {
+  // With every variable of the block empty the app looks as before it (hoja de ruta, parte 2):
+  // a free app has nothing to restore, and two buttons that only say «not yet» are noise.
+  it('with every variable empty, says nothing of the stores', async () => {
+    vi.mocked(getHouseholdLicense).mockResolvedValue({
+      status: 'complimentary',
+      paidBy: 'me',
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    withClient(<LicenseScreen />, (client) => {
+      client.setQueryData(membershipKey, casa);
+      client.setQueryData(householdsKey, [casa]);
+    });
+    expect(await screen.findByText(t('license.complimentary'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: t('license.restore') })).toBeNull();
+    expect(screen.queryByRole('button', { name: t('license.manage') })).toBeNull();
+  });
+
+  it('with billing on but no key of the store, says nothing of the stores either', async () => {
+    vi.stubEnv('EXPO_PUBLIC_BILLING_ENABLED', 'true');
+    vi.mocked(getHouseholdLicense).mockResolvedValue({
+      status: 'complimentary',
+      paidBy: 'me',
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    withClient(<LicenseScreen />, (client) => {
+      client.setQueryData(membershipKey, casa);
+      client.setQueryData(householdsKey, [casa]);
+    });
+    expect(await screen.findByText(t('license.complimentary'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: t('license.restore') })).toBeNull();
+  });
+
+  it('with billing on and the key of the store, offers to restore and to manage', async () => {
+    vi.stubEnv('EXPO_PUBLIC_BILLING_ENABLED', 'true');
+    vi.stubEnv('EXPO_PUBLIC_REVENUECAT_ANDROID_KEY', 'goog_test');
     vi.mocked(getHouseholdLicense).mockResolvedValue({
       status: 'complimentary',
       paidBy: 'me',
@@ -276,22 +312,5 @@ describe('the licence screen and the stores (bloque 15.6)', () => {
     expect(
       await screen.findByRole('button', { name: t('license.payLevel', { count: 2 }) }),
     ).toBeTruthy();
-  });
-});
-
-describe('restoring without the SDK (bloque 15.6)', () => {
-  it('says paying is not possible from the app yet', async () => {
-    vi.mocked(getHouseholdLicense).mockResolvedValue({
-      status: 'complimentary',
-      paidBy: 'me',
-      currentPeriodEnd: null,
-      trialEndsAt: null,
-    });
-    withClient(<LicenseScreen />, (client) => {
-      client.setQueryData(membershipKey, casa);
-      client.setQueryData(householdsKey, [casa]);
-    });
-    fireEvent.click(await screen.findByRole('button', { name: t('license.restore') }));
-    expect(await screen.findByText(t('license.checkoutLater'))).toBeTruthy();
   });
 });

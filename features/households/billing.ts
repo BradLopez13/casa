@@ -42,6 +42,15 @@ export function revenueCatKey(platform: Platform): string | null {
   return key ? key : null;
 }
 
+/**
+ * Whether the licence screen offers «Restaurar compras» and «Gestionar la suscripción»: only with
+ * billing on in this build and the store's key, the day there is something to buy. With every
+ * variable empty the screen looks as before bloque 15 (hoja de ruta, parte 2).
+ */
+export function storeAtHand(platform: Platform): boolean {
+  return billingEnabled() && revenueCatKey(platform) !== null;
+}
+
 /** Where each store manages a subscription (the stores ask for the link in the app). */
 export function manageSubscriptionUrl(platform: Platform): string {
   return platform === 'ios'

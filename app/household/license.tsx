@@ -14,6 +14,7 @@ import {
   manageSubscriptionUrl,
   purchaseLicense,
   restorePurchases,
+  storeAtHand,
 } from '@/features/households/billing';
 import {
   useHouseholdLicense,
@@ -207,28 +208,30 @@ export default function LicenseScreen() {
             )}
           </PinnedNote>
         ) : null}
-        {/* What the stores ask for, always at hand: with billing off they only say so. */}
-        <View style={{ paddingTop: space(5), gap: space(2), alignItems: 'flex-start' }}>
-          <Button
-            testID="license.restore"
-            title={t('license.restore')}
-            variant="tertiary"
-            icon={actionIcons.retry}
-            width="hug"
-            flush
-            loading={restoring}
-            onPress={() => void restore()}
-          />
-          <Button
-            testID="license.manage"
-            title={t('license.manage')}
-            variant="tertiary"
-            icon={actionIcons.openPhoneSettings}
-            width="hug"
-            flush
-            onPress={manage}
-          />
-        </View>
+        {/* What the stores ask for, the day there is something to buy (`storeAtHand`). */}
+        {storeAtHand(platform) ? (
+          <View style={{ paddingTop: space(5), gap: space(2), alignItems: 'flex-start' }}>
+            <Button
+              testID="license.restore"
+              title={t('license.restore')}
+              variant="tertiary"
+              icon={actionIcons.retry}
+              width="hug"
+              flush
+              loading={restoring}
+              onPress={() => void restore()}
+            />
+            <Button
+              testID="license.manage"
+              title={t('license.manage')}
+              variant="tertiary"
+              icon={actionIcons.openPhoneSettings}
+              width="hug"
+              flush
+              onPress={manage}
+            />
+          </View>
+        ) : null}
       </ScrollView>
       {/* The one action, at the foot in pósit, only for whoever runs the household. */}
       {canPay ? (
