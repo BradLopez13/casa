@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { noteRefusedByEnded } from '@/data/query/ended-household';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
 import { membershipEnd, type Membership } from './api';
@@ -111,6 +112,32 @@ describe('useForgetEndedHousehold', () => {
         .findAll({ status: 'pending' })
         .map((m) => m.state.variables),
     ).toMatchObject([{ householdId: 'h2' }]);
+  });
+
+  // Prueba del 4 de noviembre: of two changes made offline, the first reached the server before
+  // the household was forgotten and was refused (NOT_A_MEMBER); the notice said «Se perdió 1».
+  it('counts the changes the server refused because the household was gone', async () => {
+    vi.mocked(membershipEnd).mockResolvedValue('deleted');
+    const view = renderProbe([critica, casa], critica);
+    act(() => {
+      noteRefusedByEnded('h1');
+      queue('h1');
+    });
+    act(() => {
+      queryClient.setQueryData(membershipKey, casa);
+      queryClient.setQueryData(householdsKey, [casa]);
+    });
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <NoticeProvider>
+          <Probe households={[casa]} membership={casa} />
+        </NoticeProvider>
+      </QueryClientProvider>,
+    );
+    const notice = await screen.findByTestId('notice');
+    expect(notice.textContent).toBe(
+      `${t('households.ended.deleted', { old: 'Critica Nov', next: 'Casa' })} ${t('households.ended.lostOther', { count: 2 })}`,
+    );
   });
 
   it('says «te han quitado» and «has salido desde otro móvil» when the server knows', async () => {

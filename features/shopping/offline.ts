@@ -12,6 +12,7 @@ import {
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
+import { noteRefusedByEnded } from '@/data/query/ended-household';
 import { householdsKey, membershipKey } from '@/features/households/keys';
 import { t } from '@/i18n';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
@@ -260,14 +261,15 @@ export function buildShoppingMutationDefaults(
   };
   // A household without its licence says so (bloque 12); anything else names what was not saved.
   /** Gone with its household: no notice of its own, but the household's is made sure to come. */
-  const goneQuietly = (error: unknown) => {
+  const goneQuietly = (error: unknown, householdId: string) => {
     if (!householdGone(error)) return false;
+    noteRefusedByEnded(householdId);
     void queryClient.invalidateQueries({ queryKey: membershipKey });
     void queryClient.invalidateQueries({ queryKey: householdsKey });
     return true;
   };
-  const syncFailed = (name: string, error: unknown) =>
-    goneQuietly(error) ||
+  const syncFailed = (name: string, error: unknown, householdId: string) =>
+    goneQuietly(error, householdId) ||
     notify(
       toAppError(error).code === 'LICENSE_REQUIRED'
         ? t('errors.LICENSE_REQUIRED')
@@ -315,7 +317,7 @@ export function buildShoppingMutationDefaults(
           current?.filter((i) => i.id !== id),
         );
       }
-      syncFailed(trimItemText(name), error);
+      syncFailed(trimItemText(name), error, householdId);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
@@ -361,7 +363,8 @@ export function buildShoppingMutationDefaults(
       }
       // An item no longer on the list has nothing to explain.
       const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
-      if (item) syncFailed(item.name, error);
+      if (item) syncFailed(item.name, error, householdId);
+      else if (householdGone(error)) noteRefusedByEnded(householdId);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
@@ -411,7 +414,7 @@ export function buildShoppingMutationDefaults(
           current ? applyQuantity(current, resolve(householdId, id), previous.quantity) : current,
         );
       }
-      if (!goneQuietly(error)) notify(shoppingErrorMessage(error));
+      if (!goneQuietly(error, householdId)) notify(shoppingErrorMessage(error));
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).

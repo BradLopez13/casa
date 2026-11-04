@@ -1,6 +1,10 @@
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
+import {
+  cachedHouseholdIds,
+  endedHouseholdIds,
+  takeRefusedByEnded,
+} from '@/data/query/ended-household';
 import { forgetEndedHousehold } from '@/data/query/persist';
 import { t } from '@/i18n';
 import { useNotice } from '@/ui/components/Notice';
@@ -55,7 +59,7 @@ export function useForgetEndedHousehold(
     const ended = endedHouseholdIds(cachedHouseholdIds(client), households);
     for (const id of ended) {
       const was = seen.current;
-      const lost = unsentOf(client, id);
+      const lost = unsentOf(client, id) + takeRefusedByEnded(id);
       forgetEndedHousehold(client, id);
       if (was === null || was.householdId !== id) continue;
       seen.current = null;
