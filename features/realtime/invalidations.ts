@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 // From keys, which features/households/queries re-exports: the batcher needs no React.
-import { householdsKey, membershipKey } from '@/features/households/keys';
+import { householdsKey, invitesKey, membershipKey } from '@/features/households/keys';
 
 /**
  * Query keys to refresh when the server broadcasts a change to `table` on `householdId`'s
@@ -18,9 +18,10 @@ export function invalidationsFor(table: string, householdId: string): QueryKey[]
     // The household itself: its name and owner live in the membership and the household list.
     case 'households':
       return [membershipKey, householdsKey];
-    // Who is in, who left, who owns it: the member list, the role and the household's size.
+    // Who is in, who left, who owns it: the member list, the role and the household's size; and
+    // the invitations, since joining uses one up (prueba del 4 de noviembre).
     case 'household_members':
-      return [['members', householdId], membershipKey, householdsKey];
+      return [['members', householdId], invitesKey(householdId), membershipKey, householdsKey];
     // Its licence (bloque 12): the band and the licence screen.
     case 'household_licenses':
       return [['license', householdId], membershipKey, householdsKey];

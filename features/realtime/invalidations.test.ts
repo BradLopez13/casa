@@ -20,9 +20,12 @@ describe('invalidationsFor', () => {
     expect(invalidationsFor('households', 'h')).toEqual([['membership'], ['households']]);
   });
 
-  it('maps household members to the member lists, the membership and the household list', () => {
+  // Prueba del 4 de noviembre: someone joined by the link and the inviter's screen still listed
+  // the invitation as pending until it was opened again.
+  it('maps household members to the member lists, the invitations, the membership and the household list', () => {
     expect(invalidationsFor('household_members', 'h')).toEqual([
       ['members', 'h'],
+      ['invites', 'h'],
       ['membership'],
       ['households'],
     ]);
