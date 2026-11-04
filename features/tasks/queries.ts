@@ -7,7 +7,12 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
-import { isParked, parkedSnapshot, subscribeParked , offlineFirstQueryOptions } from '@/data/query/retry';
+import {
+  isParked,
+  parkedSnapshot,
+  subscribeParked,
+  offlineFirstQueryOptions,
+} from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
