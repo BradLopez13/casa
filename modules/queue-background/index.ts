@@ -1,4 +1,4 @@
-import { requireOptionalNativeModule } from 'expo';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 type QueueBackgroundModule = {
   wait(ms: number): Promise<void>;
