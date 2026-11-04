@@ -11,7 +11,7 @@ import { appQueryDefaults } from './defaults';
 import { reportQueryError as report } from './report';
 import { markOnline, setQueueWaiter } from './retry';
 import { queueLog, queueLogOn, startQueueLog } from './queueLog';
-import { backgroundWait } from '@/modules/background-wait';
+import { backgroundWait } from '@/modules/queue-background';
 
 export { reportQueryErrorsTo, reportQueueStorage } from './report';
 
@@ -41,7 +41,7 @@ export function watchAppAndConnection(): void {
   });
   if (queueLogOn) startQueueLog(queryClient);
   // Behind, Android fires no JS timer: the queue waits between two tries on a native one
-  // (bloque 15.1, `modules/background-wait`).
+  // (bloque 15.1, `modules/queue-background`).
   if (backgroundWait !== null) setQueueWaiter(backgroundWait);
   if (Platform.OS === 'web') return;
   focusManager.setEventListener((handleFocus) => {
