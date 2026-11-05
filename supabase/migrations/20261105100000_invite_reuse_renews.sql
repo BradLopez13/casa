@@ -1,6 +1,49 @@
--- Revisión del PR #67 (bloque 15.2): an invitation reused by «Invitar» or «Copiar invitación» lasts
--- seven days again from now, with the same token. Reused with the time it had left, one with an
--- hour to go was shared and died within the hour, the silent dead link of P2-3.
+-- Revisión del PR #67 (bloque 15.2):
+--
+-- (1) The tokens kept to hand an invitation out again are encrypted, never in the clear (decisión
+--     de Brad, 5 de noviembre de 2026): a dump of private.invite_tokens gave links valid for seven
+--     days. The key lives in Vault (`invite_token_key`); only the security definer functions read
+--     it (`private.invite_token_key`, closed to every role of the API). The rows already there
+--     are encrypted in place, so the links already shared keep working.
+-- (2) An invitation reused by «Invitar» or «Copiar invitación» lasts seven days again from now,
+--     with the same token. Reused with the time it had left, one with an hour to go was shared and
+--     died within the hour, the silent dead link of P2-3.
+
+-- (1) ------------------------------------------------------------------------------------
+
+do $$
+begin
+  if not exists (select 1 from vault.secrets where name = 'invite_token_key') then
+    perform vault.create_secret(
+      encode(extensions.gen_random_bytes(32), 'hex'),
+      'invite_token_key',
+      'Encrypts the invitation tokens kept to hand them out again (bloque 15.2)'
+    );
+  end if;
+end;
+$$;
+
+create function private.invite_token_key()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.decrypted_secret from vault.decrypted_secrets s where s.name = 'invite_token_key';
+$$;
+
+revoke execute on function private.invite_token_key() from public, anon, authenticated;
+
+alter table private.invite_tokens add column token_enc bytea;
+
+update private.invite_tokens
+set token_enc = extensions.pgp_sym_encrypt(token, private.invite_token_key());
+
+alter table private.invite_tokens alter column token_enc set not null;
+alter table private.invite_tokens drop column token;
+
+-- (2) ------------------------------------------------------------------------------------
 
 create or replace function public.create_invite(p_household_id uuid)
  RETURNS TABLE(invite_id uuid, token text, expires_at timestamp with time zone)
@@ -37,7 +80,8 @@ begin
   end if;
 
   -- The pending invitation still valid, with its token kept: the same link again (bloque 15.2).
-  select i.id, t.token, i.expires_at into v_id, v_token, v_expires
+  select i.id, extensions.pgp_sym_decrypt(t.token_enc, private.invite_token_key()), i.expires_at
+  into v_id, v_token, v_expires
   from public.household_invites i
   join private.invite_tokens t on t.invite_id = i.id
   where i.household_id = p_household_id
@@ -76,7 +120,8 @@ begin
   )
   returning id into v_id;
 
-  insert into private.invite_tokens (invite_id, token) values (v_id, v_token);
+  insert into private.invite_tokens (invite_id, token_enc)
+  values (v_id, extensions.pgp_sym_encrypt(v_token, private.invite_token_key()));
 
   return query select v_id, v_token, v_expires;
 end;

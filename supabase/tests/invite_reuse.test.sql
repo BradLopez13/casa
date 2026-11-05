@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(22);
 
 -- Bloque 15.2: a pending invitation is reused (decisión 2 A), and a membership that ends says why.
 
@@ -25,6 +25,23 @@ select is(:'second_expires_at'::timestamptz, now() + interval '7 days', 'renewed
 select tests.authenticate_as(:'bob');
 select * from public.create_invite('00000000-0000-0000-0000-0000000000e1') \gset bob_
 select is(:'bob_token'::text, :'first_token'::text, 'another member inviting gets the same link too');
+
+-- 4b. kept encrypted, never in the clear (decisión de Brad, 5 de noviembre de 2026) ---------
+
+select tests.clear_auth();
+select hasnt_column('private', 'invite_tokens', 'token', 'the token is not kept in the clear');
+select has_column('private', 'invite_tokens', 'token_enc', 'it is kept encrypted');
+select is(
+  (select count(*) from private.invite_tokens t
+   where position(convert_to(:'first_token', 'UTF8') in t.token_enc) > 0),
+  0::bigint,
+  'what is kept does not contain the token'
+);
+select ok(
+  not has_function_privilege('authenticated', 'private.invite_token_key()', 'execute')
+    and not has_function_privilege('anon', 'private.invite_token_key()', 'execute'),
+  'no role of the API can get the key'
+);
 
 -- 5-6. the first link still works --------------------------------------------------------
 
