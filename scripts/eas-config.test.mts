@@ -58,10 +58,15 @@ describe('release.yml', () => {
     expect(yml).not.toMatch(/exit 1/);
   });
 
-  it('builds and submits the production profile', () => {
+  // Revisión del PR #67: `eas build --no-wait` and then `eas submit --latest` sent the build before
+  // this one (or failed with none). The build submits itself once it is done.
+  it('builds the production profile and submits that same build when it is done', () => {
     expect(yml).toContain('eas build --platform');
     expect(yml).toContain('--profile production');
-    expect(yml).toContain('eas submit --platform');
+    expect(yml).toContain('--auto-submit');
+    expect(yml).not.toContain('--latest');
+    expect(yml).not.toMatch(/eas build[^\n]*--auto-submit[^\n]*--no-wait/);
+    expect(yml).toMatch(/timeout-minutes: (9\d|1\d\d)/);
   });
 });
 

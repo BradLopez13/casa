@@ -26,6 +26,14 @@ class QueuePassJob : JobService() {
     return true
   }
 
+  /** Destroyed without onStopJob: the instance it kept must not be finished later. */
+  override fun onDestroy() {
+    synchronized(lock) {
+      if (running?.first === this) running = null
+    }
+    super.onDestroy()
+  }
+
   override fun onStopJob(params: JobParameters): Boolean {
     val renew =
       synchronized(lock) {
@@ -65,7 +73,14 @@ class QueuePassJob : JobService() {
           held = false
           running.also { running = null }
         }
-      job?.let { (service, params) -> service.jobFinished(params, false) }
+      // The service may be gone already (destroyed without onStopJob): finishing it then throws.
+      job?.let { (service, params) ->
+        try {
+          service.jobFinished(params, false)
+        } catch (_: Exception) {
+          // Nothing to finish.
+        }
+      }
       context.getSystemService(JobScheduler::class.java)?.cancel(JOB_ID)
     }
 

@@ -30,7 +30,8 @@ concurrency:
 jobs:
   stores:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # An iOS build takes 20–40 min on EAS, and the job waits for it.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -62,11 +63,17 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      # The build itself runs on EAS; the job waits for it so the submit has something to send.
-      - name: Build for the stores
+      # The build runs on EAS and the job waits for it. With the submit on, `--auto-submit` sends
+      # this same build to the internal track and TestFlight once it is done; submitting the
+      # last finished build after a `--no-wait` sent the one before it (revisión del PR #67).
+      - name: Build for the stores, and send it
         if: steps.token.outputs.present == 'true'
-        run: eas build --platform ${{ github.event.inputs.platform || 'all' }} --profile production --non-interactive --no-wait
-
-      - name: Send to the internal track and TestFlight
-        if: steps.token.outputs.present == 'true' && (github.event_name == 'push' || github.event.inputs.submit == 'true')
-        run: eas submit --platform ${{ github.event.inputs.platform || 'all' }} --profile production --latest --non-interactive --wait
+        env:
+          PLATFORM: ${{ github.event.inputs.platform || 'all' }}
+          SUBMIT: ${{ github.event_name == 'push' || github.event.inputs.submit == 'true' }}
+        run: |
+          if [ "$SUBMIT" = true ]; then
+            eas build --platform "$PLATFORM" --profile production --non-interactive --auto-submit
+          else
+            eas build --platform "$PLATFORM" --profile production --non-interactive
+          fi

@@ -24,4 +24,20 @@ export const backgroundWait: ((ms: number) => Promise<void>) | null =
 export const networkPass: { hold: () => void; release: () => void } | null =
   native === null
     ? null
-    : { hold: () => native.holdNetwork(), release: () => native.releaseNetwork() };
+    : {
+        // A failure of the module never reaches the queue: without the pass, it goes on opening Nido.
+        hold: () => {
+          try {
+            native.holdNetwork();
+          } catch {
+            // Nothing to hold.
+          }
+        },
+        release: () => {
+          try {
+            native.releaseNetwork();
+          } catch {
+            // Nothing to release.
+          }
+        },
+      };

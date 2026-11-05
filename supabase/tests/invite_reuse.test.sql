@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(18);
 
 -- Bloque 15.2: a pending invitation is reused (decisión 2 A), and a membership that ends says why.
 
@@ -21,7 +21,7 @@ select * from public.create_invite('00000000-0000-0000-0000-0000000000e1') \gset
 select * from public.create_invite('00000000-0000-0000-0000-0000000000e1') \gset second_
 select is(:'second_token'::text, :'first_token'::text, 'a second create_invite hands out the same token');
 select is(:'second_invite_id'::uuid, :'first_invite_id'::uuid, 'and the same invitation');
-select is(:'second_expires_at'::timestamptz, :'first_expires_at'::timestamptz, 'with the same expiry');
+select is(:'second_expires_at'::timestamptz, now() + interval '7 days', 'renewed to seven days from now');
 select tests.authenticate_as(:'bob');
 select * from public.create_invite('00000000-0000-0000-0000-0000000000e1') \gset bob_
 select is(:'bob_token'::text, :'first_token'::text, 'another member inviting gets the same link too');
@@ -64,6 +64,21 @@ select is(
   (select count(*) from private.invite_tokens where invite_id = :'third_invite_id'::uuid),
   0::bigint,
   'the revoked invitation keeps no token'
+);
+
+-- 11b. almost expired: the same link, seven days again (revisión del PR #67) ------------------
+-- An invitation with an hour left, shared again, used to die within the hour.
+
+update public.household_invites set expires_at = now() + interval '1 hour'
+where id = :'fourth_invite_id'::uuid;
+select tests.authenticate_as(:'ana');
+select * from public.create_invite('00000000-0000-0000-0000-0000000000e1') \gset again_
+select is(:'again_token'::text, :'fourth_token'::text, 'an invitation about to expire is still reused');
+select tests.clear_auth();
+select is(
+  (select expires_at from public.household_invites where id = :'fourth_invite_id'::uuid),
+  now() + interval '7 days',
+  'and it lasts seven days again from now'
 );
 
 -- 11. expired: a new one ------------------------------------------------------------------

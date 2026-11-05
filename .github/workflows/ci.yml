@@ -131,8 +131,6 @@ jobs:
         env:
           E2E: '1'
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
-          # TEMPORAL (PR #67): el log de la cola en el logcat de los informes, para ver queue-cycles.
-          EXPO_PUBLIC_QUEUE_LOG: '1'
         run: |
           set -a; . ./.env.e2e; set +a
           pnpm expo prebuild --platform android --clean
