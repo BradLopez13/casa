@@ -1,7 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { HistoryEntry } from '@/domain/shopping/suggest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { router } from 'expo-router';
 import ShoppingScreen from '@/app/(tabs)/shopping';
 import { AppError } from '@/data/supabase/errors';
@@ -241,5 +241,37 @@ describe('Compra', () => {
   it('online, there is no offline band', () => {
     renderShopping([item('Leche')]);
     expect(screen.queryByTestId('shopping.offline')).toBeNull();
+  });
+});
+
+// Bloque 15.3 (P3-9): a test product or a typo stayed in «¿Falta algo de lo de siempre?» for ever.
+describe('removing a usual suggestion', () => {
+  const bread: HistoryEntry = {
+    name: 'Bolsa aa',
+    normalizedName: 'bolsa aa',
+    uses: 4,
+    lastUsedAt: '2026-10-20T08:00:00.000Z',
+  };
+
+  afterEach(() => vi.useRealTimers());
+
+  it('a long press takes it away at once and offers «Deshacer»', () => {
+    vi.useFakeTimers();
+    renderShopping([], [bread]);
+    const pill = screen.getByTestId('shopping.usual.bolsa aa');
+    expect(pill.getAttribute('aria-label')).toBe(
+      t('shopping.a11y.addSuggestion', { name: 'Bolsa aa' }),
+    );
+    act(() => {
+      fireEvent.mouseDown(pill);
+      vi.advanceTimersByTime(700);
+    });
+    expect(screen.queryByTestId('shopping.usual.bolsa aa')).toBeNull();
+    expect(screen.getByTestId('notice').textContent).toContain(t('shopping.usualRemoved'));
+    expect(screen.getByTestId('notice.undo')).toBeTruthy();
+    act(() => {
+      fireEvent.click(screen.getByTestId('notice.undo'));
+    });
+    expect(screen.getByTestId('shopping.usual.bolsa aa')).toBeTruthy();
   });
 });

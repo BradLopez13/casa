@@ -65,12 +65,19 @@ export function todayLineText(
       if (line.today === 0) {
         const first = t(line.overdue === 1 ? 'today.line.leftOne' : 'today.line.leftOther', count);
         const number = String(line.overdue);
+        // Over the tray of what was done today the line says so (bloque 15.3, P3-3): «Nada para
+        // hoy» sat over fifteen tasks done today.
+        const doneToday = (line.doneToday ?? 0) > 0;
         if (line.household === null)
-          return { first, number, second: t('today.line.noneTodayPart') + '.' };
+          return {
+            first,
+            number,
+            second: t(doneToday ? 'today.line.allDone' : 'today.line.empty'),
+          };
         return {
           first,
           number,
-          second: t('today.line.noneTodayRest', {
+          second: t(doneToday ? 'today.line.allDoneRest' : 'today.line.noneTodayRest', {
             rest: restText(line.household, line.rest, several, nameOf),
           }),
         };

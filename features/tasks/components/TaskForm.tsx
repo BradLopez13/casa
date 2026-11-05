@@ -23,6 +23,7 @@ import { Button } from '@/ui/components/Button';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { useModalFill } from '@/ui/components/ModalSheet';
+import { useSheetFoot } from '@/ui/components/sheetFootContext';
 import { TextField } from '@/ui/components/TextField';
 import { FocusRevealContext } from '@/ui/focusReveal';
 import { formDensity } from '@/ui/sheet';
@@ -56,6 +57,11 @@ type Props = {
   onSave: (input: TaskInput) => void;
   /** A task being created: the title takes the focus and Save works as soon as it has one. */
   isNew: boolean;
+  /**
+   * The first task of a home with none yet (bloque 15.3, P3-5): the example in the title field
+   * says «Por ejemplo, …», so a large grey example never reads as a title already written.
+   */
+  firstTask?: boolean;
   /** Secondary actions at the foot, above Save ("Marcar como hecha", "Saltar esta vez"). */
   footer?: ReactNode;
   /** Kept apart from the foot, at the end of the scroll ("Borrar tarea"). */
@@ -85,11 +91,13 @@ export function TaskForm({
   onCancel,
   onSave,
   isNew,
+  firstTask = false,
   footer,
   dangerZone,
   repeatEditable = true,
 }: Props) {
   const { colors, radii, noteEdge, space } = useTheme();
+  const foot = useSheetFoot();
   const { fill, avoidKeyboard, edges } = useModalFill();
   const density = formDensity(useLayout());
   const twoColumns = density.columns === 2;
@@ -320,7 +328,9 @@ export function TaskForm({
                       bare
                       testID="task-form.title"
                       label={t('taskForm.titleLabel')}
-                      placeholder={t('taskForm.titlePlaceholder')}
+                      placeholder={t(
+                        firstTask ? 'taskForm.titlePlaceholderFirst' : 'taskForm.titlePlaceholder',
+                      )}
                       value={typed.title}
                       onChangeText={(text) =>
                         setTyped((current) => ({ ...current, title: oneLineTitle(text) }))
@@ -399,6 +409,7 @@ export function TaskForm({
           {/* The foot: Save is the sheet's one pósit, fixed above the keyboard, with the other
               actions on the task right above it, or beside it on a short window. */}
           <View
+            onLayout={foot.onLayout}
             style={{
               ...(density.footRow ? { flexDirection: 'row', alignItems: 'center' } : null),
               paddingHorizontal: space(5),

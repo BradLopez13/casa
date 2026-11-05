@@ -15,6 +15,7 @@ module.exports = defineConfig([
     'expo-env.d.ts',
     'supabase/functions/send-push/',
     'supabase/functions/billing-webhook/',
+    'supabase/functions/revoke-apple/',
   ]),
   expoConfig,
   {

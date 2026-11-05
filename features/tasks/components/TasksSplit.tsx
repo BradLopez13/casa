@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { View } from 'react-native';
 import { dayHeading } from '@/domain/tasks/labels';
+import { isOpen } from '@/domain/tasks/views';
 import { QueueBand } from '@/features/offline/QueueBand';
 import { DayList } from '@/features/tasks/components/DayList';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
@@ -29,8 +31,14 @@ export function TasksSplit({
   chooseDay,
   empty,
   doorLine,
+  deleting,
 }: TasksParts) {
   const { space } = useTheme();
+  // What «Todas» counts: every open task of the filter, as the list and the door's line.
+  const open = useMemo(
+    () => [...screen.filtered, ...deleting].filter(isOpen),
+    [screen.filtered, deleting],
+  );
   const listStyle = { paddingBottom: useListEndPadding() };
   const refreshControl = usePaneRefreshControl(screen.pulling, () => void screen.refresh());
   const rows = {
@@ -91,6 +99,8 @@ export function TasksSplit({
             today={screen.today}
             marks={screen.marks}
             names={screen.names}
+            total={open.length}
+            earlier={open.filter((task) => task.dueOn !== null && task.dueOn < screen.today).length}
           />
         </View>
       }

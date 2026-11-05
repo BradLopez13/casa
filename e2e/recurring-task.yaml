@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 - clearState
 # Android can kill the first start while the cleared task is still being removed: retry it.

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { router } from 'expo-router';
 import OnboardingScreen from '@/app/onboarding';
@@ -217,7 +217,9 @@ describe('Crear tu hogar: las estancias', () => {
     await toRoomsStep();
     const proceed = screen.getByRole('button', { name: t('onboarding.roomsContinue') });
     fireEvent.click(proceed);
-    expect((await screen.findByRole('alert')).textContent).toBe(t('onboarding.errors.NETWORK'));
+    // Under a full run the alert can take over a second (bloque 15: it timed out once at 1112 ms).
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
+    expect(alert.textContent).toBe(t('onboarding.errors.NETWORK'));
     expect(busy(proceed)).toBe(false);
   });
 });
@@ -264,5 +266,45 @@ describe('Crear otra casa (bloque 12)', () => {
   it('opened from «Unirme con un enlace», the link field has the focus', () => {
     renderOnboarding(<NewHouseholdFlow another focusLink />);
     expect(document.activeElement).toBe(linkField());
+  });
+});
+
+// Bloque 15.5 (P3-6d): the person went to the chat to copy the message with the screen open;
+// coming back, the empty field reads the clipboard again.
+describe('the invitation field when the app comes back', () => {
+  it('reads the clipboard again while the field is still empty', async () => {
+    const { AppState } = await import('react-native');
+    const clipboard = await import('@/features/households/clipboardInvite');
+    const token = 'ab'.repeat(24);
+    const spy = vi
+      .spyOn(clipboard, 'inviteFromClipboard')
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(`casa://invite?token=${token}`);
+    let onChange: ((state: string) => void) | null = null;
+    const listen = vi.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
+      onChange = handler as (state: string) => void;
+      return { remove: () => undefined };
+    });
+    renderOnboarding();
+    await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    expect(linkField().value).toBe('');
+    act(() => onChange?.('active'));
+    await vi.waitFor(() => expect(linkField().value).toBe(`casa://invite?token=${token}`));
+    expect(screen.getByText(t('onboarding.linkPasted'))).toBeTruthy();
+    listen.mockRestore();
+    spy.mockRestore();
+  });
+});
+
+// Bloque 15.2 (P2-2): with a single household that ended, the screen with none explains it.
+describe('after the only household ended', () => {
+  it('says so at the top', async () => {
+    const { setEndedNotice, clearEndedNotice } = await import('@/features/households/endedNotice');
+    setEndedNotice('Ya no estás en «Critica Nov»: la han borrado.');
+    renderOnboarding();
+    expect(screen.getByTestId('onboarding.ended').textContent).toBe(
+      'Ya no estás en «Critica Nov»: la han borrado.',
+    );
+    clearEndedNotice();
   });
 });

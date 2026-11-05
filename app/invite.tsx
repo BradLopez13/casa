@@ -22,6 +22,7 @@ import {
 } from '@/features/households/queries';
 import { inviteErrorKey } from '@/features/households/errors';
 import { leaveToHome } from '@/features/households/leaveToHome';
+import { useNotice } from '@/ui/components/Notice';
 import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { BrandHeader } from '@/ui/components/BrandHeader';
@@ -53,6 +54,7 @@ export default function InviteScreen() {
   const [phase, setPhase] = useState<'busy' | 'failed' | null>(null);
   const [refreshNetwork, setRefreshNetwork] = useState(false);
   const [failure, setFailure] = useState<{ code: AppErrorCode; terminal: boolean } | null>(null);
+  const notify = useNotice();
 
   // A present-but-malformed token param is invalid; only fall back to the stored token
   // when the param is absent.
@@ -184,6 +186,14 @@ export default function InviteScreen() {
     }
     // Root lets the guard pick /today (it returns null for member + invite by design).
     leaveToHome(router);
+    // The welcome (bloque 15.2, P3-7): which household, and with whom; Hoy shows its tasks.
+    const name = preview.data?.inviterName;
+    const household = preview.data?.householdName;
+    if (household) {
+      notify(
+        name ? t('invite.welcome', { household, name }) : t('households.nowIn', { household }),
+      );
+    }
   }
 
   async function dismiss() {

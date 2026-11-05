@@ -134,7 +134,7 @@ Lee `.env` y `.env.local`, regenera `android/` con `expo prebuild --clean` (una 
 
 ### Builds de EAS
 
-Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):
+Los perfiles `preview` (APK interno para testers) y `production` leen sus variables del entorno de EAS del mismo nombre. Todas las variables, con una línea cada una y el paso de `LANZAMIENTO.md` del que salen, están en `.env.example`; con las que aún no existen vacías, la app y los scripts se comportan como hoy. `app.config.js` para la build si falta alguna (`scripts/build-env.js`):
 
 | Variable                                               | Tipo en EAS                                     |
 | ------------------------------------------------------ | ----------------------------------------------- |
@@ -152,6 +152,10 @@ eas env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services
 Sentry solo informa desde builds de release con DSN: sin datos personales, sin grabación de sesión y con trazas en el 20 % de las sesiones. En CI la subida de source maps está apagada (`SENTRY_DISABLE_AUTO_UPLOAD`).
 
 Con Expo Go, el móvil y el ordenador deben estar en la misma red Wi-Fi. Los enlaces de invitación en Expo Go son de tipo `exp://`; si el sistema no los abre en la app, la pantalla de onboarding tiene un campo para pegar el enlace. En una build propia el esquema es `casa://invite?token=…`.
+
+### Publicar en las tiendas
+
+Todo lo que depende de las cuentas de Google Play, Apple Developer, Firebase, RevenueCat y Expo se lee de variables con nombre fijo; `LANZAMIENTO.md` lista, en orden, lo que hay que hacer en cada una, qué variable sale de cada paso y dónde se pone. `release.yml` compila y envía con `eas build` y `eas submit` cuando hay `EXPO_TOKEN`; sin él, lo dice y termina en verde. `CHANGELOG.md` lleva las versiones publicadas.
 
 ## Flujo de Git
 

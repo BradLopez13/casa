@@ -9,6 +9,7 @@ import { useTheme } from '../theme';
 import { MIN_TOUCH, radii } from '../tokens';
 import { useTabBarClearance } from '../useTabBarClearance';
 import { NoticeNudgesContext, NoticeShownContext } from './noticeContext';
+import { SheetFootContext, SheetFootSetContext } from './sheetFootContext';
 import { NOTICE_ACTION_MS, noticeDuration, noticeExpired } from './noticeTiming';
 
 export type NoticeAction = {
@@ -52,6 +53,8 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   const onTabs = segments[0] === '(tabs)';
   const screenReader = useScreenReader();
   const [notice, setNotice] = useState<Shown | null>(null);
+  // The foot of the sheet on screen, so the pill never sits on Guardar (bloque 15.3, P2-4).
+  const [sheetFoot, setSheetFoot] = useState(0);
 
   // The last tab seen: a sheet over a tab keeps it, so opening or closing one changes nothing.
   const currentTab = onTabs ? segments.join('/') : null;
@@ -120,7 +123,9 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
     <NoticeContext.Provider value={notify}>
       <NoticeShownContext.Provider value={notice !== null}>
         <NoticeNudgesContext.Provider value={notice?.action?.nudges === true}>
-          {children}
+          <SheetFootSetContext.Provider value={setSheetFoot}>
+            <SheetFootContext.Provider value={sheetFoot}>{children}</SheetFootContext.Provider>
+          </SheetFootSetContext.Provider>
         </NoticeNudgesContext.Provider>
       </NoticeShownContext.Provider>
       {notice === null ? null : (
@@ -132,7 +137,8 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
             // Clear of a side notch on a phone on its side.
             left: space(4) + insets.left,
             right: space(4) + insets.right,
-            bottom: (onTabs ? tabClearance : insets.bottom) + space(3),
+            // Over a sheet, above its foot (Guardar), as it clears the tab bar on the tabs.
+            bottom: (onTabs ? tabClearance : insets.bottom + sheetFoot) + space(3),
             alignItems: 'center',
           }}
         >

@@ -1,12 +1,13 @@
 import {
+  notifyManager,
   useMutation,
-  useMutationState,
   useQuery,
   useQueryClient,
   type MutateOptions,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { offlineFirstQueryOptions, subscribeParked } from '@/data/query/retry';
 import type { AppError } from '@/data/supabase/errors';
 import { useNotice } from '@/ui/components/Notice';
 import { isProvisional } from '@/domain/tasks/optimistic';
@@ -15,13 +16,12 @@ import { listTasks, skipTask } from './api';
 import { hiddenTasks } from './deferredDelete';
 import {
   buildToggleOptions,
+  busyToggleIds,
   invalidateIfStale,
   runToggle,
-  TOGGLE_KEY,
   type ToggleVars,
 } from './toggle';
 
-import { offlineFirstQueryOptions } from '@/data/query/retry';
 import { tasksKey } from './keys';
 import { pendingTasks, withQueued } from './pending';
 import { useQueueSnapshot } from '@/features/offline/useQueue';
@@ -149,11 +149,29 @@ export function useToggleTask(
   const options = buildToggleOptions(queryClient, notify);
   // A toggle waiting for the connection is done on screen: the note can be tapped back (an undo
   // queues behind it), so only one actually on its way, and a provisional note, is busy.
-  const sending = useMutationState({
-    filters: { mutationKey: TOGGLE_KEY, status: 'pending' },
-    select: (m) => (m.state.isPaused ? null : (m.state.variables as ToggleVars).id),
-  });
-  const isBusy = (id: string) => isProvisional({ id }) || sending.includes(id);
+  // What is busy is a value React sees change (`busyToggleIds`), never the cache read when the
+  // note asks: with the React Compiler that check was memoised and the note stayed «ocupado».
+  // It follows the queue and the toggles that park to wait for the connection (revisión 15.1).
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const offCache = queryClient
+        .getMutationCache()
+        .subscribe(() => notifyManager.schedule(onChange));
+      const offParked = subscribeParked(onChange);
+      return () => {
+        offCache();
+        offParked();
+      };
+    },
+    [queryClient],
+  );
+  const busyKey = useSyncExternalStore(
+    subscribe,
+    () => busyToggleIds(queryClient),
+    () => '',
+  );
+  const busy = useMemo(() => new Set(busyKey.split('\n').filter(Boolean)), [busyKey]);
+  const isBusy = (id: string) => isProvisional({ id }) || busy.has(id);
   // True when the toggle went (or waits for the connection, as the shopping «comprado» does).
   const toggle = ({ id, done }: ToggleRequest): boolean => {
     if (householdId === undefined || userId === null || isProvisional({ id })) return false;

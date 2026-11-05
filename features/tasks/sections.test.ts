@@ -96,3 +96,25 @@ describe('allSections', () => {
     expect(allSections([], TODAY)).toEqual([]);
   });
 });
+
+// Bloque 15.3 (P3-4): during a delete's «Deshacer» the headline counted 10 and the section 9.
+describe('a task whose «Deshacer» is still up', () => {
+  it('counts in its section of Hoy, without a row', () => {
+    const due = task({ dueOn: TODAY });
+    const going = task({ dueOn: TODAY });
+    const sections = todaySections([due], TODAY, [going]);
+    expect(sections.map((s) => [s.key, s.count])).toEqual([['today', 2]]);
+    expect(sections[0]?.data).toEqual([{ kind: 'note', task: due }]);
+  });
+
+  it('counts in its group of Todas too', () => {
+    const going = task({ dueOn: '2026-10-01' });
+    const undated = task();
+    const sections = allSections([undated], TODAY, [going]);
+    expect(sections.map((s) => [s.key, s.count])).toEqual([
+      ['overdue', 1],
+      ['undated', 1],
+    ]);
+    expect(sections[0]?.data).toEqual([]);
+  });
+});

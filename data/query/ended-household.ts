@@ -44,3 +44,24 @@ export function endedHouseholdIds(
   if (households === undefined) return [];
   return cached.filter((id) => !households.some((h) => h.householdId === id));
 }
+
+/** Per household, the queued changes the server refused because the person was no longer in it. */
+const refused = new Map<string, number>();
+
+/**
+ * A queued change of `householdId` was refused because the person is no longer in it
+ * (`householdGone`): it counts among what the household's notice says was lost, with the changes
+ * still waiting (prueba del 4 de noviembre: of two, the first reached the server before the
+ * household was forgotten, and the notice said «Se perdió 1»).
+ */
+export function noteRefusedByEnded(householdId: unknown): void {
+  if (typeof householdId !== 'string') return;
+  refused.set(householdId, (refused.get(householdId) ?? 0) + 1);
+}
+
+/** How many changes of `householdId` were refused that way, and forget them. */
+export function takeRefusedByEnded(householdId: string): number {
+  const count = refused.get(householdId) ?? 0;
+  refused.delete(householdId);
+  return count;
+}

@@ -74,7 +74,7 @@ describe('a queued change of a household left (bloque 14.4, T6)', () => {
       .find((m) => (m.state.variables as { householdId: string }).householdId === 'mama')!;
     forgetHouseholdData(client, 'mama');
     await expect(fn(mutation.state.variables as object, {})).rejects.toMatchObject({
-      code: 'NOT_AUTHENTICATED',
+      code: 'QUEUE_DROPPED',
     });
     expect(send).not.toHaveBeenCalled();
   });

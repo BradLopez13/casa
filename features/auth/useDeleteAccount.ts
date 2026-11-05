@@ -4,6 +4,7 @@ import { pendingInvite } from '@/features/households/pending-invite';
 import { clearPushRegistration } from '@/features/push/registration';
 import { clearReminderSettings } from '@/features/reminders/storage';
 import { deleteAccount, signOutLocally } from './api';
+import { revokeAppleSignIn } from './social/revoke';
 import { useSession } from './SessionProvider';
 
 /**
@@ -16,6 +17,8 @@ export function useDeleteAccount() {
   const locked = useRef(false);
   const mutation = useMutation({
     mutationFn: async () => {
+      // Apple's consent goes first (App Review, bloque 15.4); its failure never stops this.
+      await revokeAppleSignIn();
       await deleteAccount();
       await pendingInvite.clear().catch(() => undefined);
       if (userId) await clearReminderSettings(userId);

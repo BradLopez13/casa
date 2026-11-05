@@ -6,7 +6,7 @@ import {
   type MutationOptions,
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
+import { QUEUED_RETRY, queuedFn } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import {
   createQueueMonitor,
@@ -28,20 +28,23 @@ describe('queue monitor', () => {
   let queryClient: QueryClient;
   let monitor: QueueMonitor;
   let stop: () => void;
-  const server = { reachable: true, latency: 300, hang: false, sent: [] as string[] };
-
-  const options: MutationOptions<void, AppError, Vars> = {
+  type Server = { reachable: boolean; latency: number; hang: boolean; sent: string[] };
+  // One fake server per test, captured by that test's mutations: a change of an earlier test
+  // still waiting between tries (`retryQueuedNow` wakes every waiter, whatever client it came
+  // from) lands in its own list, never in this test's.
+  let server: Server = { reachable: true, latency: 300, hang: false, sent: [] };
+  let options: MutationOptions<void, AppError, Vars>;
+  const optionsFor = (own: Server): MutationOptions<void, AppError, Vars> => ({
     mutationKey: ['tasks', 'create'],
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id }: Vars) => {
-      if (server.hang) await new Promise(() => undefined);
-      await new Promise((resolve) => setTimeout(resolve, server.latency));
-      if (!server.reachable) throw new AppError('NETWORK');
-      server.sent.push(id);
+      if (own.hang) await new Promise(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, own.latency));
+      if (!own.reachable) throw new AppError('NETWORK');
+      own.sent.push(id);
     }),
-  };
+  });
 
   const create = (id: string, household = 'h') =>
     void new MutationObserver(queryClient, { ...options, scope: { id: `tasks:${household}` } })
@@ -54,7 +57,8 @@ describe('queue monitor', () => {
     vi.useFakeTimers();
     onlineManager.setOnline(true);
     focusManager.setFocused(true);
-    Object.assign(server, { reachable: true, latency: 300, hang: false, sent: [] });
+    server = { reachable: true, latency: 300, hang: false, sent: [] };
+    options = optionsFor(server);
     queryClient = new QueryClient();
     queryClient.mount();
     monitor = createQueueMonitor(
@@ -194,10 +198,8 @@ describe('queue monitor', () => {
     focusManager.setFocused(false);
     server.reachable = true;
     onlineManager.setOnline(true);
-    // Not at once: an AppState event on its way gets its moment.
-    await vi.advanceTimersByTimeAsync(QUEUE_WATCH_MS - 2000);
-    expect(server.sent).toEqual([]);
-    await vi.advanceTimersByTimeAsync(4000);
+    // At once (bloque 15.1): with a queue and a connection the focus is held, in front or not.
+    await vi.advanceTimersByTimeAsync(2000);
     expect(server.sent).toEqual(['a']);
     expect(focusManager.isFocused()).toBe(true);
     active = false;
@@ -238,15 +240,45 @@ describe('queue monitor', () => {
   });
 
   // Revisión de 14.1: the 30 s ran while the app was behind, where nothing is tried.
-  it('does not say «No se pudo enviar» on coming back after a while behind', async () => {
+  // Prueba del 4 de noviembre: a change made offline two minutes before said «No se pudo enviar»
+  // as soon as the connection came back (the 30 s counted from the tap, not from the connection).
+  it('does not say «No se pudo enviar» at once for a change made offline a while ago', async () => {
+    onlineManager.setOnline(false);
     server.reachable = false;
     create('a');
+    await vi.advanceTimersByTimeAsync(120_000);
+    onlineManager.setOnline(true);
     await vi.advanceTimersByTimeAsync(3000);
+    expect(monitor.getSnapshot().band).toBe('sending');
+    await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS);
+    expect(monitor.getSnapshot().band).toBe('stuck');
+  });
+
+  it('does not say «No se pudo enviar» on coming back after a while behind', async () => {
+    server.reachable = false;
+    stop();
+    let active = true;
+    monitor = createQueueMonitor(
+      queryClient,
+      (key) => key?.[0] === 'tasks',
+      Date.now,
+      () => active,
+    );
+    stop = monitor.start();
+    create('a');
+    await vi.advanceTimersByTimeAsync(3000);
+    active = false;
     focusManager.setFocused(false);
     await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS + 30_000);
+    active = true;
     focusManager.setFocused(true);
     await vi.advanceTimersByTimeAsync(100);
     expect(monitor.getSnapshot().band).toBe('sending');
+    // The 30 s start on coming back to the front.
+    await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS - 2000);
+    expect(monitor.getSnapshot().band).toBe('sending');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(monitor.getSnapshot().band).toBe('stuck');
   });
 
   it('keeps each household to its own queue', async () => {
@@ -257,5 +289,93 @@ describe('queue monitor', () => {
     create('b', 'h2');
     await vi.advanceTimersByTimeAsync(500);
     expect(server.sent).toEqual(['b']);
+  });
+
+  // Bloque 15.1 (P2-1, decisión 1 A): with the connection back and the app in the background,
+  // nothing went out until the app was opened (5 of 5 times, 20 to 150 s): TanStack resumes a
+  // change only with the focus, and the app drops the focus as soon as it is not `active`.
+  describe('the queue with the app behind (bloque 15.1)', () => {
+    let active = true;
+    const behind = () => {
+      stop();
+      monitor = createQueueMonitor(
+        queryClient,
+        (key) => key?.[0] === 'tasks',
+        Date.now,
+        () => active,
+      );
+      stop = monitor.start();
+    };
+
+    it('sends a change made offline once the connection is back, without coming to the front', async () => {
+      behind();
+      onlineManager.setOnline(false);
+      server.reachable = false;
+      create('a');
+      await vi.advanceTimersByTimeAsync(50);
+      // Home button: the app is behind, and TanStack is told so.
+      active = false;
+      focusManager.setFocused(false);
+      await vi.advanceTimersByTimeAsync(5000);
+      server.reachable = true;
+      onlineManager.setOnline(true);
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(server.sent).toEqual(['a']);
+    });
+
+    it('gives the focus back once the queue is empty behind, so coming to the front is still an event', async () => {
+      behind();
+      onlineManager.setOnline(false);
+      create('a');
+      await vi.advanceTimersByTimeAsync(50);
+      active = false;
+      focusManager.setFocused(false);
+      onlineManager.setOnline(true);
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(server.sent).toEqual(['a']);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(focusManager.isFocused()).toBe(false);
+    });
+
+    it('keeps the 30 s of «No se pudo enviar» off while behind, even with the focus held', async () => {
+      behind();
+      onlineManager.setOnline(false);
+      create('a');
+      await vi.advanceTimersByTimeAsync(50);
+      active = false;
+      focusManager.setFocused(false);
+      server.reachable = false;
+      onlineManager.setOnline(true);
+      await vi.advanceTimersByTimeAsync(QUEUE_STUCK_MS + 5000);
+      expect(monitor.getSnapshot().band).toBe('sending');
+      expect(waiting()).toEqual(['a']);
+    });
+
+    // The 4–9 s on opening the app: the reconnect window had closed behind, so a first try that
+    // failed (the token refresh) waited 1, 2 and 4 s. Coming to the front reopens the window.
+    it('back in front after 90 s of connection, a failed first try is followed within a second', async () => {
+      behind();
+      onlineManager.setOnline(false);
+      create('a');
+      await vi.advanceTimersByTimeAsync(50);
+      active = false;
+      focusManager.setFocused(false);
+      // Behind, the connection comes back but the server does not answer: the tries back off.
+      server.reachable = false;
+      onlineManager.setOnline(true);
+      await vi.advanceTimersByTimeAsync(92_000);
+      expect(server.sent).toEqual([]);
+      // Opened: the first try still fails, the server answers right after.
+      active = true;
+      focusManager.setFocused(true);
+      await vi.advanceTimersByTimeAsync(server.latency + 50);
+      server.reachable = true;
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(server.sent).toEqual(['a']);
+    });
+
+    afterEach(() => {
+      active = true;
+    });
   });
 });

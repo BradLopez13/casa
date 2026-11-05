@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 # Runs even when the flow fails: an emulator left offline would break every later flow.
 onFlowComplete:
   - setAirplaneMode: disabled

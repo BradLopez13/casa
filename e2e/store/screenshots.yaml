@@ -1,0 +1,125 @@
+# The store listing's screenshots (store/capturas.md), taken on the E2E build with the listing
+# account of the fixtures (demo@e2e.dev, «Casa de ejemplo»). Run by scripts/store-screenshots.sh,
+# once per profile and theme, with OUT pointing at store/screenshots/<profile>/ and THEME at
+# «claro» or «oscuro». Outside the CI shards on purpose (e2e/config.yaml lists e2e/*.yaml only).
+appId: com.nidoapp.casa
+env:
+  OUT: store/screenshots/phone
+  THEME: claro
+---
+- clearState
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+- runFlow:
+    file: ../subflows/sign-in.yaml
+    env:
+      EMAIL: demo@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+# The first-use hints are per device and clearState wiped them: the actions that retire the
+# ones Hoy and Compra show (writing with the quick add, ticking a box, opening a quantity) come
+# first, on things the shots do not mind. The fixtures are put back before each run
+# (scripts/store-screenshots.sh), so what this adds never shows twice.
+- tapOn:
+    id: today.quick-add
+- inputText: Bajar la basura
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Bajar la basura
+    timeout: 10000
+- tapOn:
+    text: Bajar la basura
+- extendedWaitUntil:
+    visible:
+      id: task-form.save
+    timeout: 10000
+- tapOn:
+    id: task-form.delete
+- extendedWaitUntil:
+    notVisible: Bajar la basura
+    timeout: 10000
+- extendedWaitUntil:
+    notVisible:
+      id: notice
+    timeout: 10000
+- takeScreenshot: ${OUT}/01-hoy-${THEME}
+
+- tapOn:
+    id: tab.tasks
+- extendedWaitUntil:
+    visible:
+      id: tasks.quick-add
+    timeout: 10000
+- takeScreenshot: ${OUT}/02-tareas-${THEME}
+
+- tapOn:
+    id: tab.shopping
+- extendedWaitUntil:
+    visible:
+      id: shopping.add
+    timeout: 10000
+# The quantity's hint goes on the first use of a quantity: open Leche's «2» and close it.
+- tapOn:
+    text: '2'
+- tapOn:
+    id: shopping.add
+- hideKeyboard
+- extendedWaitUntil:
+    notVisible:
+      id: shopping.quantity.hint
+    timeout: 10000
+    optional: true
+- takeScreenshot: ${OUT}/03-compra-${THEME}
+
+- tapOn:
+    id: tab.today
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 10000
+- tapOn: Regar las plantas
+- extendedWaitUntil:
+    visible:
+      id: task-form.save
+    timeout: 10000
+- takeScreenshot: ${OUT}/04-tarea-${THEME}
+- tapOn:
+    id: task-form.cancel
+
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: tasks.offline
+    timeout: 15000
+- tapOn:
+    id: today.quick-add
+- inputText: Comprar bombillas
+- tapOn:
+    id: today.quick-add.submit
+- hideKeyboard
+- extendedWaitUntil:
+    visible:
+      text: Comprar bombillas
+    timeout: 10000
+- takeScreenshot: ${OUT}/05-sin-red-${THEME}
+- setAirplaneMode: disabled
+
+- tapOn:
+    id: tab.settings
+- extendedWaitUntil:
+    visible:
+      id: settings.members
+    timeout: 10000
+- takeScreenshot: ${OUT}/06-ajustes-${THEME}

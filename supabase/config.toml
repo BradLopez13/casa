@@ -407,6 +407,10 @@ deno_version = 2
 # Authenticates with the x-push-secret header instead of a user JWT.
 verify_jwt = false
 
+[functions.revoke-apple]
+# Called by the app with the person's session: the JWT check stays on (bloque 15.4).
+verify_jwt = true
+
 [functions.billing-webhook]
 # Authenticates with the Authorization header RevenueCat sends (BILLING_WEBHOOK_SECRET), not a
 # user JWT (bloque 12).

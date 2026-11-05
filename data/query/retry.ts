@@ -1,6 +1,7 @@
 // Pure: no react-native import, so Vitest can check it.
 import { onlineManager } from '@tanstack/react-query';
 import { AppError, isTransient, toAppError } from '@/data/supabase/errors';
+import { queueLog, queueLogOn } from './queueLog';
 import { isSignedIn } from './sessionUser';
 
 /**
@@ -45,7 +46,7 @@ export const retryOnNetwork = (failureCount: number, error: AppError) => {
   const appError = toAppError(error);
   const again = failureCount < NETWORK_RETRY_LIMIT && isTransient(appError, isSignedIn());
   // The token expired and could not be refreshed: ask for a new one before the next try (T1).
-  if (again && appError.status === 401) refreshSoon();
+  if (again && (appError.status === 401 || appError.code === 'NOT_AUTHENTICATED')) refreshSoon();
   return again;
 };
 
@@ -109,30 +110,56 @@ export function retryQueuedNow(): void {
 const tries = new WeakMap<object, { count: number; endedAt: number }>();
 
 /**
- * A queued change's function, with the wait between two tries inside it instead of in TanStack's
- * `retryDelay` (which the queued changes set to 0): TanStack's timer cannot be cut short, and
- * «Reintentar» waited for it, up to 15 s (bloque 14.1, T5). The first try goes at once; each next
- * one waits what is left of `retryDelayOnNetwork` since the last try ended (a pause in between,
- * offline or in the background, counts), or less if `retryQueuedNow` comes first. A change
- * restored after a restart is a new run and starts over.
+ * A queued change's function, with the tries inside it instead of in TanStack. Two reasons:
+ * TanStack's timer between two tries cannot be cut short, and «Reintentar» waited for it, up to
+ * 15 s (bloque 14.1, T5); and with the app behind, Android delivers the network's events and the
+ * answers to JS but fires no JS timer at all (React Native stops them on host pause,
+ * `JavaTimerManager.onHostPause`), and TanStack sleeps on one before every retry, so a change whose
+ * first try failed as the connection came back (the handover from mobile data to wifi: ciclo 17
+ * en el .51, 4 de noviembre) waited for the app to be opened (bloque 15.1). Here a transient
+ * failure (`retryOnNetwork`) waits what `retryDelayOnNetwork` says with the waiter the app set
+ * (`setQueueWaiter`: native on Android, so it runs behind), then for the connection if it went,
+ * and tries again; «Reintentar» and the connection coming back cut both waits short
+ * (`retryQueuedNow`). Any answer from the server is final at once. TanStack keeps no retry of its
+ * own (`QUEUED_RETRY`). A change restored after a restart is a new run and starts over, with what
+ * is left of its wait since the last try ended (a pause in between, offline or behind, counts).
  */
 export function queuedFn<V, R>(fn: (vars: V) => Promise<R>): (vars: V, run?: object) => Promise<R> {
   return async (vars, run) => {
     // Taken out of the cache (a household left, a sign-out): it never goes again (T6), also when
-    // that happened while it waited between two tries.
+    // that happened while it waited.
     const letGo = () => typeof vars === 'object' && vars !== null && abandoned.has(vars);
-    if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+    if (letGo()) throw new AppError('QUEUE_DROPPED');
     if (run === undefined) return fn(vars);
     const before = tries.get(run);
+    let count = before?.count ?? 0;
     if (before !== undefined) {
-      const left = retryDelayOnNetwork(before.count - 1) - (Date.now() - before.endedAt);
+      const left = retryDelayOnNetwork(count - 1) - (Date.now() - before.endedAt);
       if (left > 0) await waitBetweenTries(left);
-      if (letGo()) throw new AppError('NOT_AUTHENTICATED');
+      if (letGo()) throw new AppError('QUEUE_DROPPED');
     }
-    try {
-      return await fn(vars);
-    } finally {
-      tries.set(run, { count: (before?.count ?? 0) + 1, endedAt: Date.now() });
+    for (;;) {
+      try {
+        const result = await fn(vars);
+        tries.set(run, { count: count + 1, endedAt: Date.now() });
+        return result;
+      } catch (error) {
+        tries.set(run, { count: count + 1, endedAt: Date.now() });
+        const appError = toAppError(error);
+        if (!retryOnNetwork(count, appError)) throw error;
+        count += 1;
+        const wait = retryDelayOnNetwork(count - 1);
+        if (queueLogOn) queueLog(`try ${count} failed ${appError.code}: again in ${wait} ms`);
+        park(vars, true);
+        try {
+          await waitBetweenTries(wait);
+          if (letGo()) throw new AppError('QUEUE_DROPPED');
+          await untilOnline();
+          if (letGo()) throw new AppError('QUEUE_DROPPED');
+        } finally {
+          park(vars, false);
+        }
+      }
     }
   };
 }
@@ -151,17 +178,87 @@ export function abandonQueued(mutation: { state: { variables?: unknown } }): voi
   if (typeof vars === 'object' && vars !== null) abandoned.add(vars);
 }
 
-/** The retry delay TanStack keeps for the queued changes: none, the wait is in `queuedFn`. */
-export const QUEUED_RETRY_DELAY = 0;
+/** The variables of the queued changes waiting inside `queuedFn` (between tries or for the connection). */
+const parked = new Set<object>();
+const parkedListeners = new Set<() => void>();
+let parkedVersion = 0;
+
+function park(vars: unknown, on: boolean): void {
+  if (typeof vars !== 'object' || vars === null) return;
+  if (on) parked.add(vars);
+  else parked.delete(vars);
+  parkedVersion += 1;
+  for (const listener of [...parkedListeners]) listener();
+}
+
+/**
+ * Whether a queued change waits inside `queuedFn`, between two tries or for the connection: like
+ * a change TanStack paused, it is not on its way (revisión 15.1: with the tries out of TanStack,
+ * `isPaused` stays false while a change waits for the connection after a failed try, so a toggle
+ * kept its note busy offline and a delete in Compra waited 10 s for it).
+ */
+export function isParked(vars: unknown): boolean {
+  return typeof vars === 'object' && vars !== null && parked.has(vars);
+}
+
+/** Called whenever a queued change parks or goes on (for `useSyncExternalStore`). */
+export function subscribeParked(listener: () => void): () => void {
+  parkedListeners.add(listener);
+  return () => parkedListeners.delete(listener);
+}
+
+/** Changes on every park and unpark: the snapshot for `useSyncExternalStore`. */
+export const parkedSnapshot = (): number => parkedVersion;
+
+/** The retry TanStack keeps for the queued changes: none, the tries are in `queuedFn`. */
+export const QUEUED_RETRY = false;
+
+type Waiter = (ms: number) => Promise<void>;
+let waiter: Waiter | undefined;
+
+/**
+ * How a queued change waits between two tries: a JS timer unless the app sets one that runs with
+ * the app behind (on Android, the native `BackgroundWait`, `data/query/setup.ts`). `undefined` goes
+ * back to the timer.
+ */
+export function setQueueWaiter(wait: Waiter | undefined): void {
+  waiter = wait;
+}
 
 function waitBetweenTries(ms: number): Promise<void> {
   return new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const wake = () => {
-      clearTimeout(timer);
+      if (timer !== undefined) clearTimeout(timer);
       waits.delete(wake);
       resolve();
     };
-    const timer = setTimeout(wake, ms);
+    // A waiter that fails (the native module gone with a reload) falls back to the timer: the
+    // change waits, it is never dropped for it (revisión 15.1).
+    let native: Promise<void> | undefined;
+    try {
+      native = waiter?.(ms);
+    } catch {
+      native = undefined;
+    }
+    if (native === undefined) timer = setTimeout(wake, ms);
+    else void native.then(wake, () => (timer = setTimeout(wake, ms)));
+    waits.add(wake);
+  });
+}
+
+/** Resolves once there is a connection (at once with one); «Reintentar» cuts it short too. */
+function untilOnline(): Promise<void> {
+  if (onlineManager.isOnline()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const wake = () => {
+      off();
+      waits.delete(wake);
+      resolve();
+    };
+    const off = onlineManager.subscribe((online) => {
+      if (online) wake();
+    });
     waits.add(wake);
   });
 }

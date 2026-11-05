@@ -13,6 +13,9 @@ import { SheetDragFrame } from './SheetDrag';
 
 const InSheet = createContext(false);
 
+/** Whether this modal is drawn as the centred sheet of a wide window (from `medium` up). */
+export const useInSheet = () => useContext(InSheet);
+
 const ALL_EDGES: Edge[] = ['top', 'right', 'bottom', 'left'];
 const NO_EDGES: Edge[] = [];
 const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };

@@ -7,6 +7,7 @@ import { signOut } from '@/features/auth/api';
 import { useUnsentCount } from '@/features/offline/unsent';
 import { useSession } from '@/features/auth/SessionProvider';
 import { DeleteAccountButton } from '@/features/auth/DeleteAccountButton';
+import { openLegal } from '@/features/legal/open';
 import { HouseholdNoticesSection } from '@/features/push/HouseholdNoticesSection';
 import { ReminderSettingsSection } from '@/features/reminders/ReminderSettingsSection';
 import { HouseholdsSection } from '@/features/households/HouseholdsSection';
@@ -176,6 +177,26 @@ export default function SettingsScreen() {
               aloneIn={aloneIn}
               disabled={!members.data}
               quiet
+            />
+            {/* The stores ask for both to be at hand inside the app (bloque 15.5); they open in
+                the browser, in the app's language. */}
+            <Button
+              testID="settings.privacy"
+              title={t('legal.privacy')}
+              variant="tertiary"
+              icon={actionIcons.openPhoneSettings}
+              width="hug"
+              flush
+              onPress={() => void openLegal('privacy')}
+            />
+            <Button
+              testID="settings.terms"
+              title={t('legal.terms')}
+              variant="tertiary"
+              icon={actionIcons.openPhoneSettings}
+              width="hug"
+              flush
+              onPress={() => void openLegal('terms')}
             />
             {/* Deleting needs to know who else is in the household; until then, say why it waits. */}
             {members.data || members.isError ? null : (

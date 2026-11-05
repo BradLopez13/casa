@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 # Bloque 14.1 (P1-2 del 1 de noviembre): a task made offline stayed «Sin enviar» with the
 # connection back in 3 of 9 tries. One try is not enough: three cycles of airplane mode in a row,
 # each with a task made offline, and each time the mark goes once the connection is back.

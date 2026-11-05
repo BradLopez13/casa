@@ -6,8 +6,9 @@ import { applyToggle } from '@/domain/tasks/optimistic';
 import type { TaskItem } from '@/domain/tasks/views';
 import { t } from '@/i18n';
 import { QUEUED_META, touches } from '@/data/query/queue';
-import { QUEUED_RETRY_DELAY, queuedFn, retryOnNetwork } from '@/data/query/retry';
-import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { isParked, QUEUED_RETRY, queuedFn } from '@/data/query/retry';
+import { noteRefusedByEnded } from '@/data/query/ended-household';
+import { assertQueuedBy, droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import { taskErrorMessage } from './errors';
 import { completeTask, reopenTask } from './api';
 import { markFresh } from './freshIds';
@@ -106,8 +107,7 @@ export function buildToggleOptions(
     scope: TASKS_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     // The moment and the day of the tap: the note keeps its time when it arrives, and the server
     // moves a recurring task on from the day it was marked (bloque 11).
     mutationFn: queuedFn(async ({ id, done, at, userId }: ToggleVars) => {
@@ -147,7 +147,8 @@ export function buildToggleOptions(
           return successor ? [...restored, successor] : restored;
         });
       }
-      notify(explainToggleError(error, done));
+      if (householdGone(error)) noteRefusedByEnded(householdId);
+      else notify(explainToggleError(error, done));
       await invalidateIfStale(queryClient, error);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
@@ -156,6 +157,23 @@ export function buildToggleOptions(
       void invalidateTasksWhenIdle(queryClient, householdId);
     },
   };
+}
+
+/**
+ * The ids of the tasks with a toggle on its way (pending, not waiting its turn or for the
+ * connection), sorted and on one line: a value the screen subscribes to for the box's «ocupado».
+ * With the React Compiler on, a check that read the mutation cache when called was memoised with
+ * nothing React saw changing, and the note stayed «ocupado» after its reopen had reached the server
+ * (CI del PR #67, create-complete-task; prueba en el .51 del 5 de noviembre).
+ */
+export function busyToggleIds(queryClient: QueryClient): string {
+  const ids = queryClient
+    .getMutationCache()
+    .findAll({ mutationKey: TOGGLE_KEY, status: 'pending' })
+    .filter((m) => !m.state.isPaused && !isParked(m.state.variables))
+    .map((m) => (m.state.variables as ToggleVars | undefined)?.id)
+    .filter((id): id is string => typeof id === 'string');
+  return [...new Set(ids)].sort().join('\n');
 }
 
 /** The toggles of this task still pending, oldest first. */

@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 # Needs the fixtures: EXPIRED_TOKEN = b2 x 24, VALID_TOKEN = a1 x 24 (see supabase/e2e/fixtures.sql).
 - clearState

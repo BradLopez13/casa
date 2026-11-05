@@ -19,6 +19,12 @@ export type TodayLine =
        * is (bloque 14.5, P2-2): the door then says it.
        */
       rest?: HouseholdRest;
+      /**
+       * How many were done today, when nothing is due today but yours from earlier days is
+       * (bloque 15.3, P3-3): the line then says «Todo hecho por hoy» instead of «Nada para hoy»
+       * over the tray of what was done.
+       */
+      doneToday?: number;
     }
   | { kind: 'household'; household: number }
   | { kind: 'nothingMine'; unassigned: number }
@@ -70,10 +76,22 @@ export function todayLine({
     };
     return mineToday > 0
       ? line
-      : { ...line, rest: householdRest(pending.filter((t) => !isMine(t))) };
+      : {
+          ...line,
+          rest: householdRest(pending.filter((t) => !isMine(t))),
+          doneToday: doneToday.length,
+        };
   }
   if (filter === userId) {
-    if (mine > 0) return { kind: 'mine', today: mineToday, overdue: mineOverdue, household: null };
+    if (mine > 0) {
+      const line = {
+        kind: 'mine' as const,
+        today: mineToday,
+        overdue: mineOverdue,
+        household: null,
+      };
+      return mineToday > 0 ? line : { ...line, doneToday: doneToday.length };
+    }
     return { kind: 'nothingMine', unassigned: pending.filter((t) => t.assigneeId === null).length };
   }
   return {

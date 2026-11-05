@@ -8,8 +8,11 @@ let configured = false;
 function configure() {
   if (configured) return;
   const webClientId: unknown = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  // iOS: its own client (bloque 15.4); the URL scheme goes in the build (app.config.js).
+  const iosClientId: unknown = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   GoogleSignin.configure({
     webClientId: typeof webClientId === 'string' ? webClientId : undefined,
+    iosClientId: typeof iosClientId === 'string' && iosClientId !== '' ? iosClientId : undefined,
   });
   configured = true;
 }

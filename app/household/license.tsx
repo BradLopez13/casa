@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Linking, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@/data/supabase/errors';
 import { houseInitials } from '@/domain/members/marks';
@@ -8,9 +8,13 @@ import { useSession } from '@/features/auth/SessionProvider';
 import { startHouseholdCheckout, type HouseholdLicense } from '@/features/households/api';
 import {
   billingEnabled,
+  configureBilling,
   licenseHeadline,
   licensePrice,
+  manageSubscriptionUrl,
   purchaseLicense,
+  restorePurchases,
+  storeAtHand,
 } from '@/features/households/billing';
 import {
   useHouseholdLicense,
@@ -19,6 +23,7 @@ import {
   useMembership,
 } from '@/features/households/queries';
 import { t } from '@/i18n';
+import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 import { LoadError } from '@/ui/components/LoadError';
 import { ModalHeader } from '@/ui/components/ModalHeader';
@@ -63,7 +68,11 @@ export default function LicenseScreen() {
   const license = useHouseholdLicense(householdId);
   const members = useMembers(householdId).data ?? [];
   const [paying, setPaying] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const isOwner = membership?.role === 'owner';
+  // The level the person needs: the households they lead (bloque 15.6).
+  const led = households.filter((h) => h.role === 'owner').length;
+  const platform = Platform.OS === 'ios' ? 'ios' : 'android';
 
   // A database without licences answers none: the household is complimentary, as all are now.
   const shown: HouseholdLicense | null =
@@ -91,7 +100,10 @@ export default function LicenseScreen() {
     setPaying(true);
     try {
       const checkout = await startHouseholdCheckout(householdId);
-      if ((await purchaseLicense(checkout)) === 'unavailable') notify(t('license.checkoutLater'));
+      if (userId) await configureBilling(userId, platform);
+      const outcome = await purchaseLicense(checkout);
+      if (outcome === 'unavailable') notify(t('license.checkoutLater'));
+      else if (outcome === 'purchased') notify(t('license.purchased'));
     } catch (e) {
       const code = toAppError(e).code;
       notify(
@@ -104,6 +116,30 @@ export default function LicenseScreen() {
     } finally {
       setPaying(false);
     }
+  };
+
+  // Both stores ask for these two in the app (bloque 15.6): restoring finds the person's
+  // subscriptions again; managing opens the store's own page.
+  const restore = async () => {
+    setRestoring(true);
+    try {
+      if (userId) await configureBilling(userId, platform);
+      const outcome = await restorePurchases();
+      notify(
+        outcome === 'restored'
+          ? t('license.restored')
+          : outcome === 'nothing'
+            ? t('license.restoredNothing')
+            : t('license.checkoutLater'),
+      );
+    } catch {
+      notify(t('members.errors.UNKNOWN'));
+    } finally {
+      setRestoring(false);
+    }
+  };
+  const manage = () => {
+    void Linking.openURL(manageSubscriptionUrl(platform)).catch(() => undefined);
   };
 
   return (
@@ -172,6 +208,30 @@ export default function LicenseScreen() {
             )}
           </PinnedNote>
         ) : null}
+        {/* What the stores ask for, the day there is something to buy (`storeAtHand`). */}
+        {storeAtHand(platform) ? (
+          <View style={{ paddingTop: space(5), gap: space(2), alignItems: 'flex-start' }}>
+            <Button
+              testID="license.restore"
+              title={t('license.restore')}
+              variant="tertiary"
+              icon={actionIcons.retry}
+              width="hug"
+              flush
+              loading={restoring}
+              onPress={() => void restore()}
+            />
+            <Button
+              testID="license.manage"
+              title={t('license.manage')}
+              variant="tertiary"
+              icon={actionIcons.openPhoneSettings}
+              width="hug"
+              flush
+              onPress={manage}
+            />
+          </View>
+        ) : null}
       </ScrollView>
       {/* The one action, at the foot in pósit, only for whoever runs the household. */}
       {canPay ? (
@@ -186,7 +246,7 @@ export default function LicenseScreen() {
         >
           <Button
             testID="license.pay"
-            title={t('license.pay')}
+            title={led > 1 ? t('license.payLevel', { count: led }) : t('license.pay')}
             width="full"
             loading={paying}
             onPress={() => void pay()}

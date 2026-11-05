@@ -34,6 +34,12 @@ export type Door = {
    * the controls go under it (fase 10b).
    */
   beside: boolean;
+  /**
+   * Whether a door with a purpose line (Tareas: «Todo lo de la casa, por día…») keeps it. On a
+   * phone on its side in one column with large text those two rows, with the pills under the
+   * door, left half a note in view (bloque 15.3, P3-8): there the line is dropped.
+   */
+  purposeLine: boolean;
 };
 
 /** Largest the door's own text grows with the system's: past it the list would have no room. */
@@ -105,6 +111,7 @@ export function doorFor(
       maxHeight: null,
       holdsQuickAdd: false,
       beside,
+      purposeLine: true,
     };
   }
   return {
@@ -118,6 +125,7 @@ export function doorFor(
     // ×1.3 on a phone on its side, left no note whole; beside the headline it costs nothing.
     holdsQuickAdd: layout.shortHeight && !layout.twoPane,
     beside,
+    purposeLine: !(layout.shortHeight && !layout.twoPane && largeText),
   };
 }
 

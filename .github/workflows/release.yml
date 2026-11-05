@@ -1,0 +1,79 @@
+# Builds for the stores and sends them to Google Play's internal track and to TestFlight
+# (bloque 15.7). Runs on a `v*` tag or by hand. Needs EXPO_TOKEN in the repository's secrets:
+# without it the workflow says so and ends green, so the rest of the repository is never blocked
+# by accounts that do not exist yet. The build's variables and secret files live in EAS
+# (`eas env:create`, LANZAMIENTO.md), never here.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build and submit
+        type: choice
+        default: all
+        options: [all, android, ios]
+      submit:
+        description: Send the build to the stores (internal track / TestFlight)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  stores:
+    runs-on: ubuntu-latest
+    # An iOS build takes 20–40 min on EAS, and the job waits for it.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Is EXPO_TOKEN there?
+        id: token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "No EXPO_TOKEN in the repository's secrets: nothing is built or sent (LANZAMIENTO.md, paso 7)." >> "$GITHUB_STEP_SUMMARY"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.token.outputs.present == 'true'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.token.outputs.present == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.token.outputs.present == 'true'
+
+      - uses: expo/expo-github-action@v8
+        if: steps.token.outputs.present == 'true'
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # The build runs on EAS and the job waits for it. With the submit on, `--auto-submit` sends
+      # this same build to the internal track and TestFlight once it is done; submitting the
+      # last finished build after a `--no-wait` sent the one before it (revisión del PR #67).
+      - name: Build for the stores, and send it
+        if: steps.token.outputs.present == 'true'
+        env:
+          PLATFORM: ${{ github.event.inputs.platform || 'all' }}
+          SUBMIT: ${{ github.event_name == 'push' || github.event.inputs.submit == 'true' }}
+        run: |
+          if [ "$SUBMIT" = true ]; then
+            eas build --platform "$PLATFORM" --profile production --non-interactive --auto-submit
+          else
+            eas build --platform "$PLATFORM" --profile production --non-interactive
+          fi

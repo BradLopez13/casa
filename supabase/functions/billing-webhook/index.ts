@@ -30,6 +30,18 @@ Deno.serve((req) => {
         p_paid_by: change.paidBy,
         p_initial: change.initial,
         p_event_at: change.eventAt,
+        p_product_id: change.productId,
+        p_event_id: change.eventId,
+      });
+      if (error) throw error;
+      return data === true;
+    },
+    transfer: async (change) => {
+      const { data, error } = await supabase.rpc('transfer_subscriptions', {
+        p_from: change.transfer.from,
+        p_to: change.transfer.to,
+        p_event_id: change.eventId,
+        p_event_at: change.eventAt,
       });
       if (error) throw error;
       return data === true;

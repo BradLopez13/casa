@@ -12,7 +12,7 @@ import { membersKey, membershipKey } from '@/features/households/keys';
 import { useHint, type HintId } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
-import { createTask, listTasks } from './api';
+import { completeTask, createTask, listTasks, reopenTask } from './api';
 import { TaskFilterProvider } from './filter';
 import { deleteWithUndo, showTask } from './deferredDelete';
 import { tasksKey } from './queries';
@@ -32,6 +32,8 @@ vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api')>()),
   listTasks: vi.fn(),
   createTask: vi.fn(),
+  completeTask: vi.fn(),
+  reopenTask: vi.fn(),
 }));
 
 const today = localDateIso(new Date());
@@ -82,6 +84,7 @@ function renderToday(tasks?: TaskItem[]) {
       </NoticeProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 /** The window at `width` × `height`: react-native-web measures the document element. */
@@ -230,6 +233,38 @@ describe('Hoy', () => {
     expect(createTask).toHaveBeenCalledTimes(1);
   });
 
+  it('a quick add that fails puts what was typed back in the field', async () => {
+    let fail: (error: unknown) => void = () => undefined;
+    vi.mocked(createTask).mockReturnValue(new Promise((_, reject) => (fail = reject)));
+    renderToday([]);
+    const field = screen.getByTestId<HTMLInputElement>('today.quick-add');
+    fireEvent.change(field, { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('today.quick-add.submit'));
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(field.value).toBe('');
+    act(() => fail(new AppError('UNKNOWN')));
+    await vi.waitFor(() => expect(field.value).toBe('Regar'));
+  });
+
+  // Prueba del 4 de noviembre: a quick add made offline in a household deleted meanwhile was let
+  // go of with the household (QUEUE_DROPPED), and its text came back into the quick add of the
+  // household the app had just moved to, ready to be added to the wrong one.
+  it('does not put it back when the change was let go of, nor when the household is gone', async () => {
+    let fail: (error: unknown) => void = () => undefined;
+    vi.mocked(createTask).mockReturnValue(new Promise((_, reject) => (fail = reject)));
+    renderToday([]);
+    const field = screen.getByTestId<HTMLInputElement>('today.quick-add');
+    fireEvent.change(field, { target: { value: 'Regar' } });
+    fireEvent.click(screen.getByTestId('today.quick-add.submit'));
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalled());
+    expect(screen.getByText('Regar')).toBeTruthy();
+    await act(async () => {
+      fail(new AppError('QUEUE_DROPPED'));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(field.value).toBe('');
+  });
+
   // Bloque 11 (11.6): with the field empty the «+» opens the full form, for today and for you.
   it('with the field empty, the «+» opens the new task form for today and for you', () => {
     vi.mocked(router.push).mockClear();
@@ -254,6 +289,24 @@ describe('Hoy', () => {
   it('offers task ideas when there is nothing to do today', () => {
     renderToday([task('Planchar', { dueOn: addDays(today, 3) })]);
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();
+  });
+
+  // CI del PR #67 (create-complete-task) y prueba en el .51: after reopening, the box stayed
+  // «ocupado» for good although the reopen had reached the server in 0,2 s; the note was not drawn
+  // again once the toggle left the queue.
+  it('the box is no longer busy once a complete and its reopen have gone', async () => {
+    vi.mocked(completeTask).mockResolvedValue(undefined);
+    vi.mocked(reopenTask).mockResolvedValue(undefined);
+    renderToday([task('Fregar', {})]);
+    fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalled());
+    fireEvent.click(await screen.findByTestId('done-tray.Fregar'));
+    await vi.waitFor(() => expect(reopenTask).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(screen.getByTestId('task-note.Fregar.toggle').getAttribute('aria-busy')).not.toBe(
+        'true',
+      ),
+    );
   });
 
   it('offline, the box marks the task at once and offers «Deshacer», as the shopping does', () => {

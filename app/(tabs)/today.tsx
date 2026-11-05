@@ -3,6 +3,7 @@ import { useMemo, useRef, type ReactElement, type ReactNode } from 'react';
 import { SectionList, Text, View } from 'react-native';
 import { longDateLabel, shortDateLabel } from '@/domain/tasks/labels';
 import { todayLine } from '@/domain/tasks/todayLine';
+import { filterByAssignee } from '@/domain/tasks/views';
 import { MemberFilter } from '@/features/tasks/components/MemberFilter';
 import { SectionHeader } from '@/features/tasks/components/SectionHeader';
 import { QuickAdd } from '@/features/tasks/components/QuickAdd';
@@ -64,13 +65,25 @@ export default function TodayScreen() {
   // The door counts the whole household, so the line can say what is left for everyone else.
   const tasks = tasksQuery.data;
   // A delete whose «Deshacer» is still up is not celebrated (DESIGN.md, fase 10a).
-  const deleting = useDeletingTasks(membership?.householdId);
+  const going = useDeletingTasks(membership?.householdId);
+  // The sections carry the list's filter; the headline applies it itself.
+  const deleting = useMemo(() => filterByAssignee(going, assigneeId), [going, assigneeId]);
   const line = useMemo(
     () =>
-      todayLine({ tasks: tasks ?? [], deleting, today, userId, filter: assigneeId, filterName }),
-    [tasks, deleting, today, userId, assigneeId, filterName],
+      todayLine({
+        tasks: tasks ?? [],
+        deleting: going,
+        today,
+        userId,
+        filter: assigneeId,
+        filterName,
+      }),
+    [tasks, going, today, userId, assigneeId, filterName],
   );
-  const sections = useMemo(() => todaySections(filtered, today), [filtered, today]);
+  const sections = useMemo(
+    () => todaySections(filtered, today, deleting),
+    [filtered, today, deleting],
+  );
   const cards = todayCards({
     loaded: tasksQuery.isSuccess,
     // What is being deleted still counts until its «Deshacer» goes.

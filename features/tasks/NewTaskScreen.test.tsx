@@ -90,7 +90,7 @@ describe('Nueva tarea', () => {
     renderNew();
     expect(screen.getAllByText(t('taskForm.newTitle')).length).toBeGreaterThan(0);
     expect(titleField().value).toBe('');
-    expect(titleField().getAttribute('placeholder')).toBe(t('taskForm.titlePlaceholder'));
+    expect(titleField().getAttribute('placeholder')).toBe(t('taskForm.titlePlaceholderFirst'));
     // A pósit that does nothing contradicts «pósit es hacer» (bloque 11): it waits, saying why.
     const save = screen.getByTestId('task-form.save');
     expect(save.getAttribute('aria-disabled')).toBe('true');

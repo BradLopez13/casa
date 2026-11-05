@@ -1,4 +1,5 @@
 import { hiddenItems } from './deferredDelete';
+import { hiddenSuggestions } from './hideSuggestion';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useSyncExternalStore } from 'react';
 import type { AppError } from '@/data/supabase/errors';
@@ -82,6 +83,11 @@ export function useShoppingItems(householdId: string | undefined) {
  * The products deleted on screen whose «Deshacer» is still up, as the cache last had them: «lo de
  * siempre» does not offer them back while they may yet come back (bloque 14.5, P3).
  */
+/** The normalized names dropped from «lo de siempre» whose «Deshacer» is still up. */
+export function useHiddenSuggestions(): ReadonlySet<string> {
+  return useSyncExternalStore(hiddenSuggestions.subscribe, hiddenSuggestions.get);
+}
+
 export function useDeletingItems(householdId: string | undefined): readonly ShoppingItem[] {
   const queryClient = useQueryClient();
   const hidden = useSyncExternalStore(hiddenItems.subscribe, hiddenItems.get);

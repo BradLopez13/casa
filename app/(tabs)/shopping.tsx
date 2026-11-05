@@ -7,13 +7,15 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { ActivityIndicator, ScrollView, Text, View, type FlatList } from 'react-native';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import { ActivityIndicator, AppState, ScrollView, Text, View, type FlatList } from 'react-native';
 import { sortList, type ShoppingItem } from '@/domain/shopping/list';
 import { doorLine } from '@/domain/shopping/screen';
 import { usual, type HistoryEntry } from '@/domain/shopping/suggest';
 import { useSession } from '@/features/auth/SessionProvider';
 import { useMembers, useMembership, useSeveralHouseholds } from '@/features/households/queries';
-import { newShoppingItemId } from '@/features/shopping/api';
+import { hideShoppingSuggestion, newShoppingItemId } from '@/features/shopping/api';
+import { hideSuggestionWithUndo } from '@/features/shopping/hideSuggestion';
 import {
   AddItemField,
   useItemEntry,
@@ -41,7 +43,9 @@ import {
   useSetQuantity,
   useShoppingHistory,
   useDeletingItems,
+  useHiddenSuggestions,
   useShoppingItems,
+  shoppingHistoryKey,
 } from '@/features/shopping/queries';
 import {
   listTopStep,
@@ -58,6 +62,7 @@ import { DoorHeader } from '@/ui/components/DoorHeader';
 import { ErrorText } from '@/ui/components/ErrorText';
 import { FridgeRefresh, usePaneRefreshControl } from '@/ui/components/FridgeRefresh';
 import { useNotice } from '@/ui/components/Notice';
+import { noticeDuration } from '@/ui/components/noticeTiming';
 import { TwoPane } from '@/ui/components/TwoPane';
 import { useTheme } from '@/ui/theme';
 import { useLayout } from '@/ui/useLayout';
@@ -66,7 +71,7 @@ import { useNoticeNudge } from '@/ui/useNoticeNudge';
 import { useListEndPadding } from '@/ui/useTabBarClearance';
 import type { SheetRow } from '@/features/shopping/sheetRows';
 import { actionIcons } from '@/ui/actionIcons';
-import { announce } from '@/ui/a11y';
+import { announce, isScreenReaderOn } from '@/ui/a11y';
 
 const NO_ITEMS: ShoppingItem[] = [];
 const NO_HISTORY: HistoryEntry[] = [];
@@ -98,6 +103,7 @@ export default function ShoppingScreen() {
   const notify = useNotice();
   const { userId } = useSession();
   const householdId = useMembership().data?.householdId;
+  const queryClient = useQueryClient();
   const itemsQuery = useShoppingItems(householdId);
   const historyQuery = useShoppingHistory(householdId);
   const membersQuery = useMembers(householdId);
@@ -122,11 +128,42 @@ export default function ShoppingScreen() {
 
   const items = itemsQuery.data ?? NO_ITEMS;
   const deleting = useDeletingItems(householdId);
+  const hiddenUsual = useHiddenSuggestions();
   const history = historyQuery.data ?? NO_HISTORY;
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const { marks, names } = useMemberLabels(members, userId);
   const sorted = useMemo(() => sortList(items), [items]);
   const pending = sorted.pending;
+
+  // Press and hold on a suggestion drops it from «lo de siempre» (bloque 15.3, P3-9), with
+  // «Deshacer» as a deleted product; the server hides it when the notice goes. Hiding needs the
+  // connection, as everything that is not the day to day.
+  const removeUsual = (suggestion: HistoryEntry) => {
+    if (householdId === undefined) return;
+    if (!onlineManager.isOnline()) {
+      notify(t('shopping.usualRemoveNeedsNet'));
+      return;
+    }
+    hideSuggestionWithUndo({
+      id: suggestion.normalizedName,
+      remove: async (name) => {
+        await hideShoppingSuggestion(householdId, name);
+        await queryClient.invalidateQueries({ queryKey: shoppingHistoryKey(householdId) });
+      },
+      notify,
+      ms: noticeDuration({ action: true, screenReader: isScreenReaderOn() }),
+      schedule: (fn, ms) => {
+        const timer = setTimeout(fn, ms);
+        return () => clearTimeout(timer);
+      },
+      watchBackground: (flush) => {
+        const sub = AppState.addEventListener('change', (state) => {
+          if (state !== 'active') flush();
+        });
+        return () => sub.remove();
+      },
+    });
+  };
 
   const add = (name: string) => {
     if (householdId === undefined || userId === null) return;
@@ -249,9 +286,13 @@ export default function ShoppingScreen() {
           // whose «Deshacer» is still up (bloque 14.5).
           usual={usual(
             history,
-            new Set([...items, ...deleting].map((entry) => entry.normalizedName)),
+            new Set([
+              ...[...items, ...deleting].map((entry) => entry.normalizedName),
+              ...hiddenUsual,
+            ]),
           )}
           onAdd={(name) => entry.submit(name)}
+          onRemove={removeUsual}
         />
         <HelpLink entry="shopping" testID="shopping.help" />
       </View>

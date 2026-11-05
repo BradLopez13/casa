@@ -38,8 +38,11 @@ export type HouseholdLicense = {
   trialEndsAt: string | null;
 };
 
-/** What the billing provider needs to start paying for a household's licence. */
-export type Checkout = { provider: string; offering: string; householdId: string };
+/**
+ * What the billing provider needs to start paying for a household's licence: the offering, the
+ * household the person pays from, and the level (how many households they lead: casas_n).
+ */
+export type Checkout = { provider: string; offering: string; householdId: string; level: number };
 export type Member = { userId: string; displayName: string; role: Role; joinedAt: string };
 export type ActiveInvite = { id: string; expiresAt: string; createdBy: string | null };
 
@@ -78,7 +81,9 @@ function toLicense(
  */
 export async function listMyHouseholds(): Promise<Membership[]> {
   const userId = await sessionUserId();
-  if (!userId) return [];
+  // «I do not know», never «none» (bloque 15.1, P3-10): an empty list would read as every
+  // household ended and forget their queues (useForgetEndedHousehold).
+  if (!userId) throw new AppError('NOT_AUTHENTICATED');
 
   let result;
   try {
@@ -197,6 +202,17 @@ export async function createInvite(
   return { token: row.token, expiresAt: row.expires_at };
 }
 
+/**
+ * Why the person is no longer in a household (bloque 15.2): the household was deleted, the owner
+ * removed them, or they left from another phone; null while they are still in it.
+ */
+export async function membershipEnd(
+  householdId: string,
+): Promise<'deleted' | 'removed' | 'left' | null> {
+  const reason = await unwrapMaybe(supabase.rpc('membership_end', { p_household_id: householdId }));
+  return reason === 'deleted' || reason === 'removed' || reason === 'left' ? reason : null;
+}
+
 export async function revokeInvite(inviteId: string): Promise<void> {
   await unwrapMaybe(supabase.rpc('revoke_invite', { p_invite_id: inviteId }));
 }
@@ -295,9 +311,10 @@ export async function startHouseholdCheckout(householdId: string): Promise<Check
   const data = await unwrap(
     supabase.rpc('start_household_checkout', { p_household_id: householdId }),
   );
-  const row = data as { provider?: unknown; offering?: unknown };
+  const row = data as { provider?: unknown; offering?: unknown; level?: unknown };
   if (typeof row.provider !== 'string' || typeof row.offering !== 'string') {
     throw new AppError('UNKNOWN');
   }
-  return { provider: row.provider, offering: row.offering, householdId };
+  const level = typeof row.level === 'number' ? row.level : 1;
+  return { provider: row.provider, offering: row.offering, householdId, level };
 }

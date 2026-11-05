@@ -1,6 +1,8 @@
 import { focusManager, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
+import { networkPass } from '@/modules/queue-background';
+import { watchNetworkPass } from './networkPass';
 import { shouldPersistMutation } from './persistence';
 import { createQueueMonitor, type QueueMonitor, type QueueSnapshot } from './queueMonitor';
 
@@ -43,7 +45,28 @@ export const queueMonitorOf = (queryClient: QueryClient): QueueMonitor => held(q
  * layout calls it once (bloque 14.1).
  */
 export function keepQueueWatched(queryClient: QueryClient): () => void {
-  return hold(held(queryClient));
+  const release = hold(held(queryClient));
+  // Behind, Android takes the app's network away after some 5 s: a job gives it back while
+  // changes wait (bloque 15.1, `watchNetworkPass`).
+  const stopPass =
+    networkPass === null
+      ? () => undefined
+      : watchNetworkPass(
+          queryClient,
+          shouldPersistMutation,
+          networkPass,
+          () => AppState.currentState === 'active',
+          (listener) => {
+            const subscription = AppState.addEventListener('change', (state) =>
+              listener(state === 'active'),
+            );
+            return () => subscription.remove();
+          },
+        );
+  return () => {
+    stopPass();
+    release();
+  };
 }
 
 /** What the queue says now: the ids waiting («Sin enviar») and the band, kept up to date. */

@@ -50,6 +50,7 @@ describe('todayLine', () => {
       overdue: 1,
       household: 0,
       rest: { unassigned: 0, others: [] },
+      doneToday: 0,
     });
     const tasks = [
       task({ assigneeId: me, dueOn: '2026-10-05' }),
@@ -164,6 +165,20 @@ describe('todayLine', () => {
 
     it('once confirmed (no longer in flight) the door celebrates', () => {
       expect(deleting([done({ assigneeId: me })], [])).toEqual({ kind: 'allDone' });
+    });
+  });
+});
+
+// Bloque 15.3 (P3-3): «Nada para hoy» sat over fifteen tasks done today.
+describe('done today under yours from before', () => {
+  it('says there are tasks done today when nothing is due and yours from before wait', () => {
+    const tasks = [task({ assigneeId: me, dueOn: '2026-10-05' }), done()];
+    expect(line(tasks, null)).toMatchObject({ kind: 'mine', today: 0, overdue: 1, doneToday: 1 });
+    expect(line(tasks, me)).toMatchObject({ kind: 'mine', today: 0, doneToday: 1 });
+  });
+  it('and counts none when nothing was done today', () => {
+    expect(line([task({ assigneeId: me, dueOn: '2026-10-05' })], null)).toMatchObject({
+      doneToday: 0,
     });
   });
 });

@@ -31,6 +31,8 @@ export const APP_ERROR_CODES = [
   'TOO_MANY_HOUSEHOLDS',
   'BILLING_DISABLED',
   'NETWORK',
+  /** The queue let the change go on this phone (a sign-out, a household left): never the server's. */
+  'QUEUE_DROPPED',
   'UNKNOWN',
 ] as const;
 
@@ -134,6 +136,10 @@ export function isTransient(error: AppError, signedIn: boolean): boolean {
   if (error.code === 'NETWORK') return true;
   const { status, serverCode } = error;
   if (status === 401 && signedIn) return true;
+  // The RPC's own NOT_AUTHENTICATED (a 400) while someone is signed in is the 401 in another
+  // coat: the token expired without refreshing and the change went with the anonymous key
+  // (bloque 15.1, P2-6). Refreshed and tried again, never dropped as a sign-out.
+  if (error.code === 'NOT_AUTHENTICATED' && signedIn) return true;
   if (status !== undefined && TRANSIENT_STATUSES.has(status)) return true;
   if (serverCode === undefined) return false;
   if (TRANSIENT_SERVER_CODES.has(serverCode)) return true;

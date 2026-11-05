@@ -2,10 +2,147 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0; url=privacidad/" />
-    <title>Nido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nido · La casa, en equipo.</title>
+    <meta
+      name="description"
+      content="Nido reparte las tareas y la compra de una casa entre quienes viven en ella."
+    />
+    <link rel="icon" href="icon.png" />
+    <style>
+      :root {
+        --papel: #f3f4f0;
+        --pizarra: #2e3b41;
+        --tinta: #1e2a2f;
+        --gris: #505c63;
+        --posit: #f2d04b;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --papel: #151b1e;
+          --tinta: #ecefea;
+          --gris: #a7b2b5;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font:
+          17px/1.55 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      header {
+        background: var(--pizarra);
+        color: #f3f4f0;
+        padding: 32px 16px;
+      }
+      header p {
+        margin: 4px 0 0;
+        opacity: 0.8;
+      }
+      main {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+      h2 {
+        margin: 2rem 0 0.5rem;
+        font-size: 1.25rem;
+      }
+      a {
+        color: inherit;
+        text-decoration-thickness: 2px;
+        text-decoration-color: var(--posit);
+      }
+      .meta {
+        color: var(--gris);
+      }
+    </style>
+    <style>
+      .icono {
+        width: 96px;
+        height: 96px;
+        border-radius: 22px;
+        display: block;
+        margin: 0 0 16px;
+      }
+      .tiendas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 24px 0;
+      }
+      .boton {
+        display: inline-block;
+        text-decoration: none;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font-weight: 600;
+        border: 1.5px solid currentColor;
+      }
+      .boton.principal {
+        background: var(--posit);
+        border-color: var(--posit);
+        color: #1e2a2f;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
   </head>
-  <body>
-    <p><a href="privacidad/">Política de privacidad de Nido</a></p>
+  <body data-play-url="" data-app-store-id="">
+    <header>
+      <img class="icono" src="icon.png" alt="" width="96" height="96" />
+      <h1>Nido</h1>
+      <p>La casa, en equipo.</p>
+    </header>
+    <main>
+      <p>
+        Nido reparte las tareas y la compra de una casa entre quienes viven en ella: cada cual ve
+        qué le toca hoy, la lista de la compra se comparte y lo que apuntas sin cobertura llega en
+        cuanto vuelve. Sin publicidad y sin vender datos.
+      </p>
+      <div class="tiendas">
+        <a class="boton principal" id="play" href="#" hidden>Google Play</a>
+        <a class="boton principal" id="app-store" href="#" hidden>App Store</a>
+        <span class="meta" id="pronto">Pronto en Google Play y en la App Store.</span>
+      </div>
+      <p class="meta">
+        <a href="privacidad/">Política de privacidad</a> · <a href="terminos/">Términos de uso</a> ·
+        <a href="cuenta/borrar/">Borrar tu cuenta</a> ·
+        <a href="en/privacy/">English</a>
+      </p>
+    </main>
+    <script>
+      // The store links are filled at deploy time (pages.yml) from the repository's variables:
+      // until the apps are published, the line says so instead.
+      (function () {
+        var body = document.body;
+        var play = body.getAttribute('data-play-url') || '';
+        var appStore = body.getAttribute('data-app-store-id') || '';
+        var any = false;
+        if (play) {
+          document.getElementById('play').href = play;
+          document.getElementById('play').hidden = false;
+          any = true;
+        }
+        if (appStore) {
+          document.getElementById('app-store').href = 'https://apps.apple.com/app/id' + appStore;
+          document.getElementById('app-store').hidden = false;
+          any = true;
+        }
+        if (any) document.getElementById('pronto').hidden = true;
+      })();
+    </script>
   </body>
 </html>

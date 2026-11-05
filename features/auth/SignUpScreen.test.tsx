@@ -6,6 +6,12 @@ import { AuthFailure, signUp } from '@/features/auth/api';
 import { pendingInviteKey } from '@/features/households/pending-invite';
 import { t } from '@/i18n';
 
+// The legal pages open in the browser: here only that they are asked for.
+vi.mock('@/features/legal/open', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/legal/open')>()),
+  openLegal: vi.fn(),
+}));
+
 // «Cambiar correo» comes back here with the email and name: the params are the test's to set.
 const nav = vi.hoisted(() => ({
   params: {},
@@ -172,5 +178,18 @@ describe('Crear cuenta', () => {
     renderSignUp();
     fireEvent.click(screen.getByRole('button', { name: t('auth.signUp.goSignIn') }));
     expect(nav.router.back).toHaveBeenCalled();
+  });
+});
+
+// Bloque 15.5: creating an account accepts the terms and the policy, with both at hand.
+describe('the terms line', () => {
+  it('says what creating the account accepts and links to both pages', async () => {
+    const { openLegal } = await import('@/features/legal/open');
+    renderSignUp();
+    expect(screen.getByTestId('sign-up.legal').textContent).toContain(t('auth.signUp.legal'));
+    fireEvent.click(screen.getByTestId('sign-up.privacy'));
+    expect(vi.mocked(openLegal)).toHaveBeenCalledWith('privacy');
+    fireEvent.click(screen.getByTestId('sign-up.terms'));
+    expect(vi.mocked(openLegal)).toHaveBeenCalledWith('terms');
   });
 });

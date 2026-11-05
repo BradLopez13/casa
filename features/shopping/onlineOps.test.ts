@@ -1,5 +1,7 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { markOnline, QUEUED_RETRY, queuedFn, RECONNECT_WINDOW_MS } from '@/data/query/retry';
+import { AppError } from '@/data/supabase/errors';
 import {
   afterShoppingQueue,
   dropQueuedQuantities,
@@ -67,6 +69,32 @@ describe('Compra online operations', () => {
     finish();
     await vi.advanceTimersByTimeAsync(10);
     expect(done).toBe(true);
+  });
+
+  // Revisión de 15.1: an add whose try failed and then went offline waits inside queuedFn, not
+  // paused by TanStack: a delete made then waited the full 10 s for it.
+  it('do not wait for a change waiting inside its function for the connection', async () => {
+    vi.useFakeTimers();
+    markOnline(-RECONNECT_WINDOW_MS);
+    try {
+      const client = new QueryClient();
+      void new MutationObserver<void, AppError, { householdId: string }>(client, {
+        mutationKey: ['shopping', 'add'],
+        networkMode: 'online',
+        retry: QUEUED_RETRY,
+        mutationFn: queuedFn(() => Promise.reject(new AppError('NETWORK'))),
+      })
+        .mutate({ householdId: 'casa' })
+        .catch(() => undefined);
+      await vi.advanceTimersByTimeAsync(0);
+      onlineManager.setOnline(false);
+      let done = false;
+      void afterShoppingQueue(client, 'casa').then(() => (done = true));
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(done).toBe(true);
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   // Revisión de 14.4: offline, a delete waited 10 s for adds that could not go, then failed.

@@ -16,3 +16,17 @@ describe('toSocialFailure', () => {
     expect(toSocialFailure(f)).toBe(f);
   });
 });
+
+// Bloque 15.4: clashing with an account that already exists, said in words.
+describe('clashing accounts (bloque 15.4)', () => {
+  it('an email already taken by a password account', () => {
+    expect(toSocialFailure({ code: 'email_exists' }).code).toBe('SOCIAL_EMAIL_TAKEN');
+    expect(toSocialFailure({ code: 'user_already_exists' }).code).toBe('SOCIAL_EMAIL_TAKEN');
+  });
+  it('a Google or Apple identity already linked to someone else', () => {
+    expect(toSocialFailure({ code: 'identity_already_exists' }).code).toBe('IDENTITY_TAKEN');
+  });
+  it('a provider Supabase has not got switched on', () => {
+    expect(toSocialFailure({ code: 'provider_disabled' }).code).toBe('PROVIDER_OFF');
+  });
+});

@@ -31,6 +31,7 @@ import { firstInitial, memberMarks, type MemberMark } from '@/domain/members/mar
 import { DIALOGS, type Pending } from '@/features/households/memberDialogs';
 import { PendingInvites } from '@/features/households/PendingInvites';
 import { memberErrorMessage } from '@/features/households/errors';
+import { joinNames } from '@/domain/members/names';
 import { t, type MessageKey } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { AccountZone } from '@/ui/components/AccountZone';
@@ -99,6 +100,10 @@ export default function MembersScreen() {
     return () => clearTimeout(timer);
   }, [copied]);
   const onlyMember = isOwner && members.data?.length === 1;
+  // Deleting names who else it is deleted for (bloque 15.2, P3-7).
+  const otherNames = joinNames(
+    (members.data ?? []).filter((m) => m.userId !== userId).map((m) => m.displayName),
+  );
   const mustTransfer = isOwner && (members.data?.length ?? 0) > 1;
 
   async function onInvite() {
@@ -156,7 +161,11 @@ export default function MembersScreen() {
   function onRevoke(inviteId: string) {
     setCopied(false);
     setError(undefined);
-    revoke.mutate(inviteId, { onError: (e) => setError(memberErrorMessage(e, true)) });
+    revoke.mutate(inviteId, {
+      // The one thing that kills a shared link, and it says so (bloque 15.2, P2-3).
+      onSuccess: () => notify(t('members.revoked')),
+      onError: (e) => setError(memberErrorMessage(e, true)),
+    });
   }
 
   const target = pending?.userId
@@ -357,8 +366,10 @@ export default function MembersScreen() {
             ? t(
                 pending?.kind === 'leave' && onlyMember
                   ? 'members.confirm.leaveLastMessage'
-                  : dialog.message,
-                { name: targetName },
+                  : pending?.kind === 'delete' && otherNames !== ''
+                    ? 'members.confirm.deleteMessageWith'
+                    : dialog.message,
+                { name: targetName, names: otherNames },
               )
             : ''
         }

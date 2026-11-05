@@ -416,3 +416,25 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     expect(shopping).toMatch(/<AddItemField entry=\{entry\} \/>[\s\S]{0,300}<OfflineBand/);
   });
 });
+
+// Bloque 15.3 (P2-4): a notice sat on the foot of a sheet, over Guardar, and took its taps. Every
+// foot with a pósit reports its height (`useSheetFoot`) so the pill is drawn above it.
+describe('sheet feet (bloque 15.3)', () => {
+  it('every sheet foot with a button reports its height through useSheetFoot', () => {
+    const feet = sources.filter((file) => {
+      const lines = read(file).split('\n');
+      return lines.some(
+        (line, i) =>
+          /borderTopColor: colors\.hairline/.test(line) &&
+          lines.slice(i, i + 12).some((l) => /<Button\b/.test(l)),
+      );
+    });
+    const missing = feet.filter((file) => !/useSheetFoot\(\)/.test(read(file)));
+    // The licence's foot is on a tab-less screen that shows no notice of its own; the households
+    // section's rule is a divider inside Ajustes, not a foot.
+    expect(missing).toEqual([
+      'app/household/license.tsx',
+      'features/households/HouseholdsSection.tsx',
+    ]);
+  });
+});

@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { addDays } from '@/domain/tasks/dates';
 import { dayInSentence } from '@/domain/tasks/labels';
 import { type StripDay } from '@/domain/tasks/strip';
+import { type TaskItem } from '@/domain/tasks/views';
 import { emptyDayText } from '@/features/tasks/dayFilter';
 import { QuickAdd } from '@/features/tasks/components/QuickAdd';
 import { type TaskListSection } from '@/features/tasks/sections';
@@ -91,4 +92,6 @@ export type TasksParts = {
   empty: ReactNode;
   /** The door's line under its headline: what is yours (or the household's) in all. */
   doorLine: string;
+  /** Tasks deleted on screen whose «Deshacer» is still up, under the list's filter: they count. */
+  deleting: readonly TaskItem[];
 };

@@ -17,6 +17,7 @@
     "ios",
     "scripts",
     "supabase/functions/send-push",
-    "supabase/functions/billing-webhook"
+    "supabase/functions/billing-webhook",
+    "supabase/functions/revoke-apple"
   ]
 }

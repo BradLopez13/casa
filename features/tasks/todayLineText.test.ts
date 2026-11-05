@@ -161,3 +161,16 @@ describe('todayLineText', () => {
     );
   });
 });
+
+// Bloque 15.3 (P3-3): over a list of tasks done today the line says so, not «Nada para hoy».
+describe('with tasks done today under yours from before', () => {
+  it('says all done for today in place of nothing for today', () => {
+    const none = { unassigned: 0, others: [] };
+    expect(
+      text({ kind: 'mine', today: 0, overdue: 1, household: 0, rest: none, doneToday: 15 }).second,
+    ).toBe('Todo hecho por hoy; a la casa no le queda nada más.');
+    expect(text({ kind: 'mine', today: 0, overdue: 1, household: null, doneToday: 2 }).second).toBe(
+      'Todo hecho por hoy.',
+    );
+  });
+});

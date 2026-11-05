@@ -1,16 +1,19 @@
 import { type MutationKey, type MutationOptions, type QueryClient } from '@tanstack/react-query';
 import { QUEUED_META, touches } from '@/data/query/queue';
-import { assertQueuedBy, droppedOnSignOut } from '@/data/query/sessionUser';
+import { assertQueuedBy, droppedOnSignOut, householdGone } from '@/data/query/sessionUser';
 import {
   offlineFirstQueryOptions,
   abandonQueued,
-  QUEUED_RETRY_DELAY,
+  QUEUED_RETRY,
   queuedFn,
-  retryOnNetwork,
+  isParked,
+  subscribeParked,
 } from '@/data/query/retry';
 import { toAppError, type AppError } from '@/data/supabase/errors';
 import { applyAdd, applyBought, applyQuantity, type ShoppingItem } from '@/domain/shopping/list';
 import { normalizeItemName, trimItemText } from '@/domain/shopping/normalize';
+import { noteRefusedByEnded } from '@/data/query/ended-household';
+import { householdsKey, membershipKey } from '@/features/households/keys';
 import { t } from '@/i18n';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
 import { shoppingErrorMessage } from './errors';
@@ -172,8 +175,10 @@ export function afterShoppingQueue(
   const busy = () =>
     cache.findAll({ status: 'pending' }).some(
       (m) =>
-        // A change paused (offline, or waiting its turn) is not on its way: nothing to wait for.
+        // A change paused (offline, or waiting its turn) or waiting inside its function for the
+        // connection is not on its way: nothing to wait for.
         !m.state.isPaused &&
+        !isParked(m.state.variables) &&
         isQueuedShoppingMutation(m.options.mutationKey) &&
         (householdId === undefined ||
           (m.state.variables as { householdId?: string } | undefined)?.householdId === householdId),
@@ -186,9 +191,16 @@ export function afterShoppingQueue(
       resolve();
     };
     const timer = setTimeout(done, ms);
-    const unsubscribe = cache.subscribe(() => {
+    const offCache = cache.subscribe(() => {
       if (!busy()) done();
     });
+    const offParked = subscribeParked(() => {
+      if (!busy()) done();
+    });
+    const unsubscribe = () => {
+      offCache();
+      offParked();
+    };
   });
 }
 
@@ -248,7 +260,16 @@ export function buildShoppingMutationDefaults(
     }));
   };
   // A household without its licence says so (bloque 12); anything else names what was not saved.
-  const syncFailed = (name: string, error: unknown) =>
+  /** Gone with its household: no notice of its own, but the household's is made sure to come. */
+  const goneQuietly = (error: unknown, householdId: string) => {
+    if (!householdGone(error)) return false;
+    noteRefusedByEnded(householdId);
+    void queryClient.invalidateQueries({ queryKey: membershipKey });
+    void queryClient.invalidateQueries({ queryKey: householdsKey });
+    return true;
+  };
+  const syncFailed = (name: string, error: unknown, householdId: string) =>
+    goneQuietly(error, householdId) ||
     notify(
       toAppError(error).code === 'LICENSE_REQUIRED'
         ? t('errors.LICENSE_REQUIRED')
@@ -262,8 +283,7 @@ export function buildShoppingMutationDefaults(
     meta: QUEUED_META,
     // Offline it waits for the connection, unlike the rest of the app.
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, name, quantity, userId }: AddVars) => {
       assertQueuedBy(userId);
       return addShoppingItem(id, householdId, name, quantity);
@@ -297,7 +317,7 @@ export function buildShoppingMutationDefaults(
           current?.filter((i) => i.id !== id),
         );
       }
-      syncFailed(trimItemText(name), error);
+      syncFailed(trimItemText(name), error, householdId);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
@@ -311,8 +331,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, bought: value, userId }: BoughtVars) => {
       assertQueuedBy(userId);
       return setItemBought(resolve(householdId, id), value);
@@ -344,7 +363,8 @@ export function buildShoppingMutationDefaults(
       }
       // An item no longer on the list has nothing to explain.
       const item = queryClient.getQueryData<ShoppingItem[]>(key)?.find((i) => i.id === target);
-      if (item) syncFailed(item.name, error);
+      if (item) syncFailed(item.name, error, householdId);
+      else if (householdGone(error)) noteRefusedByEnded(householdId);
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).
@@ -361,8 +381,7 @@ export function buildShoppingMutationDefaults(
     scope: SHOPPING_SCOPE,
     meta: QUEUED_META,
     networkMode: 'online',
-    retry: retryOnNetwork,
-    retryDelay: QUEUED_RETRY_DELAY,
+    retry: QUEUED_RETRY,
     mutationFn: queuedFn(async ({ id, householdId, quantity: value, userId }: QuantityVars) => {
       assertQueuedBy(userId);
       const target = resolve(householdId, id);
@@ -395,7 +414,7 @@ export function buildShoppingMutationDefaults(
           current ? applyQuantity(current, resolve(householdId, id), previous.quantity) : current,
         );
       }
-      notify(shoppingErrorMessage(error));
+      if (!goneQuietly(error, householdId)) notify(shoppingErrorMessage(error));
     },
     // Not awaited: the mutation stays pending until onSettled returns, and a refetch finished in
     // the meantime would lay a change that failed back on top of the list (bloque 12).

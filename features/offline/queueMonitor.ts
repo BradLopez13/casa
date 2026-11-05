@@ -55,8 +55,15 @@ const idOf = (m: AnyMutation) => (m.state.variables as { id?: unknown } | undefi
  *   moment; a queue that missed its turn stayed paused with a connection until the app was
  *   restarted. With a connection and the app in front, a queue that has not moved for
  *   `QUEUE_WATCH_MS` has its first change woken up, again every `QUEUE_WATCH_MS`; the connection
- *   and the focus coming back wake every change, not only the paused ones. If the app is in front
- *   (`isActive`) but TanStack still believes it is not, after `QUEUE_WATCH_MS` it is told.
+ *   and the focus coming back wake every change, not only the paused ones.
+ * - **Holds the focus while something waits** (bloque 15.1, decisión 1 A de Brad): TanStack
+ *   resumes a change only with the focus, and the app drops it as soon as it is not `active`, so
+ *   a change made offline waited in the background until the app was opened (crítica del 2 de
+ *   noviembre, P2-1). With a connection and a queue the focus is held, in front or not; once the
+ *   queue is empty behind, it is given back, so coming to the front is a focus event again. The
+ *   known cost: the stale queries refetch once behind, when the focus is held, and once more on
+ *   coming to the front (`queryCache.onFocus`). The 30 s of «No se pudo enviar» follow the phone
+ *   (`isActive`), not the held focus: behind, they do not run.
  */
 export function createQueueMonitor(
   queryClient: QueryClient,
@@ -73,8 +80,14 @@ export function createQueueMonitor(
   const heads = new Map<string, { id: number; at: number }>();
   /** Since when, with a connection, something waits and nothing went out. */
   let since: number | null = null;
-  /** Since when the app is in front while TanStack believes it is not. */
-  let unfocusedSince: number | null = null;
+  /** When the connection last came back and the app last came to the front: the 30 s start there. */
+  let onlineAt = now();
+  let activeAt = now();
+  let wasOnlineC = onlineManager.isOnline();
+  let wasActiveC = isActive();
+  /** Whether the monitor holds TanStack's focus for the queue while the app is behind. */
+  let holding = false;
+  let wasActive = isActive();
   let snapshot = NONE;
   let timer: ReturnType<typeof setInterval> | undefined;
 
@@ -87,7 +100,14 @@ export function createQueueMonitor(
   const compute = () => {
     const t = now();
     const online = onlineManager.isOnline();
+    const active = isActive();
+    if (online && !wasOnlineC) onlineAt = t;
+    if (active && !wasActiveC) activeAt = t;
+    wasOnlineC = online;
+    wasActiveC = active;
     const waiting = new Set<string>();
+    /** When the earliest waiting change started trying: the 30 s count from there. */
+    let startedAt = t;
     for (const m of queued()) {
       const { isPaused, failureCount, submittedAt } = m.state;
       if (
@@ -97,18 +117,20 @@ export function createQueueMonitor(
         (submittedAt > 0 && t - submittedAt >= QUEUE_GRACE_MS)
       ) {
         waited.add(m);
+        if (submittedAt > 0) startedAt = Math.min(startedAt, submittedAt);
         const id = idOf(m);
         if (typeof id === 'string') waiting.add(id);
       }
     }
     let band: QueueBandState = 'none';
-    // The 30 s only run with the app in front: nothing is tried behind it, so coming back after a
-    // while must not say at once that nothing could be sent.
-    if (online && waiting.size > 0 && !focusManager.isFocused()) {
+    // The 30 s only run with the app in front: behind, the queue goes (the focus is held) but a
+    // weak signal is the rule there, so coming back after a while must not say at once that
+    // nothing could be sent.
+    if (online && waiting.size > 0 && !isActive()) {
       since = null;
       band = 'sending';
     } else if (online && waiting.size > 0) {
-      since ??= t;
+      since ??= Math.max(startedAt, onlineAt, activeAt);
       band = t - since >= QUEUE_STUCK_MS ? 'stuck' : 'sending';
     } else {
       since = null;
@@ -128,20 +150,42 @@ export function createQueueMonitor(
     for (const m of queued()) void m.continue().catch(() => undefined);
   };
 
+  /**
+   * With a connection and a queue, TanStack has the focus whatever the phone says (and whether
+   * AppState's event ever came): that is what resumes the queue. Once the queue is empty with the
+   * app behind, the focus goes back to following the phone.
+   */
+  const hold = () => {
+    const active = isActive();
+    if (holding && active && !wasActive) {
+      // Came to the front while held: TanStack saw no focus event (the focus was already true),
+      // so what one brings is done here: the stale queries refetch, the retry window reopens and
+      // every wait is cut short (revisión 15.1).
+      holding = false;
+      void queryClient.refetchQueries({ type: 'active', stale: true }).catch(() => undefined);
+      if (onlineManager.isOnline()) {
+        markOnline();
+        retryQueuedNow();
+        wakeAll();
+      }
+    }
+    wasActive = active;
+    if (onlineManager.isOnline() && queued().length > 0) {
+      if (!focusManager.isFocused()) {
+        holding = !active;
+        focusManager.setFocused(true);
+      }
+      return;
+    }
+    if (holding && queued().length === 0) {
+      holding = false;
+      if (!active) focusManager.setFocused(false);
+    }
+  };
+
   /** The first change of each queue that has not moved for a while is woken up. */
   const watch = () => {
     const t = now();
-    // TanStack resumes nothing without the focus, and learns it from AppState's events: if the
-    // app is in front and that event never came, the focus is put right, which resumes the queue.
-    if (isActive() && !focusManager.isFocused() && queued().length > 0) {
-      unfocusedSince ??= t;
-      if (t - unfocusedSince >= QUEUE_WATCH_MS) {
-        unfocusedSince = null;
-        focusManager.setFocused(true);
-      }
-    } else {
-      unfocusedSince = null;
-    }
     if (!onlineManager.isOnline() || !focusManager.isFocused()) return;
     const firsts = new Map<string, AnyMutation>();
     for (const m of queued()) {
@@ -163,6 +207,7 @@ export function createQueueMonitor(
 
   const tick = () => {
     compute();
+    hold();
     watch();
     if (queued().length === 0 && timer !== undefined) {
       clearInterval(timer);
@@ -197,18 +242,25 @@ export function createQueueMonitor(
         ensureTicking();
       });
       const offOnline = onlineManager.subscribe((online) => {
-        if (online) wakeAll();
+        if (online) {
+          hold();
+          wakeAll();
+        }
         compute();
       });
       const offFocus = focusManager.subscribe((focused) => {
-        // Back in front: every wait between two tries is cut short and the queues go on.
+        // Back in front: the reconnect window opens again (the tries go every second, not 1, 2
+        // and 4 s: the 4–9 s on opening the app, bloque 15.1), every wait between two tries is
+        // cut short and the queues go on.
         if (focused && onlineManager.isOnline()) {
+          markOnline();
           retryQueuedNow();
           wakeAll();
         }
         compute();
       });
       compute();
+      hold();
       ensureTicking();
       return () => {
         offCache();

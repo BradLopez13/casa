@@ -32,3 +32,22 @@ describe('visibleProviders', () => {
     expect(visibleProviders({ env: {}, platform: 'web', inExpoGo: false })).toEqual([]);
   });
 });
+
+// Bloque 15.4: Google on iOS needs its own client id (and the URL scheme in the build): with it,
+// the button shows there too.
+describe('Google on iOS (bloque 15.4)', () => {
+  it('shows with the iOS client id', () => {
+    expect(
+      visibleProviders({
+        env: { google: '1', googleIos: '123.apps.googleusercontent.com' },
+        platform: 'ios',
+        inExpoGo: false,
+      }),
+    ).toEqual(['google']);
+  });
+  it('stays hidden with an empty one', () => {
+    expect(
+      visibleProviders({ env: { google: '1', googleIos: '' }, platform: 'ios', inExpoGo: false }),
+    ).toEqual([]);
+  });
+});

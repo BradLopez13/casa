@@ -9,8 +9,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { cachedHouseholdIds, endedHouseholdIds } from '@/data/query/ended-household';
-import { forgetEndedHousehold } from '@/data/query/persist';
 import { queryClient, reportQueryErrorsTo, watchAppAndConnection } from '@/data/query/setup';
 import { keepQueueWatched } from '@/features/offline/useQueue';
 import { refreshSessionWith } from '@/data/query/retry';
@@ -31,6 +29,7 @@ import { SessionProvider, useSession } from '@/features/auth/SessionProvider';
 import { useSyncDevice } from '@/features/auth/useSyncDevice';
 import { usePendingInvite } from '@/features/households/pending-invite';
 import { setActiveHousehold, useHouseholds, useMembership } from '@/features/households/queries';
+import { useForgetEndedHousehold } from '@/features/households/useForgetEndedHousehold';
 import { householdForNotification, routeForNotification } from '@/features/push/routes';
 import { usePushRegistration } from '@/features/push/usePushRegistration';
 import { onNotificationTapped } from '@/features/reminders/notifications';
@@ -121,20 +120,6 @@ function groupOf(segment: string | undefined): RouteInput['group'] {
 }
 
 /**
- * A membership that ended from someone else's side (removed, or the household deleted) must
- * not leave that household's data on the device: once the household list no longer has it, its
- * data is forgotten. The other households' data stays (bloque 12).
- */
-function useForgetEndedHousehold(households: readonly { householdId: string }[] | undefined) {
-  const client = useQueryClient();
-  useEffect(() => {
-    for (const id of endedHouseholdIds(cachedHouseholdIds(client), households)) {
-      forgetEndedHousehold(client, id);
-    }
-  }, [client, households]);
-}
-
-/**
  * Runs `run` once the navigation container is ready: now if it already is, otherwise on the
  * first state change that finds it ready. Returns the cancel function.
  */
@@ -165,7 +150,7 @@ function Guard() {
   const householdsQuery = useHouseholds();
   const queryClient = useQueryClient();
   const pending = usePendingInvite();
-  useForgetEndedHousehold(householdsQuery.data);
+  useForgetEndedHousehold(householdsQuery.data, membershipQuery.data);
   useEffect(() => trackNavigation(navRef), [navRef]);
 
   const signedIn = session.status === 'signed-in';

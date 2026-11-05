@@ -225,12 +225,14 @@ export function QuantityPill({
             flexShrink: 1,
             minWidth: space(5),
             textAlign: 'center',
-            color: colors.ink,
+            // With none, the same quiet «—» as the closed quantity (bloque 15.3, P3-1): a «1» in
+            // ink looked real and went back to «—» on closing, since one is no quantity.
+            color: draft === null ? colors.muted : colors.ink,
             fontSize: 15,
             fontVariant: ['tabular-nums'],
           }}
         >
-          {draft ?? '1'}
+          {draft ?? NO_QUANTITY}
         </Text>
         {button(1)}
       </Animated.View>

@@ -28,6 +28,10 @@
 --   zoe@e2e.dev   = Zoe, owner of "Piso Zoe" (several-households: creates a second household,
 --                   switches, invites, sees its licence and joins Yoli's with JOIN_TOKEN)
 --   yoli@e2e.dev  = Yoli, owner of "Piso Yoli" (several-households)
+--   omar@e2e.dev  = Omar, owner of "Piso Omar", with Olivia (olivia@e2e.dev), who also owns
+--                   "Piso Olivia" (household-ended: Omar deletes his through the API)
+--   demo@e2e.dev  = Demo, owner of "Casa de ejemplo" with Mar (mar@e2e.dev), tasks and shopping
+--                   already in it (e2e/store/screenshots.yaml, the store listing's screenshots)
 -- Each flow that is not about sign-up signs in as its own user, so the flows never share state.
 -- The sign-up path itself stays covered by sign-up-create-household, forgot-password and
 -- invite-link-signed-out.
@@ -145,6 +149,62 @@ begin
   perform pg_temp.e2e_household(pg_temp.e2e_user('gala@e2e.dev', 'Gala'), 'Piso Gala');
   perform pg_temp.e2e_household(pg_temp.e2e_user('fede@e2e.dev', 'Fede'), 'Piso Fede');
   perform pg_temp.e2e_household(pg_temp.e2e_user('zoe@e2e.dev', 'Zoe'), 'Piso Zoe');
+  -- The household that ends from the other side (bloque 15.2, household-ended).
+  declare
+    v_omar uuid := pg_temp.e2e_user('omar@e2e.dev', 'Omar');
+    v_olivia uuid := pg_temp.e2e_user('olivia@e2e.dev', 'Olivia');
+    v_piso_omar uuid := pg_temp.e2e_household(v_omar, 'Piso Omar');
+    v_series uuid;
+  begin
+    perform pg_temp.e2e_household(v_olivia, 'Piso Olivia');
+    insert into public.household_members (household_id, user_id, role)
+    values (v_piso_omar, v_olivia, 'member');
+    insert into public.task_series (household_id, title, room, created_by)
+    values (v_piso_omar, 'Regar las plantas de Omar', 'living_room', v_omar)
+    returning id into v_series;
+    insert into public.task_occurrences (series_id, household_id, due_on, assignee_id)
+    values (v_series, v_piso_omar, current_date, v_olivia);
+  end;
+  -- The store listing's account (bloque 15.5): a home with something on every screen.
+  declare
+    v_demo uuid := pg_temp.e2e_user('demo@e2e.dev', 'Demo');
+    v_mar uuid := pg_temp.e2e_user('mar@e2e.dev', 'Mar');
+    v_casa uuid := pg_temp.e2e_household(v_demo, 'Casa de ejemplo');
+    v_series uuid;
+    v_task record;
+  begin
+    insert into public.household_members (household_id, user_id, role)
+    values (v_casa, v_mar, 'member');
+    for v_task in
+      select * from (values
+        ('Regar las plantas', 'living_room', v_demo, current_date, null::timestamptz),
+        ('Sacar la basura', 'kitchen', v_demo, current_date, null),
+        ('Poner la lavadora', 'bathroom', v_mar, current_date, null),
+        ('Cambiar las sábanas', 'bedroom', v_demo, current_date - 2, null),
+        ('Pasar la aspiradora', 'living_room', v_mar, current_date + 1, null),
+        ('Fregar los platos', 'kitchen', v_demo, current_date, now() - interval '2 hours'),
+        ('Limpiar el baño', 'bathroom', v_mar, current_date, now() - interval '1 hour')
+      ) as t(title, room, assignee, due_on, completed_at)
+    loop
+      insert into public.task_series (household_id, title, room, created_by)
+      values (v_casa, v_task.title, v_task.room, v_demo)
+      returning id into v_series;
+      insert into public.task_occurrences
+        (series_id, household_id, due_on, assignee_id, completed_at, completed_by)
+      values (
+        v_series, v_casa, v_task.due_on, v_task.assignee, v_task.completed_at,
+        case when v_task.completed_at is null then null else v_task.assignee end
+      );
+    end loop;
+    insert into public.shopping_items (id, household_id, name, quantity, created_by, bought_at, bought_by)
+    values
+      (gen_random_uuid(), v_casa, 'Leche', '2', v_demo, null, null),
+      (gen_random_uuid(), v_casa, 'Pan', null, v_mar, null, null),
+      (gen_random_uuid(), v_casa, 'Tomates', '1 kg', v_demo, null, null),
+      (gen_random_uuid(), v_casa, 'Huevos', '12', v_mar, null, null),
+      (gen_random_uuid(), v_casa, 'Café', null, v_demo, now() - interval '3 days', v_demo),
+      (gen_random_uuid(), v_casa, 'Arroz', null, v_mar, now() - interval '3 days', v_mar);
+  end;
   declare
     v_yoli uuid := pg_temp.e2e_user('yoli@e2e.dev', 'Yoli');
   begin

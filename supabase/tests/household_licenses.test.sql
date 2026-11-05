@@ -2,7 +2,7 @@
 -- licence a new household gets with the switch off and on, the write guard with every state,
 -- reading never blocked, my_households, the checkout and the billing webhook's door.
 begin;
-select plan(61);
+select plan(62);
 
 select tests.create_user('ana@test.dev', 'Ana') as ana \gset
 select tests.create_user('bob@test.dev', 'Bob') as bob \gset
@@ -155,8 +155,9 @@ select ok(
 
 select is(
   public.start_household_checkout(:'eva_hid'),
-  jsonb_build_object('provider', 'revenuecat', 'offering', 'household_monthly', 'household_id', :'eva_hid'::uuid),
-  'and its lead gets what the provider needs to pay'
+  jsonb_build_object('provider', 'revenuecat', 'offering', 'default', 'household_id', :'eva_hid'::uuid,
+    'level', 1, 'product_id', 'casas_1'),
+  'and its lead gets what the provider needs to pay, with the level (bloque 15.6)'
 );
 
 select lives_ok(
@@ -262,7 +263,8 @@ select is(pg_temp.licensed_as('trial', now() + interval '1 day', null), true, 'a
 select is(pg_temp.licensed_as('trial', now() - interval '1 minute', null), false, 'an ended trial is not');
 select is(pg_temp.licensed_as('past_due', null, now() - interval '6 days'), true, 'past_due within the 7-day grace is licensed');
 select is(pg_temp.licensed_as('past_due', null, now() - interval '8 days'), false, 'past_due beyond the grace is not');
-select is(pg_temp.licensed_as('canceled', null, now() + interval '1 day'), false, 'canceled is not');
+select is(pg_temp.licensed_as('canceled', null, now() + interval '1 day'), true, 'canceled with time left is licensed until then (bloque 15.6: a level gone down)');
+select is(pg_temp.licensed_as('canceled', null, now() - interval '1 day'), false, 'canceled past its end is not');
 
 -- The webhook's door with billing on.
 select tests.clear_auth();
@@ -321,9 +323,9 @@ select throws_ok(
   format($$select public.apply_billing_event(%L, 'complimentary', null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
   'P0001', 'INVALID_LICENSE_STATUS', 'the webhook cannot hand out a complimentary licence'
 );
-select throws_ok(
-  format($$select public.apply_billing_event(%L, null, null, 'revenuecat', 'sub_1', null, false, now())$$, :'hid'),
-  'P0001', 'INVALID_LICENSE_STATUS', 'nor a licence without a state'
+select is(
+  public.apply_billing_event(:'hid', null, null, 'revenuecat', 'sub_none', null, false, now()),
+  false, 'nor a licence without a state (bloque 15.6: only a transfer of a known subscription keeps it)'
 );
 reset role;
 

@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appQueryDefaults } from '@/data/query/defaults';
-import { QUEUED_RETRY_DELAY } from '@/data/query/retry';
+import { QUEUED_RETRY } from '@/data/query/retry';
 import { AppError } from '@/data/supabase/errors';
 import type { ShoppingItem } from '@/domain/shopping/list';
 import { addShoppingItem, setItemBought, updateShoppingItem } from './api';
@@ -236,15 +236,11 @@ describe('buildShoppingMutationDefaults', () => {
     expect(notify).toHaveBeenCalledWith('No se pudo guardar «Leche». Inténtalo de nuevo.');
   });
 
-  it('keeps retrying network errors, waiting longer each time (bloque 11, T1)', () => {
+  it('leaves the tries to queuedFn, with TanStack retrying nothing (bloque 11, T1; bloque 15.1)', () => {
     const { defaults } = setup();
-    const retry = defaults.add.retry as (count: number, error: AppError) => boolean;
-    expect(retry(0, new AppError('NETWORK'))).toBe(true);
-    expect(retry(100, new AppError('NETWORK'))).toBe(true);
-    expect(retry(0, new AppError('INVALID_ITEM_NAME'))).toBe(false);
-    expect(defaults.bought.retry).toBe(defaults.add.retry);
-    expect(defaults.quantity.retry).toBe(defaults.add.retry);
-    expect(defaults.add.retryDelay).toBe(QUEUED_RETRY_DELAY);
+    expect(defaults.add.retry).toBe(QUEUED_RETRY);
+    expect(defaults.bought.retry).toBe(QUEUED_RETRY);
+    expect(defaults.quantity.retry).toBe(QUEUED_RETRY);
     // Bloque 14.4 (T4): a dropped add reaches Sentry like the others.
     expect(defaults.add.meta).toEqual(defaults.bought.meta);
     expect(defaults.add.meta).toEqual({ queued: true });
@@ -254,9 +250,10 @@ describe('buildShoppingMutationDefaults', () => {
     const { queryClient, notify } = setup();
     queryClient.setQueryData(key, []);
     vi.mocked(addShoppingItem).mockRejectedValue(new AppError('NETWORK'));
+    // The queue gave up (a week of tries, `queuedFn`): the error reaches TanStack as final.
     await new MutationObserver<string, AppError, AddVars>(queryClient, {
       mutationKey: addKey,
-      retry: false,
+      mutationFn: () => Promise.reject(new AppError('NETWORK')),
     })
       .mutate(milk)
       .catch(() => undefined);

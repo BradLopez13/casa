@@ -35,6 +35,7 @@ import { Button } from '@/ui/components/Button';
 import { ModalHeader } from '@/ui/components/ModalHeader';
 import { PinnedNote } from '@/ui/components/PinnedNote';
 import { ModalSheet, useModalFill } from '@/ui/components/ModalSheet';
+import { useSheetFoot } from '@/ui/components/sheetFootContext';
 import { pressedOpacity } from '@/ui/buttonLook';
 import { useTheme } from '@/ui/theme';
 import { MIN_TOUCH } from '@/ui/tokens';
@@ -101,6 +102,7 @@ function roomHeading(room: CatalogRoom): string {
 
 function TemplatesScreen() {
   const { colors, space } = useTheme();
+  const foot = useSheetFoot();
   const { fill, edges } = useModalFill();
   const close = useCloseModal('/today');
   const today = useToday();
@@ -279,6 +281,7 @@ function TemplatesScreen() {
       </ScrollView>
       {/* The foot, as on the task form: «Añadir» is the sheet's one pósit, under the thumb. */}
       <View
+        onLayout={foot.onLayout}
         style={{
           paddingHorizontal: space(5),
           paddingTop: space(3),

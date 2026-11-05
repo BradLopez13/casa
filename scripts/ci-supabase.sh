@@ -6,12 +6,16 @@
 set -euo pipefail
 
 log=.supabase-start.log
+# Seconds between two tries, times the try number (the tests set 0).
+retry_s="${CI_SUPABASE_RETRY_S:-30}"
 status=.supabase-start.status
 
 # Runs a Supabase start, appending to `$1`, up to four times. The public image registry sometimes
 # refuses an anonymous pull ("Data limit exceeded", "toomanyrequests"): it failed one e2e shard
 # twice while the other jobs came up. The images already pulled stay, so a later try only fetches
-# the rest. Any other failure is not retried. Returns the last exit code.
+# the rest. A host port taken ("address already in use": 54322 sits in Linux's range of
+# ephemeral ports, so an outgoing connection of the runner can hold it for a moment; PR #67, shard
+# 4) is tried again the same way. Any other failure is not retried. Returns the last exit code.
 with_retries() {
   local out="$1"
   shift
@@ -22,11 +26,11 @@ with_retries() {
     else
       code=$?
     fi
-    grep -qiE "data limit exceeded|toomanyrequests|rate limit" "$out" || return "$code"
+    grep -qiE "data limit exceeded|toomanyrequests|rate limit|address already in use" "$out" || return "$code"
     [ "$attempt" = 4 ] && return "$code"
-    echo "ci-supabase: the image registry refused a pull; trying again in $((attempt * 30)) s" >> "$out"
+    echo "ci-supabase: a pull was refused or a port was taken; trying again in $((attempt * retry_s)) s" >> "$out"
     supabase stop --no-backup >> "$out" 2>&1 || true
-    sleep $((attempt * 30))
+    sleep $((attempt * retry_s))
   done
   return "$code"
 }

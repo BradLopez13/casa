@@ -1,6 +1,6 @@
 # Signs in as ${EMAIL}, a user from the fixtures (password e2e-password-2026, see
 # supabase/e2e/fixtures.sql). Run from the sign-in screen; the caller waits for where it lands.
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 - tapOn:
     id: sign-in.email

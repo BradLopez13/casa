@@ -20,17 +20,18 @@ describe('assertQueuedBy', () => {
 
   it('drops a change made by someone who signed out (bloque 11)', () => {
     setSessionUser('bo');
-    expect(() => assertQueuedBy('ana')).toThrow(new AppError('NOT_AUTHENTICATED'));
+    expect(() => assertQueuedBy('ana')).toThrow(new AppError('QUEUE_DROPPED'));
     setSessionUser(null);
-    expect(() => assertQueuedBy('ana')).toThrow(new AppError('NOT_AUTHENTICATED'));
+    expect(() => assertQueuedBy('ana')).toThrow(new AppError('QUEUE_DROPPED'));
   });
 
   it('lets the queue resume before the session is read', () => {
     expect(() => assertQueuedBy('ana')).not.toThrow();
   });
 
-  it('says a dropped change needs no notice', () => {
-    expect(droppedOnSignOut(new AppError('NOT_AUTHENTICATED'))).toBe(true);
+  it('says a dropped change needs no notice, and a server answer is not one (bloque 15.1)', () => {
+    expect(droppedOnSignOut(new AppError('QUEUE_DROPPED'))).toBe(true);
+    expect(droppedOnSignOut(new AppError('NOT_AUTHENTICATED'))).toBe(false);
     expect(droppedOnSignOut(new AppError('NETWORK'))).toBe(false);
   });
 });

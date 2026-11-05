@@ -22,6 +22,12 @@ const CHECKED_PROFILES = ['preview', 'production'];
 function assertBuildEnv(env) {
   const profile = env.EAS_BUILD_PROFILE;
   if (!profile || !CHECKED_PROFILES.includes(profile)) return;
+  // The queue's console log is for the test phones (bloque 14.1): never in a store build.
+  if (profile === 'production' && env.EXPO_PUBLIC_QUEUE_LOG) {
+    throw new Error(
+      'The "production" build must not set EXPO_PUBLIC_QUEUE_LOG: it writes the queue to the console.',
+    );
+  }
   const required = env.EAS_BUILD === 'true' ? REQUIRED_BUILD_ENV : PUBLIC_BUILD_ENV;
   const missing = required.filter((name) => !env[name]);
   if (missing.length > 0) {

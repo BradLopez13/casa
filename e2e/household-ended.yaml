@@ -1,0 +1,62 @@
+appId: com.nidoapp.casa
+---
+# Bloque 15.2 (P2-2): the household on screen, deleted from another phone, used to vanish and the
+# app jumped to another household without a word. Olivia is in "Piso Omar" (Omar's) and in her
+# own "Piso Olivia"; Omar deletes his through the API while she looks at it.
+# Needs the fixtures and `maestro test -e SUPABASE_KEY=<anon key>` for the script.
+- clearState
+# Android can kill the first start while the cleared task is still being removed: retry it.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          stopApp: true
+      - extendedWaitUntil:
+          visible:
+            id: sign-in.email
+          timeout: 30000
+
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: olivia@e2e.dev
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 20000
+
+# Olivia opens «Tus casas» from the door's label and chooses Omar's
+- tapOn:
+    id: door.household
+- extendedWaitUntil:
+    visible: Piso Omar
+    timeout: 10000
+- tapOn: Piso Omar
+- extendedWaitUntil:
+    visible:
+      id: today.door-line
+    timeout: 10000
+# The household's tasks are on screen (and cached) before it ends
+- extendedWaitUntil:
+    visible: Regar las plantas de Omar
+    timeout: 20000
+# A fixed 5 s for the realtime channel to be SUBSCRIBED (the UI shows no signal for it).
+- extendedWaitUntil:
+    visible:
+      id: e2e.never-present
+    timeout: 5000
+    optional: true
+
+# Omar deletes the household from outside the app
+- runScript:
+    file: scripts/owner-deletes-household.js
+    env:
+      SUPABASE_KEY: ${SUPABASE_KEY}
+
+# The app says which household ended, why, and where she is now; then shows her own
+- extendedWaitUntil:
+    visible: 'Ya no estás en «Piso Omar»: la han borrado. Ahora estás en «Piso Olivia».'
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible: Regar las plantas de Omar
+    timeout: 10000

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AppState, Pressable, Text, View } from 'react-native';
 import type { AppError } from '@/data/supabase/errors';
 import { ROOMS, type Room } from '@/domain/tasks/rooms';
 import { signOut } from '@/features/auth/api';
@@ -10,6 +10,7 @@ import { AccountMenu } from '@/features/auth/AccountMenu';
 import { useSession } from '@/features/auth/SessionProvider';
 import { createHousehold, setHouseholdRooms } from '@/features/households/api';
 import { inviteFromClipboard } from '@/features/households/clipboardInvite';
+import { clearEndedNotice, useEndedNotice } from '@/features/households/endedNotice';
 import { parseInviteToken } from '@/features/households/invite-link';
 import { leaveToHome } from '@/features/households/leaveToHome';
 import { householdNameSchema } from '@/features/households/schemas';
@@ -226,16 +227,28 @@ function CreateStep({
   useEffect(() => {
     if (!readsClipboard) return;
     let live = true;
-    void inviteFromClipboard().then((found) => {
-      if (!live || found === null || typed.current !== '') return;
-      setLink(found);
-      setPasted(true);
+    const read = () => {
+      void inviteFromClipboard().then((found) => {
+        if (!live || found === null || typed.current !== '') return;
+        setLink(found);
+        setPasted(true);
+      });
+    };
+    read();
+    // Back from the chat where the message was copied, with the field still empty: read again
+    // (bloque 15.5, P3-6d).
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') read();
     });
     return () => {
       live = false;
+      sub.remove();
     };
   }, [readsClipboard]);
   const notify = useNotice();
+  const ended = useEndedNotice();
+  // Read once: the next time this screen opens it is for a new household.
+  useEffect(() => () => clearEndedNotice(), []);
   const joinBlock = useRef<View>(null);
   const [signingOut, setSigningOut] = useState(false);
   const leave = () => {
@@ -308,6 +321,15 @@ function CreateStep({
       }
     >
       {another ? null : <ScreenTitle>{t('onboarding.title')}</ScreenTitle>}
+      {/* The only household ended from someone else's side (bloque 15.2): the screen says so. */}
+      {ended && !another ? (
+        <Text
+          testID="onboarding.ended"
+          style={{ color: colors.ink, fontSize: 16, fontWeight: '600' }}
+        >
+          {ended}
+        </Text>
+      ) : null}
       <Text style={{ color: colors.ink, fontSize: 16 }}>
         {another ? t('onboarding.anotherWelcome') : t('onboarding.welcome')}
       </Text>
