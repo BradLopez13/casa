@@ -12,7 +12,7 @@ import { membersKey, membershipKey } from '@/features/households/keys';
 import { useHint, type HintId } from '@/features/hints/hints';
 import { t } from '@/i18n';
 import { NoticeProvider } from '@/ui/components/Notice';
-import { createTask, listTasks } from './api';
+import { completeTask, createTask, listTasks, reopenTask } from './api';
 import { TaskFilterProvider } from './filter';
 import { deleteWithUndo, showTask } from './deferredDelete';
 import { tasksKey } from './queries';
@@ -32,6 +32,8 @@ vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api')>()),
   listTasks: vi.fn(),
   createTask: vi.fn(),
+  completeTask: vi.fn(),
+  reopenTask: vi.fn(),
 }));
 
 const today = localDateIso(new Date());
@@ -287,6 +289,24 @@ describe('Hoy', () => {
   it('offers task ideas when there is nothing to do today', () => {
     renderToday([task('Planchar', { dueOn: addDays(today, 3) })]);
     expect(screen.getByTestId('tasks.ideas')).toBeTruthy();
+  });
+
+  // CI del PR #67 (create-complete-task) y prueba en el .51: after reopening, the box stayed
+  // «ocupado» for good although the reopen had reached the server in 0,2 s; the note was not drawn
+  // again once the toggle left the queue.
+  it('the box is no longer busy once a complete and its reopen have gone', async () => {
+    vi.mocked(completeTask).mockResolvedValue(undefined);
+    vi.mocked(reopenTask).mockResolvedValue(undefined);
+    renderToday([task('Fregar', {})]);
+    fireEvent.click(screen.getByTestId('task-note.Fregar.toggle'));
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalled());
+    fireEvent.click(await screen.findByTestId('done-tray.Fregar'));
+    await vi.waitFor(() => expect(reopenTask).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(screen.getByTestId('task-note.Fregar.toggle').getAttribute('aria-busy')).not.toBe(
+        'true',
+      ),
+    );
   });
 
   it('offline, the box marks the task at once and offers «Deshacer», as the shopping does', () => {

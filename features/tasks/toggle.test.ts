@@ -6,7 +6,7 @@ import type { TaskItem } from '@/domain/tasks/views';
 import { completeTask, reopenTask } from './api';
 import { membershipKey } from '@/features/households/keys';
 import { isFresh, takeFresh } from './freshIds';
-import { buildToggleOptions, runToggle, type ToggleVars } from './toggle';
+import { buildToggleOptions, busyToggleIds, runToggle, type ToggleVars } from './toggle';
 
 vi.mock('./api', () => ({ completeTask: vi.fn(), reopenTask: vi.fn() }));
 
@@ -390,5 +390,29 @@ describe('without a connection (fase 10e)', () => {
     onlineManager.setOnline(true);
     await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
     expect(queryClient.getQueryData<TaskItem[]>(key)?.[0]?.completedAt).toBeNull();
+  });
+});
+
+// CI del PR #67 y prueba en el .51: with the React Compiler on, a check that read the mutation
+// cache when called left the note «ocupado» for good, because nothing React saw had changed. What
+// is busy is now a value, the ids of the toggles on their way, which the screen subscribes to.
+describe('busyToggleIds', () => {
+  it('lists the tasks with a toggle on its way, and not the ones waiting their turn or done', async () => {
+    const { queryClient, run } = setup();
+    queryClient.setQueryData(key, [a, b]);
+    const first = deferred();
+    vi.mocked(completeTask).mockReturnValueOnce(first.promise);
+    vi.mocked(completeTask).mockReturnValueOnce(Promise.resolve());
+    expect(busyToggleIds(queryClient)).toBe('');
+    void run({ id: 'a', done: true }).catch(() => undefined);
+    await vi.waitFor(() => expect(completeTask).toHaveBeenCalledTimes(1));
+    expect(busyToggleIds(queryClient)).toBe('a');
+    first.resolve();
+    await vi.waitFor(() => expect(busyToggleIds(queryClient)).toBe(''));
+  });
+
+  it('is the same string while nothing changes, so a subscriber does not render again', () => {
+    const { queryClient } = setup();
+    expect(busyToggleIds(queryClient)).toBe(busyToggleIds(queryClient));
   });
 });
