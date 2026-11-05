@@ -34,7 +34,7 @@ describe('appleClientSecret', () => {
       teamId: 'TEAM123456',
       keyId: 'KEY1234567',
       privateKey: pem,
-      clientId: 'com.bradlopez13.casa',
+      clientId: 'com.nidoapp.casa',
     };
     const now = 1_800_000_000;
     const jwt = await appleClientSecret(config, now);
@@ -45,7 +45,7 @@ describe('appleClientSecret', () => {
       iat: now,
       exp: now + 180 * 24 * 60 * 60,
       aud: 'https://appleid.apple.com',
-      sub: 'com.bradlopez13.casa',
+      sub: 'com.nidoapp.casa',
     });
     const ok = await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
@@ -59,19 +59,19 @@ describe('appleClientSecret', () => {
 
 describe('the requests to Apple', () => {
   it('exchange the authorization code for tokens, as a form', async () => {
-    const request = appleTokenRequest('secret', 'com.bradlopez13.casa', 'code-1');
+    const request = appleTokenRequest('secret', 'com.nidoapp.casa', 'code-1');
     expect(request.url).toBe('https://appleid.apple.com/auth/token');
     expect(request.method).toBe('POST');
     expect(await request.text()).toBe(
-      'client_id=com.bradlopez13.casa&client_secret=secret&code=code-1&grant_type=authorization_code',
+      'client_id=com.nidoapp.casa&client_secret=secret&code=code-1&grant_type=authorization_code',
     );
   });
 
   it('revoke the refresh token', async () => {
-    const request = appleRevokeRequest('secret', 'com.bradlopez13.casa', 'refresh-1');
+    const request = appleRevokeRequest('secret', 'com.nidoapp.casa', 'refresh-1');
     expect(request.url).toBe('https://appleid.apple.com/auth/revoke');
     expect(await request.text()).toBe(
-      'client_id=com.bradlopez13.casa&client_secret=secret&token=refresh-1&token_type_hint=refresh_token',
+      'client_id=com.nidoapp.casa&client_secret=secret&token=refresh-1&token_type_hint=refresh_token',
     );
   });
 });
@@ -153,11 +153,11 @@ describe('appleConfigFrom', () => {
     APPLE_TEAM_ID: 't',
     APPLE_KEY_ID: 'k',
     APPLE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
-    APPLE_BUNDLE_ID: 'com.bradlopez13.casa',
+    APPLE_BUNDLE_ID: 'com.nidoapp.casa',
   };
 
   it('needs the four secrets, the client being the bundle id (a native token)', () => {
-    expect(appleConfigFrom(env(all))).toMatchObject({ clientId: 'com.bradlopez13.casa' });
+    expect(appleConfigFrom(env(all))).toMatchObject({ clientId: 'com.nidoapp.casa' });
     for (const missing of Object.keys(all)) {
       expect(appleConfigFrom(env({ ...all, [missing]: '' }))).toBeNull();
     }

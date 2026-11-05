@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 - clearState
 # The phone already allows notifications, so turning reminders on asks nothing.

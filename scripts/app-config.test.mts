@@ -28,8 +28,8 @@ describe('app.json for the stores', () => {
   it('keeps the final identifiers and the version', () => {
     expect(app.expo.name).toBe('Nido');
     expect(app.expo.version).toBe('1.0.0');
-    expect(app.expo.ios.bundleIdentifier).toBe('com.bradlopez13.casa');
-    expect(app.expo.android.package).toBe('com.bradlopez13.casa');
+    expect(app.expo.ios.bundleIdentifier).toBe('com.nidoapp.casa');
+    expect(app.expo.android.package).toBe('com.nidoapp.casa');
   });
 
   it('declares no non-exempt encryption, so App Store Connect never asks', () => {

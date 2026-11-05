@@ -35,5 +35,5 @@ pasar a un dominio propio, donde el enlace abre Nido directamente (A).
    verifican en la raíz del dominio, así que `bradlopez13.github.io/casa` no vale para eso.
 4. `EXPO_PUBLIC_INVITE_HOST=<dominio>` en los perfiles de EAS (`eas.json`) y en `.env.local`.
 5. Nueva build: Android verifica el dominio al instalar
-   (`adb shell pm get-app-links com.bradlopez13.casa` debe decir `verified`).
+   (`adb shell pm get-app-links com.nidoapp.casa` debe decir `verified`).
 6. Probar: el enlace en WhatsApp abre Nido con la app instalada, y la página sin ella.

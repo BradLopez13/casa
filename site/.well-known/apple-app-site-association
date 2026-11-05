@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["EQUIPO.com.bradlopez13.casa"],
+        "appIDs": ["EQUIPO.com.nidoapp.casa"],
         "components": [{ "/": "/invite*", "comment": "Las invitaciones a una casa" }]
       }
     ]

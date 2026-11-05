@@ -3,7 +3,7 @@
 # (adb root; setprop persist.sys.locale en-US; setprop ctl.restart zygote). The app reads the phone
 # language once at JS start, so a flow on a Spanish emulator fails here: it is not part of the
 # plain shard run (scripts/e2e-shard.sh english prints it apart) nor of `pnpm e2e` (it lives in e2e/locale/).
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 - clearState
 - retry:

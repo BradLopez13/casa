@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 # Needs the fixtures: DEEPLINK_TOKEN = c3 x 24 (see supabase/e2e/fixtures.sql).
 - clearState

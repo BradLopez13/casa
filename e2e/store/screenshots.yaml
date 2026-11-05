@@ -2,7 +2,7 @@
 # account of the fixtures (demo@e2e.dev, «Casa de ejemplo»). Run by scripts/store-screenshots.sh,
 # once per profile and theme, with OUT pointing at store/screenshots/<profile>/ and THEME at
 # «claro» or «oscuro». Outside the CI shards on purpose (e2e/config.yaml lists e2e/*.yaml only).
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 env:
   OUT: store/screenshots/phone
   THEME: claro

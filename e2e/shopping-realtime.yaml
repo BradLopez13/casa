@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 # Needs the fixtures (Ana and Berta in "Casa E2E", see supabase/e2e/fixtures.sql) and
 # `maestro test -e SUPABASE_KEY=<anon key>` for the script.

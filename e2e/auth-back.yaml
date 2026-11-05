@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 ---
 # Back from the sign-up returns to the sign-in, with the link and with the system button.
 # The sign-up is told apart by its first field: on a small screen its submit is below the fold.

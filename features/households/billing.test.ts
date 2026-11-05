@@ -139,7 +139,7 @@ describe('the products (bloque 15.6)', () => {
 
   it('links to where the stores manage a subscription', () => {
     expect(manageSubscriptionUrl('android')).toBe(
-      'https://play.google.com/store/account/subscriptions?package=com.bradlopez13.casa',
+      'https://play.google.com/store/account/subscriptions?package=com.nidoapp.casa',
     );
     expect(manageSubscriptionUrl('ios')).toBe('https://apps.apple.com/account/subscriptions');
   });

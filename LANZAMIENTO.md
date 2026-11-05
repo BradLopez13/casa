@@ -13,15 +13,16 @@ Dónde se pone cada cosa:
 - **Supabase (las funciones):** `pnpm exec supabase secrets set NOMBRE=valor` (proyecto `fyojaslimsgcabfbqdba`); el panel de Auth para los proveedores.
 - **`.env.local` del PC:** lo que haga falta para las builds de los móviles de prueba (`pnpm android:release`).
 
-Identificadores, decididos el 3 de noviembre de 2026 (DESIGN.md): `com.bradlopez13.casa` como
-`bundleIdentifier` y `package`. **Después de publicar no se pueden cambiar.** El nombre que se ve
+Identificadores, decididos por Brad (DESIGN.md): `com.nidoapp.casa` como `bundleIdentifier` y
+`package`; el esquema de los enlaces sigue siendo `casa://`. **Después de publicar no se pueden cambiar.** El nombre que se ve
 es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`).
 
 ---
 
 ## 1 · Identificador y dominio
 
-- **Qué:** confirmar `com.bradlopez13.casa` (hecho) y decidir el dominio. Sin dominio todo sigue
+- **Qué:** el identificador es `com.nidoapp.casa` (hecho: en `app.json`, `site/.well-known` y la
+  página de la invitación); queda decidir el dominio. Sin dominio todo sigue
   en `https://bradlopez13.github.io/casa` (invitación, política, términos, borrado de cuenta).
 - **Si compras dominio:** apúntalo a GitHub Pages (_Settings → Pages → Custom domain_, con los
   registros DNS que GitHub indica) y sigue el paso 5.
@@ -30,7 +31,7 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 
 ## 2 · Google Play Console (25 $, una vez)
 
-1. Crea la cuenta de desarrollador y la app «Nido» (paquete `com.bradlopez13.casa`, gratis, con
+1. Crea la cuenta de desarrollador y la app «Nido» en Play Console (paquete `com.nidoapp.casa`, gratis, con
    compras dentro de la app).
 2. **Play App Signing:** acepta que Play firme la app. Apunta la **huella SHA-256 del certificado
    de firma de la app** (_Integridad de la app → Firma de apps_) → va en
@@ -57,8 +58,8 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 
 ## 3 · Firebase y Google (entrar con Google, avisos push)
 
-1. **Firebase:** proyecto «Nido», app Android `com.bradlopez13.casa` y app iOS
-   `com.bradlopez13.casa`. Descarga `google-services.json` → **`GOOGLE_SERVICES_JSON`** (EAS,
+1. **Firebase:** proyecto «Nido», app Android `com.nidoapp.casa` y app iOS
+   `com.nidoapp.casa`. Descarga `google-services.json` → **`GOOGLE_SERVICES_JSON`** (EAS,
    archivo secreto; ya existe en preview) y `GoogleService-Info.plist` →
    **`GOOGLE_SERVICES_PLIST`** (EAS, archivo secreto).
 2. **FCM V1 para el push de iOS/Android desde Expo:** en Firebase, _Configuración → Cuentas de
@@ -66,9 +67,12 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
    _Google Service Account for FCM V1_).
 3. **Clientes OAuth** (Google Cloud → APIs y servicios → Credenciales):
    - Web → **`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`** y su secreto para Supabase.
-   - Android: paquete `com.bradlopez13.casa` con **dos** huellas SHA-1: la de Play App Signing
+   - Android: paquete `com.nidoapp.casa` con **dos** huellas SHA-1: la de Play App Signing
      (paso 2) y la del keystore de subida (`eas credentials` la enseña).
-   - iOS: bundle `com.bradlopez13.casa` → **`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`** y su esquema
+     El cliente Android que hubiera para el paquete anterior (`com.bradlopez13.casa`, el de las
+     pruebas) no vale: va ligado al paquete. Sin este, «Continuar con Google» falla en Android.
+     Para las builds de prueba del PC, añade también la huella del keystore de `pnpm android:release`.
+   - iOS: bundle `com.nidoapp.casa` → **`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`** y su esquema
      invertido (`com.googleusercontent.apps.…`) → **`EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME`**.
 4. **Supabase → Authentication → Providers → Google:** el client id web y su secreto; añade el
    client id de iOS y el de Android en «Authorized Client IDs» (los `id_token` nativos los firman
@@ -82,19 +86,19 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 ## 4 · Apple Developer (99 $/año)
 
 1. Cuenta de desarrollador. **`APPLE_TEAM_ID`** (Membership) → EAS (secreto) y Supabase (secreto).
-2. **App ID** `com.bradlopez13.casa` con _Sign in with Apple_, _Push Notifications_ y
+2. **App ID** `com.nidoapp.casa` con _Sign in with Apple_, _Push Notifications_ y
    _Associated Domains_.
-3. **Services ID** (p. ej. `com.bradlopez13.casa.web`) con _Sign in with Apple_, dominio
+3. **Services ID** (p. ej. `com.nidoapp.casa.web`) con _Sign in with Apple_, dominio
    `fyojaslimsgcabfbqdba.supabase.co` y return URL
    `https://fyojaslimsgcabfbqdba.supabase.co/auth/v1/callback`: es el cliente del inicio por
    navegador (Android). Va solo en Supabase (Providers → Apple), con el Team ID y la clave de abajo.
 4. **Clave de Sign in with Apple (.p8):** _Keys → +_, con _Sign in with Apple_. **`APPLE_KEY_ID`**
    y el contenido del .p8 → **`APPLE_PRIVATE_KEY`** (Supabase, secretos, para la función
    `revoke-apple`; la clave pegada en una línea con `\n` vale). **`APPLE_BUNDLE_ID`**
-   (`com.bradlopez13.casa`) → Supabase, secreto. Con los cuatro, borrar la cuenta revoca el token
+   (`com.nidoapp.casa`) → Supabase, secreto. Con los cuatro, borrar la cuenta revoca el token
    de Apple (App Review lo exige).
 5. **Clave APNs (.p8)** para los avisos: `eas credentials` → iOS → _Push Notifications_ la sube.
-6. **App Store Connect:** crea la app (bundle `com.bradlopez13.casa`, SKU `casa`). Su id numérico
+6. **App Store Connect:** crea la app (bundle `com.nidoapp.casa`, SKU `casa`). Su id numérico
    → **`ASC_APP_ID`**; tu Apple ID (correo) → **`APPLE_ID`**; los dos en EAS (secretos). Ficha con
    `store/*/ficha.md`, categoría Productividad, política y términos (`/privacidad/`, `/terminos/`),
    _App Privacy_ con `store/seguridad-datos.md`, capturas de 6,7″ y 6,5″ (cuando haya build de
@@ -118,7 +122,7 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
    `.env.local`). Nueva build.
 
 - **Coste / tiempo:** 0 € · 30 min.
-- **Prueba:** `adb shell pm get-app-links com.bradlopez13.casa` dice `verified`; el enlace de una
+- **Prueba:** `adb shell pm get-app-links com.nidoapp.casa` dice `verified`; el enlace de una
   invitación en WhatsApp abre Nido directamente; el validador de Apple
   (`https://app-site-association.cdn-apple.com/a/v1/<dominio>`) devuelve el archivo.
 

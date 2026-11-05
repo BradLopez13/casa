@@ -183,7 +183,7 @@ describe('invitation page', () => {
 
   it('opens Nido with the token, with the store (or this page) as the fallback on Android', () => {
     expect(html).toContain("'intent://invite?token='");
-    expect(html).toContain('scheme=casa;package=com.bradlopez13.casa;S.browser_fallback_url=');
+    expect(html).toContain('scheme=casa;package=com.nidoapp.casa;S.browser_fallback_url=');
     expect(html).toContain("'casa://invite?token='");
     // Any case (bloque 15.5): the app accepts a capitalised token too.
     expect(html).toContain('/^[0-9a-f]{48}$/i');
@@ -194,7 +194,7 @@ describe('invitation page', () => {
     const links = JSON.parse(page('.well-known/assetlinks.json')) as {
       target: { package_name: string };
     }[];
-    expect(links[0]?.target.package_name).toBe('com.bradlopez13.casa');
+    expect(links[0]?.target.package_name).toBe('com.nidoapp.casa');
     expect(page('.well-known/apple-app-site-association')).toContain('/invite*');
   });
 });

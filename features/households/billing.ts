@@ -55,7 +55,7 @@ export function storeAtHand(platform: Platform): boolean {
 export function manageSubscriptionUrl(platform: Platform): string {
   return platform === 'ios'
     ? 'https://apps.apple.com/account/subscriptions'
-    : 'https://play.google.com/store/account/subscriptions?package=com.bradlopez13.casa';
+    : 'https://play.google.com/store/account/subscriptions?package=com.nidoapp.casa';
 }
 
 type Sdk = typeof import('react-native-purchases').default;

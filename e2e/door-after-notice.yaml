@@ -1,4 +1,4 @@
-appId: com.bradlopez13.casa
+appId: com.nidoapp.casa
 # Bloque 14.2 (P1-1 del 1 de noviembre): offline, tapping a note still in the queue showed
 # «Aún se está enviando…»; the list moved to uncover its last note, which the notice did not
 # speak of, and the door was left cut under the status bar. With nine notes the pill covers the

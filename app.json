@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.bradlopez13.casa",
+      "bundleIdentifier": "com.nidoapp.casa",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -27,7 +27,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "allowBackup": false,
-      "package": "com.bradlopez13.casa",
+      "package": "com.nidoapp.casa",
       "permissions": ["INTERNET", "VIBRATE", "POST_NOTIFICATIONS", "RECEIVE_BOOT_COMPLETED"],
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
