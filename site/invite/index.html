@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="no-referrer" />
-    <title>Te invitan a una casa · Nido</title>
+    <title>Te invitan a una casa · Keli</title>
     <style>
       :root {
         --papel: #f3f4f0;
@@ -108,15 +108,15 @@
     <header>
       <div>
         <h1>
-          <span class="es">Te invitan a una casa en Nido</span
-          ><span class="en">You're invited to a home in Nido</span>
+          <span class="es">Te invitan a una casa en Keli</span
+          ><span class="en">You're invited to a home in Keli</span>
         </h1>
         <p>
           <span class="es"
-            >Nido reparte las tareas y la compra de una casa entre quienes viven en ella.</span
+            >Keli reparte las tareas y la compra de una casa entre quienes viven en ella.</span
           >
           <span class="en"
-            >Nido shares the chores and the shopping of a home between the people who live in
+            >Keli shares the chores and the shopping of a home between the people who live in
             it.</span
           >
         </p>
@@ -125,12 +125,12 @@
     <main>
       <div class="nota" id="con-app">
         <strong
-          ><span class="es">¿Ya tienes Nido?</span
-          ><span class="en">Already have Nido?</span></strong
+          ><span class="es">¿Ya tienes Keli?</span
+          ><span class="en">Already have Keli?</span></strong
         >
         <a class="boton principal" id="abrir" href="casa://invite"
-          ><span class="es">Abrir la invitación en Nido</span
-          ><span class="en">Open the invitation in Nido</span></a
+          ><span class="es">Abrir la invitación en Keli</span
+          ><span class="en">Open the invitation in Keli</span></a
         >
       </div>
       <div class="nota" id="instalar">
@@ -140,21 +140,21 @@
         >
         <ol>
           <li>
-            <span class="es">Instala Nido:</span><span class="en">Install Nido:</span>
+            <span class="es">Instala Keli:</span><span class="en">Install Keli:</span>
             <a class="boton secundario" id="play" href="#" hidden>Google Play</a>
             <a class="boton secundario" id="app-store" href="#" hidden>App Store</a>
             <p class="gris" id="sin-play">
               <span class="es"
-                >Nido aún no está en Google Play: pide a quien te invitó cómo instalarla.</span
+                >Keli aún no está en Google Play: pide a quien te invitó cómo instalarla.</span
               ><span class="en"
-                >Nido is not on Google Play yet: ask whoever invited you how to install it.</span
+                >Keli is not on Google Play yet: ask whoever invited you how to install it.</span
               >
             </p>
             <p class="gris" id="sin-app-store" hidden>
               <span class="es"
-                >Nido aún no está en la App Store: pide a quien te invitó cómo instalarla.</span
+                >Keli aún no está en la App Store: pide a quien te invitó cómo instalarla.</span
               ><span class="en"
-                >Nido is not on the App Store yet: ask whoever invited you how to install it.</span
+                >Keli is not on the App Store yet: ask whoever invited you how to install it.</span
               >
             </p>
           </li>
@@ -183,13 +183,13 @@
       </p>
     </main>
     <script>
-      // The page sends the token nowhere else: it only goes into the link that opens Nido.
+      // The page sends the token nowhere else: it only goes into the link that opens Keli.
       (function () {
         var english = /^en\b/i.test(navigator.language || '');
         document.documentElement.lang = english ? 'en' : 'es';
         document.title = english
-          ? "You're invited to a home · Nido"
-          : 'Te invitan a una casa · Nido';
+          ? "You're invited to a home · Keli"
+          : 'Te invitan a una casa · Keli';
 
         var body = document.body;
         var android = /Android/i.test(navigator.userAgent);
@@ -219,7 +219,7 @@
           return;
         }
         token = token.toLowerCase();
-        // Without Nido, Android falls back to the store, or to this page's install steps while
+        // Without Keli, Android falls back to the store, or to this page's install steps while
         // there is no listing.
         var fallback = playUrl || location.href.split('#')[0] + '#instalar';
         document.getElementById('abrir').href = android

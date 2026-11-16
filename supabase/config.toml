@@ -243,14 +243,14 @@ otp_expiry = 900
 # user = "env(SMTP_USER)"
 # pass = "env(SMTP_PASS)"
 # admin_email = "env(SMTP_USER)"
-# sender_name = "Nido"
+# sender_name = "Keli"
 
 [auth.email.template.confirmation]
-subject = "Tu código de Nido / Your Nido code"
+subject = "Tu código de Keli / Your Keli code"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Recupera tu contraseña de Nido / Reset your Nido password"
+subject = "Recupera tu contraseña de Keli / Reset your Keli password"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template
@@ -261,7 +261,7 @@ content_path = "./supabase/templates/recovery.html"
 # Security notice when a password changes (template built by `pnpm emails:build`).
 [auth.email.notification.password_changed]
 enabled = true
-subject = "Tu contraseña de Nido ha cambiado / Your Nido password has changed"
+subject = "Tu contraseña de Keli ha cambiado / Your Keli password has changed"
 content_path = "./supabase/templates/password_changed.html"
 
 [auth.sms]

@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 function fill(env: Record<string, string>) {
-  dir = mkdtempSync(join(tmpdir(), 'nido-site-'));
+  dir = mkdtempSync(join(tmpdir(), 'keli-site-'));
   cpSync(join(root, 'site'), dir, { recursive: true });
   execFileSync('bash', [join(root, 'scripts/site-store-links.sh'), dir], {
     env: { ...process.env, ...env },

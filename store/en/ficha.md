@@ -2,7 +2,7 @@
 
 ## Title (30)
 
-Nido: chores and shopping
+Keli: chores & groceries
 
 ## Subtitle · App Store (30)
 
@@ -14,13 +14,13 @@ Share the chores and the shopping of your home with the people you live with.
 
 ## Full description (4000)
 
-Nido is your home's fridge door, on your phone: everyone's chores on notes, one shared shopping list and nothing to explain to anyone.
+Keli is your home's fridge door, on your phone: everyone's chores on notes, one shared shopping list and nothing to explain to anyone.
 
 WHAT'S YOURS TODAY
-Open Nido and the door tells you: "You have 2." Today's chores, the ones left from other days and everyone else's, each with the magnet of whoever takes care of it. Tick one and it goes to the done tray; if you slip, "Undo".
+Open Keli and the door tells you: "You have 2." Today's chores, the ones left from other days and everyone else's, each with the magnet of whoever takes care of it. Tick one and it goes to the done tray; if you slip, "Undo".
 
 WRITE THE WAY YOU TALK
-"Take out the trash every Monday @Marta" creates a chore that repeats every Monday and gives it to Marta. Nido understands "tomorrow", "on Saturday", "every 2 days" and the rooms of your home.
+"Take out the trash every Monday @Marta" creates a chore that repeats every Monday and gives it to Marta. Keli understands "tomorrow", "on Saturday", "every 2 days" and the rooms of your home.
 
 ONE SHOPPING LIST
 What's missing, with its quantity in the margin. Whoever goes to the shop ticks what goes in the bag and the others see it at once. "The usual" offers what you often buy, to add with one tap.
@@ -43,7 +43,7 @@ chores,home,household,shopping,list,family,roommates,flat,share,reminders,cleani
 
 ## Release notes 1.0.0
 
-First version of Nido: chores per person, a shared shopping list, several homes, all of it also without signal.
+First version of Keli: chores per person, a shared shopping list, several homes, all of it also without signal.
 
 ## Category
 

@@ -12,7 +12,7 @@ describe('auth emails', () => {
     expect(Object.keys(authEmails()).sort()).toEqual([...names].sort());
   });
 
-  it.each(names)('%s carries the Nido layout', (name) => {
+  it.each(names)('%s carries the Keli layout', (name) => {
     const html = authEmails()[name].html;
     expect(html.startsWith('<!doctype html>')).toBe(true);
     expect(html).toContain('<html lang="es">');
@@ -87,12 +87,12 @@ describe('auth emails', () => {
 
   it('subjects follow the brand voice', () => {
     const emails = authEmails();
-    expect(emails.confirmation.subject).toBe('Tu código de Nido / Your Nido code');
+    expect(emails.confirmation.subject).toBe('Tu código de Keli / Your Keli code');
     expect(emails.recovery.subject).toBe(
-      'Recupera tu contraseña de Nido / Reset your Nido password',
+      'Recupera tu contraseña de Keli / Reset your Keli password',
     );
     expect(emails.password_changed.subject).toBe(
-      'Tu contraseña de Nido ha cambiado / Your Nido password has changed',
+      'Tu contraseña de Keli ha cambiado / Your Keli password has changed',
     );
   });
 

@@ -16,7 +16,7 @@ afterEach(() => {
 
 /** Runs `ci-supabase.sh run` with a fake `supabase` that fails once with `firstError`. */
 function runWith(firstError: string) {
-  dir = mkdtempSync(join(tmpdir(), 'nido-ci-supabase-'));
+  dir = mkdtempSync(join(tmpdir(), 'keli-ci-supabase-'));
   const bin = join(dir, 'bin');
   execFileSync('mkdir', ['-p', bin]);
   const fake = join(bin, 'supabase');

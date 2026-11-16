@@ -40,12 +40,12 @@ describe.each(pages)('privacy policy $file', ({ file, lang, other }) => {
   });
 });
 
-// Bloque 15.5: the site root is Nido's card, with the stores and the legal pages.
+// Bloque 15.5: the site root is Keli's card, with the stores and the legal pages.
 describe('the site root', () => {
   const html = page('index.html');
 
-  it('names Nido, its tagline, the icon, both stores and the legal pages', () => {
-    expect(html).toContain('<title>Nido · La casa, en equipo.</title>');
+  it('names Keli, its tagline, the icon, both stores and the legal pages', () => {
+    expect(html).toContain('<title>Keli · La casa, en equipo.</title>');
     expect(html).toContain('src="icon.png"');
     expect(html).toContain('id="play"');
     expect(html).toContain('id="app-store"');
@@ -152,17 +152,17 @@ describe('privacy policy, bloque 15.5', () => {
 describe('invitation page', () => {
   const html = page('invite/index.html');
 
-  it('says what it is, how to open it in Nido and the two steps without the app', () => {
+  it('says what it is, how to open it in Keli and the two steps without the app', () => {
     expect(html).toContain('<html lang="es">');
-    expect(html).toContain('Te invitan a una casa en Nido');
-    expect(html).toContain('Abrir la invitación en Nido');
+    expect(html).toContain('Te invitan a una casa en Keli');
+    expect(html).toContain('Abrir la invitación en Keli');
     expect(html).toContain('¿Tienes un enlace?');
     expect(html).toContain('Unirme con un enlace');
   });
 
   // Bloque 15.5 (P3-6): in the reader's language, with the App Store, and honest about Play.
   it('speaks English too, chosen by the browser', () => {
-    expect(html).toContain("You're invited to a home in Nido");
+    expect(html).toContain("You're invited to a home in Keli");
     expect(html).toContain('navigator.language');
   });
 
@@ -170,7 +170,7 @@ describe('invitation page', () => {
     expect(html).toContain('<body data-app-store-id="" data-play-url="">');
     expect(html).toContain("'https://apps.apple.com/app/id' + appStoreId");
     expect(html).toContain(
-      'Nido aún no está en Google Play: pide a quien te invitó cómo instalarla.',
+      'Keli aún no está en Google Play: pide a quien te invitó cómo instalarla.',
     );
     expect(html).not.toContain('play.google.com/store/apps/details');
   });
@@ -181,7 +181,7 @@ describe('invitation page', () => {
     expect(html).toContain('name="robots" content="noindex"');
   });
 
-  it('opens Nido with the token, with the store (or this page) as the fallback on Android', () => {
+  it('opens Keli with the token, with the store (or this page) as the fallback on Android', () => {
     expect(html).toContain("'intent://invite?token='");
     expect(html).toContain('scheme=casa;package=com.nidoapp.casa;S.browser_fallback_url=');
     expect(html).toContain("'casa://invite?token='");
@@ -214,9 +214,9 @@ describe('app.config.js with an invite host', () => {
   });
 
   it('declares verified App Links and Universal Links for the host', () => {
-    const links = inviteLinks('nido.example');
+    const links = inviteLinks('keli.example');
     expect(links.android.intentFilters?.[0]?.autoVerify).toBe(true);
-    expect(links.android.intentFilters?.[0]?.data[0]?.host).toBe('nido.example');
-    expect(links.ios.associatedDomains).toEqual(['applinks:nido.example']);
+    expect(links.android.intentFilters?.[0]?.data[0]?.host).toBe('keli.example');
+    expect(links.ios.associatedDomains).toEqual(['applinks:keli.example']);
   });
 });
