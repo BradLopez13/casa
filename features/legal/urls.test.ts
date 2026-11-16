@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { legalUrls, SITE_URL_DEFAULT } from './urls';
 
-const site = process.env.EXPO_PUBLIC_SITE_URL;
+// `unknown` first: process.env is typed only where expo-env.d.ts exists (not in CI), as urls.ts does.
+const saved: unknown = process.env.EXPO_PUBLIC_SITE_URL;
+const site = typeof saved === 'string' ? saved : undefined;
 afterEach(() => {
-  process.env.EXPO_PUBLIC_SITE_URL = site;
+  if (site === undefined) delete process.env.EXPO_PUBLIC_SITE_URL;
+  else process.env.EXPO_PUBLIC_SITE_URL = site;
 });
 
 // Bloque 15.5: the stores ask for the policy and the terms inside the app, in its language.
