@@ -60,7 +60,12 @@ appId: com.nidoapp.casa
 - tapOn:
     id: sign-up.password-confirm
 - inputText: e2e-password-2026
-- hideKeyboard
+# On a slow emulator the text can still be landing when inputText returns, and hideKeyboard then
+# fails while the keyboard is busy (CI, 16 Nov 2026): try again once the typing is done.
+- retry:
+    maxRetries: 2
+    commands:
+      - hideKeyboard
 - scrollUntilVisible:
     element:
       id: sign-up.submit
