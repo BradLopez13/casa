@@ -1,6 +1,6 @@
-# Nido
+# Keli
 
-**Nido · La casa, en equipo.** El repositorio conserva el nombre técnico `casa`. La app ya usa el icono, el splash, el nombre y la paleta de Nido.
+**Keli · La casa, en equipo.** El repositorio conserva el nombre técnico `casa`. La app ya usa el icono, el splash, el nombre y la paleta de Keli.
 
 App móvil para llevar una casa compartida entre varias personas, para iOS y Android con una sola base de código (Expo y Supabase). Responde a una pregunta: **¿cómo se hace que un grupo comparta datos en una app móvil sin que el cliente pueda escribir donde no debe?**
 

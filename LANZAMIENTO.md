@@ -1,4 +1,4 @@
-# Lanzamiento de Nido · lo que solo Brad puede hacer
+# Lanzamiento de Keli · lo que solo Brad puede hacer
 
 El código está listo para Google Play y la App Store (bloque 15). Todo lo que depende de una
 cuenta que aún no existe se lee de una variable o un secreto con nombre fijo (`.env.example` los
@@ -15,7 +15,51 @@ Dónde se pone cada cosa:
 
 Identificadores, decididos por Brad (DESIGN.md): `com.nidoapp.casa` como `bundleIdentifier` y
 `package`; el esquema de los enlaces sigue siendo `casa://`. **Después de publicar no se pueden cambiar.** El nombre que se ve
-es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`).
+es «Keli». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`).
+
+---
+
+## 0 · Renombrado a Keli: lo que queda por rehacer con el nombre nuevo
+
+El 16 nov 2026 la app pasó de Nido a Keli (Nido estaba ocupado en las tiendas). En el código solo
+se cambió el nombre visible. Como aún no hay nada publicado, en esta etapa se puede (y conviene)
+rehacer de cero con el nombre nuevo lo que hoy lleva «nido» o es de prueba. Cada punto: qué, dónde
+se cambia y cómo se comprueba.
+
+- **Identificador de la app.** Decidir si `com.nidoapp.casa` pasa a uno con keli (p. ej.
+  `com.keliapp.casa`) ANTES de crear la app en Play Console y App Store, porque después no se
+  puede cambiar. Si cambia: `app.json` (`bundleIdentifier`, `package`),
+  `site/.well-known/assetlinks.json` y `apple-app-site-association`, la URL `intent://` de
+  `site/invite/index.html`, `features/households/billing.ts` (enlace de suscripciones de Play),
+  `e2e/*.yaml` (`appId`), `.env.example` (`APPLE_BUNDLE_ID`), los tests que lo comprueban
+  (`scripts/app-config.test.mts`, `site/site.test.ts`, `features/households/billing.test.ts`,
+  `supabase/functions/_shared/apple.test.ts`, `scripts/site-store-links.test.mts`), el Services ID
+  de Apple y el resto que salga de `git grep -n nidoapp`. **Prueba:** `git grep -n nidoapp` vacío y
+  los tests en verde.
+- **Firebase.** Crear un proyecto nuevo «Keli» con la app Android/iOS del identificador definitivo
+  y bajar un `google-services.json` nuevo (el actual es del proyecto de pruebas de Nido, está
+  ligado a `com.nidoapp.casa` y no se versiona). Credenciales FCM V1 nuevas en EAS y clientes OAuth
+  de Google nuevos (`EXPO_PUBLIC_GOOGLE_*`). **Prueba:** un aviso push y «Continuar con Google» en
+  una build con el identificador nuevo.
+- **Supabase.** Se puede crear un proyecto de producción nuevo con nombre Keli en lugar de seguir
+  con `fyojaslimsgcabfbqdba` (que tiene los datos de prueba). Si se hace: nuevas
+  `EXPO_PUBLIC_SUPABASE_URL` y clave anónima en EAS y `.env.local`, `pnpm exec supabase link` al
+  proyecto nuevo, `db push` de todas las migraciones, secretos de las funciones, Vault del push,
+  proveedores de Auth (Google, Apple), SMTP, URLs de Auth, el bucket `email-assets` con
+  `keli-symbol-v3.png` y la URL base de la imagen en `scripts/email/auth-emails.mts` (después
+  `pnpm emails:build`). Si NO se hace: al menos subir `assets/email/keli-symbol-v3.png` al bucket
+  `email-assets` antes de aplicar las plantillas nuevas (`nido-symbol-v3.png` se queda allí para
+  los correos ya enviados). **Prueba:** un correo de acceso real muestra el símbolo.
+- **Correo de contacto y remitente.** Hoy es `nido.app.avisos@gmail.com` (`store/*/ficha.md`,
+  `store/seguridad-datos.md`, las páginas legales de `site/`, `scripts/store-texts.test.mts`,
+  `site/site.test.ts` y el paso 8 de este documento). Crear uno con Keli (o del dominio) y
+  cambiarlo en todos esos sitios. **Prueba:** `git grep -n nido.app.avisos` vacío.
+- **Dominio.** Si se compra, que sea con Keli (pasos 1 y 5).
+- **Sentry y EAS.** Renombrar el proyecto de Sentry y el de EAS si llevan «nido» o «casa» como
+  nombre visible (el `slug` `casa` no se toca).
+- **Arte.** Rehacer `assets/brand/keli/identidad-aprobada.png` y las variantes, que aún dicen
+  «nido», y revisar a la vista el lettering «keli» (`assets/brand/keli/lettering.svg` y
+  `ui/keliLettering.ts`).
 
 ---
 
@@ -31,7 +75,7 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 
 ## 2 · Google Play Console (25 $, una vez)
 
-1. Crea la cuenta de desarrollador y la app «Nido» en Play Console (paquete `com.nidoapp.casa`, gratis, con
+1. Crea la cuenta de desarrollador y la app «Keli» en Play Console (paquete `com.nidoapp.casa`, gratis, con
    compras dentro de la app).
 2. **Play App Signing:** acepta que Play firme la app. Apunta la **huella SHA-256 del certificado
    de firma de la app** (_Integridad de la app → Firma de apps_) → va en
@@ -58,7 +102,7 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 
 ## 3 · Firebase y Google (entrar con Google, avisos push)
 
-1. **Firebase:** proyecto «Nido», app Android `com.nidoapp.casa` y app iOS
+1. **Firebase:** proyecto «Keli», app Android `com.nidoapp.casa` y app iOS
    `com.nidoapp.casa`. Descarga `google-services.json` → **`GOOGLE_SERVICES_JSON`** (EAS,
    archivo secreto; ya existe en preview) y `GoogleService-Info.plist` →
    **`GOOGLE_SERVICES_PLIST`** (EAS, archivo secreto).
@@ -123,12 +167,12 @@ es «Nido». Versión `1.0.0`; el número de build lo lleva EAS (`autoIncrement`
 
 - **Coste / tiempo:** 0 € · 30 min.
 - **Prueba:** `adb shell pm get-app-links com.nidoapp.casa` dice `verified`; el enlace de una
-  invitación en WhatsApp abre Nido directamente; el validador de Apple
+  invitación en WhatsApp abre Keli directamente; el validador de Apple
   (`https://app-site-association.cdn-apple.com/a/v1/<dominio>`) devuelve el archivo.
 
 ## 6 · RevenueCat (el cobro)
 
-1. Proyecto «Nido», dos apps (Play y App Store) con sus credenciales de tienda (Play: la cuenta de
+1. Proyecto «Keli», dos apps (Play y App Store) con sus credenciales de tienda (Play: la cuenta de
    servicio con acceso a la API de Play Developer; App Store: la clave de _In-App Purchase_).
 2. Productos `casas_1` … `casas_10` importados de las dos tiendas, un _entitlement_ `casas` y una
    _offering_ `default` con un _package_ por producto (`store/productos.md`).
@@ -193,7 +237,13 @@ envía a revisión. `CHANGELOG.md` queda con la 1.0.0 y la fecha.
 
 - **`expo-updates`** (actualizar el JS sin pasar por la tienda): no está. A favor, arreglar textos
   sin esperar a la revisión; en contra, una pieza más que firmar y una política más que leer.
-- **El dominio** (paso 1): sin él, los enlaces abren el navegador antes que Nido.
+- **El dominio** (paso 1): sin él, los enlaces abren el navegador antes que Keli.
+- **Identificador** (paso 0): ¿`com.nidoapp.casa` o uno con keli? Hay que decidirlo antes de crear las apps en las tiendas.
+- **Firebase** (paso 0): proyecto nuevo «Keli» y `google-services.json` nuevo, con FCM V1 y clientes de Google nuevos.
+- **Supabase** (paso 0): proyecto de producción nuevo llamado Keli, o seguir con el actual y subir `keli-symbol-v3.png` a `email-assets`.
+- **Correo de contacto y remitente** (paso 0): crear uno con Keli (o del dominio) en lugar de `nido.app.avisos@gmail.com`.
+- **Sentry y EAS** (paso 0): renombrar los proyectos si llevan «nido» o «casa» a la vista.
+- **Arte** (paso 0): rehacer `identidad-aprobada.png` y variantes, y revisar el lettering «keli».
 
 ## Lo que ya está hecho en el código (no hay que tocar)
 
