@@ -225,7 +225,7 @@ describe('design rules (DESIGN.md «Reglas»)', () => {
     ];
     const found = sources.filter(
       (f) =>
-        /['"][^'"]*\/(NidoSymbol|SymbolPlate)(\.tsx)?['"]/.test(read(f)) && !allowed.includes(f),
+        /['"][^'"]*\/(KeliSymbol|SymbolPlate)(\.tsx)?['"]/.test(read(f)) && !allowed.includes(f),
     );
     expect(found).toEqual([]);
   });

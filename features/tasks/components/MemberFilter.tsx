@@ -4,7 +4,7 @@ import type { Member } from '@/features/households/api';
 import { t } from '@/i18n';
 import { useDoorCompact } from '@/ui/components/doorContext';
 import { Magnet } from '@/ui/components/Magnet';
-import { NidoSymbol } from '@/ui/components/NidoSymbol';
+import { KeliSymbol } from '@/ui/components/KeliSymbol';
 import { useTheme } from '@/ui/theme';
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * A radio row of magnets: "Todos" first (the Nido symbol on slate, chosen by default), then one per
+ * A radio row of magnets: "Todos" first (the Keli symbol on slate, chosen by default), then one per
  * person. Tapping one filters by them; tapping the chosen one keeps it, "Todos" clears.
  * In a compact door (a phone on its side) the magnets are the medium size, ring included still a
  * 48 dp target, and the names under them give way, so the row is one touch height: each magnet
@@ -48,7 +48,7 @@ export function MemberFilter({ members, marks, userId, selected, onSelect, dense
           color="teal"
           size={compact ? 'md' : 'lg'}
           selected={selected === null}
-          glyph={{ node: <NidoSymbol size={24} onSlate />, fill: colors.brandBand }}
+          glyph={{ node: <KeliSymbol size={24} onSlate />, fill: colors.brandBand }}
           accessibilityRole="radio"
           accessibilityLabel={allName}
           testID="member-filter.all"

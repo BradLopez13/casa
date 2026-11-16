@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { legalUrls, SITE_URL_DEFAULT } from './urls';
 
-const site = process.env.EXPO_PUBLIC_SITE_URL as string | undefined;
+const site = process.env.EXPO_PUBLIC_SITE_URL;
 afterEach(() => {
   process.env.EXPO_PUBLIC_SITE_URL = site;
 });
@@ -28,10 +28,10 @@ describe('legalUrls', () => {
   });
 
   it('follows EXPO_PUBLIC_SITE_URL, with or without a trailing slash', () => {
-    process.env.EXPO_PUBLIC_SITE_URL = 'https://nido.example/';
-    expect(legalUrls('es').privacy).toBe('https://nido.example/privacidad/');
-    process.env.EXPO_PUBLIC_SITE_URL = 'https://nido.example';
-    expect(legalUrls('en').terms).toBe('https://nido.example/en/terms/');
+    process.env.EXPO_PUBLIC_SITE_URL = 'https://keli.example/';
+    expect(legalUrls('es').privacy).toBe('https://keli.example/privacidad/');
+    process.env.EXPO_PUBLIC_SITE_URL = 'https://keli.example';
+    expect(legalUrls('en').terms).toBe('https://keli.example/en/terms/');
   });
 
   it('treats an empty variable as unset', () => {

@@ -33,7 +33,7 @@ function renderHelp(members: Member[]) {
   );
 }
 
-describe('Cómo funciona Nido', () => {
+describe('Cómo funciona Keli', () => {
   it('lists what the screens do not show, the magnets, Hoy and Tareas and earlier days too', () => {
     renderHelp([{ userId: 'me', displayName: 'Ana', role: 'owner', joinedAt: '2026-10-01' }]);
     for (const key of [

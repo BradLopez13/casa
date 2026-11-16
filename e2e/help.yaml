@@ -45,7 +45,7 @@ appId: com.nidoapp.casa
 - tapOn:
     id: today.help
 - extendedWaitUntil:
-    visible: Cómo funciona Nido
+    visible: Cómo funciona Keli
     timeout: 10000
 - assertVisible:
     id: help.tabs
@@ -61,7 +61,7 @@ appId: com.nidoapp.casa
 - tapOn:
     id: settings.help
 - extendedWaitUntil:
-    visible: Cómo funciona Nido
+    visible: Cómo funciona Keli
     timeout: 10000
 - assertVisible: Los imanes son personas
 - scrollUntilVisible:

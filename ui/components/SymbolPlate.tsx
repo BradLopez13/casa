@@ -1,7 +1,7 @@
 import { View } from 'react-native';
-import { SYMBOL_PLATE } from '../nidoSymbol';
+import { SYMBOL_PLATE } from '../keliSymbol';
 import { useTheme } from '../theme';
-import { NidoSymbol } from './NidoSymbol';
+import { KeliSymbol } from './KeliSymbol';
 
 /** The symbol on a slate plate, slate in both themes: the end of the day and an empty Tareas. Decorative. */
 export function SymbolPlate() {
@@ -18,7 +18,7 @@ export function SymbolPlate() {
         borderRadius: radii.note,
       }}
     >
-      <NidoSymbol size={SYMBOL_PLATE.size - 2 * SYMBOL_PLATE.inset} onSlate />
+      <KeliSymbol size={SYMBOL_PLATE.size - 2 * SYMBOL_PLATE.inset} onSlate />
     </View>
   );
 }

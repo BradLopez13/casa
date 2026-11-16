@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { RAIL_WIDTH } from './layout';
 import {
   BESIDE_SIGNATURE,
-  NIDO_LETTERING_DOT,
-  NIDO_LETTERING_PATH,
-  NIDO_LETTERING_VIEWBOX,
+  KELI_LETTERING_DOT,
+  KELI_LETTERING_PATH,
+  KELI_LETTERING_VIEWBOX,
   brandSignatureSizes,
   letteringWidth,
-} from './nidoLettering';
+} from './keliLettering';
 
-describe('nido lettering', () => {
-  it('is the geometry of assets/brand/nido/lettering.svg', () => {
-    expect(NIDO_LETTERING_VIEWBOX).toBe('0 0 2077 760');
-    expect(NIDO_LETTERING_PATH.startsWith('M56 750')).toBe(true);
-    expect(NIDO_LETTERING_PATH.endsWith('Z')).toBe(true);
-    expect(NIDO_LETTERING_DOT).toEqual({ cx: 723, cy: 95, r: 95 });
+describe('keli lettering', () => {
+  it('is the geometry of assets/brand/keli/lettering.svg', () => {
+    expect(KELI_LETTERING_VIEWBOX).toBe('0 0 2077 760');
+    expect(KELI_LETTERING_PATH.startsWith('M56 750')).toBe(true);
+    expect(KELI_LETTERING_PATH.endsWith('Z')).toBe(true);
+    expect(KELI_LETTERING_DOT).toEqual({ cx: 723, cy: 95, r: 95 });
   });
 
   it('keeps its proportion at any height', () => {

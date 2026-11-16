@@ -76,7 +76,7 @@ vi.mock('expo-crypto', () => ({
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
 }));
 
-// The drawings (the Nido symbol, the brand marks) are decorative: their shapes are plain tags.
+// The drawings (the Keli symbol, the brand marks) are decorative: their shapes are plain tags.
 vi.mock('react-native-svg', () => {
   const shape = (tag: string) =>
     function Shape({ children }: { children?: ReactNode }) {

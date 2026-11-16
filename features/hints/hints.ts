@@ -86,7 +86,7 @@ export function markHintSeen(id: HintId): void {
   AsyncStorage.setItem(keyOf(id), String(now)).catch(() => undefined);
 }
 
-/** «Volver a ver las pistas» (Cómo funciona Nido): every hint shows again on this device. */
+/** «Volver a ver las pistas» (Cómo funciona Keli): every hint shows again on this device. */
 export function resetHints(): void {
   for (const id of ALL) {
     seen.set(id, false);

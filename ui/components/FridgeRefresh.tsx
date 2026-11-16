@@ -26,7 +26,7 @@ import { FADE_MS, MAX_MS } from '../motion';
 import { useReduceMotion, useTheme } from '../theme';
 import { DOOR_OPEN } from '../tokens';
 import { DoorInsetContext, FridgeRefreshContext } from './doorContext';
-import { NidoSymbol } from './NidoSymbol';
+import { KeliSymbol } from './KeliSymbol';
 
 export { useFridgeRefresh } from './doorContext';
 
@@ -185,7 +185,7 @@ export function FridgeRefresh({ refreshing, onRefresh, children }: Props) {
           gap: space(2),
         }}
       >
-        {inside === null ? null : <NidoSymbol size={20} mono={colors.light.text} />}
+        {inside === null ? null : <KeliSymbol size={20} mono={colors.light.text} />}
         <Text
           maxFontSizeMultiplier={1.6}
           numberOfLines={1}

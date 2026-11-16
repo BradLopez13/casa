@@ -45,7 +45,7 @@ function Fact({ label, value, testID }: { label: string; value: string; testID?:
 
 /**
  * «La licencia de esta casa» (bloque 12): one per household, monthly, paid by whoever runs it.
- * While Nido does not charge, the licence is complimentary: «Incluida por ahora», and nothing to
+ * While Keli does not charge, the licence is complimentary: «Incluida por ahora», and nothing to
  * press. With billing on: its state, its price, who pays, what happens when the household is
  * handed over, and «Pagar la licencia» for whoever runs it.
  */

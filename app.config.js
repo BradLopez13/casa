@@ -11,7 +11,7 @@ function googleServicesFile() {
 
 /**
  * With a domain for the invitations (EXPO_PUBLIC_INVITE_HOST, decisión 1: A at the launch), its
- * https links open Nido: Android App Links, verified against the domain's assetlinks.json, and iOS
+ * https links open Keli: Android App Links, verified against the domain's assetlinks.json, and iOS
  * Universal Links. Without it, nothing changes: the invitation is casa://invite (site/INVITACIONES.md).
  * @param {string | undefined} host
  */

@@ -1,16 +1,16 @@
 import { View } from 'react-native';
 import Svg, { Circle, G, Path } from 'react-native-svg';
-import { NIDO_SYMBOL_PATHS, NIDO_SYMBOL_VIEWBOX, nidoSymbolColors } from '../nidoSymbol';
+import { KELI_SYMBOL_PATHS, KELI_SYMBOL_VIEWBOX, keliSymbolColors } from '../keliSymbol';
 import { useTheme } from '../theme';
 import { radii } from '../tokens';
 
 const TILE_INSET = 8;
 
 /**
- * The Nido symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for
+ * The Keli symbol: two figures sharing a hollow. Decorative. `onSlate` drops the slate tile for
  * use on the brand band; `mono` draws both figures in that one colour, with no tile and the mono seam between the bases.
  */
-export function NidoSymbol({
+export function KeliSymbol({
   size,
   onSlate = false,
   mono,
@@ -20,9 +20,9 @@ export function NidoSymbol({
   mono?: string;
 }) {
   const { scheme } = useTheme();
-  const brand = nidoSymbolColors(scheme);
+  const brand = keliSymbolColors(scheme);
   const c = mono === undefined ? brand : { left: mono, right: mono, tile: null };
-  const { left, right } = NIDO_SYMBOL_PATHS;
+  const { left, right } = KELI_SYMBOL_PATHS;
   // On the brand band the slate is already behind it: no tile of its own.
   const tile = onSlate ? null : c.tile;
   const inset = tile === null ? 0 : TILE_INSET;
@@ -30,7 +30,7 @@ export function NidoSymbol({
     <Svg
       width={size - inset * 2}
       height={size - inset * 2}
-      viewBox={NIDO_SYMBOL_VIEWBOX}
+      viewBox={KELI_SYMBOL_VIEWBOX}
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >

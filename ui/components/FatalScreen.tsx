@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '../actionIcons';
 import { useTheme } from '../theme';
 import { Button } from './Button';
-import { NidoSymbol } from './NidoSymbol';
+import { KeliSymbol } from './KeliSymbol';
 
 type Props = {
   /** `crash`: something broke while running. `config`: the build is missing its setup. */
@@ -33,7 +33,7 @@ export function FatalScreen({ kind, onRetry, detail }: Props) {
             padding: space(6),
           }}
         >
-          <NidoSymbol size={72} onSlate />
+          <KeliSymbol size={72} onSlate />
           <Text
             accessibilityRole="header"
             style={{

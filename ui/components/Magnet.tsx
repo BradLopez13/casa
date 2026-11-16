@@ -33,7 +33,7 @@ type Props = {
   /** A ticked box: the magnet fills with the accent and shows the check. Unticked boxes leave it out. */
   check?: MagnetCheck;
   /**
-   * Replaces the initial with a drawing (the Nido symbol of "Todos"), on `fill` instead of a member
+   * Replaces the initial with a drawing (the Keli symbol of "Todos"), on `fill` instead of a member
    * colour. An empty magnet draws it inside its bare ring (a property with no value, fase 10f).
    */
   glyph?: { node: ReactNode; fill: string; highlight?: boolean };
