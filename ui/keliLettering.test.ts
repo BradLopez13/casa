@@ -11,15 +11,15 @@ import {
 
 describe('keli lettering', () => {
   it('is the geometry of assets/brand/keli/lettering.svg', () => {
-    expect(KELI_LETTERING_VIEWBOX).toBe('0 0 2077 760');
+    expect(KELI_LETTERING_VIEWBOX).toBe('0 0 1694 760');
     expect(KELI_LETTERING_PATH.startsWith('M56 750')).toBe(true);
     expect(KELI_LETTERING_PATH.endsWith('Z')).toBe(true);
-    expect(KELI_LETTERING_DOT).toEqual({ cx: 723, cy: 95, r: 95 });
+    expect(KELI_LETTERING_DOT).toEqual({ cx: 1609, cy: 105, r: 85 });
   });
 
   it('keeps its proportion at any height', () => {
-    expect(letteringWidth(760)).toBeCloseTo(2077);
-    expect(letteringWidth(40)).toBeCloseTo(109.3, 1);
+    expect(letteringWidth(760)).toBeCloseTo(1694);
+    expect(letteringWidth(40)).toBeCloseTo(89.2, 1);
   });
 });
 
