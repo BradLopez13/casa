@@ -26,7 +26,7 @@ const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'ut
 
 describe('app.json for the stores', () => {
   it('keeps the final identifiers and the version', () => {
-    expect(app.expo.name).toBe('Nido');
+    expect(app.expo.name).toBe('Keli');
     expect(app.expo.version).toBe('1.0.0');
     expect(app.expo.ios.bundleIdentifier).toBe('com.nidoapp.casa');
     expect(app.expo.android.package).toBe('com.nidoapp.casa');

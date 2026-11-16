@@ -32,7 +32,7 @@ export type SettingsPanes = { left: SettingsGroup[]; right: SettingsGroup[] };
 
 /**
  * Ajustes on two panes: your household and account (members, sign out, delete account) on the
- * left, what the phone tells you (reminders, household notices) and how Nido works on the right. In one column
+ * left, what the phone tells you (reminders, household notices) and how Keli works on the right. In one column
  * everything stays in its usual order, the account last.
  */
 export function settingsPanes(mode: PaneMode, several: boolean): SettingsPanes {

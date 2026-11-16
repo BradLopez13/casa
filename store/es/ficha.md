@@ -2,7 +2,7 @@
 
 ## Título (30)
 
-Nido: tareas y compra en casa
+Keli: tareas y compra
 
 ## Subtítulo · App Store (30)
 
@@ -14,13 +14,13 @@ Reparte las tareas y la compra de tu casa con quienes viven contigo.
 
 ## Descripción larga (4000)
 
-Nido es la nevera de tu casa, en el móvil: las tareas de cada persona en notas, la lista de la compra compartida y nada que explicar a nadie.
+Keli es la nevera de tu casa, en el móvil: las tareas de cada persona en notas, la lista de la compra compartida y nada que explicar a nadie.
 
 QUÉ TE TOCA HOY
-Abres Nido y la puerta te lo dice: «Te tocan 2.» Las tareas de hoy, las que quedaron de otros días y las de los demás, cada una con el imán de quien se encarga. Marcas una y se va a la bandeja de hechas; si te equivocas, «Deshacer».
+Abres Keli y la puerta te lo dice: «Te tocan 2.» Las tareas de hoy, las que quedaron de otros días y las de los demás, cada una con el imán de quien se encarga. Marcas una y se va a la bandeja de hechas; si te equivocas, «Deshacer».
 
 ESCRIBE COMO HABLAS
-«Sacar la basura cada lunes @Marta» crea una tarea que se repite cada lunes y se la da a Marta. Nido entiende «mañana», «el sábado», «cada 2 días» y las estancias de tu casa.
+«Sacar la basura cada lunes @Marta» crea una tarea que se repite cada lunes y se la da a Marta. Keli entiende «mañana», «el sábado», «cada 2 días» y las estancias de tu casa.
 
 LA COMPRA, UNA SOLA LISTA
 Lo que falta, con su cantidad al margen. Quien va al súper marca lo que mete en la bolsa y los demás lo ven al momento. «Lo de siempre» te ofrece lo que soléis comprar para añadirlo de un toque.
@@ -43,7 +43,7 @@ tareas,casa,hogar,compra,lista,familia,compañeros,piso,reparto,recordatorios,li
 
 ## Notas de la versión 1.0.0
 
-Primera versión de Nido: tareas por persona, lista de la compra compartida, varias casas, todo también sin cobertura.
+Primera versión de Keli: tareas por persona, lista de la compra compartida, varias casas, todo también sin cobertura.
 
 ## Categoría
 

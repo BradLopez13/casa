@@ -48,7 +48,7 @@ export default function HelpRoute() {
 }
 
 /**
- * «Cómo funciona Nido», from Ajustes and from the empty states («¿Cómo funciona?», which opens it
+ * «Cómo funciona Keli», from Ajustes and from the empty states («¿Cómo funciona?», which opens it
  * on its entry: `casa://help?entry=tabs`): one note with what the first-use hints teach and what a
  * new member asks, for whoever missed them. One thing acts: «Volver a ver las pistas».
  */

@@ -94,7 +94,7 @@ export function appleTokenRequest(secret: string, clientId: string, code: string
   );
 }
 
-/** Revokes the refresh token kept at sign-in: Apple forgets the person's consent to Nido. */
+/** Revokes the refresh token kept at sign-in: Apple forgets the person's consent to Keli. */
 export function appleRevokeRequest(secret: string, clientId: string, token: string): Request {
   return post(
     '/auth/revoke',

@@ -4,16 +4,16 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/i18n';
-import { BESIDE_SIGNATURE, brandSignatureSizes } from '../nidoLettering';
+import { BESIDE_SIGNATURE, brandSignatureSizes } from '../keliLettering';
 import { useTheme } from '../theme';
 import { authBeside, RAIL_WIDTH } from '../layout';
 import { useLayout } from '../useLayout';
-import { NidoLettering } from './NidoLettering';
-import { NidoSymbol } from './NidoSymbol';
+import { KeliLettering } from './KeliLettering';
+import { KeliSymbol } from './KeliSymbol';
 
 /**
  * The slate band that opens sign-in, sign-up, forgot-password and onboarding: full width, under the status bar,
- * with the signature (symbol, then the «nido» lettering) at the start; on a phone on its side, a
+ * with the signature (symbol, then the «keli» lettering) at the start; on a phone on its side, a
  * column at the left edge (`authBeside`) with the signature stacked. `hero` is the larger
  * signature that opens onboarding. Render it as `CenteredCard`'s `header`, which lets it bleed to
  * the edges of the window. `trailing` is a quiet control at the end of the band (the account
@@ -59,7 +59,7 @@ export function BrandHeader({
     >
       {/* The band is slate in both themes: light status icons while it is on screen. */}
       {focused ? <StatusBar style="light" /> : null}
-      {/* One image named «Nido»: the screen reader reads the name the lettering draws. */}
+      {/* One image named «Keli»: the screen reader reads the name the lettering draws. */}
       <View
         accessible
         accessibilityRole="image"
@@ -70,8 +70,8 @@ export function BrandHeader({
           gap: sizes.gap,
         }}
       >
-        <NidoSymbol size={sizes.symbol} onSlate />
-        <NidoLettering height={sizes.lettering} color={colors.onBrandBand} />
+        <KeliSymbol size={sizes.symbol} onSlate />
+        <KeliLettering height={sizes.lettering} color={colors.onBrandBand} />
       </View>
       {trailing}
     </View>

@@ -24,7 +24,7 @@ describe('inviteFromClipboard (bloque 14.3)', () => {
 
   it('puts the link alone in the field when a whole message was copied from a chat', async () => {
     copied(
-      `Te invito a mi casa «Casa» en Nido.\n\nSi ya tienes Nido…\n\ncasa://invite?token=${TOKEN}`,
+      `Te invito a mi casa «Casa» en Keli.\n\nSi ya tienes Keli…\n\ncasa://invite?token=${TOKEN}`,
     );
     expect(await inviteFromClipboard('android')).toMatch(new RegExp(`invite/?\\?token=${TOKEN}$`));
   });

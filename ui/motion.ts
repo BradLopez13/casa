@@ -9,7 +9,7 @@ import {
 } from 'react-native-reanimated';
 
 /**
- * Nido's one movement (spec §14.3): a single spring, a single set of vibrations, nothing longer
+ * Keli's one movement (spec §14.3): a single spring, a single set of vibrations, nothing longer
  * than 250 ms, and with Reduce Motion only 120 ms fades or instant changes.
  */
 export const SPRING = { damping: 14, stiffness: 180 } as const;

@@ -2,15 +2,15 @@
 
 Decisión de Brad (1 y 2 de noviembre de 2026): hasta el lanzamiento, la invitación lleva un enlace
 https a esta web en GitHub Pages, `https://bradlopez13.github.io/casa/invite/?token=…`, con los dos
-pasos en el mensaje por si no se abre. La página abre Nido con un toque (o lleva a Google Play).
+pasos en el mensaje por si no se abre. La página abre Keli con un toque (o lleva a Google Play).
 Sin dominio propio no hay App Links: el enlace abre primero el navegador. Lo de abajo es para
-pasar a un dominio propio, donde el enlace abre Nido directamente (A).
+pasar a un dominio propio, donde el enlace abre Keli directamente (A).
 
 ## Lo que ya está hecho
 
-- `site/invite/index.html`: la página del enlace sin la app («Te invitan a una casa en Nido»,
-  «Abrir la invitación en Nido», Google Play y los dos pasos). La página no manda el token a
-  ningún sitio: solo va al enlace que abre Nido (`intent://` en Android, con la tienda como
+- `site/invite/index.html`: la página del enlace sin la app («Te invitan a una casa en Keli»,
+  «Abrir la invitación en Keli», Google Play y los dos pasos). La página no manda el token a
+  ningún sitio: solo va al enlace que abre Keli (`intent://` en Android, con la tienda como
   respaldo; `casa://` en el resto). No carga nada de fuera. El servidor que la sirve sí ve la
   consulta en sus registros; con `#token=` no la vería, si algún día se quiere.
 - En iOS la página solo enlaza Google Play: falta el enlace de la App Store cuando exista.
@@ -36,4 +36,4 @@ pasar a un dominio propio, donde el enlace abre Nido directamente (A).
 4. `EXPO_PUBLIC_INVITE_HOST=<dominio>` en los perfiles de EAS (`eas.json`) y en `.env.local`.
 5. Nueva build: Android verifica el dominio al instalar
    (`adb shell pm get-app-links com.nidoapp.casa` debe decir `verified`).
-6. Probar: el enlace en WhatsApp abre Nido con la app instalada, y la página sin ella.
+6. Probar: el enlace en WhatsApp abre Keli con la app instalada, y la página sin ella.

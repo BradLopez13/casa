@@ -1,5 +1,5 @@
 // Exports the app icon, Android adaptive/monochrome icons, splash (light/dark), favicon and
-// Android notification icon from the Nido symbol master. Run with `pnpm brand:icons`; output
+// Android notification icon from the Keli symbol master. Run with `pnpm brand:icons`; output
 // is deterministic.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -95,8 +95,8 @@ for (const [name, data] of Object.entries(files)) {
 // Auth email header symbol, shown at 48 px (3x). The slate background is painted in so mail
 // clients in dark mode never recolour it. Uploaded to the public `email-assets` bucket.
 const emailSymbol = await compose(colour, 132, 144, SLATE);
-writeFileSync(join(root, 'assets/email/nido-symbol-v3.png'), emailSymbol);
-process.stdout.write(`email nido-symbol-v3.png ${emailSymbol.length} bytes
+writeFileSync(join(root, 'assets/email/keli-symbol-v3.png'), emailSymbol);
+process.stdout.write(`email keli-symbol-v3.png ${emailSymbol.length} bytes
 `);
 process.stdout.write(`adaptive symbol width ${adaptive}px
 `);

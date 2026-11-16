@@ -229,7 +229,7 @@ describe('Crear otra casa (bloque 12)', () => {
   it('has the common header, «Volver» and its title, instead of the band and the account', () => {
     renderOnboarding(<NewHouseholdFlow another />);
     expect(screen.getByRole('heading', { name: t('onboarding.anotherTitle') })).toBeTruthy();
-    expect(screen.queryByLabelText('Nido')).toBeNull();
+    expect(screen.queryByLabelText('Keli')).toBeNull();
     const buttons = screen.getAllByRole('button');
     expect(buttons[0]?.getAttribute('aria-label')).toBe(t('onboarding.back'));
     // Empty, with «Otra casa» as the example (bloque 14.5, P3).

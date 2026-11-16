@@ -18,14 +18,14 @@ describe('buildInviteUrl', () => {
     expect(buildInviteUrl(TOKEN, createUrl)).toBe(
       `https://bradlopez13.github.io/casa/invite/?token=${TOKEN}`,
     );
-    expect(buildInviteUrl(TOKEN, createUrl, 'nido.example')).toBe(
-      `https://nido.example/invite/?token=${TOKEN}`,
+    expect(buildInviteUrl(TOKEN, createUrl, 'keli.example')).toBe(
+      `https://keli.example/invite/?token=${TOKEN}`,
     );
   });
 });
 
 describe('inviteMessage (bloque 14.3)', () => {
-  // P1-3: the message was «Te invito a mi casa en Nido: casa://…»; in WhatsApp nothing said how to
+  // P1-3: the message was «Te invito a mi casa en Keli: casa://…»; in WhatsApp nothing said how to
   // join, and the link ran into the sentence.
   it('says how to join in two steps and ends with the link alone on its line', () => {
     const url = `casa://invite?token=${TOKEN}`;
@@ -66,14 +66,14 @@ describe('parseInviteToken', () => {
   // «Unirme con un enlace» takes the whole message pasted, and an https link (bloque 14.3).
   it('parses the whole message pasted, line breaks and all', () => {
     const message = `Te invito a mi casa.
-Si no tienes Nido…
+Si no tienes Keli…
 
 casa://invite?token=${TOKEN}`;
     expect(parseInviteToken(message)).toBe(TOKEN);
   });
 
   it('parses an https invite link', () => {
-    expect(parseInviteToken(`https://nido.example/invite?token=${TOKEN}`)).toBe(TOKEN);
+    expect(parseInviteToken(`https://keli.example/invite?token=${TOKEN}`)).toBe(TOKEN);
     expect(parseInviteToken(`https://bradlopez13.github.io/casa/invite/?token=${TOKEN}`)).toBe(
       TOKEN,
     );

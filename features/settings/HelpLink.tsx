@@ -3,7 +3,7 @@ import { t } from '@/i18n';
 import { actionIcons } from '@/ui/actionIcons';
 import { Button } from '@/ui/components/Button';
 
-/** An entry of «Cómo funciona Nido» (`app/help.tsx`, `HELP_ITEMS`). */
+/** An entry of «Cómo funciona Keli» (`app/help.tsx`, `HELP_ITEMS`). */
 export type HelpEntry = 'write' | 'tabs' | 'shopping';
 
 /**

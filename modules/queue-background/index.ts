@@ -25,7 +25,7 @@ export const networkPass: { hold: () => void; release: () => void } | null =
   native === null
     ? null
     : {
-        // A failure of the module never reaches the queue: without the pass, it goes on opening Nido.
+        // A failure of the module never reaches the queue: without the pass, it goes on opening Keli.
         hold: () => {
           try {
             native.holdNetwork();

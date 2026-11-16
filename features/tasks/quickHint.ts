@@ -37,7 +37,7 @@ export function hintName(
  * Whether the quick add's example shows under the empty field. At the default text it shows until
  * used. From ×1.3 two lines of example cost the second note in view (bloque 11): it keeps quiet
  * while the list has notes, whatever hint the list has, and comes back with the list empty, where
- * it is the only one. It is always in «Cómo funciona Nido».
+ * it is the only one. It is always in «Cómo funciona Keli».
  */
 export function quickHintShown({
   open,

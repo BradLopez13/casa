@@ -10,7 +10,7 @@ import { Button } from '@/ui/components/Button';
 import { useDoorCompact, useDoorType } from '@/ui/components/DoorHeader';
 import { DOOR_MAX_SCALE } from '@/ui/door';
 import { Magnet } from '@/ui/components/Magnet';
-import { NidoSymbol } from '@/ui/components/NidoSymbol';
+import { KeliSymbol } from '@/ui/components/KeliSymbol';
 import { TextField } from '@/ui/components/TextField';
 import { useTheme } from '@/ui/theme';
 import { displayFont, displayFontBold } from '@/ui/tokens';
@@ -35,7 +35,7 @@ export function BrandPlate() {
         backgroundColor: colors.brandBand,
       }}
     >
-      <NidoSymbol size={30} onSlate />
+      <KeliSymbol size={30} onSlate />
     </View>
   );
 }

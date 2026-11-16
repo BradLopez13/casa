@@ -7,8 +7,8 @@ type CreateUrl = (path: string, opts: { queryParams: Record<string, string> }) =
 
 /**
  * Where the invitation links live (decisión 1 de Brad, 2 de noviembre: B with a link that can be
- * tapped). Until Nido has its own domain, the project's GitHub Pages site, where `site/invite/`
- * opens Nido with one tap or leads to Google Play; a chat app turns an https link into one that can
+ * tapped). Until Keli has its own domain, the project's GitHub Pages site, where `site/invite/`
+ * opens Keli with one tap or leads to Google Play; a chat app turns an https link into one that can
  * be tapped, never `casa://`. With the domain at the launch, `EXPO_PUBLIC_INVITE_HOST=<domain>` and
  * `app.config.js` declares the App Links and Universal Links too (`site/INVITACIONES.md`).
  */
@@ -31,7 +31,7 @@ export function buildInviteUrl(
 
 /**
  * The message an invitation is shared or copied with (bloque 14.3, P1-3): who invites to which
- * home, how to join in two steps (tap the link, or install Nido and paste this message in «Unirme
+ * home, how to join in two steps (tap the link, or install Keli and paste this message in «Unirme
  * con un enlace»), and the link alone on the last line, so a chat app turns it into a link and
  * never runs it into the sentence. The whole message, pasted, is a valid invitation.
  */

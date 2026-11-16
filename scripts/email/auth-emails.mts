@@ -1,13 +1,14 @@
-// Nido's auth emails (Supabase Auth templates), built from one shared layout so the header and
+// Keli's auth emails (Supabase Auth templates), built from one shared layout so the header and
 // footer never drift between files. Run `pnpm emails:build` to write supabase/templates/; the
 // test checks the committed files match. Layout rules for mail clients: tables and inline
 // styles only, no links, light colour scheme pinned, and an image that already carries its
 // background so dark mode cannot recolour it. Supabase Auth keeps one template per email
 // type, with no per-person language, so each email carries a Spanish block first, a thin
 // rule, then the same block in English.
+// TODO(lanzamiento): subir assets/email/keli-symbol-v3.png al bucket email-assets antes de aplicar estas plantillas; nido-symbol-v3.png se queda en el bucket porque lo usan correos ya enviados.
 
 export const SYMBOL_URL =
-  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/nido-symbol-v3.png';
+  'https://fyojaslimsgcabfbqdba.supabase.co/storage/v1/object/public/email-assets/keli-symbol-v3.png';
 
 const SLATE = '#2E3B41';
 const POSIT = '#F2D04B';
@@ -70,7 +71,7 @@ const layout = ({ es, en }: Content) => `<!doctype html>
       <tr>
         <td align="center" bgcolor="${SLATE}" style="background: ${SLATE}; padding: 28px 16px 64px;">
           <img src="${SYMBOL_URL}" width="48" height="48" alt="" style="display: block; width: 48px; height: 48px; border: 0;">
-          <p style="margin: 8px 0 0; font-family: ${FONT}; font-size: 22px; font-weight: 800; color: ${PAPER};">Nido</p>
+          <p style="margin: 8px 0 0; font-family: ${FONT}; font-size: 22px; font-weight: 800; color: ${PAPER};">Keli</p>
           <p style="margin: 2px 0 0; font-family: ${FONT}; font-size: 14px; color: ${PAPER};">La casa, en equipo.</p>
         </td>
       </tr>
@@ -117,14 +118,14 @@ const SEP = '\n                ';
 
 const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
   confirmation: {
-    subject: 'Tu código de Nido / Your Nido code',
+    subject: 'Tu código de Keli / Your Keli code',
     content: {
       es: {
         title: 'Confirma tu correo',
-        preheader: 'Tu código para confirmar el correo en Nido.',
+        preheader: 'Tu código para confirmar el correo en Keli.',
         heading: 'Confirma tu correo',
         body: [
-          paragraph(`${GREETING} Escribe este código en Nido:`),
+          paragraph(`${GREETING} Escribe este código en Keli:`),
           codePill(),
           paragraph('Caduca en 15 minutos.', 14),
         ].join(SEP),
@@ -132,10 +133,10 @@ const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
       },
       en: {
         title: 'Confirm your email',
-        preheader: 'Your code to confirm your email in Nido.',
+        preheader: 'Your code to confirm your email in Keli.',
         heading: 'Confirm your email',
         body: [
-          paragraph(`${GREETING_EN} Enter this code in Nido:`),
+          paragraph(`${GREETING_EN} Enter this code in Keli:`),
           codePill(),
           paragraph('It expires in 15 minutes.', 14),
         ].join(SEP),
@@ -144,14 +145,14 @@ const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
     },
   },
   recovery: {
-    subject: 'Recupera tu contraseña de Nido / Reset your Nido password',
+    subject: 'Recupera tu contraseña de Keli / Reset your Keli password',
     content: {
       es: {
         title: 'Recupera tu contraseña',
-        preheader: 'Tu código para elegir una contraseña nueva en Nido.',
+        preheader: 'Tu código para elegir una contraseña nueva en Keli.',
         heading: 'Recupera tu contraseña',
         body: [
-          paragraph(`${GREETING} Escribe este código en Nido para elegir una contraseña nueva:`),
+          paragraph(`${GREETING} Escribe este código en Keli para elegir una contraseña nueva:`),
           codePill(),
           paragraph('Caduca en 15 minutos.', 14),
         ].join(SEP),
@@ -159,10 +160,10 @@ const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
       },
       en: {
         title: 'Reset your password',
-        preheader: 'Your code to choose a new password in Nido.',
+        preheader: 'Your code to choose a new password in Keli.',
         heading: 'Reset your password',
         body: [
-          paragraph(`${GREETING_EN} Enter this code in Nido to choose a new password:`),
+          paragraph(`${GREETING_EN} Enter this code in Keli to choose a new password:`),
           codePill(),
           paragraph('It expires in 15 minutes.', 14),
         ].join(SEP),
@@ -171,30 +172,30 @@ const emails: Record<AuthEmailName, { subject: string; content: Content }> = {
     },
   },
   password_changed: {
-    subject: 'Tu contraseña de Nido ha cambiado / Your Nido password has changed',
+    subject: 'Tu contraseña de Keli ha cambiado / Your Keli password has changed',
     content: {
       es: {
         title: 'Tu contraseña ha cambiado',
-        preheader: 'Aviso de seguridad de tu cuenta de Nido.',
+        preheader: 'Aviso de seguridad de tu cuenta de Keli.',
         heading: 'Tu contraseña ha cambiado',
         body: [
-          paragraph('Hola. La contraseña de tu cuenta de Nido ({{ .Email }}) acaba de cambiar.'),
+          paragraph('Hola. La contraseña de tu cuenta de Keli ({{ .Email }}) acaba de cambiar.'),
           paragraph('Si has sido tú, no tienes que hacer nada.'),
           paragraph(
-            'Si no has sido tú, abre Nido, pulsa «¿Has olvidado tu contraseña?» y elige una nueva.',
+            'Si no has sido tú, abre Keli, pulsa «¿Has olvidado tu contraseña?» y elige una nueva.',
           ),
         ].join(SEP),
         footer: 'Este aviso se envía siempre que cambia la contraseña de tu cuenta.',
       },
       en: {
         title: 'Your password has changed',
-        preheader: 'A security notice about your Nido account.',
+        preheader: 'A security notice about your Keli account.',
         heading: 'Your password has changed',
         body: [
-          paragraph('Hi. The password of your Nido account ({{ .Email }}) has just changed.'),
+          paragraph('Hi. The password of your Keli account ({{ .Email }}) has just changed.'),
           paragraph('If it was you, there is nothing to do.'),
           paragraph(
-            'If it was not you, open Nido, tap “Forgot your password?” and choose a new one.',
+            'If it was not you, open Keli, tap “Forgot your password?” and choose a new one.',
           ),
         ].join(SEP),
         footer: 'This notice is sent whenever the password of your account changes.',
